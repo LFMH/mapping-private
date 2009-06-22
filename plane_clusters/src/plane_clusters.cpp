@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: plane_clusters.cpp 17089 2009-06-15 18:52:12Z stuglaser $
+ * $Id: plane_clusters.cpp 17089 2009-06-15 18:52:12Z veedee $
  *
  */
 
@@ -33,9 +33,7 @@
 
 @htmlinclude manifest.html
 
-\author Radu Bogdan Rusu
-
-@b table_object_detector detects tables and objects.
+@plane_clusters detects tables and objects.
 
  **/
 
@@ -67,10 +65,11 @@
 
 #include <sys/time.h>
 
-#include <mapping_srvs/GetPlaneCluster.h>
+#include <mapping_srvs/GetPlaneClusters.h>
 #include <robot_msgs/ObjectOnTable.h>
 
 using namespace std;
+using namespace ros;
 using namespace std_msgs;
 using namespace robot_msgs;
 using namespace mapping_srvs;
@@ -89,11 +88,11 @@ class PlaneClustersSR
   public:
 
     // ROS messages
-    PointCloud cloud_in_, cloud_down_;
+    PointCloudConstPtr cloud_in_;
+    PointCloud cloud_down_;
     Point leaf_width_;
     PointCloud cloud_annotated_;
     Point32 z_axis_;
-    PolygonalMap pmap_;
 
     // Parameters
     double min_z_bounds_, max_z_bounds_;
@@ -111,11 +110,15 @@ class PlaneClustersSR
 
     double table_min_height_, table_max_height_, delta_z_, object_min_distance_from_table_;
 
+
+    Subscriber cloud_sub_;
+    Publisher cloud_ann_pub_;
+
+    int downsample_factor_;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlaneClustersSR ()  
     {
-      nh_.param ("/global_frame_id", global_frame_, std::string("/base_link"));
-
       nh_.param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
       nh_.param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
 
@@ -144,14 +147,14 @@ class PlaneClustersSR
       nh_.param ("~publish_debug", publish_debug_, true);
 
       nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("tilt_laser_cloud"));
-      nh_.advertiseService("table_object_detector", &PlaneClustersSR::detectTable, this);
+      nh_.advertiseService("table_object_detector", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
       nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
 
       if (publish_debug_)
       {
-        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
+//        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
         nh_.advertise<PointCloud> ("cloud_annotated", 1);
       }
     }
@@ -179,16 +182,13 @@ class PlaneClustersSR
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectTable (FindTable::Request &req, FindTable::Response &resp)
+      plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
     {
       updateParametersFromServer ();
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
-      tf::MessageNotifier<robot_msgs::PointCloud> _pointcloudnotifier (&tf_, ros::Node::instance (),
-                                                                       boost::bind (&PlaneClustersSR::cloud_cb, this, _1),
-                                                                       input_cloud_topic_, global_frame_, 50);
-      nh_.subscribe (input_cloud_topic_, cloud_in_, &PlaneClustersSR::cloud_cb, this, 1);
+      cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
 
       // Wait until the scan is ready, sleep for 10ms
       ros::Duration tictoc (0, 10000000);
@@ -196,16 +196,20 @@ class PlaneClustersSR
       {
         tictoc.sleep ();
       }
-      // Unsubscribe from the point cloud topic
-      nh_.unsubscribe (input_cloud_topic_.c_str ()) ;
 
+      detectTable (*cloud_in_);
+    }
+
+    void
+      detectTable (const PointCloud &cloud)
+    {
       ros::Time ts = ros::Time::now ();
       // We have a pointcloud, estimate the true point bounds
-      vector<int> indices_in_bounds (cloud_in_.pts.size ());
+      vector<int> indices_in_bounds (cloud.pts.size ());
       int nr_p = 0;
-      for (unsigned int i = 0; i < cloud_in_.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud.pts.size (); i++)
       {
-        if (cloud_in_.pts[i].z >= table_min_height_ && cloud_in_.pts[i].z <= table_max_height_)
+        if (cloud.pts[i].z >= table_min_height_ && cloud.pts[i].z <= table_max_height_)
         {
           indices_in_bounds[nr_p] = i;
           nr_p++;
@@ -213,19 +217,18 @@ class PlaneClustersSR
       }
       indices_in_bounds.resize (nr_p);
       ROS_DEBUG("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
-                nr_p, cloud_in_.pts.size(), table_min_height_, table_max_height_);
+                nr_p, cloud.pts.size(), table_min_height_, table_max_height_);
 
       // Downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
       vector<cloud_geometry::Leaf> leaves;
       try
       {
-        cloud_geometry::downsamplePointCloud (cloud_in_, indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
+        cloud_geometry::downsamplePointCloud (cloud, indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
       }
       catch (std::bad_alloc)
       {
         // downsamplePointCloud should issue a ROS_ERROR on screen, so we simply exit here
-        return (false);
       }
 
       ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.pts.size ());
@@ -272,13 +275,12 @@ class PlaneClustersSR
       if (c_good == -1)
       {
         ROS_WARN ("No table found");
-        return (false);
       }
       ROS_INFO ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
 
       // Fill in the header
-      resp.table.header.frame_id = global_frame_;
-      resp.table.header.stamp = cloud_in_.header.stamp;
+     //resp.table.header.frame_id = global_frame_;
+     // resp.table.header.stamp = cloud_in_.header.stamp;
 
       // Get the table bounds
       robot_msgs::Point32 minP, maxP;
@@ -287,72 +289,48 @@ class PlaneClustersSR
       PointStamped minPstamped_local, maxPstamped_local;
       minPstamped_local.point.x = minP.x;
       minPstamped_local.point.y = minP.y;
-      minPstamped_local.header = cloud_in_.header;
+      minPstamped_local.header = cloud.header;
       maxPstamped_local.point.x = maxP.x;
       maxPstamped_local.point.y = maxP.y;
-      maxPstamped_local.header = cloud_in_.header;
+      maxPstamped_local.header = cloud.header;
       PointStamped minPstamped_global, maxPstamped_global;
-      try
-      {
-        tf_.transformPoint (global_frame_, minPstamped_local, minPstamped_global);
-        tf_.transformPoint (global_frame_, maxPstamped_local, maxPstamped_global);
-        resp.table.table_min.x = minPstamped_global.point.x;
-        resp.table.table_min.y = minPstamped_global.point.y;
-        resp.table.table_max.x = maxPstamped_global.point.x;
-        resp.table.table_max.y = maxPstamped_global.point.y;
-      }
-      catch (tf::TransformException)
-      {
-        ROS_ERROR ("Failed to transform table bounds from frame %s to frame %s",
-                   cloud_in_.header.frame_id.c_str(), global_frame_.c_str());
-        return (false);
-      }
 
       // Compute the convex hull
-      pmap_.header.stamp = cloud_down_.header.stamp;
-      pmap_.header.frame_id = global_frame_;
-      pmap_.polygons.resize (1);
-      cloud_geometry::areas::convexHull2D (cloud_down_, inliers, coeff, pmap_.polygons[0]);
+//      pmap_.header.stamp = cloud_down_.header.stamp;
+//      pmap_.header.frame_id = global_frame_;
+//      pmap_.polygons.resize (1);
+//      cloud_geometry::areas::convexHull2D (cloud_down_, inliers, coeff, pmap_.polygons[0]);
 
       // Find the object clusters supported by the table
       inliers.clear ();
-      findObjectClusters (cloud_in_, coeff, pmap_.polygons[0], minP, maxP, inliers, resp.table);
+      //findObjectClusters (cloud_in_, coeff, pmap_.polygons[0], minP, maxP, inliers, resp.table);
 
       // Transform into the global frame
-      try
-      {
         PointStamped local, global;
         local.header = cloud_down_.header;
-        for (unsigned int i = 0; i < pmap_.polygons.size (); i++)
+/*        for (unsigned int i = 0; i < pmap_.polygons.size (); i++)
         {
           for (unsigned int j = 0; j < pmap_.polygons[i].points.size (); j++)
           {
             local.point.x = pmap_.polygons[i].points[j].x;
             local.point.y = pmap_.polygons[i].points[j].y;
-            tf_.transformPoint (global_frame_, local, global);
             pmap_.polygons[i].points[j].x = global.point.x;
             pmap_.polygons[i].points[j].y = global.point.y;
           }
-        }
-      }
-      catch (tf::TransformException)
-      {
-        ROS_ERROR ("Failed to PolygonalMap from frame %s to frame %s", cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
-        return (false);
-      }
+        }*/
 
-      resp.table.table = pmap_.polygons[0];
+//      resp.table.table = pmap_.polygons[0];
 
 
-      ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
+ //     ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
+ //               resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
 
       // Should only used for debugging purposes (on screen visualization)
       if (publish_debug_)
       {
         // Break the object inliers into clusters in an Euclidean sense
         vector<vector<int> > objects;
-        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, -1, object_cluster_min_pts_);
+        findClusters (cloud, inliers, object_cluster_tolerance_, objects, -1, -1, -1, -1, object_cluster_min_pts_);
 
         int total_nr_pts = 0;
         for (unsigned int i = 0; i < objects.size (); i++)
@@ -362,14 +340,14 @@ class PlaneClustersSR
         cloud_annotated_.pts.resize (total_nr_pts);
 
         // Copy all the channels from the original pointcloud
-        cloud_annotated_.chan.resize (cloud_in_.chan.size () + 1);
-        for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
+        cloud_annotated_.chan.resize (cloud.chan.size () + 1);
+        for (unsigned int d = 0; d < cloud.chan.size (); d++)
         {
-          cloud_annotated_.chan[d].name = cloud_in_.chan[d].name;
+          cloud_annotated_.chan[d].name = cloud.chan[d].name;
           cloud_annotated_.chan[d].vals.resize (total_nr_pts);
         }
-        cloud_annotated_.chan[cloud_in_.chan.size ()].name = "rgb";
-        cloud_annotated_.chan[cloud_in_.chan.size ()].vals.resize (total_nr_pts);
+        cloud_annotated_.chan[cloud.chan.size ()].name = "rgb";
+        cloud_annotated_.chan[cloud.chan.size ()].vals.resize (total_nr_pts);
 
         // For each object in the set
         int nr_p = 0;
@@ -379,23 +357,22 @@ class PlaneClustersSR
           // Get its points
           for (unsigned int j = 0; j < objects[i].size (); j++)
           {
-            cloud_annotated_.pts[nr_p] = cloud_in_.pts.at (objects[i][j]);
-            for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
-              cloud_annotated_.chan[d].vals[nr_p] = cloud_in_.chan[d].vals.at (objects[i][j]);
-            cloud_annotated_.chan[cloud_in_.chan.size ()].vals[nr_p] = rgb;
+            cloud_annotated_.pts[nr_p] = cloud.pts.at (objects[i][j]);
+            for (unsigned int d = 0; d < cloud.chan.size (); d++)
+              cloud_annotated_.chan[d].vals[nr_p] = cloud.chan[d].vals.at (objects[i][j]);
+            cloud_annotated_.chan[cloud.chan.size ()].vals[nr_p] = rgb;
             nr_p++;
           }
         }
-        nh_.publish ("cloud_annotated", cloud_annotated_);
+        cloud_ann_pub_.publish (cloud_annotated_);
       }
-      return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       findObjectClusters (PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
                           const Point32 &minP, const Point32 &maxP,
-                          vector<int> &object_indices, Table &table)
+                          vector<int> &object_indices)
     {
       int nr_p = 0;
       Point32 pt;
@@ -435,7 +412,7 @@ class PlaneClustersSR
       findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
       robot_msgs::Point32 minPCluster, maxPCluster;
-      table.objects.resize (object_clusters.size ());
+      //table.objects.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
         vector<int> object_idx = object_clusters.at (i);
@@ -451,18 +428,17 @@ class PlaneClustersSR
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
-        cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
-        cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[i].center);
+        //cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
+        //cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[i].center);
       }
       object_indices.resize (nr_p);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
+    void cloud_cb (const PointCloudConstPtr& cloud)
     {
-      //cloud_in_ = *pc;
-      tf_.transformPointCloud(global_frame_, *pc, cloud_in_);
+      cloud_in_ = cloud;
       need_cloud_data_ = false;
     }
 
@@ -605,7 +581,7 @@ class PlaneClustersSR
     void
       estimatePointNormals (PointCloud &cloud)
     {
-      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
+/*      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
       vector<vector<int> > points_k_indices;
       // Allocate enough space for point indices
       points_k_indices.resize (cloud.pts.size ());
@@ -631,7 +607,6 @@ class PlaneClustersSR
         viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
       }
 
-#pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
@@ -646,7 +621,7 @@ class PlaneClustersSR
         cloud.chan[2].vals[i] = plane_parameters (2);
       }
       // Delete the kd-tree
-      delete kdtree;
+      delete kdtree;*/
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -658,9 +633,9 @@ class PlaneClustersSR
       {
         tictoc.sleep ();
 
-/*        FindTable::Request req;
-        FindTable::Response resp;
-        ros::service::call ("table_object_detector", req, resp);*/
+        GetPlaneClusters::Request req;
+        GetPlaneClusters::Response resp;
+        ros::service::call ("/get_plane_clusters_sr", req, resp);
       }
 
       return (true);
