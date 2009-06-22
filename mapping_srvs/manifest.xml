@@ -1,11 +1,12 @@
 <package>
-  <description>3D-TOF plane and cluster decomposition.</description>
+  <description>Mapping related services.</description>
   <author>@cs.tum.edu</author>
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="robot_msgs" />
-  <depend package="point_cloud_mapping" />
-  <depend package="mapping_srv" />
   
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp" />
+  </export>
   <url></url>
 </package>

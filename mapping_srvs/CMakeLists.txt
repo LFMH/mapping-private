@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(plane_clusters)
-
-rospack_add_executable(plane_clusters_node src/plane_clusters.cpp)
+rospack(mapping_srvs)
+gensrv()
 
