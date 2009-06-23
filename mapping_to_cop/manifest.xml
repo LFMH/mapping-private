@@ -1,0 +1,11 @@
+<package>
+  <description>Bridges plane and cluster messages to cop.</description>
+  <author>Ulrich Klank (klank@in.tum.de)</author>
+  <license>Ask</license>
+  <depend package="roscpp" />
+  <depend package="jlo" />
+  <depend package="cop" />
+  <depend package="robot_msgs" />
+  <depend package="mapping_srvs" />
+  <url></url>
+</package>
