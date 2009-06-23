@@ -161,6 +161,8 @@ class PlaneClustersSR
 //        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
         nh_.advertise<PointCloud> ("cloud_annotated", 1);
       }
+      
+      nh_.advertiseService("/get_plane_clusters_sr", &PlaneClustersSR::getTableClusters, this);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -721,13 +723,35 @@ class PlaneClustersSR
       {
         tictoc.sleep ();
 
-        GetPlaneClusters::Request req;
-        GetPlaneClusters::Response resp;
-        ros::service::call ("/get_plane_clusters_sr", req, resp);
+        //     GetPlaneClusters::Request req;
+        //GetPlaneClusters::Response resp;
+        //ros::service::call ("/get_plane_clusters_sr", req, resp);
       }
 
       return (true);
     }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  bool
+  //hard encoded for Uli to test
+  getTableClusters (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
+  {
+    resp.a = 1;
+    resp.b = 2;
+    resp.c = 3;
+    resp.d = 4;
+    Point32 n_;
+    n_.x = 1;
+    n_.y = 2;
+    n_.z = 3;
+    resp.pcenter = n_;
+    ObjectOnTable o_ [1];
+    o_[0].center = n_;
+    o_[0].min_bound =  n_;
+    o_[0].max_bound = n_;
+    return (true);
+  }
+
 };
 
 /* ---[ */
@@ -738,7 +762,6 @@ int
 
   PlaneClustersSR p;
   p.spin ();
-
   return (0);
 }
 /* ]--- */
