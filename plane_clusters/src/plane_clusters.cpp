@@ -116,6 +116,7 @@ class PlaneClustersSR
 
     Subscriber cloud_sub_;
     Publisher cloud_ann_pub_;
+    ServiceServer plane_service_;
 
     int downsample_factor_;
 
@@ -123,13 +124,14 @@ class PlaneClustersSR
     PlaneClustersSR ()  
     {
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
+      z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
+
       nh_.param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
       nh_.param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
 
       nh_.param ("~downsample_factor", downsample_factor_, 3);          // Use every nth point
       nh_.param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
 
-      z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
       nh_.param ("~normal_eps_angle", eps_angle_, 15.0);                   // 15 degrees
       eps_angle_ = angles::from_degrees (eps_angle_);                         // convert to radians
 
@@ -150,17 +152,14 @@ class PlaneClustersSR
 
       nh_.param ("~publish_debug", publish_debug_, true);
 
-      nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("tilt_laser_cloud"));
-      nh_.advertiseService("table_object_detector", &PlaneClustersSR::plane_clusters_service, this);
+      nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("/cloud_sr"));
+      plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
       nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
 
-      if (publish_debug_)
-      {
 //        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
-        nh_.advertise<PointCloud> ("cloud_annotated", 1);
-      }
+      cloud_ann_pub_ = nh_.advertise<PointCloud> ("cloud_annotated", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,10 +187,10 @@ class PlaneClustersSR
     bool
       plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
     {
-      updateParametersFromServer ();
+//      updateParametersFromServer ();
 
       // Subscribe to a point cloud topic
-      need_cloud_data_ = true;
+/*      need_cloud_data_ = true;
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
 
       // Wait until the scan is ready, sleep for 10ms
@@ -201,9 +200,12 @@ class PlaneClustersSR
         tictoc.sleep ();
       }
 
-      detectTable (*cloud_in_);
+      detectTable (*cloud_in_);*/
+      ROS_INFO ("Service request terminated.");
+      return (true);
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       detectTable (const PointCloud &cloud)
     {
@@ -716,14 +718,17 @@ class PlaneClustersSR
     bool
       spin ()
     {
-      ros::Duration tictoc (0, 10000000);
+      ros::Duration tictoc (0, 100000000);
       while (nh_.ok ())
       {
         tictoc.sleep ();
 
+        ROS_INFO ("Request service /plane_clusters_service");
         GetPlaneClusters::Request req;
         GetPlaneClusters::Response resp;
-        ros::service::call ("/get_plane_clusters_sr", req, resp);
+        ros::service::call ("/plane_clusters_sr_service", req, resp);
+
+        ros::spinOnce ();
       }
 
       return (true);
