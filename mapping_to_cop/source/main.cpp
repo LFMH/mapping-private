@@ -31,7 +31,7 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
   ros::ServiceClient client = n.serviceClient<jlo::srvjlo>("/located_object", true);
 
   msg.request.query.id = 0;
-  msg.request.query.id = 5;  /*ID of swissranger TODO! instead of 5 (= left camera)*/
+  msg.request.query.parent_id = 1;  /*ID of swissranger TODO! instead of 5 (= left camera)*/
   msg.request.query.type = 0;
   msg.request.query.pose = mat;
   msg.request.query.cov = uncertainty;
@@ -58,6 +58,15 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
     {
         printf( "%f ", msg.response.answer.pose[r * width2 + c]);
 
+    }
+    printf("\n");
+  }
+  width2 = 6;
+  for(int r = 0; r < width2; r++)
+  {
+    for(int c = 0; c < width2; c++)
+    {
+       printf( "%f ", msg.response.answer.cov[r * width2 + c]);
     }
     printf("\n");
   }
@@ -93,14 +102,14 @@ float64 d
 robot_msgs/Point32 pcenter
 robot_msgs/ObjectOnTable[] oclusters
 */
-bool GetPlaneClusterCall(std::vector<uint64> cluster_ids)
+bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
 {
   mapping_srvs::GetPlaneClusters msg;
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<mapping_srvs::GetPlaneClusters>("/mapping_srv", true);
+  ros::ServiceClient client = n.serviceClient<mapping_srvs::GetPlaneClusters>("/get_plane_clusters_sr", true);
   if (!client.call(msg))
   {
-    printf("Error in GetPlaneCluster  srv!\n");
+    printf("Error in /get_plane_clusters_sr  srv!\n");
     return false;
   }
   double a = msg.response.a;
@@ -109,8 +118,8 @@ bool GetPlaneClusterCall(std::vector<uint64> cluster_ids)
   double s = msg.response.d;
   robot_msgs::Point32 &pcenter = msg.response.pcenter;
   std::vector<robot_msgs::ObjectOnTable> &vec = msg.response.oclusters;
-
-  /*Norm v1*/
+  printf("Got plane equation %f x + %f y + %f z + %f = 0\n", a,b,c,s);
+   /*Norm v1*/
   normalize(a,b,c);
 
   /*Init v2*/
@@ -142,6 +151,23 @@ bool GetPlaneClusterCall(std::vector<uint64> cluster_ids)
   *   0 0 0 1
   *   for every cluster
   */
+  if(vec.size() == 0)
+  {
+     robot_msgs::ObjectOnTable on;
+     on.center.x = 0.0;
+     on.center.y = 0.0;
+     on.center.z = 0.8;
+     
+     on.min_bound.x = -0.2;
+     on.min_bound.y = -0.2;
+     on.min_bound.z = 1.0;
+     
+     on.max_bound.x = 0.2;
+     on.max_bound.y = 0.2;
+     on.max_bound.z = 1.1;
+     vec.push_back(on);
+  }
+  printf("Creating a pose for every cluster\n");
   for(int i = 0; i < vec.size(); i++)
   {
     const robot_msgs::Point32 &center = vec[i].center;
@@ -153,18 +179,19 @@ bool GetPlaneClusterCall(std::vector<uint64> cluster_ids)
            rotmat.push_back( f ); rotmat.push_back( i ); rotmat.push_back( c ); rotmat.push_back( center.z);
             rotmat.push_back( 0 ); rotmat.push_back( 0 ); rotmat.push_back( 0 ); rotmat.push_back( 1);
     std::vector<double> cov;
-    double covx = max(abs(center.x - max_bound.x), abs(center.x - min_bound.x));
-    double covy = max(abs(center.y - max_bound.y), abs(center.y - min_bound.y));
-    double covz = max(abs(center.z - max_bound.z), abs(center.z - min_bound.z));
+    double covx = max(fabs(center.x - max_bound.x), fabs(center.x - min_bound.x));
+    double covy = max(fabs(center.y - max_bound.y), fabs(center.y - min_bound.y));
+    double covz = max(fabs(center.z - max_bound.z), fabs(center.z - min_bound.z));
     /*Fill covariance with the cluster size and hardcoded full rotation in normal direction */
-    cov.push_back(covx); cov.push_back(0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
+     cov.push_back(covx); cov.push_back(0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( covy ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( covz ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
-     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0.2 ); cov.push_back( 0   ); cov.push_back( 0);
-     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0.2 ); cov.push_back( 0);
+     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0.3 ); cov.push_back( 0   ); cov.push_back( 0);
+     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0.3 ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 1.5);
 
      cluster_ids.push_back(JloRegisterPose(rotmat, cov));
+     printf("Pushed back a cluster\n");
   }
   return true;
 }
@@ -197,9 +224,12 @@ std::string _object = "Mug";
 
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids)
  {
+  ros::NodeHandle nh;
    cop::cop_call call;
-  ros::Publisher pub = n.advertise<cop::cop_call>("/tracking/in", 1); //000);
-
+   ros::Publisher pub = nh.advertise<cop::cop_call>("/tracking/in", 1); //000);
+   ros::Rate r(1);
+   r.sleep();
+    
   /** Create the cop_call msg*/
   call.outputtopic = stTopicName;
   call.object_classes.push_back(object);
@@ -207,6 +237,8 @@ std::string _object = "Mug";
   call.number_of_objects = 1;
   cop::apriori_position pos;
   int size = (int)cluster_ids.size();
+  printf("Number of pos ids? %d\n", size);
+  
   for(int i = 0; i < size; i++)
   {
     pos.probability = 1.0 / size;
@@ -229,9 +261,15 @@ int main(int argc, char* argv[])
      /** subscribe to the topic cop should publish the results*/
   ros::Subscriber read = n.subscribe<cop::cop_answer>(stTopicName, 1000, &callback);
   /** Publish */
-  ros::Rate r(1);
-  r.sleep();
+  std::vector<uint64> cluster_ids;
 
+  if(GetPlaneClusterCall(cluster_ids))
+  {
+      ros::NodeHandle n;
+      publishToCop(_object, n, cluster_ids);
+  }
+  ros::Rate r(1);
+    
   /**  Wait for results*/
   while(n.ok())
   {
