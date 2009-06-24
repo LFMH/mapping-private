@@ -118,6 +118,7 @@ class PlaneClustersSR
     Publisher cloud_ann_pub_;
 
     int downsample_factor_;
+    ServiceServer get_plane_clusters_service_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlaneClustersSR ()  
@@ -160,17 +161,17 @@ class PlaneClustersSR
       {
 //        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
         nh_.advertise<PointCloud> ("cloud_annotated", 1);
-      }
+        }
       
-      nh_.advertiseService("/get_plane_clusters_sr", &PlaneClustersSR::getTableClusters, this);
+      get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::getTableClusters, this);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
+   void
       updateParametersFromServer ()
     {
       nh_.getParam ("~input_cloud_topic", input_cloud_topic_);
-    }
+      }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Obtain a 24-bit RGB coded value from 3 independent <r, g, b> channel values
@@ -723,9 +724,10 @@ class PlaneClustersSR
       {
         tictoc.sleep ();
 
-        //     GetPlaneClusters::Request req;
+        //GetPlaneClusters::Request req;
         //GetPlaneClusters::Response resp;
         //ros::service::call ("/get_plane_clusters_sr", req, resp);
+        ros::spinOnce ();
       }
 
       return (true);
@@ -736,7 +738,8 @@ class PlaneClustersSR
   //hard encoded for Uli to test
   getTableClusters (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
   {
-    resp.a = 1;
+    ROS_INFO("IN getTableClusters \n");
+    resp.a = 2.7;
     resp.b = 2;
     resp.c = 3;
     resp.d = 4;
