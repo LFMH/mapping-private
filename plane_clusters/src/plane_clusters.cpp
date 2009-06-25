@@ -33,7 +33,7 @@
 
 @htmlinclude manifest.html
 
-@plane_clusters detects tables and objects.
+@plane_clusters detects tables and objects in SR data.
 
  **/
 
@@ -42,6 +42,7 @@
 #include <ros/node_handle.h>
 // ROS messages
 #include <robot_msgs/PointCloud.h>
+#include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -68,8 +69,9 @@
 #include <mapping_srvs/GetPlaneClusters.h>
 #include <robot_msgs/ObjectOnTable.h>
 
-#define SR_ROWS 176
-#define SR_COLS 144
+#define SR_COLS 176
+#define SR_ROWS 144
+#define DEBUG 1
 
 using namespace std;
 using namespace ros;
@@ -92,30 +94,29 @@ class PlaneClustersSR
 
     // ROS messages
     PointCloudConstPtr cloud_in_;
+    
     PointCloud cloud_down_;
     Point leaf_width_;
     PointCloud cloud_annotated_;
-    Point32 z_axis_;
+    Point32 axis_;
 
     // Parameters
-    double min_z_bounds_, max_z_bounds_;
     string input_cloud_topic_;
     int k_;
-    double clusters_growing_tolerance_;
     int clusters_min_pts_;
 
     int object_cluster_min_pts_;
     double object_cluster_tolerance_;
 
-    bool need_cloud_data_, publish_debug_;
+    bool need_cloud_data_;
 
-    double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
+    double sac_distance_threshold_, eps_angle_;
 
-    double table_min_height_, table_max_height_, delta_z_, object_min_distance_from_table_;
+    double delta_z_, object_min_dist_from_table_;
 
 
     Subscriber cloud_sub_;
-    Publisher cloud_ann_pub_;
+    Publisher cloud_ann_pub_, pmap_pub_;
     ServiceServer plane_service_;
 
     int downsample_factor_;
@@ -125,47 +126,31 @@ class PlaneClustersSR
     PlaneClustersSR ()  
     {
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
-      z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
+      axis_.x = 0; axis_.y = 1; axis_.z = 0;
 
-      nh_.param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
-      nh_.param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
+      nh_.param ("~downsample_factor", downsample_factor_, 4); // Use every nth point
+      nh_.param ("~search_k_closest", k_, 5);                  // 5 k-neighbors by default
 
-      nh_.param ("~downsample_factor", downsample_factor_, 3);          // Use every nth point
-      nh_.param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
+      nh_.param ("~normal_eps_angle", eps_angle_, 15.0);       // 15 degrees
+      eps_angle_ = angles::from_degrees (eps_angle_);          // convert to radians
 
-      nh_.param ("~normal_eps_angle", eps_angle_, 15.0);                   // 15 degrees
-      eps_angle_ = angles::from_degrees (eps_angle_);                         // convert to radians
+      nh_.param ("~clusters_min_pts", clusters_min_pts_, 10);  // 10 points
 
-      nh_.param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
-      region_angle_threshold_ = angles::from_degrees (region_angle_threshold_); // convert to radians
+      nh_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.03);   // 5cm between two objects
+      nh_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);         // 30 points per object cluster
 
-      nh_.param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.5);   // 0.5 m
-      nh_.param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
-
-      nh_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.05);   // 5cm between two objects
-      nh_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);           // 30 points per object cluster
-
-      nh_.param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
-      nh_.param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
-      nh_.param ("~table_delta_z", delta_z_, 0.03);                         // consider objects starting at 3cm from the table
-      nh_.param ("~object_min_distance_from_table", object_min_distance_from_table_, 0.10); // objects which have their support more 10cm from the table will not be considered
-      ROS_DEBUG ("Using the following thresholds for table detection [min / max height]: %f / %f.", table_min_height_, table_max_height_);
-
-      nh_.param ("~publish_debug", publish_debug_, true);
+      nh_.param ("~table_delta_z", delta_z_, 0.03);                              // consider objects starting at 3cm from the table
+      nh_.param ("~object_min_distance_from_table", object_min_dist_from_table_, 0.08); // objects which have their support more 8cm from the table will not be considered
 
       nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("/cloud_sr"));
       plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
-      nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
-
-//        nh_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
-
+      nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
 
       cloud_ann_pub_ = nh_.advertise<PointCloud> ("cloud_annotated", 1);
-
-      
-      get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::getTableClusters, this);
+      pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
+      get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +158,8 @@ class PlaneClustersSR
       updateParametersFromServer ()
     {
       nh_.getParam ("~input_cloud_topic", input_cloud_topic_);
-      }
+      nh_.getParam ("~downsample_factor", downsample_factor_);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Obtain a 24-bit RGB coded value from 3 independent <r, g, b> channel values
@@ -193,349 +179,274 @@ class PlaneClustersSR
     bool
       plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
     {
-//      updateParametersFromServer ();
+      ROS_INFO ("Service request initiated.");
+      updateParametersFromServer ();
 
       // Subscribe to a point cloud topic
-/*      need_cloud_data_ = true;
+      need_cloud_data_ = true;
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
 
       // Wait until the scan is ready, sleep for 10ms
       ros::Duration tictoc (0, 10000000);
       while (need_cloud_data_)
       {
-        tictoc.sleep ();
+        //tictoc.sleep ();
+        ros::spinOnce ();
       }
 
-      detectTable (*cloud_in_);*/
+      detectTable (*cloud_in_, resp);
+      
       ROS_INFO ("Service request terminated.");
       return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // PointCloud message callback
     void
-      detectTable (const PointCloud &cloud)
+      cloud_cb (const PointCloudConstPtr& cloud)
     {
-      ros::Time ts = ros::Time::now ();
-      // We have a pointcloud, estimate the true point bounds
-      vector<int> indices_in_bounds (cloud.pts.size ());
-      int nr_p = 0;
-      for (unsigned int i = 0; i < cloud.pts.size (); i++)
-      {
-        if (cloud.pts[i].z >= table_min_height_ && cloud.pts[i].z <= table_max_height_)
-        {
-          indices_in_bounds[nr_p] = i;
-          nr_p++;
-        }
-      }
-      indices_in_bounds.resize (nr_p);
-      ROS_DEBUG("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
-                nr_p, cloud.pts.size(), table_min_height_, table_max_height_);
-
-      // Downsample the cloud in the bounding box for faster processing
-      // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
-      vector<cloud_geometry::Leaf> leaves;
-      try
-      {
-        cloud_geometry::downsamplePointCloud (cloud, indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
-      }
-      catch (std::bad_alloc)
-      {
-        // downsamplePointCloud should issue a ROS_ERROR on screen, so we simply exit here
-      }
-
-      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.pts.size ());
-
-      // Reserve space for 3 channels: nx, ny, nz
-      cloud_down_.chan.resize (3);
-      cloud_down_.chan[0].name = "nx";
-      cloud_down_.chan[1].name = "ny";
-      cloud_down_.chan[2].name = "nz";
-      for (unsigned int d = 0; d < cloud_down_.chan.size (); d++)
-        cloud_down_.chan[d].vals.resize (cloud_down_.pts.size ());
-
-      // Create Kd-Tree
-      estimatePointNormals (cloud_down_);
-
-      // ---[ Select points whose normals are perpendicular to the Z-axis
-      vector<int> indices_z;
-      cloud_geometry::getPointIndicesAxisParallelNormals (cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
-      ROS_DEBUG ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
-
-      vector<vector<int> > clusters;
-      // Split the Z-parallel points into clusters
-      findClusters (cloud_down_, indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, region_angle_threshold_, clusters_min_pts_);
-
-      sort (clusters.begin (), clusters.end (), compareRegions);
-
-      vector<int> inliers;
-      vector<double> coeff, z_coeff (3);
-      z_coeff[0] = z_axis_.x; z_coeff[1] = z_axis_.y; z_coeff[2] = z_axis_.z;
-      int c_good = -1;
-      double eps_angle_deg = angles::to_degrees (eps_angle_);
-      for (int i = clusters.size () - 1; i >= 0; i--)
-      {
-        // Find the best plane in this cluster
-        fitSACPlane (&cloud_down_, &clusters[i], inliers, coeff);
-        double angle = angles::to_degrees (cloud_geometry::angles::getAngleBetweenPlanes (coeff, z_coeff));
-        if ( fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg )
-        {
-          c_good = i;
-          break;
-        }
-      }
-
-      if (c_good == -1)
-      {
-        ROS_WARN ("No table found");
-      }
-      ROS_INFO ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
-
-      // Fill in the header
-     //resp.table.header.frame_id = global_frame_;
-     // resp.table.header.stamp = cloud_in_.header.stamp;
-
-      // Get the table bounds
-      robot_msgs::Point32 minP, maxP;
-      cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
-      // Transform to the global frame
-      PointStamped minPstamped_local, maxPstamped_local;
-      minPstamped_local.point.x = minP.x;
-      minPstamped_local.point.y = minP.y;
-      minPstamped_local.header = cloud.header;
-      maxPstamped_local.point.x = maxP.x;
-      maxPstamped_local.point.y = maxP.y;
-      maxPstamped_local.header = cloud.header;
-      PointStamped minPstamped_global, maxPstamped_global;
-
-      // Compute the convex hull
-//      pmap_.header.stamp = cloud_down_.header.stamp;
-//      pmap_.header.frame_id = global_frame_;
-//      pmap_.polygons.resize (1);
-//      cloud_geometry::areas::convexHull2D (cloud_down_, inliers, coeff, pmap_.polygons[0]);
-
-      // Find the object clusters supported by the table
-      inliers.clear ();
-      //findObjectClusters (cloud_in_, coeff, pmap_.polygons[0], minP, maxP, inliers, resp.table);
-
-      // Transform into the global frame
-        PointStamped local, global;
-        local.header = cloud_down_.header;
-/*        for (unsigned int i = 0; i < pmap_.polygons.size (); i++)
-        {
-          for (unsigned int j = 0; j < pmap_.polygons[i].points.size (); j++)
-          {
-            local.point.x = pmap_.polygons[i].points[j].x;
-            local.point.y = pmap_.polygons[i].points[j].y;
-            pmap_.polygons[i].points[j].x = global.point.x;
-            pmap_.polygons[i].points[j].y = global.point.y;
-          }
-        }*/
-
-//      resp.table.table = pmap_.polygons[0];
-
-
- //     ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
- //               resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
-
-      // Should only used for debugging purposes (on screen visualization)
-      if (publish_debug_)
-      {
-        // Break the object inliers into clusters in an Euclidean sense
-        vector<vector<int> > objects;
-        findClusters (cloud, inliers, object_cluster_tolerance_, objects, -1, -1, -1, -1, object_cluster_min_pts_);
-
-        int total_nr_pts = 0;
-        for (unsigned int i = 0; i < objects.size (); i++)
-          total_nr_pts += objects[i].size ();
-
-        cloud_annotated_.header = cloud_down_.header;
-        cloud_annotated_.pts.resize (total_nr_pts);
-
-        // Copy all the channels from the original pointcloud
-        cloud_annotated_.chan.resize (cloud.chan.size () + 1);
-        for (unsigned int d = 0; d < cloud.chan.size (); d++)
-        {
-          cloud_annotated_.chan[d].name = cloud.chan[d].name;
-          cloud_annotated_.chan[d].vals.resize (total_nr_pts);
-        }
-        cloud_annotated_.chan[cloud.chan.size ()].name = "rgb";
-        cloud_annotated_.chan[cloud.chan.size ()].vals.resize (total_nr_pts);
-
-        // For each object in the set
-        int nr_p = 0;
-        for (unsigned int i = 0; i < objects.size (); i++)
-        {
-          float rgb = getRGB (rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0));
-          // Get its points
-          for (unsigned int j = 0; j < objects[i].size (); j++)
-          {
-            cloud_annotated_.pts[nr_p] = cloud.pts.at (objects[i][j]);
-            for (unsigned int d = 0; d < cloud.chan.size (); d++)
-              cloud_annotated_.chan[d].vals[nr_p] = cloud.chan[d].vals.at (objects[i][j]);
-            cloud_annotated_.chan[cloud.chan.size ()].vals[nr_p] = rgb;
-            nr_p++;
-          }
-        }
-        cloud_ann_pub_.publish (cloud_annotated_);
-      }
+      if (!need_cloud_data_)
+        return;
+      
+      ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
+      if (cloud->pts.size () != SR_ROWS * SR_COLS)
+        ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->pts.size ());
+      cloud_in_ = cloud;
+      need_cloud_data_ = false;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    /** \brief Filter shadow points based on 3 global parameters: min_angle, max_angle
-     * and window. {min,max}_angle specify the allowed angle interval (in degrees)
-     * between the created lines (see getAngleWithViewPoint). Window specifies how many
-     * consecutive measurements to take into account for one point.
-     * \param cloud_in the input PointCloud message
-     * \param cloud_out the output PointCloud message
-     */
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Estimate point normals assuming the spatial relationships between points are known
+    // (note: the resultant representation is downsampled by a factor of N)
     void
-      filterShadowPoints (const PointCloud &cloud_in, PointCloud &cloud_out, int window, double min_angle, double max_angle)
+      estimatePointNormals (const PointCloud &cloud_in, PointCloud &cloud_out, 
+                            int k, int downsample_factor, int width, int height, Point32 viewpoint_cloud)
     {
-      // For each point in the current line scan
-      int n_pts_filtered = 0;
-      for (unsigned int i = 0; i < cloud_in.pts.size (); i++)
+      // Reduce by a factor of N
+      cloud_out.pts.resize (lrint (ceil (width / (double)downsample_factor)) * 
+                            lrint (ceil (height / (double)downsample_factor)));
+      // Reserve space for 4 channels: nx, ny, nz, curvature
+      cloud_out.chan.resize (4);
+      cloud_out.chan[0].name = "nx";
+      cloud_out.chan[1].name = "ny";
+      cloud_out.chan[2].name = "nz";
+      cloud_out.chan[3].name = "curvature";
+      for (unsigned int d = 0; d < cloud_out.chan.size (); d++)
+        cloud_out.chan[d].vals.resize (cloud_out.pts.size ());
+
+      // Reserve enough space
+      vector<int> points_k_indices ((k + k + 1) * (k + k + 1));
+      Eigen::Vector4d plane_parameters;
+      double curvature;
+
+      int j = 0;
+      for (int i = 0; i < (int)cloud_in.pts.size (); i++)
       {
-        bool valid_point = true;
-        for (int y = -window; y < window + 1; y++)
+        // Obtain the <u,v> pixel values
+        int u = i / width;
+        int v = i % width;
+        
+        // Get every Nth pixel in both rows, cols
+        if ((u % downsample_factor != 0) || (v % downsample_factor != 0))
+          continue;
+          
+        // Copy the data
+        cloud_down_.pts[j] = cloud_in.pts[i];
+
+        // Get all point neighbors in a k x k window
+        for (int l = 0, x = -k; x < k+1; x++)
         {
-          int j = i + y;
-          if ( j < 0 || j >= (int)cloud_in.pts.size () || (int)i == j ) // Out of scan bounds or itself
-            continue;
-
-          double angle = getAngleWithViewpoint (cloud_in.pts[i].x, cloud_in.pts[i].y, cloud_in.pts[i].z,
-                                                cloud_in.pts[j].x, cloud_in.pts[j].y, cloud_in.pts[j].z);
-          if (angle < min_angle || angle > max_angle)
-            valid_point = false;
+          for (int y = -k; y < k+1; y++)
+          {
+            int idx = (u+x) * width + (v+y);
+            if (idx > 0 && idx < (int)cloud_in.pts.size ())
+              points_k_indices[l++] = idx;
+          }
         }
+      
+        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        cloud_geometry::nearest::computePointNormal (cloud_in, points_k_indices, plane_parameters, curvature);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_in.pts[i], viewpoint_cloud);
 
-        // If point found as 'ok', copy the relevant data
-        if (valid_point)
-        {
-          cloud_out.pts[n_pts_filtered].x = cloud_in.pts[i].x;
-          cloud_out.pts[n_pts_filtered].y = cloud_in.pts[i].y;
-          cloud_out.pts[n_pts_filtered].z = cloud_in.pts[i].z;
-
-          for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-            cloud_out.chan[d].vals[n_pts_filtered] = cloud_in.chan[d].vals[i];
-
-          n_pts_filtered++;
-        }
+        cloud_out.chan[0].vals[j] = plane_parameters (0);
+        cloud_out.chan[1].vals[j] = plane_parameters (1);
+        cloud_out.chan[2].vals[j] = plane_parameters (2);
+        cloud_out.chan[3].vals[j] = curvature;
+        j++;
       }
-
-      // Resize output vectors
-      cloud_out.pts.resize (n_pts_filtered);
-      for (unsigned int d = 0; d < cloud_out.get_chan_size (); d++)
-        cloud_out.chan[d].vals.resize (n_pts_filtered);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    /**
-     * \brief Computes the angle between the two lines created from 2 points and the
-     * viewpoint. Returns the angle (in degrees).
-     * \param px X coordinate for the first point
-     * \param py Y coordinate for the first point
-     * \param pz Z coordinate for the first point
-     * \param qx X coordinate for the second point
-     * \param qy Y coordinate for the second point
-     * \param qz Z coordinate for the second point
-     */
-    inline double
-      getAngleWithViewpoint (float px, float py, float pz, float qx, float qy, float qz)
-    {
-      double dir_a[3], dir_b[3];
-      dir_a[0] =    - px; dir_a[1] =    - py; dir_a[2] =    - pz;   // Assume viewpoint is 0,0,0
-      dir_b[0] = qx - px; dir_b[1] = qy - py; dir_b[2] = qz - pz;
-
-      // sqrt (sqr (x) + sqr (y) + sqr (z))
-      double norm_a = sqrt (dir_a[0]*dir_a[0] + dir_a[1]*dir_a[1] + dir_a[2]*dir_a[2]);
-      // Check for bogus 0,0,0 points
-      if (norm_a == 0) return (0);
-      double norm_b = sqrt (dir_b[0]*dir_b[0] + dir_b[1]*dir_b[1] + dir_b[2]*dir_b[2]);
-      if (norm_b == 0) return (0);
-      // dot_product (x, y)
-      double dot_pr = dir_a[0]*dir_b[0] + dir_a[1]*dir_b[1] + dir_a[2]*dir_b[2];
-      if (dot_pr != dot_pr)     // Check for NaNs
-        return (0);
-
-      return ( acos (dot_pr / (norm_a * norm_b) ) * 180.0 / M_PI);
     }
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findObjectClusters (PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
-                          const Point32 &minP, const Point32 &maxP,
-                          vector<int> &object_indices)
+      detectTable (const PointCloud &cloud, GetPlaneClusters::Response &resp)
+    {
+      ros::Time ts = ros::Time::now ();
+      
+      // Create a downsampled representation of the cloud
+      cloud_down_.header = cloud.header;
+      // Viewpoint value in the point cloud frame should be 0,0,0
+      Point32 viewpoint_cloud;
+      viewpoint_cloud.x = viewpoint_cloud.y = viewpoint_cloud.z = 0.0;
+
+      // Estimate point normals and copy the relevant data
+      estimatePointNormals (cloud, cloud_down_, k_, downsample_factor_, SR_COLS, SR_ROWS, viewpoint_cloud);
+
+      // ---[ Select points whose normals are perpendicular to the Z-axis
+      vector<int> indices_z;
+      cloud_geometry::getPointIndicesAxisParallelNormals (cloud_down_, 0, 1, 2, eps_angle_, axis_, indices_z);
+#ifdef DEBUG
+      ROS_INFO ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
+#endif
+      // Find the best plane in this cluster (later, we can optimize and process more clusters individually)
+      vector<int> inliers_down;
+      vector<double> coeff;
+      fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
+      
+#ifdef DEBUG
+        // Refine plane
+        vector<int> inliers (cloud.pts.size ());
+        int j = 0;
+        for (unsigned int i = 0; i < cloud.pts.size (); i++)
+        {
+          double dist_to_plane = cloud_geometry::distances::pointToPlaneDistance (cloud.pts[i], coeff);
+          if (dist_to_plane < sac_distance_threshold_)
+            inliers[j++] = i;
+        }
+        inliers.resize (j);
+#endif
+      
+      // Obtain the bounding 2D polygon of the table
+      Polygon3D table;
+      cloud_geometry::areas::convexHull2D (cloud_down_, inliers_down, coeff, table);
+#ifdef DEBUG
+      PolygonalMap pmap;
+      pmap.header = cloud.header;
+      pmap.polygons.resize (1);
+      pmap.polygons[0] = table;
+      pmap_pub_.publish (pmap);
+#endif
+
+      // Find the object clusters supported by the table
+      Point32 min_p, max_p;
+      cloud_geometry::statistics::getMinMax (cloud, inliers, min_p, max_p);
+      vector<int> object_inliers;
+      findObjectClusters (cloud, coeff, table, axis_, min_p, max_p, object_inliers, resp);
+      
+#ifdef DEBUG
+      //cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);
+      //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);
+      //cloud_geometry::getPointCloud (cloud, object_inliers, cloud_annotated_);
+
+      cloud_ann_pub_.publish (cloud_annotated_);
+#endif      
+      ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
+      // Copy the plane parameters back in the response
+      resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
+      cloud_geometry::nearest::computeCentroid (cloud, inliers, resp.pcenter);
+      
+      return;
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    void
+      findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon3D &table,
+                          const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices, GetPlaneClusters::Response &resp)
     {
       int nr_p = 0;
       Point32 pt;
-      object_indices.resize (points.pts.size ());
-      for (unsigned int i = 0; i < points.pts.size (); i++)
-      {
-        // Select all the points in the given bounds
-        if ( points.pts.at (i).x > minP.x &&
-             points.pts.at (i).x < maxP.x &&
-             points.pts.at (i).y > minP.y &&
-             points.pts.at (i).y < maxP.y &&
-             points.pts.at (i).z > (maxP.z + delta_z_)
-           )
-        {
-          // Calculate the distance from the point to the plane
-          double distance_to_plane = coeff.at (0) * points.pts.at (i).x +
-                                     coeff.at (1) * points.pts.at (i).y +
-                                     coeff.at (2) * points.pts.at (i).z +
-                                     coeff.at (3) * 1;
-          // Calculate the projection of the point on the plane
-          pt.x = points.pts.at (i).x - distance_to_plane * coeff.at (0);
-          pt.y = points.pts.at (i).y - distance_to_plane * coeff.at (1);
-          pt.z = points.pts.at (i).z - distance_to_plane * coeff.at (2);
+      object_indices.resize (cloud.pts.size ());
 
-          if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
-          {
-            object_indices[nr_p] = i;
-            nr_p++;
-          }
+      // Iterate over the entire cloud to extract the object clusters
+      for (unsigned int i = 0; i < cloud.pts.size (); i++)
+      {
+        // Select all the points in the given bounds - check all axes
+        if ( axis.x == 1 && ( cloud.pts.at (i).y < min_p.y || cloud.pts.at (i).y > max_p.y || cloud.pts.at (i).z < min_p.z || cloud.pts.at (i).z > max_p.z ) )
+          continue;
+
+        else if ( axis.y == 1 && ( cloud.pts.at (i).x < min_p.x || cloud.pts.at (i).x > max_p.x || cloud.pts.at (i).z < min_p.z || cloud.pts.at (i).z > max_p.z ) )
+          continue;
+
+        else if ( axis.z == 1 && ( cloud.pts.at (i).x < min_p.x || cloud.pts.at (i).x > max_p.x || cloud.pts.at (i).y < min_p.y || cloud.pts.at (i).y > max_p.y ) )
+          continue;
+        
+        // Calculate the distance from the point to the plane
+        double dist_to_plane = coeff.at (0) * cloud.pts.at (i).x +
+                               coeff.at (1) * cloud.pts.at (i).y +
+                               coeff.at (2) * cloud.pts.at (i).z +
+                               coeff.at (3) * 1;
+        // Calculate the projection of the point on the plane
+        pt.x = cloud.pts.at (i).x - dist_to_plane * coeff.at (0);
+        pt.y = cloud.pts.at (i).y - dist_to_plane * coeff.at (1);
+        pt.z = cloud.pts.at (i).z - dist_to_plane * coeff.at (2);
+
+        if (dist_to_plane > delta_z_ && cloud_geometry::areas::isPointIn2DPolygon (pt, table))
+        {
+          object_indices[nr_p] = i;
+          nr_p++;
         }
       }
       object_indices.resize (nr_p);
+      //return;
 
       // Find the clusters
       nr_p = 0;
       vector<vector<int> > object_clusters;
-      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
+      findClusters (cloud, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
-      robot_msgs::Point32 minPCluster, maxPCluster;
-      //table.objects.resize (object_clusters.size ());
+#ifdef DEBUG
+        int total_nr_pts = 0;
+        for (unsigned int i = 0; i < object_clusters.size (); i++)
+          total_nr_pts += object_clusters[i].size ();
+
+        cloud_annotated_.header = cloud.header;
+        cloud_annotated_.pts.resize (total_nr_pts);
+        cloud_annotated_.chan.resize (1);
+        cloud_annotated_.chan[0].name = "rgb";
+        cloud_annotated_.chan[0].vals.resize (total_nr_pts);
+        ROS_INFO ("Number of clusters found: %d", (int)object_clusters.size ());
+#endif
+
+      robot_msgs::Point32 min_p_cluster, max_p_cluster;
+      
+      resp.oclusters.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
+#ifdef DEBUG
+        float rgb = getRGB (rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0));
+#endif
         vector<int> object_idx = object_clusters.at (i);
 
         // Check whether this object cluster is supported by the table or just flying through thin air
-        cloud_geometry::statistics::getMinMax (points, object_idx, minPCluster, maxPCluster);
-        if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
-            continue;
+        cloud_geometry::statistics::getMinMax (cloud, object_idx, min_p_cluster, max_p_cluster);
+        // Select all the points in the given bounds - check all axes
+        if ( axis.x == 1 && ( min_p_cluster.x > max_p.x + object_min_dist_from_table_ ) )
+          continue;        
+        if ( axis.y == 1 && ( min_p_cluster.y > max_p.y + object_min_dist_from_table_ ) )
+          continue;        
+        if ( axis.z == 1 && ( min_p_cluster.z > max_p.z + object_min_dist_from_table_ ) )
+          continue;        
 
         // Process this cluster and extract the centroid and the bounds
         for (unsigned int j = 0; j < object_idx.size (); j++)
         {
           object_indices[nr_p] = object_idx.at (j);
+#ifdef DEBUG          
+            cloud_annotated_.pts[nr_p] = cloud.pts.at (object_idx.at (j));
+            cloud_annotated_.chan[0].vals[nr_p] = rgb;
+#endif
           nr_p++;
         }
-        //cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
-        //cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[i].center);
+        cloud_geometry::statistics::getMinMax (cloud, object_idx, resp.oclusters[i].min_bound, resp.oclusters[i].max_bound);
+        cloud_geometry::nearest::computeCentroid (cloud, object_idx, resp.oclusters[i].center);
       }
       object_indices.resize (nr_p);
+#ifdef DEBUG
+        cloud_annotated_.pts.resize (nr_p);
+        cloud_annotated_.chan[0].vals.resize (nr_p);
+#endif
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Callback
-    void cloud_cb (const PointCloudConstPtr& cloud)
-    {
-      if (cloud->pts.size () != SR_ROWS * SR_COLS)
-        ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!");
-      cloud_in_ = cloud;
-      need_cloud_data_ = false;
-    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
@@ -631,135 +542,46 @@ class PlaneClustersSR
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    int
-      fitSACPlane (PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
+    bool
+      fitSACPlane (PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
+                   const Point32 &viewpoint_cloud, double dist_thresh)
     {
-      if ((int)indices->size () < clusters_min_pts_)
+      if ((int)indices.size () < clusters_min_pts_)
       {
         inliers.resize (0);
         coeff.resize (0);
-        return (-1);
+        return (false);
       }
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
       sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
-      sac->setMaxIterations (500);
+      sac->setMaxIterations (200);
       sac->setProbability (0.99);
-      model->setDataSet (points, *indices);
+      model->setDataSet (points, indices);
 
       // Search for the best plane
       if (sac->computeModel ())
       {
-        // Obtain the inliers and the planar model coefficients
         if ((int)sac->getInliers ().size () < clusters_min_pts_)
         {
           //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
           inliers.resize (0);
           coeff.resize (0);
-          return (0);
+          return (false);
         }
+
         sac->computeCoefficients (coeff);     // Compute the model coefficients
         sac->refineCoefficients (coeff);      // Refine them using least-squares
-        model->selectWithinDistance (coeff, sac_distance_threshold_, inliers);
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
 
-        //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-        //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
 
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);
       }
-      return (0);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      estimatePointNormals (PointCloud &cloud)
-    {
-
-/*      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
-      vector<vector<int> > points_k_indices;
-      // Allocate enough space for point indices
-      points_k_indices.resize (cloud.pts.size ());
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
-        points_k_indices[i].resize (k_);
-      // Get the nerest neighbors for all the point indices in the bounds
-      vector<float> distances;
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
-        kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
-
-      // Figure out the viewpoint value in the point cloud frame
-      PointStamped viewpoint_laser, viewpoint_cloud;
-      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
-      // Set the viewpoint in the laser coordinate system to 0,0,0
-      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
-
-      try
-      {
-        tf_.transformPoint (cloud.header.frame_id, viewpoint_laser, viewpoint_cloud);
-      }
-      catch (tf::TransformException)
-      {
-        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
-      }
-
-      for (int i = 0; i < (int)cloud.pts.size (); i++)
-      {
-        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
-        Eigen::Vector4d plane_parameters;
-        double curvature;
-        cloud_geometry::nearest::computePointNormal (cloud, points_k_indices[i], plane_parameters, curvature);
-
-        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_down_.pts[i], viewpoint_cloud);
-
-        cloud.chan[0].vals[i] = plane_parameters (0);
-        cloud.chan[1].vals[i] = plane_parameters (1);
-        cloud.chan[2].vals[i] = plane_parameters (2);
-      }
-      // Delete the kd-tree
-      delete kdtree;*/
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    bool
-      spin ()
-    {
-      ros::Duration tictoc (0, 100000000);
-      while (nh_.ok ())
-      {
-        tictoc.sleep ();
-
-        //GetPlaneClusters::Request req;
-        //GetPlaneClusters::Response resp;
-        //ros::service::call ("/get_plane_clusters_sr", req, resp);
-        ros::spinOnce ();
-      }
-
       return (true);
     }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  bool
-  //hard encoded for Uli to test
-  getTableClusters (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
-  {
-    ROS_INFO("IN getTableClusters \n");
-    resp.a = 2.7;
-    resp.b = 2;
-    resp.c = 3;
-    resp.d = 4;
-    Point32 n_;
-    n_.x = 1;
-    n_.y = 2;
-    n_.z = 3;
-    resp.pcenter = n_;
-    ObjectOnTable o_ [1];
-    o_[0].center = n_;
-    o_[0].min_bound =  n_;
-    o_[0].max_bound = n_;
-    return (true);
-  }
-
 };
 
 /* ---[ */
@@ -769,8 +591,8 @@ int
   ros::init (argc, argv, "plane_clusters_sr");
 
   PlaneClustersSR p;
-  p.spin ();
+  ros::spin ();
+
   return (0);
 }
 /* ]--- */
-

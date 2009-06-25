@@ -1,0 +1,6 @@
+<launch>
+  <param name="/plane_clusters_sr/downsample_factor" value="5" />
+
+  <node pkg="plane_clusters" type="plane_clusters_node" name="plane_clusters_sr" output="screen" respawn="true">
+  </node>
+</launch>
