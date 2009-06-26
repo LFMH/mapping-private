@@ -31,7 +31,7 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
   ros::ServiceClient client = n.serviceClient<jlo::srvjlo>("/located_object", true);
 
   msg.request.query.id = 0;
-  msg.request.query.parent_id = 1;  /*ID of swissranger TODO! instead of 5 (= left camera)*/
+  msg.request.query.parent_id = 2;  /*ID of swissranger= 2 !*/
   msg.request.query.type = 0;
   msg.request.query.pose = mat;
   msg.request.query.cov = uncertainty;
@@ -41,7 +41,7 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
 
   if (!client.call(msg))
   {
-    printf("Error in GetPlaneCluster  srv!\n");
+    printf("Error in jlo  srv!\n");
     return 1;
   }
     else if (msg.response.error.length() > 0)
@@ -70,7 +70,50 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
     }
     printf("\n");
   }
-  return msg.response.answer.id;
+  
+  jlo::srvjlo msg_trans;
+  msg_trans.request.query.id = msg.response.answer.id;
+  msg_trans.request.query.parent_id = 5;  /*ID of swissranger= 2  Camera 4+5!*/
+  msg_trans.request.query.type = 0;
+       
+  msg_trans.request.command ="framequery";
+                 
+    if (!client.call(msg_trans))
+    {
+      printf("Error in jlo  srv!\n");
+      return 1;
+    }
+    else if (msg_trans.response.error.length() > 0)
+    {
+       printf("Error from jlo: %s!\n", msg_trans.response.error.c_str());
+       return 1;
+    }
+    width2 = 4;
+    printf("Showing PosId %d with parent %d:\n", (int)msg_trans.response.answer.id, (int)msg_trans.response.answer.parent_id);
+                  
+    for(int r = 0; r < width2; r++)
+    {
+        for(int c = 0; c < width2; c++)
+        {
+             printf( "%f ", msg_trans.response.answer.pose[r * width2 + c]);
+        }
+        printf("\n");
+    }
+
+  width2 = 6;
+    for(int r = 0; r < width2; r++)
+      {
+          for(int c = 0; c < width2; c++)
+              {
+                     printf( "%f ", msg_trans.response.answer.cov[r * width2 + c]);
+                }
+           printf("\n");
+    }
+                               
+                               
+
+
+  return msg_trans.response.answer.id;
 }
 
 void normalize(double &a,double &b, double &c)
@@ -106,10 +149,10 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
 {
   mapping_srvs::GetPlaneClusters msg;
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<mapping_srvs::GetPlaneClusters>("/get_plane_clusters_sr", true);
+  ros::ServiceClient client = n.serviceClient<mapping_srvs::GetPlaneClusters>("get_plane_clusters_sr", true);
   if (!client.call(msg))
   {
-    printf("Error in /get_plane_clusters_sr  srv!\n");
+    printf("Error in get_plane_clusters_sr  srv!\n");
     return false;
   }
   double a = msg.response.a;
@@ -153,23 +196,25 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
   */
   if(vec.size() == 0)
   {
+    printf("No Clusters found, adding a meaningless cluster");
      robot_msgs::ObjectOnTable on;
      on.center.x = 0.0;
-     on.center.y = 0.0;
-     on.center.z = 0.8;
+     on.center.y = -0.1;
+     on.center.z = 1.75;
      
-     on.min_bound.x = -0.2;
-     on.min_bound.y = -0.2;
-     on.min_bound.z = 1.0;
+     on.min_bound.x = -0.5;
+     on.min_bound.y = -0.3;
+     on.min_bound.z = 1.6;
      
-     on.max_bound.x = 0.2;
-     on.max_bound.y = 0.2;
-     on.max_bound.z = 1.1;
+     on.max_bound.x = 0.5;
+     on.max_bound.y = 0.3;
+     on.max_bound.z = 1.9;
      vec.push_back(on);
   }
   printf("Creating a pose for every cluster\n");
   for(int i = 0; i < vec.size(); i++)
   {
+    printf("a: %f , b: %f , c: %f\n", a, b, c);
     const robot_msgs::Point32 &center = vec[i].center;
     const robot_msgs::Point32 &min_bound = vec[i].min_bound;
     const robot_msgs::Point32 &max_bound = vec[i].max_bound;
@@ -178,17 +223,18 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
            rotmat.push_back( e ); rotmat.push_back( h ); rotmat.push_back( b ); rotmat.push_back( center.y);
            rotmat.push_back( f ); rotmat.push_back( i ); rotmat.push_back( c ); rotmat.push_back( center.z);
             rotmat.push_back( 0 ); rotmat.push_back( 0 ); rotmat.push_back( 0 ); rotmat.push_back( 1);
+            
     std::vector<double> cov;
-    double covx = max(fabs(center.x - max_bound.x), fabs(center.x - min_bound.x));
-    double covy = max(fabs(center.y - max_bound.y), fabs(center.y - min_bound.y));
-    double covz = max(fabs(center.z - max_bound.z), fabs(center.z - min_bound.z));
+    double covx = max(fabs(center.x - max_bound.x), fabs(center.x - min_bound.x)) ;
+    double covy = max(fabs(center.y - max_bound.y), fabs(center.y - min_bound.y)) ;
+    double covz = max(fabs(center.z - max_bound.z), fabs(center.z - min_bound.z)) ;
     /*Fill covariance with the cluster size and hardcoded full rotation in normal direction */
      cov.push_back(covx); cov.push_back(0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( covy ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( covz ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0);
-     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0.3 ); cov.push_back( 0   ); cov.push_back( 0);
+     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0.1 ); cov.push_back( 0   ); cov.push_back( 0);
      cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0.3 ); cov.push_back( 0);
-     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 1.5);
+     cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0    ); cov.push_back( 0   ); cov.push_back( 0   ); cov.push_back( 0.3);
 
      cluster_ids.push_back(JloRegisterPose(rotmat, cov));
      printf("Pushed back a cluster\n");
@@ -220,15 +266,16 @@ std::string _object = "Mug";
     exit(0);
  }
 
-  std::string stTopicName = "/tracking/out";
-
+ std::string stTopicName = "/tracking/out";
+ int _counter = 0;
+  
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids)
  {
   ros::NodeHandle nh;
    cop::cop_call call;
    ros::Publisher pub = nh.advertise<cop::cop_call>("/tracking/in", 1); //000);
-   ros::Rate r(1);
-   r.sleep();
+  ros::Rate r(5);
+  r.sleep();
     
   /** Create the cop_call msg*/
   call.outputtopic = stTopicName;
@@ -247,7 +294,7 @@ std::string _object = "Mug";
   }
   printf("Publish a cop_call at pub.nam: %s\n", pub.getTopic().c_str());
   pub.publish(call);
-
+  _counter = 0;
  }
 
 int main(int argc, char* argv[])
@@ -256,6 +303,8 @@ int main(int argc, char* argv[])
   cop::cop_call call;
   cop::cop_answer answer;
   ros::NodeHandle n;
+  if(argc > 1)
+    _object = argv[1];
   /** new topic for cop*/
 
      /** subscribe to the topic cop should publish the results*/
@@ -268,14 +317,15 @@ int main(int argc, char* argv[])
       ros::NodeHandle n;
       publishToCop(_object, n, cluster_ids);
   }
-  ros::Rate r(1);
-    
+  ros::Rate r(0.2);
   /**  Wait for results*/
   while(n.ok())
   {
+   _counter++;
     ros::spinOnce();
     r.sleep();
-//    pub.publish(call);
+/*    if(_counter > 400)
+      publishToCop(_object, n, cluster_ids);*/
   }
   return 0;
 }
