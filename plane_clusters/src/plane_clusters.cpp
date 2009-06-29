@@ -94,7 +94,7 @@ class PlaneClustersSR
 
     // ROS messages
     PointCloudConstPtr cloud_in_;
-    
+
     PointCloud cloud_down_;
     Point leaf_width_;
     PointCloud cloud_annotated_;
@@ -195,7 +195,7 @@ class PlaneClustersSR
       }
 
       detectTable (*cloud_in_, resp);
-      
+
       ROS_INFO ("Service request terminated.");
       return (true);
     }
@@ -207,7 +207,7 @@ class PlaneClustersSR
     {
       if (!need_cloud_data_)
         return;
-      
+
       ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
       if (cloud->pts.size () != SR_ROWS * SR_COLS)
         ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->pts.size ());
@@ -216,73 +216,11 @@ class PlaneClustersSR
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Estimate point normals assuming the spatial relationships between points are known
-    // (note: the resultant representation is downsampled by a factor of N)
-    void
-      estimatePointNormals (const PointCloud &cloud_in, PointCloud &cloud_out, 
-                            int k, int downsample_factor, int width, int height, Point32 viewpoint_cloud)
-    {
-      // Reduce by a factor of N
-      cloud_out.pts.resize (lrint (ceil (width / (double)downsample_factor)) * 
-                            lrint (ceil (height / (double)downsample_factor)));
-      // Reserve space for 4 channels: nx, ny, nz, curvature
-      cloud_out.chan.resize (4);
-      cloud_out.chan[0].name = "nx";
-      cloud_out.chan[1].name = "ny";
-      cloud_out.chan[2].name = "nz";
-      cloud_out.chan[3].name = "curvature";
-      for (unsigned int d = 0; d < cloud_out.chan.size (); d++)
-        cloud_out.chan[d].vals.resize (cloud_out.pts.size ());
-
-      // Reserve enough space
-      vector<int> points_k_indices ((k + k + 1) * (k + k + 1));
-      Eigen::Vector4d plane_parameters;
-      double curvature;
-
-      int j = 0;
-      for (int i = 0; i < (int)cloud_in.pts.size (); i++)
-      {
-        // Obtain the <u,v> pixel values
-        int u = i / width;
-        int v = i % width;
-        
-        // Get every Nth pixel in both rows, cols
-        if ((u % downsample_factor != 0) || (v % downsample_factor != 0))
-          continue;
-          
-        // Copy the data
-        cloud_down_.pts[j] = cloud_in.pts[i];
-
-        // Get all point neighbors in a k x k window
-        for (int l = 0, x = -k; x < k+1; x++)
-        {
-          for (int y = -k; y < k+1; y++)
-          {
-            int idx = (u+x) * width + (v+y);
-            if (idx > 0 && idx < (int)cloud_in.pts.size ())
-              points_k_indices[l++] = idx;
-          }
-        }
-      
-        // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
-        cloud_geometry::nearest::computePointNormal (cloud_in, points_k_indices, plane_parameters, curvature);
-        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_in.pts[i], viewpoint_cloud);
-
-        cloud_out.chan[0].vals[j] = plane_parameters (0);
-        cloud_out.chan[1].vals[j] = plane_parameters (1);
-        cloud_out.chan[2].vals[j] = plane_parameters (2);
-        cloud_out.chan[3].vals[j] = curvature;
-        j++;
-      }
-    }
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       detectTable (const PointCloud &cloud, GetPlaneClusters::Response &resp)
     {
       ros::Time ts = ros::Time::now ();
-      
+
       // Create a downsampled representation of the cloud
       cloud_down_.header = cloud.header;
       // Viewpoint value in the point cloud frame should be 0,0,0
@@ -290,7 +228,7 @@ class PlaneClustersSR
       viewpoint_cloud.x = viewpoint_cloud.y = viewpoint_cloud.z = 0.0;
 
       // Estimate point normals and copy the relevant data
-      estimatePointNormals (cloud, cloud_down_, k_, downsample_factor_, SR_COLS, SR_ROWS, viewpoint_cloud);
+      cloud_geometry::nearest::computeOrganizedPointCloudNormals (cloud_down_, cloud, k_, downsample_factor_, SR_COLS, SR_ROWS, viewpoint_cloud);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
@@ -302,7 +240,7 @@ class PlaneClustersSR
       vector<int> inliers_down;
       vector<double> coeff;
       fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
-      
+
 #ifdef DEBUG
         // Refine plane
         vector<int> inliers (cloud.pts.size ());
@@ -315,7 +253,7 @@ class PlaneClustersSR
         }
         inliers.resize (j);
 #endif
-      
+
       // Obtain the bounding 2D polygon of the table
       Polygon3D table;
       cloud_geometry::areas::convexHull2D (cloud_down_, inliers_down, coeff, table);
@@ -332,22 +270,22 @@ class PlaneClustersSR
       cloud_geometry::statistics::getMinMax (cloud, inliers, min_p, max_p);
       vector<int> object_inliers;
       findObjectClusters (cloud, coeff, table, axis_, min_p, max_p, object_inliers, resp);
-      
+
 #ifdef DEBUG
       //cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);
       //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);
       //cloud_geometry::getPointCloud (cloud, object_inliers, cloud_annotated_);
 
       cloud_ann_pub_.publish (cloud_annotated_);
-#endif      
+#endif
       ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
       // Copy the plane parameters back in the response
       resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
       cloud_geometry::nearest::computeCentroid (cloud, inliers, resp.pcenter);
-      
+
       return;
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon3D &table,
@@ -369,7 +307,7 @@ class PlaneClustersSR
 
         else if ( axis.z == 1 && ( cloud.pts.at (i).x < min_p.x || cloud.pts.at (i).x > max_p.x || cloud.pts.at (i).y < min_p.y || cloud.pts.at (i).y > max_p.y ) )
           continue;
-        
+
         // Calculate the distance from the point to the plane
         double dist_to_plane = coeff.at (0) * cloud.pts.at (i).x +
                                coeff.at (1) * cloud.pts.at (i).y +
@@ -387,12 +325,12 @@ class PlaneClustersSR
         }
       }
       object_indices.resize (nr_p);
-      //return;
 
       // Find the clusters
       nr_p = 0;
       vector<vector<int> > object_clusters;
-      findClusters (cloud, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
+      cloud_geometry::nearest::extractEuclideanClusters (cloud, object_indices, object_cluster_tolerance_,
+                                                         object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
 #ifdef DEBUG
         int total_nr_pts = 0;
@@ -447,99 +385,6 @@ class PlaneClustersSR
 #endif
     }
 
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
-      * angular deviation
-      * \NOTE: assumes normalized point normals !
-      * \param points pointer to the point cloud message
-      * \param indices pointer to a list of point indices
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
-      * \param clusters the resultant clusters
-      * \param nx_idx the index of the channel containing the X component of the normal
-      * \param ny_idx the index of the channel containing the Y component of the normal
-      * \param nz_idx the index of the channel containing the Z component of the normal
-      * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
-      */
-    void
-      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
-                    int nx_idx, int ny_idx, int nz_idx,
-                    double eps_angle, unsigned int min_pts_per_cluster)
-    {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
-
-      int nr_points = indices.size ();
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (nr_points, false);
-
-      vector<int> nn_indices;
-      vector<float> nn_distances;
-      // Process all points in the indices vector
-      for (int i = 0; i < nr_points; i++)
-      {
-        if (processed[i])
-          continue;
-
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
-        {
-          // Search for sq_idx
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
-          {
-            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
-              continue;
-
-            processed[nn_indices[j]] = true;
-            if (nx_idx != -1)                                         // Are point normals present ?
-            {
-              // [-1;1]
-              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                             points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                             points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
-              if ( fabs (acos (dot_p)) < eps_angle )
-              {
-                processed[nn_indices[j]] = true;
-                seed_queue.push_back (nn_indices[j]);
-              }
-            }
-            // If normal information is not present, perform a simple Euclidean clustering
-            else
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-
-          sq_idx++;
-        }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
-        {
-          vector<int> r (seed_queue.size ());
-          for (unsigned int j = 0; j < seed_queue.size (); j++)
-            r[j] = indices.at (seed_queue[j]);
-
-          sort (r.begin (), r.end ());
-          r.erase (unique (r.begin (), r.end ()), r.end ());
-
-          clusters.push_back (r);
-        }
-      }
-
-      // Destroy the tree
-      delete tree;
-    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
