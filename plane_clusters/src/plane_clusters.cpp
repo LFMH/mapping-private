@@ -116,7 +116,7 @@ class PlaneClustersSR
 
 
     Subscriber cloud_sub_;
-    Publisher cloud_ann_pub_, pmap_pub_;
+    Publisher cloud_table_pub_, cloud_clusters_pub_, pmap_pub_;
     ServiceServer plane_service_;
 
     int downsample_factor_;
@@ -131,7 +131,7 @@ class PlaneClustersSR
       nh_.param ("~downsample_factor", downsample_factor_, 4); // Use every nth point
       nh_.param ("~search_k_closest", k_, 5);                  // 5 k-neighbors by default
 
-      nh_.param ("~normal_eps_angle", eps_angle_, 15.0);       // 15 degrees
+      nh_.param ("~normal_eps_angle", eps_angle_, 10.0);       // 15 degrees
       eps_angle_ = angles::from_degrees (eps_angle_);          // convert to radians
 
       nh_.param ("~clusters_min_pts", clusters_min_pts_, 10);  // 10 points
@@ -148,7 +148,8 @@ class PlaneClustersSR
       // This should be set to whatever the leaf_width factor is in the downsampler
       nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
 
-      cloud_ann_pub_ = nh_.advertise<PointCloud> ("cloud_annotated", 1);
+      cloud_table_pub_ = nh_.advertise<PointCloud> ("cloud_table", 1);
+      cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
       pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
       get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
     }
@@ -241,6 +242,11 @@ class PlaneClustersSR
       vector<double> coeff;
       fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
 
+      // Get the largest table candidate
+//      vector<vector<int> > table_clusters;
+//      cloud_geometry::nearest::extractEuclideanClusters (cloud_down_, inliers_down, object_cluster_tolerance_,
+//                                                         table_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
+//      inliers_down = table_clusters[0];
 #ifdef DEBUG
         // Refine plane
         vector<int> inliers (cloud.pts.size ());
@@ -272,11 +278,16 @@ class PlaneClustersSR
       findObjectClusters (cloud, coeff, table, axis_, min_p, max_p, object_inliers, resp);
 
 #ifdef DEBUG
-      //cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);
       //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);
       //cloud_geometry::getPointCloud (cloud, object_inliers, cloud_annotated_);
 
-      cloud_ann_pub_.publish (cloud_annotated_);
+      // Send the table
+      cloud_clusters_pub_.publish (cloud_annotated_);
+      
+      // Send the clusters
+      cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);   // downsampled version
+      //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);              // full version
+      cloud_table_pub_.publish (cloud_annotated_);
 #endif
       ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
       // Copy the plane parameters back in the response
