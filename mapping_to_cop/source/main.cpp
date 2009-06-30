@@ -49,6 +49,31 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
     printf("Error from jlo: %s!\n", msg.response.error.c_str());
     return 1;
   }
+  printfJloMsg(msg);
+  printf("After Transformation:\n");
+  
+    msg.request.query.id = msg.response.answer.id;
+    msg.request.query.parent_id = 1;  /*ID of swissranger TODO! instead of 5 (= left camera)*/
+    msg.request.query.type = 0;
+    msg.request.command ="frameQuery";
+            
+    if (!client.call(msg))
+    {
+           printf("Error in GetPlaneCluster  srv!\n");
+           return 1;
+    }
+    else if (msg.response.error.length() > 0)
+    {
+          printf("Error from jlo: %s!\n", msg.response.error.c_str());
+          return 1;
+    }
+    printfJloMsg(msg);
+  return msg.response.answer.id;
+    
+}
+
+void printfJloMsg(jlo::srvjlo msg)
+{  
   int width2 = 4;
   printf("Showing PosId %d with parent %d:\n", (int)msg.response.answer.id, (int)msg.response.answer.parent_id);
 
@@ -70,7 +95,6 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
     }
     printf("\n");
   }
-  
   jlo::srvjlo msg_trans;
   msg_trans.request.query.id = msg.response.answer.id;
   msg_trans.request.query.parent_id = 5;  /*ID of swissranger= 2  Camera 4+5!*/
