@@ -13,7 +13,7 @@ int main(int argc, char **argv)
   
     ros::NodeHandle n;
     ros::ServiceClient client = n.serviceClient<GetPlaneClusters>("get_plane_clusters_sr");
-    mapping_srvs::GetPlaneClusters srv;
+    GetPlaneClusters srv;
     if (client.call(srv))
       {
         //add response variables of choice

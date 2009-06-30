@@ -69,6 +69,8 @@
 #include <mapping_srvs/GetPlaneClusters.h>
 #include <robot_msgs/ObjectOnTable.h>
 
+#include <utilities/yarp_communication.h>
+
 #define SR_COLS 176
 #define SR_ROWS 144
 #define DEBUG 1
@@ -196,7 +198,18 @@ class PlaneClustersSR
       }
 
       detectTable (*cloud_in_, resp);
-
+#ifdef DEBUG
+      Eigen::Matrix4f hom_matrix;
+      string port("/hom_mat/in");
+      get_yarp_hom_matrix(port, hom_matrix);
+      for (int i=0; i<4; i++)
+        {
+          for (int j=0; j<4; j++) 
+            {
+              ROS_INFO("Hom. MAtrix %f",hom_matrix(i,j));
+            }
+            }
+#endif
       ROS_INFO ("Service request terminated.");
       return (true);
     }

@@ -2,10 +2,11 @@
   <description>3D-TOF plane and cluster decomposition.</description>
   <author>@cs.tum.edu</author>
   <license>BSD</license>
+  <depend package="eigen" />
+  <depend package="yarp2" />
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="point_cloud_mapping" />
   <depend package="mapping_srvs" />
-  
   <url></url>
 </package>
