@@ -199,7 +199,7 @@ class PlaneClustersSR
 
       detectTable (*cloud_in_, resp);
 #ifdef DEBUG
-      Eigen::Matrix4f hom_matrix;
+/*      Eigen::Matrix4f hom_matrix;
       string port("/hom_mat/in");
       get_yarp_hom_matrix(port, hom_matrix);
       for (int i=0; i<4; i++)
@@ -208,7 +208,7 @@ class PlaneClustersSR
             {
               ROS_INFO("Hom. MAtrix %f",hom_matrix(i,j));
             }
-            }
+            }*/
 #endif
       ROS_INFO ("Service request terminated.");
       return (true);
