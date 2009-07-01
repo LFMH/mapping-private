@@ -17,6 +17,33 @@
 typedef uint64_t uint64;
 
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids);
+
+
+void printfJloMsg(jlo::srvjlo msg)
+{  
+  int width2 = 4;
+  printf("Showing PosId %d with parent %d:\n", (int)msg.response.answer.id, (int)msg.response.answer.parent_id);
+
+  for(int r = 0; r < width2; r++)
+  {
+    for(int c = 0; c < width2; c++)
+    {
+        printf( "%f ", msg.response.answer.pose[r * width2 + c]);
+
+    }
+    printf("\n");
+  }
+  width2 = 6;
+  for(int r = 0; r < width2; r++)
+  {
+    for(int c = 0; c < width2; c++)
+    {
+       printf( "%f ", msg.response.answer.cov[r * width2 + c]);
+    }
+    printf("\n");
+  }
+}
+
 /*    "# Message to quiey the lo-service\n"
     "uint64 id		#id of a frame, there should be unique mapping from a tf-name-string to such an id\n"
     "uint64 parent_id        #id of parent frame\n"
@@ -51,50 +78,7 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
   }
   printfJloMsg(msg);
   printf("After Transformation:\n");
-  
-    msg.request.query.id = msg.response.answer.id;
-    msg.request.query.parent_id = 1;  /*ID of swissranger TODO! instead of 5 (= left camera)*/
-    msg.request.query.type = 0;
-    msg.request.command ="frameQuery";
-            
-    if (!client.call(msg))
-    {
-           printf("Error in GetPlaneCluster  srv!\n");
-           return 1;
-    }
-    else if (msg.response.error.length() > 0)
-    {
-          printf("Error from jlo: %s!\n", msg.response.error.c_str());
-          return 1;
-    }
-    printfJloMsg(msg);
-  return msg.response.answer.id;
     
-}
-
-void printfJloMsg(jlo::srvjlo msg)
-{  
-  int width2 = 4;
-  printf("Showing PosId %d with parent %d:\n", (int)msg.response.answer.id, (int)msg.response.answer.parent_id);
-
-  for(int r = 0; r < width2; r++)
-  {
-    for(int c = 0; c < width2; c++)
-    {
-        printf( "%f ", msg.response.answer.pose[r * width2 + c]);
-
-    }
-    printf("\n");
-  }
-  width2 = 6;
-  for(int r = 0; r < width2; r++)
-  {
-    for(int c = 0; c < width2; c++)
-    {
-       printf( "%f ", msg.response.answer.cov[r * width2 + c]);
-    }
-    printf("\n");
-  }
   jlo::srvjlo msg_trans;
   msg_trans.request.query.id = msg.response.answer.id;
   msg_trans.request.query.parent_id = 5;  /*ID of swissranger= 2  Camera 4+5!*/
@@ -112,31 +96,7 @@ void printfJloMsg(jlo::srvjlo msg)
        printf("Error from jlo: %s!\n", msg_trans.response.error.c_str());
        return 1;
     }
-    width2 = 4;
-    printf("Showing PosId %d with parent %d:\n", (int)msg_trans.response.answer.id, (int)msg_trans.response.answer.parent_id);
-                  
-    for(int r = 0; r < width2; r++)
-    {
-        for(int c = 0; c < width2; c++)
-        {
-             printf( "%f ", msg_trans.response.answer.pose[r * width2 + c]);
-        }
-        printf("\n");
-    }
-
-  width2 = 6;
-    for(int r = 0; r < width2; r++)
-      {
-          for(int c = 0; c < width2; c++)
-              {
-                     printf( "%f ", msg_trans.response.answer.cov[r * width2 + c]);
-                }
-           printf("\n");
-    }
-                               
-                               
-
-
+    printfJloMsg(msg_trans);
   return msg_trans.response.answer.id;
 }
 
@@ -295,17 +255,12 @@ std::string _object = "Mug";
   
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids)
  {
-  ros::NodeHandle nh;
-   cop::cop_call call;
-   ros::Publisher pub = nh.advertise<cop::cop_call>("/tracking/in", 1); //000);
-  ros::Rate r(5);
-  r.sleep();
-    
+  cop::cop_call call;
   /** Create the cop_call msg*/
-  call.outputtopic = stTopicName;
-  call.object_classes.push_back(object);
-  call.action_type = 0;
-  call.number_of_objects = 1;
+  call.request.outputtopic = stTopicName;
+  call.request.object_classes.push_back(object);
+  call.request.action_type = 0;
+  call.request.number_of_objects = 1;
   cop::apriori_position pos;
   int size = (int)cluster_ids.size();
   printf("Number of pos ids? %d\n", size);
@@ -314,10 +269,14 @@ std::string _object = "Mug";
   {
     pos.probability = 1.0 / size;
     pos.positionId = cluster_ids[i];
-    call.list_of_poses.push_back(pos);
+    call.request.list_of_poses.push_back(pos);
   }
-  printf("Publish a cop_call at pub.nam: %s\n", pub.getTopic().c_str());
-  pub.publish(call);
+  ros::ServiceClient client = n.serviceClient<cop::cop_call>("/tracking/in", true);
+  ros::service::waitForService("/tracking/in", 10000);
+  if(!client.call(call))
+    printf("Error calling cop");
+  else
+    printf("Waiting for cops answer on topic\n");
   _counter = 0;
  }
 
