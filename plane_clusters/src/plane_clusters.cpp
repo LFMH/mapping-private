@@ -69,7 +69,7 @@
 #include <mapping_srvs/GetPlaneClusters.h>
 #include <robot_msgs/ObjectOnTable.h>
 
-#include <utilities/yarp_communication.h>
+//#include <utilities/yarp_communication.h>
 
 #define SR_COLS 176
 #define SR_ROWS 144
