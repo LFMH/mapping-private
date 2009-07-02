@@ -27,9 +27,9 @@ int main(int argc, char **argv)
         for (int i = 0; i < srv.response.oclusters.size(); i++)
           {
             ROS_INFO("OBJECT: %d", i);
-            ROS_INFO("ocluster X: %f", srv.response.oclusters[1].center.x);
-            ROS_INFO("ocluster Y: %f", srv.response.oclusters[2].center.y);
-            ROS_INFO("ocluster Z: %f", srv.response.oclusters[3].center.z);
+            ROS_INFO("ocluster X: %f", srv.response.oclusters[i].center.x);
+            ROS_INFO("ocluster Y: %f", srv.response.oclusters[i].center.y);
+            ROS_INFO("ocluster Z: %f", srv.response.oclusters[i].center.z);
 
           }
       }
