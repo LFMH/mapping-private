@@ -67,7 +67,6 @@
 #include <sys/time.h>
 
 #include <mapping_srvs/GetPlaneClusters.h>
-#include <robot_msgs/ObjectOnTable.h>
 
 //#include <utilities/yarp_communication.h>
 
@@ -106,6 +105,7 @@ class PlaneClustersSR
     // Parameters
     string input_cloud_topic_;
     int k_;
+    double max_z_;
     int clusters_min_pts_;
 
     int object_cluster_min_pts_;
@@ -117,6 +117,7 @@ class PlaneClustersSR
 
     double delta_z_, object_min_dist_from_table_;
 
+    double min_angle_, max_angle_;
 
     Subscriber cloud_sub_;
     Publisher cloud_table_pub_, cloud_clusters_pub_, pmap_pub_;
@@ -132,18 +133,22 @@ class PlaneClustersSR
       axis_.x = 0; axis_.y = 1; axis_.z = 0;
 
       nh_.param ("~downsample_factor", downsample_factor_, 4); // Use every nth point
-      nh_.param ("~search_k_closest", k_, 5);                  // 5 k-neighbors by default
+      nh_.param ("~search_k_closest", k_, 2);                  // 5 k-neighbors by default
+      nh_.param ("~k_max_z", max_z_, 0.03);
 
-      nh_.param ("~normal_eps_angle", eps_angle_, 10.0);       // 15 degrees
+      nh_.param ("~normal_eps_angle", eps_angle_, 15.0);       // 15 degrees
       eps_angle_ = angles::from_degrees (eps_angle_);          // convert to radians
 
       nh_.param ("~clusters_min_pts", clusters_min_pts_, 10);  // 10 points
 
-      nh_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.03);   // 5cm between two objects
+      nh_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.07);   // 7cm between two objects
       nh_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);         // 30 points per object cluster
 
       nh_.param ("~table_delta_z", delta_z_, 0.03);                              // consider objects starting at 3cm from the table
-      nh_.param ("~object_min_distance_from_table", object_min_dist_from_table_, 0.08); // objects which have their support more 8cm from the table will not be considered
+      nh_.param ("~object_min_distance_from_table", object_min_dist_from_table_, 0.1); // objects which have their support more 10cm from the table will not be considered
+      
+      nh_.param ("~filtering_min_angle", min_angle_, 10.0);
+      nh_.param ("~filtering_max_angle", max_angle_, 170.0);
 
       nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("/cloud_sr"));
       plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
@@ -243,7 +248,7 @@ class PlaneClustersSR
       viewpoint_cloud.x = viewpoint_cloud.y = viewpoint_cloud.z = 0.0;
 
       // Estimate point normals and copy the relevant data
-      cloud_geometry::nearest::computeOrganizedPointCloudNormals (cloud_down_, cloud, k_, downsample_factor_, SR_COLS, SR_ROWS, viewpoint_cloud);
+      cloud_geometry::nearest::computeOrganizedPointCloudNormalsWithFiltering (cloud_down_, cloud, k_, downsample_factor_, SR_COLS, SR_ROWS, max_z_, min_angle_, max_angle_, viewpoint_cloud);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
@@ -256,23 +261,20 @@ class PlaneClustersSR
       vector<double> coeff;
       fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
 
-      // Get the largest table candidate
-//      vector<vector<int> > table_clusters;
-//      cloud_geometry::nearest::extractEuclideanClusters (cloud_down_, inliers_down, object_cluster_tolerance_,
-//                                                         table_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
-//      inliers_down = table_clusters[0];
-#ifdef DEBUG
-        // Refine plane
-        vector<int> inliers (cloud.pts.size ());
-        int j = 0;
-        for (unsigned int i = 0; i < cloud.pts.size (); i++)
-        {
-          double dist_to_plane = cloud_geometry::distances::pointToPlaneDistance (cloud.pts[i], coeff);
-          if (dist_to_plane < sac_distance_threshold_)
-            inliers[j++] = i;
-        }
-        inliers.resize (j);
-#endif
+      // Filter the original pointcloud data with the same min/max angle for jump edges
+      PointCloud cloud_filtered;// = cloud;
+      cloud_geometry::nearest::filterJumpEdges (cloud, cloud_filtered, 1, SR_COLS, SR_ROWS, min_angle_, max_angle_, viewpoint_cloud);
+
+      // Refine plane
+      vector<int> inliers (cloud_filtered.pts.size ());
+      int j = 0;
+      for (unsigned int i = 0; i < cloud_filtered.pts.size (); i++)
+      {
+        double dist_to_plane = cloud_geometry::distances::pointToPlaneDistance (cloud_filtered.pts[i], coeff);
+        if (dist_to_plane < sac_distance_threshold_)
+          inliers[j++] = i;
+      }
+      inliers.resize (j);
 
       // Obtain the bounding 2D polygon of the table
       Polygon3D table;
@@ -287,26 +289,26 @@ class PlaneClustersSR
 
       // Find the object clusters supported by the table
       Point32 min_p, max_p;
-      cloud_geometry::statistics::getMinMax (cloud, inliers, min_p, max_p);
+      cloud_geometry::statistics::getMinMax (cloud_filtered, inliers, min_p, max_p);
       vector<int> object_inliers;
-      findObjectClusters (cloud, coeff, table, axis_, min_p, max_p, object_inliers, resp);
+      findObjectClusters (cloud_filtered, coeff, table, axis_, min_p, max_p, object_inliers, resp);
 
 #ifdef DEBUG
-      //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);
-      //cloud_geometry::getPointCloud (cloud, object_inliers, cloud_annotated_);
-
       // Send the table
       cloud_clusters_pub_.publish (cloud_annotated_);
+      //cloud_geometry::getPointCloud (cloud_filtered, object_inliers, cloud_annotated_);
+
       
       // Send the clusters
+      //cloud_geometry::getPointCloud (cloud_down_, indices_z, cloud_annotated_);   // downsampled version
       cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);   // downsampled version
-      //cloud_geometry::getPointCloud (cloud, inliers, cloud_annotated_);              // full version
+      //cloud_geometry::getPointCloud (cloud_filtered, inliers, cloud_annotated_);              // full version
       cloud_table_pub_.publish (cloud_annotated_);
 #endif
       ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
       // Copy the plane parameters back in the response
       resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
-      cloud_geometry::nearest::computeCentroid (cloud, inliers, resp.pcenter);
+      cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.pcenter);
 
       return;
     }
