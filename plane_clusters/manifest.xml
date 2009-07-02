@@ -3,7 +3,7 @@
   <author>@cs.tum.edu</author>
   <license>BSD</license>
   <depend package="eigen" />
-  <depend package="yarp2" />
+<!--  <depend package="yarp2" />-->
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="point_cloud_mapping" />
