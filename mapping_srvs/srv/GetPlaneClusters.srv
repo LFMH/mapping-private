@@ -4,4 +4,4 @@ float64 b
 float64 c
 float64 d
 robot_msgs/Point32 pcenter
-robot_msgs/ObjectOnTable[] oclusters
+tabletop_msgs/ObjectOnTable[] oclusters

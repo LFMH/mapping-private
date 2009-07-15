@@ -3,6 +3,7 @@
   <author>@cs.tum.edu</author>
   <license>BSD</license>
   <depend package="roscpp" />
+  <depend package="tabletop_msgs" />
   <depend package="robot_msgs" />
   
   <export>
