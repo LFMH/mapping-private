@@ -72,7 +72,7 @@
 #define SR_COLS 278
 #define SR_ROWS 1295
 #define DEBUG 1
-#define DEBUG_D 0
+//#define DEBUG_D false
 
 using namespace std;
 using namespace ros;
@@ -120,7 +120,7 @@ class DetectBoxes
   double min_angle_, max_angle_;
 
   Subscriber cloud_sub_;
-  Publisher cloud_table_pub_, cloud_clusters_pub_, pmap_pub_, cloud_filtered_pub_;
+  Publisher cloud_table_pub_, cloud_clusters_pub_, pmap_pub_, pmap_box_wall_pub_, cloud_filtered_pub_;
   ServiceServer detect_boxes_service_;
 
   int downsample_factor_;
@@ -160,6 +160,7 @@ class DetectBoxes
       cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
       cloud_filtered_pub_ = nh_.advertise<PointCloud> ("cloud_filtered", 1);
       pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
+      pmap_box_wall_pub_ = nh_.advertise<PolygonalMap> ("box_wall", 1);
       get_detect_boxes_service_ = nh_.advertiseService("get_detect_boxes_service", &DetectBoxes::detect_boxes_service, this);
     }
 
@@ -236,7 +237,8 @@ class DetectBoxes
       cloud_down_.header = cloud.header;
       // Viewpoint value in the point cloud frame should be 0,0,0
       Point32 viewpoint_cloud;
-      viewpoint_cloud.x = viewpoint_cloud.y = viewpoint_cloud.z = 0.0;
+      viewpoint_cloud.x = viewpoint_cloud.y = 0.0;
+      viewpoint_cloud.z = 1.0;
 
       // Estimate point normals and copy the relevant data
       cloud_geometry::nearest::computeOrganizedPointCloudNormalsWithFiltering (cloud_down_, cloud, k_, downsample_factor_, SR_COLS, SR_ROWS, max_z_, min_angle_, max_angle_, viewpoint_cloud);
@@ -294,9 +296,13 @@ class DetectBoxes
       // Find the object clusters supported by the table
       Point32 min_p, max_p;
       cloud_geometry::statistics::getMinMax (cloud_filtered, inliers, min_p, max_p);
+#ifdef DEBUG_D
       ROS_INFO ("min, max p: %g, %g, %g, %g, %g, %g", min_p.x, min_p.y, min_p.z, max_p.x, max_p.y, max_p.z);
+#endif
       vector<int> object_inliers;
-      findObjectClusters (cloud_filtered, coeff, table, axis_, min_p, max_p, object_inliers, resp);
+      vector<vector<int> > object_clusters;
+      findObjectClusters (cloud_filtered, coeff, table, axis_, min_p, max_p, object_inliers, object_clusters, resp);
+      ROS_INFO ("Nr. of clusters found: %d", object_clusters.size());
 
 #ifdef DEBUG
       // Send the clusters
@@ -312,7 +318,20 @@ class DetectBoxes
       //resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
       
       cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.pcenter);
-
+      //find planes in object cluster(s)
+      vector<int> inliers_box_wall;
+      //coefficients of box_wall(s) plane equation
+      vector<double> coeff_box_wall;
+      fitSACPlane3(&cloud_down_, object_clusters, inliers_box_wall, coeff_box_wall, viewpoint_cloud, sac_distance_threshold_);
+      Polygon3D box_wall;
+      cloud_geometry::areas::convexHull2D (cloud_down_, inliers_box_wall, coeff_box_wall, box_wall);
+#ifdef DEBUG
+      PolygonalMap pmap_box_wall;
+      pmap_box_wall.header = cloud.header;
+      pmap_box_wall.polygons.resize (1);
+      pmap_box_wall.polygons[0] = box_wall;
+      pmap_box_wall_pub_.publish (pmap_box_wall);
+#endif
       return;
     }
 
@@ -320,10 +339,12 @@ class DetectBoxes
   
     void
       findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon3D &table,
-                          const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices, GetBoxes::Response &resp)
+                          const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices, 
+                          vector<vector<int> > &object_clusters, GetBoxes::Response &resp)
     {
       int nr_p = 0;
       Point32 pt;
+      //save in here all points that do not fly in thin air and project onto a table 
       object_indices.resize (cloud.pts.size ());
 
       // Iterate over the entire cloud to extract the object clusters
@@ -359,7 +380,7 @@ class DetectBoxes
 
       // Find the clusters
       nr_p = 0;
-      vector<vector<int> > object_clusters;
+      //vector<vector<int> > object_clusters;
       cloud_geometry::nearest::extractEuclideanClusters (cloud, object_indices, object_cluster_tolerance_,
                                                          object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
@@ -414,6 +435,7 @@ class DetectBoxes
         cloud_annotated_.pts.resize (nr_p);
         cloud_annotated_.chan[0].vals.resize (nr_p);
 #endif
+        
     }
 
 
@@ -457,6 +479,54 @@ class DetectBoxes
         model->projectPointsInPlace (inliers, coeff);
       }
       return (true);
+    }
+
+
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool
+      fitSACPlane3 (PointCloud *points, vector<vector<int> > &object_clusters, vector<int> &inliers, vector<double> &coeff,
+                   const Point32 &viewpoint_cloud, double dist_thresh)
+    {
+      
+       for (unsigned int i = 0; i < object_clusters.size (); i++)
+         {
+           vector<int> object_idx = object_clusters.at (i);
+           if ((int)object_idx.size () < clusters_min_pts_)
+             {
+               inliers.resize (0);
+               coeff.resize (0);
+               return (false);
+             }
+           
+           // Create and initialize the SAC model
+           sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
+           sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
+           sac->setMaxIterations (200);
+           sac->setProbability (0.99);
+           model->setDataSet (points, object_idx);
+           
+           // Search for the best plane
+           if (sac->computeModel ())
+             {
+               if ((int)sac->getInliers ().size () < clusters_min_pts_)
+                 {
+                   //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+                   inliers.resize (0);
+                   coeff.resize (0);
+                   return (false);
+                 }
+               
+               sac->computeCoefficients (coeff);     // Compute the model coefficients
+               sac->refineCoefficients (coeff);      // Refine them using least-squares
+               model->selectWithinDistance (coeff, dist_thresh, inliers);
+               
+               cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
+               
+               // Project the inliers onto the model
+               model->projectPointsInPlace (inliers, coeff);
+             }
+         }
+       return (true);
     }
 };
 
