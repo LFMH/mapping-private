@@ -34,7 +34,16 @@ int main(int argc, char **argv)
 
           }
         */
-        ROS_INFO("Service launched");
+        for (unsigned int i = 0; i < 4; i++)
+          ROS_INFO("plane0 coeff: %f", srv.response.boxes[0].plane0[i]);
+         for (unsigned int i = 0; i < 4; i++)
+          ROS_INFO("plane1 coeff: %f", srv.response.boxes[0].plane1[i]);
+         for (unsigned int i = 0; i < 4; i++)
+           ROS_INFO("plane2 coeff: %f", srv.response.boxes[0].plane2[i]);
+        ROS_INFO("angle01 %f", srv.response.boxes[0].angle01);
+        ROS_INFO("angle12 %f", srv.response.boxes[0].angle12);
+        ROS_INFO("angle02 %f", srv.response.boxes[0].angle02);
+        //ROS_INFO("Service launched");
       }
     else
     {

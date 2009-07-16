@@ -6,7 +6,7 @@
   <depend package="tabletop_msgs" />
   <depend package="robot_msgs" />
   <depend package="tabletop_msgs" />
-  
+  <depend package="mapping_ias_msgs" />  
   <export>
     <cpp cflags="-I${prefix}/srv/cpp" />
   </export>

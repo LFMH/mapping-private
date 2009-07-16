@@ -1,15 +1,4 @@
 ---
-float64 a
-float64 b
-float64 c
-float64 d
-robot_msgs/Point32 pcenter
-robot_msgs/Point32 box_center
-robot_msgs/Point32 box_vertex_top_nw
-robot_msgs/Point32 box_vertex_top_ne
-robot_msgs/Point32 box_vertex_top_sw
-robot_msgs/Point32 box_vertex_top_se
-robot_msgs/Point32 box_vertex_bottom_nw
-robot_msgs/Point32 box_vertex_bottom_ne
-robot_msgs/Point32 box_vertex_bottom_sw
-robot_msgs/Point32 box_vertex_bottom_se
+float64[] table
+robot_msgs/Point32 table_center
+mapping_ias_msgs/Box[] boxes

@@ -154,7 +154,7 @@ class DetectBoxes
       detect_boxes_service_ = nh_.advertiseService("/detect_boxes_service", &DetectBoxes::detect_boxes_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
-      nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+      nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.01);     // 3 cm
 
       cloud_table_pub_ = nh_.advertise<PointCloud> ("cloud_table", 1);
       cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
@@ -317,21 +317,58 @@ class DetectBoxes
       // Copy the plane parameters back in the response
       //resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
       
-      cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.pcenter);
+      cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.table_center);
       //find planes in object cluster(s)
-      vector<int> inliers_box_wall;
+      vector<vector<int> >inliers_box_wall;
       //coefficients of box_wall(s) plane equation
-      vector<double> coeff_box_wall;
+      vector<vector<double> >coeff_box_wall;
       fitSACPlane3(&cloud_filtered, object_clusters, inliers_box_wall, coeff_box_wall, viewpoint_cloud, sac_distance_threshold_);
-      Polygon3D box_wall;
-      cloud_geometry::areas::convexHull2D (cloud_filtered, inliers_box_wall, coeff_box_wall, box_wall);
+      Polygon3D box_wall1, box_wall2, box_wall3;
+      cloud_geometry::areas::convexHull2D (cloud_filtered, inliers_box_wall[0], coeff_box_wall[0], box_wall1);
+      cloud_geometry::areas::convexHull2D (cloud_filtered, inliers_box_wall[1], coeff_box_wall[1], box_wall2);
+      cloud_geometry::areas::convexHull2D (cloud_filtered, inliers_box_wall[2], coeff_box_wall[2], box_wall3);
 #ifdef DEBUG
       PolygonalMap pmap_box_wall;
       pmap_box_wall.header = cloud.header;
-      pmap_box_wall.polygons.resize (1);
-      pmap_box_wall.polygons[0] = box_wall;
+      pmap_box_wall.polygons.resize (3);
+      pmap_box_wall.polygons[0] = box_wall1;
+      pmap_box_wall.polygons[1] = box_wall2;
+      pmap_box_wall.polygons[2] = box_wall3;
       pmap_box_wall_pub_.publish (pmap_box_wall);
 #endif
+
+      //fill in service data
+      resp.boxes.resize(1);
+      resp.boxes[0].plane0.resize(4);
+      resp.boxes[0].plane1.resize(4);
+      resp.boxes[0].plane2.resize(4); 
+      for (unsigned int i = 0; i < 4; i++)
+        resp.boxes[0].plane0[i] = coeff_box_wall[0].at(i);
+      for (unsigned int i = 0; i < 4; i++)
+        resp.boxes[0].plane1[i] = coeff_box_wall[1].at(i);
+      for (unsigned int i = 0; i < 4; i++)
+        resp.boxes[0].plane2[i] = coeff_box_wall[2].at(i);
+    
+      //calculate and store angles between planes
+      double box_wall_angles[3];
+      for (unsigned int i = 0; i < 3; i++)
+        {
+          switch (i)
+            {
+            case 0:
+              box_wall_angles[i] = cloud_geometry::angles::getAngleBetweenPlanes (coeff_box_wall[0], coeff_box_wall[1]);
+              resp.boxes[0].angle01 =  box_wall_angles[i]; 
+              break;
+            case 1:
+              box_wall_angles[i] = cloud_geometry::angles::getAngleBetweenPlanes (coeff_box_wall[1], coeff_box_wall[2]);
+              resp.boxes[0].angle12 =  box_wall_angles[i]; 
+              break;
+            case 2:
+             box_wall_angles[i] = cloud_geometry::angles::getAngleBetweenPlanes (coeff_box_wall[0], coeff_box_wall[2]);
+             resp.boxes[0].angle02 =  box_wall_angles[i]; 
+            }
+          // ROS_INFO("angle: %f", angles::to_degrees(box_wall_angles[i]));
+        }
       return;
     }
 
@@ -471,7 +508,7 @@ class DetectBoxes
 
         sac->computeCoefficients (coeff);     // Compute the model coefficients
         sac->refineCoefficients (coeff);      // Refine them using least-squares
-        ROS_INFO("box wall coeff %f,%f,%f, %f",coeff[0], coeff[1], coeff[2], coeff[3]);
+       
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
@@ -484,18 +521,19 @@ class DetectBoxes
 
 
    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    bool
-      fitSACPlane3 (PointCloud *points, vector<vector<int> > &object_clusters, vector<int> &inliers, vector<double> &coeff,
-                   const Point32 &viewpoint_cloud, double dist_thresh)
-    {
-      
-       for (unsigned int i = 0; i < object_clusters.size (); i++)
+  bool
+  fitSACPlane3 (PointCloud *points, vector<vector<int> > &object_clusters, vector<vector<int> >&inliers, 
+                vector<vector<double> >&coeff, const Point32 &viewpoint_cloud, double dist_thresh)
+  {
+    vector<int> inliers_;
+    vector<double> coeff_;
+    for (unsigned int i = 0; i < object_clusters.size (); i++)
          {
            vector<int> object_idx = object_clusters.at (i);
            if ((int)object_idx.size () < clusters_min_pts_)
              {
-               inliers.resize (0);
-               coeff.resize (0);
+               inliers_.resize (0);
+               coeff_.resize (0);
                return (false);
              }
            
@@ -507,28 +545,34 @@ class DetectBoxes
            model->setDataSet (points, object_idx);
            
            // Search for the best plane
-           if (sac->computeModel (2))
+           for (unsigned int i = 0; i < 3; i++)
              {
-               if ((int)sac->getInliers ().size () < clusters_min_pts_)
+               if (sac->computeModel (2))
                  {
-                   //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-                   inliers.resize (0);
-                   coeff.resize (0);
-                   return (false);
+                   if ((int)sac->getInliers ().size () < clusters_min_pts_)
+                     {
+                       //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+                       inliers_.resize (0);
+                       coeff_.resize (0);
+                       return (false);
+                     }
+                   
+                   sac->computeCoefficients (coeff_);     // Compute the model coefficients
+                   sac->refineCoefficients (coeff_);      // Refine them using least-squares
+                   // ROS_INFO("box wall coeff %f,%f,%f, %f",coeff_[0], coeff_[1], coeff_[2], coeff_[3]);
+                   model->selectWithinDistance (coeff_, dist_thresh, inliers_);
+                   cloud_geometry::angles::flipNormalTowardsViewpoint (coeff_, points->pts.at (inliers_[0]), viewpoint_cloud);
+                   
+                   // Project the inliers onto the model
+                   model->projectPointsInPlace (inliers_, coeff_);
+                   sac->removeInliers();
                  }
-               
-               sac->computeCoefficients (coeff);     // Compute the model coefficients
-               sac->refineCoefficients (coeff);      // Refine them using least-squares
-               model->selectWithinDistance (coeff, dist_thresh, inliers);
-               
-               cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
-               
-               // Project the inliers onto the model
-               model->projectPointsInPlace (inliers, coeff);
+               inliers.push_back(inliers_);
+               coeff.push_back(coeff_);
              }
          }
        return (true);
-    }
+  }
 };
 
 /* ---[ */
