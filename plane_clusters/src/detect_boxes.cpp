@@ -324,7 +324,7 @@ class DetectBoxes
       vector<double> coeff_box_wall;
       fitSACPlane3(&cloud_filtered, object_clusters, inliers_box_wall, coeff_box_wall, viewpoint_cloud, sac_distance_threshold_);
       Polygon3D box_wall;
-      cloud_geometry::areas::convexHull2D (cloud_down_, inliers_box_wall, coeff_box_wall, box_wall);
+      cloud_geometry::areas::convexHull2D (cloud_filtered, inliers_box_wall, coeff_box_wall, box_wall);
 #ifdef DEBUG
       PolygonalMap pmap_box_wall;
       pmap_box_wall.header = cloud.header;
@@ -471,6 +471,7 @@ class DetectBoxes
 
         sac->computeCoefficients (coeff);     // Compute the model coefficients
         sac->refineCoefficients (coeff);      // Refine them using least-squares
+        ROS_INFO("box wall coeff %f,%f,%f, %f",coeff[0], coeff[1], coeff[2], coeff[3]);
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
