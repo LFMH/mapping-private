@@ -322,7 +322,7 @@ class DetectBoxes
       vector<int> inliers_box_wall;
       //coefficients of box_wall(s) plane equation
       vector<double> coeff_box_wall;
-      fitSACPlane3(&cloud_down_, object_clusters, inliers_box_wall, coeff_box_wall, viewpoint_cloud, sac_distance_threshold_);
+      fitSACPlane3(&cloud_filtered, object_clusters, inliers_box_wall, coeff_box_wall, viewpoint_cloud, sac_distance_threshold_);
       Polygon3D box_wall;
       cloud_geometry::areas::convexHull2D (cloud_down_, inliers_box_wall, coeff_box_wall, box_wall);
 #ifdef DEBUG
@@ -506,7 +506,7 @@ class DetectBoxes
            model->setDataSet (points, object_idx);
            
            // Search for the best plane
-           if (sac->computeModel ())
+           if (sac->computeModel (2))
              {
                if ((int)sac->getInliers ().size () < clusters_min_pts_)
                  {
