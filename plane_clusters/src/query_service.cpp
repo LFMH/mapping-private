@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include "ros/node.h"
-#include <mapping_srvs/GetPlaneClusters.h>
+#include <mapping_srvs/GetBoxes.h>
 #include <cstdlib>
 
 using namespace mapping_srvs;    
@@ -12,11 +12,12 @@ int main(int argc, char **argv)
 
   
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<GetPlaneClusters>("get_plane_clusters_sr");
-    GetPlaneClusters srv;
+    ros::ServiceClient client = n.serviceClient<GetBoxes>("get_detect_boxes_service");
+    GetBoxes srv;
     if (client.call(srv))
       {
         //add response variables of choice
+        /*
         ROS_INFO("Coeff a: %f", srv.response.a);
         ROS_INFO("Coeff b: %f", srv.response.b);
         ROS_INFO("Coeff c: %f", srv.response.c);
@@ -32,10 +33,12 @@ int main(int argc, char **argv)
             ROS_INFO("ocluster Z: %f", srv.response.oclusters[i].center.z);
 
           }
+        */
+        ROS_INFO("Service launched");
       }
     else
     {
-      ROS_ERROR("Failed to call service get_plane_clusters_sr");
+      ROS_ERROR("Failed to call service get_detect_boxes_service");
       return 1;
     }
   
