@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Dejan Pangercic <pangercic -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: plane_clusters.cpp 17089 2009-06-15 18:52:12Z veedee $
+ * $Id: detect_boxes.cpp 17089 2009-06-15 18:52:12Z pangercic $
  *
  */
 
@@ -69,8 +69,8 @@
 #include <mapping_srvs/GetBoxes.h>
 
 
-#define SR_COLS 278
-#define SR_ROWS 1295
+#define COLS 278
+#define ROWS 1295
 #define DEBUG 1
 //#define DEBUG_D false
 
@@ -205,7 +205,7 @@ class DetectBoxes
         ros::spinOnce ();
       }
 
-      detectTable (*cloud_in_, resp);
+      detectBoxes (*cloud_in_, resp);
       //to come
       //detectBoxes(*cloud_in_, resp);
       ROS_INFO ("Service request terminated.");
@@ -229,7 +229,7 @@ class DetectBoxes
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      detectTable (const PointCloud &cloud, GetBoxes::Response &resp)
+      detectBoxes (const PointCloud &cloud, GetBoxes::Response &resp)
     {
       ros::Time ts = ros::Time::now ();
 
@@ -241,7 +241,9 @@ class DetectBoxes
       viewpoint_cloud.z = 1.0;
 
       // Estimate point normals and copy the relevant data
-      cloud_geometry::nearest::computeOrganizedPointCloudNormalsWithFiltering (cloud_down_, cloud, k_, downsample_factor_, SR_COLS, SR_ROWS, max_z_, min_angle_, max_angle_, viewpoint_cloud);
+      cloud_geometry::nearest::computeOrganizedPointCloudNormalsWithFiltering 
+        (cloud_down_, cloud, k_, downsample_factor_, COLS, ROWS, max_z_, min_angle_, 
+         max_angle_, viewpoint_cloud);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       //indices from pcd, correspond to row numbers
@@ -268,7 +270,7 @@ class DetectBoxes
 
       // Filter the original pointcloud data with the same min/max angle for jump edges
       PointCloud cloud_filtered;// = cloud;
-      cloud_geometry::nearest::filterJumpEdges (cloud, cloud_filtered, 1, SR_COLS, SR_ROWS, min_angle_, max_angle_, viewpoint_cloud);
+      cloud_geometry::nearest::filterJumpEdges (cloud, cloud_filtered, 1, COLS, ROWS, min_angle_, max_angle_, viewpoint_cloud);
 
       // Refine plane
       vector<int> inliers (cloud_filtered.pts.size ());
@@ -314,9 +316,7 @@ class DetectBoxes
       cloud_table_pub_.publish (cloud_annotated_);
 #endif
       ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
-      // Copy the plane parameters back in the response
-      //resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
-      
+           
       cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.table_center);
       //find planes in object cluster(s)
       vector<vector<int> >inliers_box_wall;
