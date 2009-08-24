@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <ros/node_handle.h>
 // ROS messages
-#include <robot_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud.h>
 #include <mapping_msgs/PolygonalMap.h>
 
 // Sample Consensus
@@ -76,10 +76,11 @@
 
 using namespace std;
 using namespace ros;
-using namespace std_msgs;
-using namespace robot_msgs;
+//using namespace std_msgs;
+using namespace sensor_msgs;
 using namespace mapping_msgs;
 using namespace mapping_srvs;
+using namespace geometry_msgs;
 
 // Comparison operator for a vector of vectors
 bool
@@ -229,8 +230,8 @@ class PlaneClustersSR
         return;
 
       ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
-      if (cloud->pts.size () != SR_ROWS * SR_COLS)
-        ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->pts.size ());
+      if (cloud->points.size () != SR_ROWS * SR_COLS)
+        ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->points.size ());
       cloud_in_ = cloud;
       need_cloud_data_ = false;
     }
@@ -266,18 +267,18 @@ class PlaneClustersSR
       cloud_geometry::nearest::filterJumpEdges (cloud, cloud_filtered, 1, SR_COLS, SR_ROWS, min_angle_, max_angle_, viewpoint_cloud);
 
       // Refine plane
-      vector<int> inliers (cloud_filtered.pts.size ());
+      vector<int> inliers (cloud_filtered.points.size ());
       int j = 0;
-      for (unsigned int i = 0; i < cloud_filtered.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_filtered.points.size (); i++)
       {
-        double dist_to_plane = cloud_geometry::distances::pointToPlaneDistance (cloud_filtered.pts[i], coeff);
+        double dist_to_plane = cloud_geometry::distances::pointToPlaneDistance (cloud_filtered.points[i], coeff);
         if (dist_to_plane < sac_distance_threshold_)
           inliers[j++] = i;
       }
       inliers.resize (j);
 
       // Obtain the bounding 2D polygon of the table
-      Polygon3D table;
+      Polygon table;
       cloud_geometry::areas::convexHull2D (cloud_down_, inliers_down, coeff, table);
 #ifdef DEBUG
       PolygonalMap pmap;
@@ -315,35 +316,35 @@ class PlaneClustersSR
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon3D &table,
+      findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon &table,
                           const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices, GetPlaneClusters::Response &resp)
     {
       int nr_p = 0;
       Point32 pt;
-      object_indices.resize (cloud.pts.size ());
+      object_indices.resize (cloud.points.size ());
 
       // Iterate over the entire cloud to extract the object clusters
-      for (unsigned int i = 0; i < cloud.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud.points.size (); i++)
       {
         // Select all the points in the given bounds - check all axes
-        if ( axis.x == 1 && ( cloud.pts.at (i).y < min_p.y || cloud.pts.at (i).y > max_p.y || cloud.pts.at (i).z < min_p.z || cloud.pts.at (i).z > max_p.z ) )
+        if ( axis.x == 1 && ( cloud.points.at (i).y < min_p.y || cloud.points.at (i).y > max_p.y || cloud.points.at (i).z < min_p.z || cloud.points.at (i).z > max_p.z ) )
           continue;
 
-        else if ( axis.y == 1 && ( cloud.pts.at (i).x < min_p.x || cloud.pts.at (i).x > max_p.x || cloud.pts.at (i).z < min_p.z || cloud.pts.at (i).z > max_p.z ) )
+        else if ( axis.y == 1 && ( cloud.points.at (i).x < min_p.x || cloud.points.at (i).x > max_p.x || cloud.points.at (i).z < min_p.z || cloud.points.at (i).z > max_p.z ) )
           continue;
 
-        else if ( axis.z == 1 && ( cloud.pts.at (i).x < min_p.x || cloud.pts.at (i).x > max_p.x || cloud.pts.at (i).y < min_p.y || cloud.pts.at (i).y > max_p.y ) )
+        else if ( axis.z == 1 && ( cloud.points.at (i).x < min_p.x || cloud.points.at (i).x > max_p.x || cloud.points.at (i).y < min_p.y || cloud.points.at (i).y > max_p.y ) )
           continue;
 
         // Calculate the distance from the point to the plane
-        double dist_to_plane = coeff.at (0) * cloud.pts.at (i).x +
-                               coeff.at (1) * cloud.pts.at (i).y +
-                               coeff.at (2) * cloud.pts.at (i).z +
+        double dist_to_plane = coeff.at (0) * cloud.points.at (i).x +
+                               coeff.at (1) * cloud.points.at (i).y +
+                               coeff.at (2) * cloud.points.at (i).z +
                                coeff.at (3) * 1;
         // Calculate the projection of the point on the plane
-        pt.x = cloud.pts.at (i).x - dist_to_plane * coeff.at (0);
-        pt.y = cloud.pts.at (i).y - dist_to_plane * coeff.at (1);
-        pt.z = cloud.pts.at (i).z - dist_to_plane * coeff.at (2);
+        pt.x = cloud.points.at (i).x - dist_to_plane * coeff.at (0);
+        pt.y = cloud.points.at (i).y - dist_to_plane * coeff.at (1);
+        pt.z = cloud.points.at (i).z - dist_to_plane * coeff.at (2);
 
         if (dist_to_plane > delta_z_ && cloud_geometry::areas::isPointIn2DPolygon (pt, table))
         {
@@ -365,14 +366,14 @@ class PlaneClustersSR
           total_nr_pts += object_clusters[i].size ();
 
         cloud_annotated_.header = cloud.header;
-        cloud_annotated_.pts.resize (total_nr_pts);
-        cloud_annotated_.chan.resize (1);
-        cloud_annotated_.chan[0].name = "rgb";
-        cloud_annotated_.chan[0].vals.resize (total_nr_pts);
+        cloud_annotated_.points.resize (total_nr_pts);
+        cloud_annotated_.channels.resize (1);
+        cloud_annotated_.channels[0].name = "rgb";
+        cloud_annotated_.channels[0].values.resize (total_nr_pts);
         ROS_INFO ("Number of clusters found: %d", (int)object_clusters.size ());
 #endif
 
-      robot_msgs::Point32 min_p_cluster, max_p_cluster;
+      Point32 min_p_cluster, max_p_cluster;
       
       resp.oclusters.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
@@ -397,8 +398,8 @@ class PlaneClustersSR
         {
           object_indices[nr_p] = object_idx.at (j);
 #ifdef DEBUG          
-            cloud_annotated_.pts[nr_p] = cloud.pts.at (object_idx.at (j));
-            cloud_annotated_.chan[0].vals[nr_p] = rgb;
+            cloud_annotated_.points[nr_p] = cloud.points.at (object_idx.at (j));
+            cloud_annotated_.channels[0].values[nr_p] = rgb;
 #endif
           nr_p++;
         }
@@ -407,8 +408,8 @@ class PlaneClustersSR
       }
       object_indices.resize (nr_p);
 #ifdef DEBUG
-        cloud_annotated_.pts.resize (nr_p);
-        cloud_annotated_.chan[0].vals.resize (nr_p);
+        cloud_annotated_.points.resize (nr_p);
+        cloud_annotated_.channels[0].values.resize (nr_p);
 #endif
     }
 
@@ -447,7 +448,7 @@ class PlaneClustersSR
         sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->points.at (inliers[0]), viewpoint_cloud);
 
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);

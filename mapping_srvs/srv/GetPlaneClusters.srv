@@ -3,5 +3,5 @@ float64 a
 float64 b
 float64 c
 float64 d
-robot_msgs/Point32 pcenter
+geometry_msgs/Point32 pcenter
 tabletop_msgs/ObjectOnTable[] oclusters
