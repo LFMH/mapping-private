@@ -131,7 +131,7 @@ class PlaneClustersSR
     PlaneClustersSR ()  
     {
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
-      axis_.x = 0; axis_.y = 1; axis_.z = 0;
+      axis_.x = 0; axis_.y = 0; axis_.z = 1;
 
       nh_.param ("~downsample_factor", downsample_factor_, 4); // Use every nth point
       nh_.param ("~search_k_closest", k_, 2);                  // 5 k-neighbors by default
