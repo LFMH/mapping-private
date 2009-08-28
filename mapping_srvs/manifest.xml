@@ -3,6 +3,7 @@
   <author>@cs.tum.edu</author>
   <license>BSD</license>
   <depend package="roscpp" />
+  <depend package="sensor_msgs" />
   <depend package="tabletop_msgs" />
   <depend package="geometry_msgs" />
   <depend package="tabletop_msgs" />
