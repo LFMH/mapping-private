@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="plane_clusters" type="detect_planes_node" name="detect_planes" output="screen" respawn="true">
+  </node>
+</launch>
