@@ -65,7 +65,7 @@
 #include <point_cloud_mapping/geometry/statistics.h>
 
 #include <sys/time.h>
-#include <mapping_srvs/GetBoxes.h>
+#include <mapping_srvs/GetPlaneClusters.h>
 
 #define DEBUG 1
 //#define DEBUG_D false
@@ -161,7 +161,7 @@ public:
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bool
-  detect_planes_service (GetBoxes::Request &req, GetBoxes::Response &resp)
+  detect_planes_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
   {
     ROS_INFO ("Service request initiated.");
     updateParametersFromServer ();
@@ -201,7 +201,7 @@ public:
   //main function in the node
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   void
-  detectPlanes (const PointCloud &cloud, GetBoxes::Response &resp)
+  detectPlanes (const PointCloud &cloud, GetPlaneClusters::Response &resp)
   {
     ros::Time ts = ros::Time::now ();
 
@@ -236,11 +236,12 @@ public:
     //coefficients of plane equation
     vector<double> coeff;
     fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
-
+    resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
     // Obtain the bounding 2D polygon of the table
     Polygon table;
     cloud_geometry::areas::convexHull2D (cloud_down_, inliers_down, coeff, table);
     cloud_geometry::getPointCloud (cloud_down_, inliers_down, cloud_annotated_);   // downsampled version
+    cloud_geometry::nearest::computeCentroid (cloud_down_, inliers_down, resp.pcenter);
     // Send the table
     cloud_table_pub_.publish (cloud_annotated_);
     PolygonalMap pmap;

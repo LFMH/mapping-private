@@ -1,23 +1,23 @@
 #include "ros/ros.h"
 #include "ros/node.h"
-#include <mapping_srvs/GetBoxes.h>
+#include <mapping_srvs/GetPlaneClusters.h>
 #include <cstdlib>
+#include "string.h"
 
 using namespace mapping_srvs;    
     
 int main(int argc, char **argv)
 {
-  
-   ros::init(argc, argv, "query_service");
+  ROS_INFO("argv %s, size %d", argv[0],strlen(argv[0]));;
+  ros::init(argc, argv, "query_service");
 
-  
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<GetBoxes>("get_detect_boxes_service");
-    GetBoxes srv;
+    ros::ServiceClient client = n.serviceClient<GetPlaneClusters>("get_detect_planes_service");
+    GetPlaneClusters srv;
     if (client.call(srv))
       {
         //add response variables of choice
-        /*
+        
         ROS_INFO("Coeff a: %f", srv.response.a);
         ROS_INFO("Coeff b: %f", srv.response.b);
         ROS_INFO("Coeff c: %f", srv.response.c);
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
         ROS_INFO("pcenter X: %f", srv.response.pcenter.x);
         ROS_INFO("pcenter Y: %f", srv.response.pcenter.y);
         ROS_INFO("pcenter Z: %f", srv.response.pcenter.z);
-        for (int i = 0; i < srv.response.oclusters.size(); i++)
+        /*for (int i = 0; i < srv.response.oclusters.size(); i++)
           {
             ROS_INFO("OBJECT: %d", i);
             ROS_INFO("ocluster X: %f", srv.response.oclusters[i].center.x);
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
             ROS_INFO("ocluster Z: %f", srv.response.oclusters[i].center.z);
 
           }
-        */
+        
         for (unsigned int i = 0; i < 4; i++)
           ROS_INFO("plane0 coeff: %f", srv.response.boxes[0].plane0[i]);
          for (unsigned int i = 0; i < 4; i++)
@@ -44,10 +44,11 @@ int main(int argc, char **argv)
         ROS_INFO("angle12 %f", srv.response.boxes[0].angle12);
         ROS_INFO("angle02 %f", srv.response.boxes[0].angle02);
         //ROS_INFO("Service launched");
+        */
       }
     else
     {
-      ROS_ERROR("Failed to call service get_detect_boxes_service");
+      ROS_ERROR("Failed to call service get_detect_planes_service");
       return 1;
     }
   
