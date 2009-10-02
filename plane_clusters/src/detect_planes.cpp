@@ -117,11 +117,10 @@ public:
 
   int downsample_factor_;
   ServiceServer get_detect_planes_service_;
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //Detects one dominant plane in a point cloud
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  DetectPlanes ()  
+  DetectPlanes ()
   {
     // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
     axis_.x = 0; axis_.y = 1; axis_.z = 0;
@@ -237,6 +236,7 @@ public:
     vector<double> coeff;
     fitSACPlane (&cloud_down_, indices_z, inliers_down, coeff, viewpoint_cloud, sac_distance_threshold_);
     resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
+    resp.planeId = cloud_down_.header.seq;
     // Obtain the bounding 2D polygon of the table
     Polygon table;
     cloud_geometry::areas::convexHull2D (cloud_down_, inliers_down, coeff, table);
