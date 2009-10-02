@@ -222,8 +222,8 @@ public:
     unsigned int ii = indices_z.size();
     for (unsigned int i=0; i<ii; i++)
       {
-	ROS_INFO ("indices_z %d %f %f %f", indices_z[i], cloud_down_.points.at(indices_z[i]).x, cloud_down_.points.at(indices_z[i]).y, 
-		  cloud_down_.points.at(indices_z[i]).z);
+        ROS_INFO ("indices_z %d %f %f %f", indices_z[i], cloud_down_.points.at(indices_z[i]).x, cloud_down_.points.at(indices_z[i]).y, 
+                  cloud_down_.points.at(indices_z[i]).z);
       }
 #endif
 
@@ -255,7 +255,7 @@ public:
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bool
   fitSACPlane (PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
-	       const PointStamped &viewpoint_cloud, double dist_thresh)
+               const PointStamped &viewpoint_cloud, double dist_thresh)
   {
     if ((int)indices.size () < clusters_min_pts_)
       {
@@ -275,12 +275,12 @@ public:
     if (sac->computeModel ())
       {
         if ((int)sac->getInliers ().size () < clusters_min_pts_)
-	  {
-	    //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-	    inliers.resize (0);
-	    coeff.resize (0);
-	    return (false);
-	  }
+          {
+            //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+            inliers.resize (0);
+            coeff.resize (0);
+            return (false);
+          }
 
         sac->computeCoefficients (coeff);     // Compute the model coefficients
         sac->refineCoefficients (coeff);      // Refine them using least-squares
