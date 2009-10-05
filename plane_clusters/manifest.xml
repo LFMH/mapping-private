@@ -10,5 +10,9 @@
   <depend package="mapping_srvs" />
   <depend package="mapping_msgs" />
   <depend package="mapping_ias_msgs" />
+  <depend package="std_msgs" />                                                                                                                             
+  <depend package="angles" />                                                                                                                               
+  <depend package="tabletop_msgs" />
+  <depend package="tabletop_srvs" />
   <url></url>
 </package>
