@@ -129,7 +129,7 @@ public:
   ros::Subscriber cloud_sub_;
   unsigned int seq_;
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode), seq_(0)
+  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode), seq_(2)
   {
     node_.param ("/global_frame_id", global_frame_, std::string("/base_link"));
 
@@ -312,6 +312,7 @@ public:
     resp.table.header.stamp = cloud_in_.header.stamp;
     resp.table.header.seq = seq_;
     seq_++;
+    ROS_INFO("Seq nr. %d", seq_);
     // Get the table bounds
     geometry_msgs::Point32 minP, maxP;
     cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
