@@ -127,9 +127,9 @@ public:
   ros::Publisher semantic_map_publisher_, cloud_publisher_;
 
   ros::Subscriber cloud_sub_;
-  unsigned int seq_;
+  int seq_;
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode), seq_(2)
+  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode) , seq_(0)
   {
     node_.param ("/global_frame_id", global_frame_, std::string("/base_link"));
 
@@ -238,7 +238,7 @@ public:
           }
       }
     indices_in_bounds.resize (nr_p);
-    ROS_INFO ("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
+    ROS_DEBUG ("%d of %d points are within the table height bounds of [%.2lf,%.2lf]",
               nr_p, (int)cloud_in_.points.size (), table_min_height_, table_max_height_);
 
     // Downsample the cloud in the bounding box for faster processing
@@ -254,7 +254,7 @@ public:
         return (false);
       }
 
-    ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", 
+    ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", 
               leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.points.size ());
       
     // Reserve space for 3 channels: nx, ny, nz
@@ -265,7 +265,7 @@ public:
     for (unsigned int d = 0; d < cloud_down_.channels.size (); d++)
       cloud_down_.channels[d].values.resize (cloud_down_.points.size ());
 
-    ROS_INFO ("cloud_down_ size %d.", (int)cloud_down_.points.size ());
+    ROS_DEBUG ("cloud_down_ size %d.", (int)cloud_down_.points.size ());
     // Create Kd-Tree
     if ((int)cloud_down_.points.size() != 0)
       estimatePointNormals (cloud_down_);
@@ -273,7 +273,7 @@ public:
     // ---[ Select points whose normals are perpendicular to the Z-axis
     vector<int> indices_z;
     cloud_geometry::getPointIndicesAxisParallelNormals (cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
-    ROS_INFO ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
+    ROS_DEBUG ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
 
     vector<vector<int> > clusters;
     // Split the Z-parallel points into clusters
@@ -305,14 +305,16 @@ public:
         ROS_WARN ("No table found");
         return (false);
       }
-    ROS_INFO ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
+    ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
 
     // Fill in the header
-    resp.table.header.frame_id = cloud_in_.header.frame_id; //global_frame_;
+    resp.table.header.frame_id = cloud_in_.header.frame_id;
     resp.table.header.stamp = cloud_in_.header.stamp;
-    resp.table.header.seq = seq_;
+    //TODO: replace with 
+    //resp.table.header.seq = cloud_in_.header.seq;
+    resp.id = seq_;
     seq_++;
-    ROS_INFO("Seq nr. %d", seq_);
+
     // Get the table bounds
     geometry_msgs::Point32 minP, maxP;
     cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
@@ -332,12 +334,12 @@ public:
 
     // Find the object clusters supported by the table
     inliers.clear ();
-    ROS_INFO("minP, maxP %f %f %f, %f %f %f", minP.x, minP.y, minP.z, maxP.x, maxP.y, maxP.z);
+    ROS_DEBUG("minP, maxP %f %f %f, %f %f %f", minP.x, minP.y, minP.z, maxP.x, maxP.y, maxP.z);
     findObjectClusters (cloud_in_, coeff, pmap_.polygons[0], minP, maxP, inliers, resp.table);
 
     resp.table.table = pmap_.polygons[0];
 
-    ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
+    ROS_DEBUG ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
               resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, 
               (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
 
@@ -460,7 +462,7 @@ public:
   {
     if (!need_cloud_data_)
       return;
-    ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
+    ROS_DEBUG ("PointCloud message received on %s", input_cloud_topic_.c_str ());
 
     cloud_in_ = *pc;
     //tf_.transformPointCloud(global_frame_, *pc, cloud_in_);
@@ -510,9 +512,7 @@ public:
   void
   estimatePointNormals (sensor_msgs::PointCloud &cloud)
   {
-    ROS_INFO ("+ estimatePointNormals, %i", cloud.points.size ());
     cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
-    ROS_INFO ("- estimatePointNormals, %i", cloud.points.size ());
     vector<vector<int> > points_k_indices;
     // Allocate enough space for point indices
     points_k_indices.resize (cloud.points.size ());
