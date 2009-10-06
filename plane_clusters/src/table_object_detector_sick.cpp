@@ -72,7 +72,7 @@
 
 #include <sys/time.h>
 
-#include <tabletop_srvs/FindTable.h>
+#include <mapping_srvs/FindTableId.h>
 #include <tabletop_msgs/Table.h>
 #include <tabletop_msgs/ObjectOnTable.h>
 
@@ -82,7 +82,8 @@ using namespace sensor_msgs;
 using namespace geometry_msgs;
 using namespace mapping_msgs;
 using namespace tabletop_msgs;
-using namespace tabletop_srvs;
+//using namespace tabletop_srvs;
+using namespace mapping_srvs;
 
 // Comparison operator for a vector of vectors
 bool
@@ -208,7 +209,7 @@ public:
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bool
-  detectTable (FindTable::Request &req, FindTable::Response &resp)
+  detectTable (FindTableId::Request &req, FindTableId::Response &resp)
   {
     updateParametersFromServer ();
 
