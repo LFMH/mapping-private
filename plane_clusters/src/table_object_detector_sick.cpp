@@ -128,9 +128,10 @@ public:
   ros::Publisher semantic_map_publisher_, cloud_publisher_;
 
   ros::Subscriber cloud_sub_;
-  int seq_;
+  string axis_up_;
+  unsigned int seq_;
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode) , seq_(0)
+  TableObjectDetector (ros::NodeHandle& anode) : node_ (anode), axis_up_("z"), seq_(0)
   {
     node_.param ("/global_frame_id", global_frame_, std::string("/base_link"));
 
@@ -142,7 +143,21 @@ public:
     }
     node_.param ("search_k_closest", k_, 2);                              // 2 k-neighbors by default
 
-    z_axis_.x = 0; z_axis_.y = 1; z_axis_.z = 0;
+    //which is an up axis in the point cloud (x, y, z) 
+    node_.param("axis_up", axis_up_, string("z"));
+
+    if (axis_up_ == "x")
+      {
+        z_axis_.x = 1; z_axis_.y = 0; z_axis_.z = 0;
+      }
+    else if  (axis_up_ == "y")
+      {
+        z_axis_.x = 0; z_axis_.y = 1; z_axis_.z = 0;
+      }
+    else
+      {
+        z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
+      }
     node_.param ("normal_eps_angle", eps_angle_, 15.0);                   // 15 degrees
     eps_angle_ = angles::from_degrees (eps_angle_);                        // convert to radians
 
@@ -177,7 +192,7 @@ public:
 
     // This should be set to whatever the leaf_width factor is in the downsampler
     node_.param ("sac_distance_threshold", sac_distance_threshold_, 0.03);     // 5 cm
-
+   
     if (publish_debug_)
       {
         semantic_map_publisher_ = node_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
@@ -232,10 +247,29 @@ public:
     int nr_p = 0;
     for (unsigned int i = 0; i < cloud_in_.points.size (); i++)
       {
-        if (cloud_in_.points[i].y >= table_min_height_ && cloud_in_.points[i].y <= table_max_height_)
+        if(axis_up_ == "x")
           {
-            indices_in_bounds[nr_p] = i;
-            nr_p++;
+            if (cloud_in_.points[i].x >= table_min_height_ && cloud_in_.points[i].x <= table_max_height_)
+              {
+                indices_in_bounds[nr_p] = i;
+                nr_p++;
+              }
+          }
+        else if(axis_up_ == "y")
+          {
+            if (cloud_in_.points[i].y >= table_min_height_ && cloud_in_.points[i].y <= table_max_height_)
+              {
+                indices_in_bounds[nr_p] = i;
+                nr_p++;
+              }
+          }
+        else
+          {
+            if (cloud_in_.points[i].z >= table_min_height_ && cloud_in_.points[i].z <= table_max_height_)
+              {
+                indices_in_bounds[nr_p] = i;
+                nr_p++;
+              }
           }
       }
     indices_in_bounds.resize (nr_p);
@@ -402,27 +436,82 @@ public:
     for (unsigned int i = 0; i < points.points.size (); i++)
       {
         // Select all the points in the given bounds
-        if ( points.points.at (i).x > minP.x &&
-             points.points.at (i).x < maxP.x &&
-             points.points.at (i).z > minP.z &&
-             points.points.at (i).z < maxP.z &&
-             points.points.at (i).y > (maxP.y + delta_z_)
-             )
+        if(axis_up_ == "x")
           {
-            // Calculate the distance from the point to the plane
-            double distance_to_plane = coeff.at (0) * points.points.at (i).x +
-              coeff.at (1) * points.points.at (i).y +
-              coeff.at (2) * points.points.at (i).z +
-              coeff.at (3) * 1;
-            // Calculate the projection of the point on the plane
-            pt.x = points.points.at (i).x - distance_to_plane * coeff.at (0);
-            pt.y = points.points.at (i).y - distance_to_plane * coeff.at (1);
-            pt.z = points.points.at (i).z - distance_to_plane * coeff.at (2);
-
-            if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
+            if ( points.points.at (i).y > minP.y &&
+                 points.points.at (i).y < maxP.y &&
+                 points.points.at (i).z > minP.z &&
+                 points.points.at (i).z < maxP.z &&
+                 points.points.at (i).x > (maxP.x + delta_z_)
+                 )
               {
-                object_indices[nr_p] = i;
-                nr_p++;
+                // Calculate the distance from the point to the plane
+                double distance_to_plane = coeff.at (0) * points.points.at (i).x +
+                  coeff.at (1) * points.points.at (i).y +
+                  coeff.at (2) * points.points.at (i).z +
+                  coeff.at (3) * 1;
+                // Calculate the projection of the point on the plane
+                pt.x = points.points.at (i).x - distance_to_plane * coeff.at (0);
+                pt.y = points.points.at (i).y - distance_to_plane * coeff.at (1);
+                pt.z = points.points.at (i).z - distance_to_plane * coeff.at (2);
+                
+                if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
+                  {
+                    object_indices[nr_p] = i;
+                    nr_p++;
+                  }
+              }
+          }
+        else if(axis_up_ == "y")
+          {
+            if ( points.points.at (i).x > minP.x &&
+                 points.points.at (i).x < maxP.x &&
+                 points.points.at (i).z > minP.z &&
+                 points.points.at (i).z < maxP.z &&
+                 points.points.at (i).y > (maxP.y + delta_z_)
+                 )
+              {
+                // Calculate the distance from the point to the plane
+                double distance_to_plane = coeff.at (0) * points.points.at (i).x +
+                  coeff.at (1) * points.points.at (i).y +
+                  coeff.at (2) * points.points.at (i).z +
+                  coeff.at (3) * 1;
+                // Calculate the projection of the point on the plane
+                pt.x = points.points.at (i).x - distance_to_plane * coeff.at (0);
+                pt.y = points.points.at (i).y - distance_to_plane * coeff.at (1);
+                pt.z = points.points.at (i).z - distance_to_plane * coeff.at (2);
+                
+                if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
+                  {
+                    object_indices[nr_p] = i;
+                    nr_p++;
+                  }
+              }
+          }
+        else 
+          {
+            if ( points.points.at (i).x > minP.x &&
+                 points.points.at (i).x < maxP.x &&
+                 points.points.at (i).y > minP.y &&
+                 points.points.at (i).y < maxP.y &&
+                 points.points.at (i).z > (maxP.z + delta_z_)
+                 )
+              {
+                // Calculate the distance from the point to the plane
+                double distance_to_plane = coeff.at (0) * points.points.at (i).x +
+                  coeff.at (1) * points.points.at (i).y +
+                  coeff.at (2) * points.points.at (i).z +
+                  coeff.at (3) * 1;
+                // Calculate the projection of the point on the plane
+                pt.x = points.points.at (i).x - distance_to_plane * coeff.at (0);
+                pt.y = points.points.at (i).y - distance_to_plane * coeff.at (1);
+                pt.z = points.points.at (i).z - distance_to_plane * coeff.at (2);
+                
+                if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
+                  {
+                    object_indices[nr_p] = i;
+                    nr_p++;
+                  }
               }
           }
       }
@@ -442,9 +531,21 @@ public:
 
         // Check whether this object cluster is supported by the table or just flying through thin air
         cloud_geometry::statistics::getMinMax (points, object_idx, minPCluster, maxPCluster);
-        if (minPCluster.y > (maxP.y + object_min_distance_from_table_) )
-          continue;
-
+        if (axis_up_ == "x")
+          {
+            if (minPCluster.x > (maxP.x + object_min_distance_from_table_) )
+              continue;
+          }
+        else if (axis_up_ == "y")
+          {
+            if (minPCluster.y > (maxP.y + object_min_distance_from_table_) )
+              continue;
+          }
+        else
+          {
+            if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
+              continue;
+          }
         // Process this cluster and extract the centroid and the bounds
         for (unsigned int j = 0; j < object_idx.size (); j++)
           {
