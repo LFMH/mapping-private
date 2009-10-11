@@ -41,7 +41,7 @@
 **/
 
 // ROS core
-#include <ros/node.h>
+#include <ros/node_handle.h>
 // ROS messages
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Polygon.h>

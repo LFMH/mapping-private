@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "ros/node.h"
+#include "ros/node_handle.h"
 #include <mapping_srvs/GetPlaneClusters.h>
 #include <cstdlib>
 #include "string.h"
