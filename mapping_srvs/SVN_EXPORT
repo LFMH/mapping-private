@@ -1,0 +1,136 @@
+commit af2092d016187c5436343cb174eb068b35429b91
+Author: Lorenz Mösenlechner <moesenle@in.tum.de>
+Date:   Fri Nov 6 11:56:40 2009 +0100
+
+    Updated ignores.
+
+commit c246d45cd8f9f2f910929b330cb8c3dce81c8eda
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Tue Sep 22 10:06:32 2009 +0200
+
+    renamed a service
+
+commit 0e751ab24e26d0ee75573930f2465b574eee5c56
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Oct 6 18:03:46 2009 +0200
+
+    dependencies for my previous commit
+
+commit 248d1dd0f400d3a00a671f1824dc0b5dd4ff8858
+Author: Dejan Pangercic <pangercic@lapradig39.(none)>
+Date:   Fri Oct 2 13:22:07 2009 +0200
+
+    added plane identifier
+
+commit bad513030d51f4c92633c0b7572ecec1289dfda4
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Mon Sep 14 15:36:49 2009 +0200
+
+    Msgs and Server for Laser based object detection [UPDATE] :)
+
+commit ca2b8c1c1e7c7b50e0719426404a91e265c8fff3
+Author: Andreas Leha <andreas.leha@gmx.de>
+Date:   Mon Sep 14 14:54:14 2009 +0200
+
+    added missing dependencies
+
+commit 4105969b76651f10180f368c90b051a6e0494652
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Mon Sep 14 11:43:07 2009 +0200
+
+    Msgs and Server for Laser based object detection
+
+commit e3f6a22d417ce1f929b103a6d1e1834829081791
+Author: Bender Rodriguez <bender@roboradig31.informatik.tu-muenchen.de>
+Date:   Mon Aug 31 22:54:31 2009 +0200
+
+    trigger sweep service
+
+commit 7f6e9cc50508276fd36c3d7e20ab91b88a442358
+Author: Radu Bogdan Rusu <rusu@cs.tum.edu>
+Date:   Fri Aug 28 15:35:00 2009 +0200
+
+    service changes
+
+commit b9f931d15498b98f96cd1cba6dcae45796209750
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Fri Aug 28 11:05:19 2009 +0200
+
+    actarray srvs
+
+commit 0eaca49aea142442af6b1c155695cac2f8fbf826
+Author: Radu Bogdan Rusu <rusu@cs.tum.edu>
+Date:   Thu Aug 27 17:10:21 2009 +0200
+
+    int->float
+
+commit 8aeb15bf5dc58776c4137a41872ea727c93dc552
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Wed Aug 26 01:27:05 2009 +0200
+
+    still missing conditions
+
+commit 9ccda1a31123df864c953b9b5f957ebee6b457ef
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Aug 25 01:50:10 2009 +0200
+
+    namespaces
+
+commit a383abef0e694481c09cfb84cd0c51515187316c
+Author: Uli Klank <klank@calculon.(none)>
+Date:   Mon Aug 24 20:09:19 2009 +0200
+
+    Update plane clusters + deps tp a newer messsage sheme, deactivated box_detector until
+
+commit ab952c8799cba2f78d24e28cf6ce184b90c3fc54
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Thu Jul 16 18:29:42 2009 +0200
+
+    detection of boxes works
+
+commit 25bedc3f918d02a975fc0edfe7351156959b57b4
+Merge: c1ea0f8... ceba479...
+Author: Dejan Pangercic <pangercic@lapradig41.informatik.tu-muenchen.de>
+Date:   Thu Jul 16 10:50:39 2009 +0200
+
+    Merge branch 'master' of gitosis@srvradig1.informatik.tu-muenchen.de:tumros-internal
+
+commit c1ea0f8ffec1ab5182f4e3f37ec195e0a7c04efc
+Author: Dejan Pangercic <pangercic@lapradig41.informatik.tu-muenchen.de>
+Date:   Thu Jul 16 10:50:26 2009 +0200
+
+    service
+
+commit ceba47903eba592e336ff0a83e1f5b14061d3c3b
+Author: Radu Bogdan Rusu <rusu@dee.(none)>
+Date:   Thu Jul 16 10:41:45 2009 +0200
+
+    old stuff
+
+commit bd1d4c27d0137cde567ad326b6e38a0cb82b2e6b
+Author: Dejan Pangercic <pangercic@lapradig41.informatik.tu-muenchen.de>
+Date:   Wed Jul 15 21:14:15 2009 +0200
+
+    ObjectOnTable got moved
+
+commit 0f5ecf9c69f63d225a70b25b6ff2278641c809ae
+Author: Dejan Pangercic <pangercic@lapradig41.informatik.tu-muenchen.de>
+Date:   Tue Jun 23 19:16:13 2009 +0200
+
+    for Uli:
+    request GetPlaneCluster msg turned into reponse
+    response parameters hard-encoded
+    test script for querying the service
+    NOT FULLY FUNCTIONAL yet
+
+commit 7d35392672d21991bfb5e7132c7b35abd11dfc1d
+Author: Radu Bogdan Rusu <rusu@dee.(none)>
+Date:   Mon Jun 22 18:30:06 2009 +0200
+
+    rename
+
+commit c9aeb4fc786630ac661f6996c9056d4afba88795
+Author: Radu Bogdan Rusu <rusu@dee.(none)>
+Date:   Mon Jun 22 18:21:38 2009 +0200
+
+    bla
