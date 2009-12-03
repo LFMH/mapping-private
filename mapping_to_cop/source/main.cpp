@@ -6,11 +6,13 @@
 
 
 #include <ros/ros.h>
-#include <cop/cop_call.h>
-#include <cop/cop_answer.h>
+#include <vision_srvs/cop_call.h>
+#include <vision_msgs/cop_answer.h>
 #include <mapping_srvs/GetPlaneClusters.h>
-#include <jlo/srvjlo.h>
+#include <vision_srvs/srvjlo.h>
 
+using namespace vision_srvs;
+using namespace vision_msgs;
 
 #define max(a, b) (((a) > (b))  ?  (a) : (b))
 
@@ -19,7 +21,7 @@ typedef uint64_t uint64;
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids);
 
 
-void printfJloMsg(jlo::srvjlo msg)
+void printfJloMsg(srvjlo msg)
 {  
   int width2 = 4;
   printf("Showing PosId %d with parent %d:\n", (int)msg.response.answer.id, (int)msg.response.answer.parent_id);
@@ -53,9 +55,9 @@ void printfJloMsg(jlo::srvjlo msg)
     */
 uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertainty)
 {
-  jlo::srvjlo msg;
+  srvjlo msg;
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<jlo::srvjlo>("/located_object", true);
+  ros::ServiceClient client = n.serviceClient<srvjlo>("/located_object", true);
 
   msg.request.query.id = 0;
   msg.request.query.parent_id = 2;  /*ID of swissranger= 2 !*/
@@ -79,7 +81,7 @@ uint64_t JloRegisterPose(std::vector<double> mat, std::vector<double> uncertaint
   printfJloMsg(msg);
   printf("After Transformation:\n");
     
-  jlo::srvjlo msg_trans;
+  srvjlo msg_trans;
   msg_trans.request.query.id = msg.response.answer.id;
   msg_trans.request.query.parent_id = 5;  /*ID of swissranger= 2  Camera 4+5!*/
   msg_trans.request.query.type = 0;
@@ -126,8 +128,8 @@ float64 a
 float64 b
 float64 c
 float64 d
-robot_msgs/Point32 pcenter
-robot_msgs/ObjectOnTable[] oclusters
+geometry_msgs/Point32 pcenter
+tabletop_msgs/ObjectOnTable[] oclusters
 */
 bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
 {
@@ -143,8 +145,8 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
   double b = msg.response.b;
   double c = msg.response.c;
   double s = msg.response.d;
-  robot_msgs::Point32 &pcenter = msg.response.pcenter;
-  std::vector<robot_msgs::ObjectOnTable> &vec = msg.response.oclusters;
+  geometry_msgs::Point32 &pcenter = msg.response.pcenter;
+  std::vector<tabletop_msgs::ObjectOnTable> &vec = msg.response.oclusters;
   printf("Got plane equation %f x + %f y + %f z + %f = 0\n", a,b,c,s);
    /*Norm v1*/
   normalize(a,b,c);
@@ -181,7 +183,7 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
   if(vec.size() == 0)
   {
     printf("No Clusters found, adding a meaningless cluster");
-     robot_msgs::ObjectOnTable on;
+     tabletop_msgs::ObjectOnTable on;
      on.center.x = 0.0;
      on.center.y = -0.1;
      on.center.z = 1.75;
@@ -199,9 +201,9 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
   for(int i = 0; i < vec.size(); i++)
   {
     printf("a: %f , b: %f , c: %f\n", a, b, c);
-    const robot_msgs::Point32 &center = vec[i].center;
-    const robot_msgs::Point32 &min_bound = vec[i].min_bound;
-    const robot_msgs::Point32 &max_bound = vec[i].max_bound;
+    const geometry_msgs::Point32 &center = vec[i].center;
+    const geometry_msgs::Point32 &min_bound = vec[i].min_bound;
+    const geometry_msgs::Point32 &max_bound = vec[i].max_bound;
     std::vector<double> rotmat;
     rotmat.push_back(d ); rotmat.push_back( g ); rotmat.push_back( a ); rotmat.push_back( center.x);
            rotmat.push_back( e ); rotmat.push_back( h ); rotmat.push_back( b ); rotmat.push_back( center.y);
@@ -228,12 +230,12 @@ bool GetPlaneClusterCall(std::vector<uint64> &cluster_ids)
 
 std::string _object = "Mug";
 
- void callback(const boost::shared_ptr<const cop::cop_answer> &msg)
+ void callback(const boost::shared_ptr<const cop_answer> &msg)
  {
   printf("got answer from cop! (Errors: %s)\n", msg->error.c_str());
   for(int i = 0; i < msg->found_poses.size(); i++)
   {
-    const cop::aposteriori_position &pos =  msg->found_poses[i];
+    const aposteriori_position &pos =  msg->found_poses[i];
     printf("Foub Obj nr %d with prob %f at pos %d\n", (int)pos.objectId, pos.probability, (int)pos.position);
   }
   printf("End!\n");
@@ -255,13 +257,13 @@ std::string _object = "Mug";
   
  void publishToCop(std::string object, ros::NodeHandle &n, std::vector<uint64> cluster_ids)
  {
-  cop::cop_call call;
+  cop_call call;
   /** Create the cop_call msg*/
   call.request.outputtopic = stTopicName;
   call.request.object_classes.push_back(object);
   call.request.action_type = 0;
   call.request.number_of_objects = 1;
-  cop::apriori_position pos;
+  apriori_position pos;
   int size = (int)cluster_ids.size();
   printf("Number of pos ids? %d\n", size);
   
@@ -271,7 +273,7 @@ std::string _object = "Mug";
     pos.positionId = cluster_ids[i];
     call.request.list_of_poses.push_back(pos);
   }
-  ros::ServiceClient client = n.serviceClient<cop::cop_call>("/tracking/in", true);
+  ros::ServiceClient client = n.serviceClient<cop_call>("/tracking/in", true);
   ros::service::waitForService("/tracking/in", 10000);
   if(!client.call(call))
     printf("Error calling cop");
@@ -283,15 +285,15 @@ std::string _object = "Mug";
 int main(int argc, char* argv[])
 {
   ros::init(argc, argv, "/mapping_to_cop") ;
-  cop::cop_call call;
-  cop::cop_answer answer;
+  cop_call call;
+  cop_answer answer;
   ros::NodeHandle n;
   if(argc > 1)
     _object = argv[1];
   /** new topic for cop*/
 
      /** subscribe to the topic cop should publish the results*/
-  ros::Subscriber read = n.subscribe<cop::cop_answer>(stTopicName, 1000, &callback);
+  ros::Subscriber read = n.subscribe<cop_answer>(stTopicName, 1000, &callback);
   /** Publish */
   std::vector<uint64> cluster_ids;
 
