@@ -9,14 +9,16 @@ class MsgToPCD
 {
   protected:
     ros::NodeHandle nh_;
-    std::string input_cloud_topic_;
+    //dir_ - destination folder for pcds
+    std::string input_cloud_topic_, dir_;
     ros::Subscriber cloud_sub_;
     int counter_;
 
   public:
   MsgToPCD () :  nh_("~"), counter_(0)
     {
-      nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));       // 15 degrees
+      nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
+      nh_.param ("dir", dir_, std::string(""));       // 15 degrees
       ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);
     }
@@ -25,7 +27,7 @@ class MsgToPCD
       cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       std::ostringstream filename;
-      filename << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
+      filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
       ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
       cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
       counter_ ++;
