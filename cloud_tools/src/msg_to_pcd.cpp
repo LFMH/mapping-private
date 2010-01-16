@@ -14,9 +14,10 @@ class MsgToPCD
     int counter_;
 
   public:
-    MsgToPCD () : counter_(0)
+  MsgToPCD () :  nh_("~"), counter_(0)
     {
       nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));       // 15 degrees
+      ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);
     }
     
