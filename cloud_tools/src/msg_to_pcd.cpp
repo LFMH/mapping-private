@@ -4,6 +4,8 @@
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
+#include <boost/thread/mutex.hpp>
+
 
 class MsgToPCD
 {
@@ -13,12 +15,19 @@ class MsgToPCD
     std::string input_cloud_topic_, dir_;
     ros::Subscriber cloud_sub_;
     int counter_;
+    //for continous saving of pcds
+    bool continous_; 
+    bool debug_;
+    //lock while saving to pcd
+    boost::mutex m_lock_;
 
   public:
-  MsgToPCD () :  nh_("~"), counter_(0)
+  MsgToPCD () :  nh_("~"), counter_(0), debug_(false)
     {
       nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
-      nh_.param ("dir", dir_, std::string(""));       // 15 degrees
+      nh_.param ("dir", dir_, std::string(""));       
+      nh_.param ("continous", continous_, false);   
+      if(debug_)
       ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);
     }
@@ -28,19 +37,44 @@ class MsgToPCD
     {
       std::ostringstream filename;
       filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
-      ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
-      cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
+      if(debug_)
+      ROS_INFO("parameter continous: %d", continous_);
+      if ((counter_ == 0) && (!continous_))
+      {
+        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
+        cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
+      }
+      if ((counter_ >= 0) && (continous_))
+      {
+        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
+        m_lock_.lock ();
+        cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
+        m_lock_.unlock ();
+      }
       counter_ ++;
     }
+
+  /**
+   * @brief toggles parameter to start/stop saving pcds
+   */
+
+   void updateParametersFromServer ()
+    {
+      nh_.getParam ("continous", continous_);
+      if(debug_)
+      ROS_INFO("cont in update: %d", continous_);
+    }
+
 
     bool 
       spin ()
     {
-      while (ros::ok())
+      while (nh_.ok())
       {
         ros::spinOnce ();
-        if (counter_ > 0)
+        if ((counter_ == 1) && (!continous_))
           return true;
+        updateParametersFromServer();
       }
       return true;
     }
