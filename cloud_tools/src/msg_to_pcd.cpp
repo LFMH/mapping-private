@@ -39,7 +39,7 @@ class MsgToPCD
       //std::ostringstream filename;
       //filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
       //filename << dir_ << "cloud_" <<  << ".pcd";
-      filename_format_.parse(std::string("cloud_%f.jpg"));
+      filename_format_.parse(std::string("cloud_%f.pcd"));
       std::string filename = dir_ + (filename_format_ %  ros::Time::now().toSec()).str();
       if(debug_)
       ROS_INFO("parameter continous: %d", continous_);
