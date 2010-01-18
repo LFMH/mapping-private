@@ -5,7 +5,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
 #include <boost/thread/mutex.hpp>
-
+#include <boost/format.hpp>
 
 class MsgToPCD
 {
@@ -20,6 +20,7 @@ class MsgToPCD
     bool debug_;
     //lock while saving to pcd
     boost::mutex m_lock_;
+    boost::format filename_format_;
 
   public:
   MsgToPCD () :  nh_("~"), counter_(0), debug_(false)
@@ -35,21 +36,23 @@ class MsgToPCD
     void
       cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
-      std::ostringstream filename;
+      //std::ostringstream filename;
       //filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
-      filename << dir_ << "cloud_" <<  ros::Time::now().toSec() << ".pcd";
+      //filename << dir_ << "cloud_" <<  << ".pcd";
+      filename_format_.parse(std::string("cloud_%f.jpg"));
+      std::string filename = dir_ + (filename_format_ %  ros::Time::now().toSec()).str();
       if(debug_)
       ROS_INFO("parameter continous: %d", continous_);
       if ((counter_ == 0) && (!continous_))
       {
-        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
-        cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
+        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.c_str ());
+        cloud_io::savePCDFile (filename.c_str (), *cloud, true);
       }
       if ((counter_ >= 0) && (continous_))
       {
-        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.str ().c_str ());
+        ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.c_str ());
         m_lock_.lock ();
-        cloud_io::savePCDFile (filename.str ().c_str (), *cloud, true);
+        cloud_io::savePCDFile (filename.c_str (), *cloud, true);
         m_lock_.unlock ();
       }
       counter_ ++;
