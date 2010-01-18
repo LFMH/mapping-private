@@ -36,7 +36,8 @@ class MsgToPCD
       cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
       std::ostringstream filename;
-      filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
+      //filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
+      filename << dir_ << "cloud_" <<  ros::Time::now().toSec() << ".pcd";
       if(debug_)
       ROS_INFO("parameter continous: %d", continous_);
       if ((counter_ == 0) && (!continous_))
