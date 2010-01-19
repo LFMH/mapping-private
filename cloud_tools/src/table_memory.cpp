@@ -108,6 +108,7 @@ class TableMemory
     ros::ServiceClient table_reconstruct_clusters_client_;
     int counter_;
     float color_probability_;
+    std::string global_frame_;
     //insert lo_ids waiting for prolog update
     std::vector<unsigned long long> update_prolog_;
     unsigned long long lo_id_tmp_;
@@ -150,6 +151,7 @@ class TableMemory
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
       nh_.param ("output_table_state_topic", output_table_state_topic_, std::string("table_mem_state"));       // 15 degrees
+      nh_.param ("/global_frame_id", global_frame_, std::string("/map"));
 
       table_sub_ = nh_.subscribe (input_table_topic_, 1, &TableMemory::table_cb, this);
 //       cop_sub_ = nh_.subscribe (input_cop_topic_, 1, &TableMemory::cop_cb, this);
@@ -558,7 +560,7 @@ class TableMemory
       publish_mem_state (int table_num)
     {
       mapping_msgs::PolygonalMap pmap;
-      pmap.header.frame_id = "/map";
+      pmap.header.frame_id = global_frame_;
 
       pmap.chan.resize(1);
       pmap.chan[0].name = "rgb";
@@ -572,7 +574,7 @@ class TableMemory
 
 
       sensor_msgs::PointCloud pc;
-      pc.header.frame_id = "/map";
+      pc.header.frame_id = global_frame_;
       for (unsigned int i = 0; i < tables.size(); i++)
       {
         for (unsigned int ob_i = 0; ob_i < tables[i].getCurrentInstance ()->objects.size(); ob_i++)

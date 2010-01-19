@@ -1,8 +1,8 @@
 <launch>
-
+  <param name="global_frame_id" value="/base_link" />	
   <!-- Box Filter -->
   <node pkg="cloud_tools" type="box_filter" name="box_filter" output="screen">
-    <param name="input_cloud_topic" value="/shoulder_cloud" />
+    <param name="input_cloud_topic" value="/cloud_pcd" />
     <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
     <param name="box_min_y" value="-4.0" />
   </node>
