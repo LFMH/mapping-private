@@ -6,11 +6,11 @@ INCLUDE("${CMAKE_MODULE_PATH}/MakeDocu.cmake" OPTIONAL)
 
 
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(mapping_to_cop)
+rosbuild_init()
 
-gensrv()
-genmsg()
+rosbuild_gensrv()
+rosbuild_genmsg()
 
-rospack_add_executable(mapping_to_cop source/main.cpp)
+rosbuild_add_executable(mapping_to_cop source/main.cpp)
 
 
