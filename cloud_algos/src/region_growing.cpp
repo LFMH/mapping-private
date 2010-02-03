@@ -17,8 +17,39 @@ std::vector<std::string> RegionGrowing::pre ()
 std::vector<std::string> RegionGrowing::post ()
   {return std::vector<std::string>();}
 
-void RegionGrowing::bla ()
+
+void RegionGrowing::OptimizedRegionSegmentation ()
 {
+  kd_tree* tree;
+  std::vector<PointCloud> clusters;
+  //FOR EACH POINT pt
+  {
+    // ignore points that have a tag set
+    if (pt[regIdx] != regInitial)
+      continue;
+    
+    // start new cluster
+    sensor_msgs::PointCloud cluster;
+    cluster.header.frame_id = cloud->header.frame_id;
+    cloud->points.push_back (pt); // first point in cluster is the seed point
+    int qIdx = 0; // index in the queue
+
+    while (qIdx < (int) q.size ())
+    {
+      int k = kd_tree->annkFRSearch (points[q[qIdx]], sqr_thresh, 0, NULL, NULL, 0.0);
+      if (k > max_nr_nn)
+        k = max_nr_nn;
+      kd_tree->annkFRSearch (points[q[qIdx]], sqr_thresh, k, nnIdx, sqrDists, 0.0);
+      for (int j = 1; j < k; j++)
+      {
+        if ((points[nnIdx[j]][regIdx] == regInitial) && ((dimIdx == -1) || (points[nnIdx[j]][dimIdx] == dimVal)))
+        {
+          q.push_back (nnIdx[j]);
+        }
+      }
+      qIdx++;
+    }
+  }
 }
 
 std::string RegionGrowing::process (sensor_msgs::PointCloudConstPtr cloud)
