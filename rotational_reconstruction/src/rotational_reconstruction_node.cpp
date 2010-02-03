@@ -69,7 +69,6 @@
 
 using namespace std;
 using namespace ros;
-using namespace std_msgs;
 using namespace sensor_msgs;
 using namespace geometry_msgs;
 using namespace mapping_msgs;
