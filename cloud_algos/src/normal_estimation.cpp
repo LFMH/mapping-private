@@ -1,5 +1,5 @@
-#include <dyn_obj_store/pcd_algo.h>
-#include <dyn_obj_store/normal_estimation.h>
+#include <cloud_algos/cloud_algo.h>
+#include <cloud_algos/normal_estimation.h>
 
 void NormalEstimation::init () 
 {

@@ -1,5 +1,5 @@
-#include <dyn_obj_store/pcd_algo.h>
-#include <dyn_obj_store/planar_estimation.h>
+#include <cloud_algos/cloud_algo.h>
+#include <cloud_algos/planar_estimation.h>
 
 void PlanarEstimation::init () 
 {
