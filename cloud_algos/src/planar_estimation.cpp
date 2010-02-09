@@ -1,4 +1,4 @@
-#include <cloud_algos/cloud_algo.h>
+#include <cloud_algos/cloud_algos.h>
 #include <cloud_algos/planar_estimation.h>
 
 void PlanarEstimation::init () 
