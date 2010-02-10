@@ -17,7 +17,7 @@ class RotationalEstimation : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (sensor_msgs::PointCloudConstPtr);
+  std::string process (sensor_msgs::PointCloudConstPtr&);
   OutputType output ();
  
  private: 

@@ -21,7 +21,7 @@ class CloudAlgo
 
   virtual std::vector<std::string> pre  () = 0;
   virtual std::vector<std::string> post () = 0;
-  virtual std::string process (sensor_msgs::PointCloudConstPtr) = 0;
+  virtual std::string process (sensor_msgs::PointCloudConstPtr&) = 0;
   OutputType output ();
 };
 
@@ -35,7 +35,7 @@ template <class algo>
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_topic_name (), 5);
   }
   
-  void cloud_cb (sensor_msgs::PointCloudConstPtr cloud)
+  void cloud_cb (sensor_msgs::PointCloudConstPtr &cloud)
   {
     a.process (cloud);
     pub_.publish (a.output());

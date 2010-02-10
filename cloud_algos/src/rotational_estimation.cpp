@@ -139,7 +139,7 @@ std::vector<std::string> RotationalEstimation::pre ()
 std::vector<std::string> RotationalEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string RotationalEstimation::process (sensor_msgs::PointCloudConstPtr cloud)
+std::string RotationalEstimation::process (sensor_msgs::PointCloudConstPtr &cloud)
 {
   sensor_msgs::PointCloud pc;
   double threshold_ = 0.005;

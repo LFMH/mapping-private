@@ -11,6 +11,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
   src/rotational_estimation.cpp
+  src/region_growing.cpp
   src/register_plugins.cpp
 )
 
