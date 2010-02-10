@@ -2,8 +2,11 @@
 #define CLOUD_ALGOS_PLANAR_ESTIMATION_H
 #include <cloud_algos/cloud_algos.h>
 
-// For matrix inversion
+// For extra Eigen functions
 #include <Eigen/Array>
+// if needed:
+//#include <Eigen/LU> // matrix inversion
+//#include <Eigen/Geometry> // cross product
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>

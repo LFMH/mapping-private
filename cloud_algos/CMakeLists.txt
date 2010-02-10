@@ -27,3 +27,5 @@ target_link_libraries (cloud_algos_test cloud_algos)
 rosbuild_add_executable (rotational_estimation_node src/rotational_estimation.cpp)
 set_target_properties (rotational_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
+rosbuild_add_executable (mls_fit_node src/mls_fit.cpp)
+set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

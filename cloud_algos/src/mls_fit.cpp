@@ -252,17 +252,23 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
     // STEP3: Perform polynomial fitting
     if (polynomial_fit_)
     {
+      // initialize timer
       ts_tmp = ros::Time::now ();
 
       // update neighborhood, since point was projected
       /// TODO: leaving this out, as it is not as important
 
-      // get local coordinate system
-      Eigen::Vector3d u, v, de_meaned;
       // TODO maybe put all these variables as global - unless it messes up parallelism !!!
-      getCoordinateSystemOnPlane (plane_parameters, u, v);
+      /// @NOTE: probably not worth having the result of plane_parameters.start<3>() saved...
+
+      // get local coordinate system
+      Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
+      Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
+      // TODO is this faster or: getCoordinateSystemOnPlane (plane_parameters, u, v);
 
       // build up matrices for getting the coefficients
+      Eigen::Vector3d de_meaned;
+      double u_coord, v_coord, u_pow, v_pow;
       for (size_t i = points_sqr_distances_[cp].begin (); dit != points_sqr_distances_[cp].end (); dit++)
       {
         // (re-)compute weights
@@ -275,17 +281,17 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
         // TODO which one is better, faster? dot, * or macro?
         u_coord = de_meaned.dot (u);
         v_coord = de_meaned.dot (v);
-        // plane_parameters has 4 values, so tricky to use with functions...
-        f_vec_(i) = de_meaned[0]*plane_parameters[0] + de_meaned[1]*plane_parameters[1] + de_meaned[2]*plane_parameters[2];
+        // plane_parameters has 4 values, need only first 3
+        f_vec_(i) = de_meaned.dot (plane_parameters.start<3>());
         //cerr << "f_vec[" << i << "] = " << f_vec[i] << endl;
 
         // compute members
         int j = 0;
         u_pow = 1;
-        for (int ui=0; ui<=order; ui++)
+        for (int ui=0; ui<=order_; ui++)
         {
           v_pow = 1;
-          for (int vi=0; vi<=order-ui; vi++)
+          for (int vi=0; vi<=order_-ui; vi++)
           {
             P_(j++,i) = u_pow * v_pow;
             //cerr << (j-1) << ": u^" << ui << " * v^" << vi << " = " << P(j-1,i) << endl;
@@ -298,52 +304,66 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
 
       // compute coefficients
       P_weight_ = P_ * weight_;
-      P_weight_Pt_ = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
       inv_P_weight_Pt_.computeInverse(&P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
       inv_P_weight_Pt_P_weight_ = inv_P_weight_Pt_ * P_weight_;
       c_vec_ = inv_P_weight_Pt_P_weight_ * f_vec_;
 
       // project point onto the surface - TODO: make (at least approximate) orthogonal projection
-      if (c_vec[0]*c_vec[0] < _sqrDists[1]*3) /// maybe make some different check here !!!
-      //if (abs (c_vec[0][0]) < 0.01*sqrt(3))
+      if (c_vec_[0]*c_vec_[0] < points_sqr_distances_[cp][i]*3) /// maybe make some different check here !!!
       {
         //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
-        for (int i = 0; i < 3; i++)
-          mls_point[i] += c_vec[0] * normal[i]; /// OR USE SOME OTHER WAY TO COMPUTE PROJECTION !!!
-          //mls_point[i] += c_vec[0][0] * mls_point[3+i];
+        cloud_fit_->points[cp].x += c_vec[0] * plane_parameters[0];
+        cloud_fit_->points[cp].y += c_vec[0] * plane_parameters[1];
+        cloud_fit_->points[cp].z += c_vec[0] * plane_parameters[2];
       }
       else
       {
-        //#ifdef DEBUG
-        //  if (c_vec[0][0]*c_vec[0][0] >= _sqrDists[1]*3)
-        //  //if (abs (c_vec[0][0]) >= 0.01*sqrt(3))
-        //    Debug_SaveStuff (inlierIdx, mls_point, u, v, normal, tmp, normal[3], order, c_vec);
-        //#endif
-        mls_point[7] = 255;
-        mls_point[8] = 0;
-        mls_point[9] = 0;
-        ///print_warning(stderr, "Projection onto MLS surface ommited due to a height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
-        //print_info(stderr, "At point: "); cerr_p(mls_point, 3, 0.0001);
+        /// @NOTE: simple approximation of orthogonal projection, in case adjusting the height at (0,0) seems inappropriate
+        // get the u and v coordinates of the closest point
+        u_coord = P_(order_+1,0); // value of u^1*v^0 = u
+        v_coord = P_(1,0);        // value of u^0*v^1 = v
+
+        // compute the value of the polynomial at the nearest point
+        double height = 0.0;
+        double du = 0.0; // the partial derivative of the polynomial w.r.t. u at (u_coord,v_coord)
+        double dv = 0.0; // the partial derivative of the polynomial w.r.t. v at (u_coord,v_coord)
+        int j = 0;
+        u_pow = 1;
+        for (int ui=0; ui<=order_; ui++)
+        {
+          v_pow = 1;
+          for (int vi=0; vi<=order_-ui; vi++)
+          {
+            height += c_vec_[j++] * u_pow * v_pow;
+            v_pow *= v_coord;
+          }
+          u_pow *= u_coord;
+        }
+
+        // move the point to the corresponding surface point
+        Eigen::Vector3d movement = u_coord * u + v_coord * v + h_coord * plane_parameters.start<3>();
+        cloud_fit_->points[cp].x += movement[0];
+        cloud_fit_->points[cp].y += movement[1];
+        cloud_fit_->points[cp].z += movement[2];
+
+        // IMPORTANT: update c_vec[order_+1] and c_vec[1] to hold
       }
 
-      // re-compute surface normal - TODO: update curvature as well after polynomial fit
-      /** WARNING: check this in paper !!! **/
-      n_a[0] = u[0] + normal[0] * c_vec[order+1];
-      n_a[1] = u[1] + normal[1] * c_vec[order+1];
-      n_a[2] = u[2] + normal[2] * c_vec[order+1];
-      n_b[0] = v[0] + normal[0] * c_vec[1];
-      n_b[1] = v[1] + normal[1] * c_vec[1];
-      n_b[2] = v[2] + normal[2] * c_vec[1];
-      cANN::crossNoAlloc (n_a, n_b, n);
+      // "stop" timer
+      sum_ts_polynomial += (ros::Time::now () - ts_tmp).toSec ();
+
+      // re-compute surface normal - TODO: update curvature as well after polynomial fit?
+      ts_tmp = ros::Time::now ();
+      // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively,
+      // evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
+      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * c_vec[order_+1];
+      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * c_vec[1];
+      plane_parameters.start<3>() = n_a.cross (nb).normalize ();
       /*ANNpoint n = annAllocPt(3);
       n[0] = -c_vec[order+1][0];
       n[1] = -c_vec[1][0];
       n[2] = 1;*/
-      /** should we rewrite normal[] as well ??? or compare ... **/
-      double nlen = sqrt (SQR_VECT_LENGTH (n));
-      mls_point[3] = n[0] / nlen;
-      mls_point[4] = n[1] / nlen;
-      mls_point[5] = n[2] / nlen;
 
       /**
        *  5   4   3   2   1   0
@@ -362,8 +382,6 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
         mls_point[11] = (c_vec[5]*e_sum - c_vec[4]*c_vec[3]*c_vec[1] + c_vec[2]*d_sum) / div;
         //cerr << "K=" << mls_point[10] << ", H=" << mls_point[11] << endl;
       }*/
-
-      sum_ts_polynomial += (ros::Time::now () - ts_tmp).toSec ();
     }
 
     // STEP4: Compute local features
@@ -384,6 +402,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
       cloud_fit_->channels[original_chan_size + 6].values[cp] = j3;
       sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
     }
+    // TODO: bool cloud_geometry::nearest::isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
   }
   ROS_INFO ("Fitted points in %g seconds.\n", (ros::Time::now () - ts).toSec ());
   ROS_INFO ("- time spent filtering points: %g seconds.\n", sum_ts_filter);
