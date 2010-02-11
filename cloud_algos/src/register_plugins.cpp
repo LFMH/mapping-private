@@ -5,6 +5,8 @@
 #include <cloud_algos/rotational_estimation.h>
 #include <cloud_algos/region_growing.h>
 
+using namespace cloud_algos;
+
 //register NormalEstimation as a PCD_Algo class
 //PLUGINLIB_REGISTER_CLASS(NormalEstimation, NormalEstimation, PCD_Algo)
 //PLUGINLIB_REGISTER_CLASS(PlanarEstimation, PlanarEstimation, PCD_Algo)

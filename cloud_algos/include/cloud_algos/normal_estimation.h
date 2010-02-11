@@ -2,6 +2,9 @@
 #define CLOUD_ALGOS_NORMAL_ESTIMATION_H
 #include <cloud_algos/cloud_algos.h>
 
+namespace cloud_algos
+{
+
 class NormalEstimation : public CloudAlgo
 {
  public:
@@ -21,8 +24,10 @@ class NormalEstimation : public CloudAlgo
   void init ();
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (const sensor_msgs::PointCloudConstPtr);
+  std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
 };
 
+}
 #endif
+

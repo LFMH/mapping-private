@@ -3,6 +3,7 @@
 #include "cloud_algos/planar_estimation.h"
 #include "cloud_algos/rotational_estimation.h"
 
+using namespace cloud_algos;
 
 int main (int argc, char* argv[])
 {

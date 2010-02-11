@@ -6,6 +6,8 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <ias_sample_consensus/sac_model_rotational.h>
 
+using namespace cloud_algos;
+
 void RegionGrowing::setStopAtCriterion (RegionGrowing::StopAt stop)
 {
   stop_at_ = stop;
@@ -87,8 +89,9 @@ void RegionGrowing::OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPt
   }
 }
 
-std::string RegionGrowing::process (const sensor_msgs::PointCloudConstPtr &cloud)
+std::string RegionGrowing::process (const boost::shared_ptr<const RegionGrowing::InputType> &input)
 {
+  const sensor_msgs::PointCloudConstPtr &cloud = input; // this is to make it clear that InputType must match PointCloud
   if (kdtree_ == NULL)
   {
     kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);

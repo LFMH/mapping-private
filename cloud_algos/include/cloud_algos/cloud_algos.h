@@ -8,13 +8,16 @@
 #include <ros/node_handle.h>
 #include <sensor_msgs/PointCloud.h>
 
+namespace cloud_algos
+{
+
 class CloudAlgo
 {
  public:
   CloudAlgo () {};
   
   typedef void OutputType;
-  typedef void InputType;
+  typedef sensor_msgs::PointCloud InputType;
   virtual std::string default_output_topic () = 0;
   virtual std::string default_input_topic () = 0;
   virtual std::string default_node_name () = 0;
@@ -23,7 +26,7 @@ class CloudAlgo
 
   virtual std::vector<std::string> pre  () = 0;
   virtual std::vector<std::string> post () = 0;
-  virtual std::string process (const sensor_msgs::PointCloudConstPtr&) = 0;
+//  virtual std::string process (const boost::shared_ptr<const InputType>&) = ;
   OutputType output ();
 };
 
@@ -35,12 +38,12 @@ template <class algo>
   : nh_ (nh), a (alg)
   {
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_output_topic (), 5);
-    sub_ = nh_.subscribe (a.default_input_topic (), 1, &CloudAlgoNode<algo>::cloud_cb, this);
+    sub_ = nh_.subscribe (a.default_input_topic (), 1, &CloudAlgoNode<algo>::input_cb, this);
   }
 
-  void cloud_cb (const sensor_msgs::PointCloudConstPtr &cloud)
+  void input_cb (const boost::shared_ptr<const typename algo::InputType> &input)
   {
-    a.process (cloud);
+    a.process (input);
     pub_.publish (a.output());
   }
   
@@ -64,4 +67,6 @@ template <class algo>
   return (0);
 }
 
+}
 #endif
+

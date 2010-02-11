@@ -16,6 +16,8 @@
 
 //#define PI 3.14159265 
 
+using namespace cloud_algos;
+
 typedef std::map<std::pair<int,int>, bool> HoleMap;
 //typedef std::vector<bool> HoleMap;
 

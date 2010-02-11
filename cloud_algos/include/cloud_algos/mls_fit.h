@@ -25,6 +25,9 @@
 #include <point_cloud_mapping/sample_consensus/msac.h>
 #include <point_cloud_mapping/sample_consensus/ransac.h>
 
+namespace cloud_algos
+{
+
 // Moving Least Squares implementation
 class MovingLeastSquares : public CloudAlgo
 {
@@ -64,7 +67,7 @@ class MovingLeastSquares : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (const sensor_msgs::PointCloudConstPtr&);
+  std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
 
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!!
@@ -137,5 +140,6 @@ class MovingLeastSquares : public CloudAlgo
   Eigen::MatrixXf inv_P_weight_Pt_P_weight_;
 };
 
+}
 #endif
 

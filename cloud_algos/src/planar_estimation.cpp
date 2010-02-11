@@ -1,7 +1,9 @@
 #include <cloud_algos/cloud_algos.h>
 #include <cloud_algos/planar_estimation.h>
 
-void PlanarEstimation::init () 
+using namespace cloud_algos;
+
+void PlanarEstimation::init (ros::NodeHandle&) 
 {
 }
 
@@ -11,7 +13,7 @@ std::vector<std::string> PlanarEstimation::pre ()
 std::vector<std::string> PlanarEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string PlanarEstimation::process (const sensor_msgs::PointCloudConstPtr)
+std::string PlanarEstimation::process (const boost::shared_ptr<const PlanarEstimation::InputType>&)
   {return std::string("");}
 
 PlanarEstimation::OutputType PlanarEstimation::output ()

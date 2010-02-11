@@ -4,6 +4,8 @@
 #define THETA(cp,index)  exp( - (points_sqr_distances_[(cp)][(index)]) / (sqr_gauss_param_) )
 
 using namespace std;
+using namespace cloud_algos;
+
 
 /// TODO request this version from Radu :)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +101,7 @@ std::vector<std::string> MovingLeastSquares::post ()
   return provides;
 }
 
-std::string MovingLeastSquares::process (const sensor_msgs::PointCloudConstPtr &cloud)
+std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLeastSquares::InputType> &cloud)
 {
   // TODO Figure out the viewpoint value in the cloud_frame frame
   //geometry_msgs::PointStamped viewpoint_cloud;

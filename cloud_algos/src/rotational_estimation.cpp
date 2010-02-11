@@ -6,6 +6,8 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <ias_sample_consensus/sac_model_rotational.h>
 
+using namespace cloud_algos;
+
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
                          int max_iterations_, sensor_msgs::PointCloud &cloud_synth, mapping_msgs::PolygonalMap &pmap)
@@ -139,7 +141,7 @@ std::vector<std::string> RotationalEstimation::pre ()
 std::vector<std::string> RotationalEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string RotationalEstimation::process (const sensor_msgs::PointCloudConstPtr &cloud)
+std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> &cloud)
 {
   sensor_msgs::PointCloud pc;
   double threshold_ = 0.005;

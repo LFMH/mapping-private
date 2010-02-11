@@ -1,6 +1,8 @@
 #include <cloud_algos/cloud_algos.h>
 #include <cloud_algos/normal_estimation.h>
 
+using namespace cloud_algos;
+
 void NormalEstimation::init () 
 {
 }
@@ -11,7 +13,7 @@ std::vector<std::string> NormalEstimation::pre ()
 std::vector<std::string> NormalEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string NormalEstimation::process (const sensor_msgs::PointCloudConstPtr)
+std::string NormalEstimation::process (const boost::shared_ptr<const NormalEstimation::InputType>&)
   {return std::string("");}
 
 NormalEstimation::OutputType NormalEstimation::output ()

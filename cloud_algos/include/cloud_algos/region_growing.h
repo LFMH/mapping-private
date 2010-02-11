@@ -3,6 +3,9 @@
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 #include <cloud_algos/cloud_algos.h>
 
+namespace cloud_algos
+{
+
 /** This class implements Region Growing. It segments a point cloud */
 class RegionGrowing : public CloudAlgo
 {
@@ -63,7 +66,7 @@ class RegionGrowing : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (const sensor_msgs::PointCloudConstPtr&);
+  std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
   
   void GrowFromPoint (const sensor_msgs::PointCloudConstPtr&, int);
@@ -90,5 +93,6 @@ class RegionGrowing : public CloudAlgo
   StopAt stop_at_;
 };
 
+}
 #endif
 
