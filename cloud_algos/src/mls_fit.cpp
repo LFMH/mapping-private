@@ -99,7 +99,7 @@ std::vector<std::string> MovingLeastSquares::post ()
   return provides;
 }
 
-std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr &cloud)
+std::string MovingLeastSquares::process (const sensor_msgs::PointCloudConstPtr &cloud)
 {
   // TODO Figure out the viewpoint value in the cloud_frame frame
   //geometry_msgs::PointStamped viewpoint_cloud;
@@ -329,8 +329,8 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr &cloud)
 
         // compute the value of the polynomial at the nearest point
         double height = 0.0;
-        double du = 0.0; // the partial derivative of the polynomial w.r.t. u at (u_coord,v_coord)
-        double dv = 0.0; // the partial derivative of the polynomial w.r.t. v at (u_coord,v_coord)
+        //double du = 0.0; // the partial derivative of the polynomial w.r.t. u at (u_coord,v_coord)
+        //double dv = 0.0; // the partial derivative of the polynomial w.r.t. v at (u_coord,v_coord)
         int j = 0;
         u_pow = 1;
         for (int ui=0; ui<=order_; ui++)

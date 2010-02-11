@@ -21,7 +21,7 @@ class CloudAlgo
 
   virtual std::vector<std::string> pre  () = 0;
   virtual std::vector<std::string> post () = 0;
-  virtual std::string process (sensor_msgs::PointCloudConstPtr&) = 0;
+  virtual std::string process (const sensor_msgs::PointCloudConstPtr&) = 0;
   OutputType output ();
 };
 
@@ -36,7 +36,7 @@ template <class algo>
     sub_ = nh_.subscribe <sensor_msgs::PointCloud> ("cloud_pcd", 1, &CloudAlgoNode<algo>::cloud_cb, this);
   }
 
-  void cloud_cb (sensor_msgs::PointCloudConstPtr &cloud)
+  void cloud_cb (const sensor_msgs::PointCloudConstPtr &cloud)
   {
     a.process (cloud);
     pub_.publish (a.output());

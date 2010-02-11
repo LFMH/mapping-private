@@ -5,8 +5,8 @@
 // For extra Eigen functions
 #include <Eigen/Array>
 // if needed:
-//#include <Eigen/LU> // matrix inversion
-//#include <Eigen/Geometry> // cross product
+#include <Eigen/LU> // matrix inversion
+#include <Eigen/Geometry> // cross product
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
@@ -60,7 +60,7 @@ class MovingLeastSquares : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (sensor_msgs::PointCloudConstPtr&);
+  std::string process (const sensor_msgs::PointCloudConstPtr&);
   OutputType output ();
 
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!!

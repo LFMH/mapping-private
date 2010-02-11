@@ -33,7 +33,7 @@ void RegionGrowing::setExtraDimensionIgnore (int dimIdx, double dimVal)
 void RegionGrowing::setMaxNrNN (int max_nr_nn)
   { max_nr_nn_ = max_nr_nn; }
 
-void RegionGrowing::GrowFromPoint (sensor_msgs::PointCloudConstPtr &cloud, int idx)
+void RegionGrowing::GrowFromPoint (const sensor_msgs::PointCloudConstPtr &cloud, int idx)
 {
   std::vector<int> k_indices;
   std::vector<float> k_distances;
@@ -69,7 +69,7 @@ void RegionGrowing::GrowFromPoint (sensor_msgs::PointCloudConstPtr &cloud, int i
   clusters_.push_back (cluster);
 }
 
-void RegionGrowing::OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr &cloud)
+void RegionGrowing::OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr &cloud)
 {
   //FOR EACH POINT
   for (unsigned int i = 0; i < cloud->points.size (); i++)
@@ -78,7 +78,7 @@ void RegionGrowing::OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr &clo
   }
 }
 
-void RegionGrowing::OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr &cloud, std::vector<int> indices)
+void RegionGrowing::OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr &cloud, std::vector<int> indices)
 {
   //FOR EACH POINT
   for (unsigned int i = 0; i < indices.size (); i++)
@@ -87,7 +87,7 @@ void RegionGrowing::OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr &clo
   }
 }
 
-std::string RegionGrowing::process (sensor_msgs::PointCloudConstPtr &cloud)
+std::string RegionGrowing::process (const sensor_msgs::PointCloudConstPtr &cloud)
 {
   if (kdtree_ == NULL)
   {

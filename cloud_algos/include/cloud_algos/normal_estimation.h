@@ -16,7 +16,7 @@ class NormalEstimation : public CloudAlgo
   void init ();
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (sensor_msgs::PointCloudConstPtr);
+  std::string process (const sensor_msgs::PointCloudConstPtr);
   OutputType output ();
 };
 

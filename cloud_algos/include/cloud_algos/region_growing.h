@@ -12,7 +12,7 @@ class RegionGrowing : public CloudAlgo
   struct StopAt {
     /** stop method to decide over a given point. This method should be 
         overriden to implement new stopping criteria */
-    bool stop (sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
     {
       return false;
     }
@@ -25,7 +25,7 @@ class RegionGrowing : public CloudAlgo
     /** set threshold dimension (maximum accepted value) */
     void setChannelDimension (int d) {chIdx_ = d;}
     /** overriden stop method to decide over a given point */
-    bool stop (sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
     {
       return cloud->channels.at (chIdx_).values.at (i) > max_val_;
     }
@@ -40,7 +40,7 @@ class RegionGrowing : public CloudAlgo
     /** set threshold dimension (maximum accepted value) */
     void setChannelDimension (int d) {chIdx_ = d;}
     /** overriden stop method to decide over a given point */
-    bool stop (sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
     {
       return fabs (cloud->channels.at (chIdx_).values.at (i) - cloud->channels.at (chIdx_).values.at (i)) > max_val_;
     }
@@ -59,12 +59,12 @@ class RegionGrowing : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (sensor_msgs::PointCloudConstPtr&);
+  std::string process (const sensor_msgs::PointCloudConstPtr&);
   OutputType output ();
   
-  void GrowFromPoint (sensor_msgs::PointCloudConstPtr&, int);
-  void OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr&);
-  void OptimizedRegionGrowing (sensor_msgs::PointCloudConstPtr&, std::vector<int>);
+  void GrowFromPoint (const sensor_msgs::PointCloudConstPtr&, int);
+  void OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr&);
+  void OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr&, std::vector<int>);
 
   void setStopAtCriterion (StopAt);
   void setRadius (double radius);

@@ -11,7 +11,7 @@ std::vector<std::string> PlanarEstimation::pre ()
 std::vector<std::string> PlanarEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string PlanarEstimation::process (sensor_msgs::PointCloudConstPtr)
+std::string PlanarEstimation::process (const sensor_msgs::PointCloudConstPtr)
   {return std::string("");}
 
 PlanarEstimation::OutputType PlanarEstimation::output ()

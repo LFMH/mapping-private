@@ -11,7 +11,7 @@ std::vector<std::string> NormalEstimation::pre ()
 std::vector<std::string> NormalEstimation::post ()
   {return std::vector<std::string>();}
 
-std::string NormalEstimation::process (sensor_msgs::PointCloudConstPtr)
+std::string NormalEstimation::process (const sensor_msgs::PointCloudConstPtr)
   {return std::string("");}
 
 NormalEstimation::OutputType NormalEstimation::output ()
