@@ -14,7 +14,9 @@ class CloudAlgo
   CloudAlgo () {};
   
   typedef void OutputType;
-  virtual std::string default_topic_name () = 0;
+  typedef void InputType;
+  virtual std::string default_output_topic () = 0;
+  virtual std::string default_input_topic () = 0;
   virtual std::string default_node_name () = 0;
   
   virtual void init (ros::NodeHandle&) = 0;
@@ -32,8 +34,8 @@ template <class algo>
   CloudAlgoNode (ros::NodeHandle& nh, algo alg)
   : nh_ (nh), a (alg)
   {
-    pub_ = nh_.advertise <typename algo::OutputType> (a.default_topic_name (), 5);
-    sub_ = nh_.subscribe <sensor_msgs::PointCloud> ("cloud_pcd", 1, &CloudAlgoNode<algo>::cloud_cb, this);
+    pub_ = nh_.advertise <typename algo::OutputType> (a.default_output_topic (), 5);
+    sub_ = nh_.subscribe <typename algo::InputType> (a.default_output_topic, 1, &CloudAlgoNode<algo>::cloud_cb);
   }
 
   void cloud_cb (const sensor_msgs::PointCloudConstPtr &cloud)

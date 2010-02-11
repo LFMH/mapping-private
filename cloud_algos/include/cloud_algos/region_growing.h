@@ -49,8 +49,12 @@ class RegionGrowing : public CloudAlgo
   };
 
   typedef sensor_msgs::PointCloud OutputType;
+  typedef sensor_msgs::PointCloud InputType;
 
-  std::string default_topic_name () 
+  std::string default_input_topic ()
+    {return std::string ("cloud_pcd");}
+
+  std::string default_output_topic ()
     {return std::string ("cloud_pcd");};
 
   std::string default_node_name () 

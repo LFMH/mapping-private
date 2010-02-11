@@ -48,9 +48,13 @@ class MovingLeastSquares : public CloudAlgo
   double sqr_gauss_param_; // parameter for distance based weighting of neighbors (radius_*radius_ works ok)
   geometry_msgs::PointStamped *viewpoint_cloud_; // viewpoint towards which the normals have to point
 
-  // Topic name
-  std::string default_topic_name ()
+  // Topic name to advertise
+  std::string default_output_topic ()
     {return std::string ("cloud_mls");}
+
+  // Topic name to subscribe to
+  std::string default_input_topic ()
+    {return std::string ("cloud_pcd");}
 
   // Node name
   std::string default_node_name ()
