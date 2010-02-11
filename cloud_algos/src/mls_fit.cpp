@@ -140,6 +140,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       //case FIXED_K:     cloud_fit_ = generateDownsampled(cloud, step_); break;
       default: // COPY
       {
+        ROS_INFO ("Initial point positions are copied from the original cloud.");
         copied_points = true;
         filter_points_ = false; // no use of filtering them if they are the same as the measurements
         cloud_fit_->header   = cloud->header;
@@ -167,7 +168,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     cloud_fit_->channels[original_chan_size + 4].name = "j1";
     cloud_fit_->channels[original_chan_size + 5].name = "j2";
     cloud_fit_->channels[original_chan_size + 6].name = "j3";
+    ROS_INFO ("Added extra channels: nx ny nz curvature j1 j2 j3");
   }
+  else
+    ROS_INFO ("Added extra channels: nx ny nz curvature");
 
   // Resize the extra channels
   for (size_t d = original_chan_size; d < cloud_fit_->channels.size (); d++)
@@ -315,12 +319,17 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       c_vec_ = inv_P_weight_Pt_P_weight_ * f_vec_;
 
       // project point onto the surface - TODO: make (at least approximate) orthogonal projection
+      double du = 0.0; // value of partial derivative at the current point, see below
+      double dv = 0.0; // value of partial derivative at the current point, see below
       if (c_vec_[0]*c_vec_[0] < points_sqr_distances_[cp][0]*3) /// maybe make some different check here !!!
       {
         //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
         cloud_fit_->points[cp].x += c_vec_[0] * plane_parameters[0];
         cloud_fit_->points[cp].y += c_vec_[0] * plane_parameters[1];
         cloud_fit_->points[cp].z += c_vec_[0] * plane_parameters[2];
+        // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively evaluated at (0,0)
+        du = c_vec_[order_+1];
+        dv = c_vec_[1];
       }
       else
       {
@@ -330,9 +339,8 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         v_coord = P_(1,0);        // value of u^0*v^1 = v
 
         // compute the value of the polynomial at the nearest point
+        // and the partial derivative of the polynomial w.r.t. u and v at (u_coord,v_coord)
         double height = 0.0;
-        //double du = 0.0; // the partial derivative of the polynomial w.r.t. u at (u_coord,v_coord)
-        //double dv = 0.0; // the partial derivative of the polynomial w.r.t. v at (u_coord,v_coord)
         int j = 0;
         u_pow = 1;
         for (int ui=0; ui<=order_; ui++)
@@ -340,7 +348,11 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           v_pow = 1;
           for (int vi=0; vi<=order_-ui; vi++)
           {
-            height += c_vec_[j++] * u_pow * v_pow;
+            double term = c_vec_[j] * u_pow * v_pow;
+            height += term;
+            du += ui * term / u_coord;
+            dv += vi * term / v_coord;
+            j++;
             v_pow *= v_coord;
           }
           u_pow *= u_coord;
@@ -351,8 +363,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         cloud_fit_->points[cp].x += movement[0];
         cloud_fit_->points[cp].y += movement[1];
         cloud_fit_->points[cp].z += movement[2];
-
-        // IMPORTANT: update c_vec[order_+1] and c_vec[1] to hold
       }
 
       // "stop" timer
@@ -360,10 +370,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
       // re-compute surface normal - TODO: update curvature as well after polynomial fit?
       ts_tmp = ros::Time::now ();
-      // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively,
-      // evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * c_vec_[order_+1];
-      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * c_vec_[1];
+      // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
+      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * du;
+      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * dv;
       //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
       //plane_parameters[0] = n[0];
       //plane_parameters[1] = n[1];
@@ -374,6 +383,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       n[0] = -c_vec[order+1][0];
       n[1] = -c_vec[1][0];
       n[2] = 1;*/
+      sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
 
       /**
        *  5   4   3   2   1   0
@@ -381,7 +391,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
        *  a   b   d   c   e   f
       **/
 
-      /// NOT SURE THIS IS WORKING !!! CHECK IN PAPER
       /*if (order == 2)
       {
         // Calculating Gaussian curvature K and mean curvature H
