@@ -32,19 +32,21 @@ class MovingLeastSquares : public CloudAlgo
 
   // Output type
   typedef sensor_msgs::PointCloud OutputType;
+  typedef sensor_msgs::PointCloud InputType;
 
   // Options
   enum GenerationMethod {COPY, FILLING, CLOSE, SURROUNDING, ADAPTIVE, FIXED_K};
-  GenerationMethod point_generation_ = COPY; // method for generating the points to be fit to the underlying surface
+  GenerationMethod point_generation_; // method for generating the points to be fit to the underlying surface
   enum TangentMethod {PCA, WPCA, IWPCA, SAC};
-  TangentMethod approximating_tangent_ = PCA; // method for getting the approximate tangent plane of the underlying surface
-  double radius_ = 0.02;         // search radius for getting the nearest neighbors
-  double max_nn_ = 30;           // maximum number of nearest neighbors to consider
-  double order_ = 3;             // order of the polynomial to be fit
-  bool   filter_points_ = false; // should the generated/provided points be filtered based on proximity to the underlying surface?
-  bool  polynomial_fit_ = true;  // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
-  bool compute_moments_ = false; // switch to compute moment invariants (j1, j2, j3)
-  geometry_msgs::PointStamped viewpoint_cloud_; // viewpoint towards which the normals have to point
+  TangentMethod approximating_tangent_; // method for getting the approximate tangent plane of the underlying surface
+  double radius_;          // search radius for getting the nearest neighbors
+  double max_nn_;          // maximum number of nearest neighbors to consider
+  double order_;           // order of the polynomial to be fit
+  bool filter_points_;     // should the generated/provided points be filtered based on proximity to the underlying surface?
+  bool polynomial_fit_;    // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
+  bool compute_moments_;   // switch to compute moment invariants (j1, j2, j3)
+  double sqr_gauss_param_; // parameter for distance based weighting of neighbors (radius_*radius_ works ok)
+  geometry_msgs::PointStamped *viewpoint_cloud_; // viewpoint towards which the normals have to point
 
   // Topic name
   std::string default_topic_name ()
@@ -58,7 +60,7 @@ class MovingLeastSquares : public CloudAlgo
   void init (ros::NodeHandle&);
   std::vector<std::string> pre  ();
   std::vector<std::string> post ();
-  std::string process (sensor_msgs::PointCloudConstPtr);
+  std::string process (sensor_msgs::PointCloudConstPtr&);
   OutputType output ();
 
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!!
@@ -76,7 +78,19 @@ class MovingLeastSquares : public CloudAlgo
 
   // Constructor-Destructor
   MovingLeastSquares () : CloudAlgo ()
-      {clear ();}
+  {
+    clear ();
+    point_generation_ = COPY;
+    approximating_tangent_ = PCA;
+    radius_ = 0.03;
+    max_nn_ = 30;
+    order_ = 3;
+    filter_points_ = false;
+    polynomial_fit_ = true;
+    compute_moments_ = false;
+    sqr_gauss_param_ = radius_*radius_;
+    viewpoint_cloud_ = NULL;
+  }
   ~MovingLeastSquares ()
   {
     points_indices_.clear ();
@@ -98,25 +112,25 @@ class MovingLeastSquares : public CloudAlgo
 
   // Kd-tree stuff
   cloud_kdtree::KdTree *kdtree_;
-  vector<vector<int> > points_indices_;
-  vector<vector<float> > points_sqr_distances_;
+  std::vector<std::vector<int> > points_indices_;
+  std::vector<std::vector<float> > points_sqr_distances_;
 
   // number of coefficients, to be computed from the provided order_
   int nr_coeff_;
 
   // diagonal weight matrix
-  MatrixXf weight_;
+  Eigen::MatrixXf weight_;
   // matrix for the powers of the polynomial representation evaluated for the neighborhood
-  MatrixXf P_;
+  Eigen::MatrixXf P_;
   // vector for storing function values
-  VectorXf f_vec_;
+  Eigen::VectorXf f_vec_;
   // vector for storing coefficients
-  VectorXf c_vec_;
+  Eigen::VectorXf c_vec_;
   // matrices for intermediary results
-  MatrixXf P_weight_;
-  MatrixXf P_weight_Pt_;
-  MatrixXf inv_P_weight_Pt_;
-  MatrixXf inv_P_weight_Pt_P_weight_;
+  Eigen::MatrixXf P_weight_;
+  Eigen::MatrixXf P_weight_Pt_;
+  Eigen::MatrixXf inv_P_weight_Pt_;
+  Eigen::MatrixXf inv_P_weight_Pt_P_weight_;
 };
 
 #endif

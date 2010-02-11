@@ -33,8 +33,9 @@ template <class algo>
   : nh_ (nh), a (alg)
   {
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_topic_name (), 5);
+    sub_ = nh_.subscribe <sensor_msgs::PointCloud> ("cloud_pcd", 1, &CloudAlgoNode<algo>::cloud_cb, this);
   }
-  
+
   void cloud_cb (sensor_msgs::PointCloudConstPtr &cloud)
   {
     a.process (cloud);
@@ -43,6 +44,7 @@ template <class algo>
   
   ros::NodeHandle& nh_;
   ros::Publisher pub_;
+  ros::Subscriber sub_;
 
   algo& a;
 };

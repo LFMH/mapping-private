@@ -7,16 +7,16 @@ rosbuild_add_boost_directories()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-ROSBUILD_ADD_LIBRARY (cloud_algos
-#  src/normal_estimation.cpp
-#  src/planar_estimation.cpp
-  src/rotational_estimation.cpp
-  src/region_growing.cpp
-  src/register_plugins.cpp
-)
+#ROSBUILD_ADD_LIBRARY (cloud_algos
+##  src/normal_estimation.cpp
+##  src/planar_estimation.cpp
+#  src/rotational_estimation.cpp
+#  src/region_growing.cpp
+#  src/register_plugins.cpp
+#)
 
-rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
-target_link_libraries (cloud_algos_test cloud_algos)
+#rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
+#target_link_libraries (cloud_algos_test cloud_algos)
 
 #rosbuild_add_executable (normal_estimation_node src/normal_estimation.cpp)
 #set_target_properties (normal_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

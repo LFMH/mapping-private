@@ -3,6 +3,8 @@
 
 #define THETA(cp,index)  exp( - (points_sqr_distances_[(cp)][(index)]) / (sqr_gauss_param_) )
 
+using namespace std;
+
 /// TODO request this version from Radu :)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal
@@ -53,7 +55,7 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
 
   // allocating space for "global" matrices - TODO here?
   nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
-  weight_ = MatrixXf::Zero (max_nn_, max_nn_);
+  weight_ = Eigen::MatrixXf::Zero (max_nn_, max_nn_);
   P_.resize (nr_coeff_, max_nn_);
   f_vec_.resize (max_nn_);
   c_vec_.resize (nr_coeff_);
@@ -97,11 +99,11 @@ std::vector<std::string> MovingLeastSquares::post ()
   return provides;
 }
 
-std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
+std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr &cloud)
 {
-  // Figure out the viewpoint value in the cloud_frame frame
-  geometry_msgs::PointStamped viewpoint_cloud;
-  getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
+  // TODO Figure out the viewpoint value in the cloud_frame frame
+  //geometry_msgs::PointStamped viewpoint_cloud;
+  //getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
 
   // Timers
   ros::Time global_time = ros::Time::now ();
@@ -117,7 +119,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
     ts = ros::Time::now ();
     complete_tree = true;
     /// @TODO: should we also set epsilon / bucket size?
-    kdtree_ = new cloud_kdtree::KdTreeANN (cloud);
+    kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);
     ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
 
@@ -147,7 +149,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
   }
 
   // Allocate the extra needed channels
-  size_t original_chan_size = cloud_normals_.channels.size ();
+  size_t original_chan_size = cloud_fit_->channels.size ();
   if (compute_moments_)
     cloud_fit_->channels.resize (original_chan_size + 7);
   else
@@ -166,16 +168,16 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
   }
 
   // Resize the extra channels
-  for (size_t d = original_chan_size; d < cloud_fit_.channels.size (); d++)
+  for (size_t d = original_chan_size; d < cloud_fit_->channels.size (); d++)
   {
     cloud_fit_->channels[d].values.resize (cloud_fit_->points.size ());
     ROS_INFO ("Added channel: %s", cloud_fit_->channels[d].name.c_str ());
   }
 
   // Allocate enough space for point indices and distances
-  points_indices_.resize (cloud_fit_.points.size ());
-  points_sqr_distances_.resize (cloud_fit_.points.size ());
-  /*for (size_t i = 0; i < cloud_fit_.points.size (); i++)
+  points_indices_.resize (cloud_fit_->points.size ());
+  points_sqr_distances_.resize (cloud_fit_->points.size ());
+  /*for (size_t i = 0; i < cloud_fit_->points.size (); i++)
   {
     // needed only for K searches
     points_indices_[i].resize (k_);
@@ -196,7 +198,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
   }
   else
   {
-    vector<geometry_msgs::Point32>::iterator pit = cloud_fit_.points.begin ();
+    vector<geometry_msgs::Point32>::iterator pit = cloud_fit_->points.begin ();
     vector<vector<int> >::iterator iit = points_indices_.begin ();
     vector<vector<float> >::iterator dit = points_sqr_distances_.begin ();
     for (/*to avoid long/multiple lines*/; pit != cloud_fit_->points.end (); pit++, iit++, dit++)
@@ -214,7 +216,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
   double sum_ts_extra = 0.0;
   /// TODO #pragma omp parallel for schedule(dynamic) and boost::mutex m_lock_; .lock () / .unlock ()
   ///      which combination of parallelism/global variables is best?
-  for (size_t cp = 0; cp < viewpoint_cloud_->points.size (); cp++)
+  for (size_t cp = 0; cp < cloud_fit_->points.size (); cp++)
   {
     // STEP1: Check neighborhood
     if (filter_points_)
@@ -269,10 +271,10 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
       // build up matrices for getting the coefficients
       Eigen::Vector3d de_meaned;
       double u_coord, v_coord, u_pow, v_pow;
-      for (size_t i = points_sqr_distances_[cp].begin (); dit != points_sqr_distances_[cp].end (); dit++)
+      for (size_t i = 0; i != points_indices_[cp].size (); i++)
       {
         // (re-)compute weights
-        weights_(i,i) = THETA(cp,i);
+        weight_(i,i) = THETA(cp,i);
 
         // transforming coordinates
         de_meaned[0] = cloud->points[points_indices_[cp][i]].x - cloud_fit_->points[cp].x;
@@ -304,18 +306,19 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
 
       // compute coefficients
       P_weight_ = P_ * weight_;
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
+      // TODO .part<Eigen::SelfAdjoint>()
+      P_weight_Pt_ = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
       inv_P_weight_Pt_.computeInverse(&P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
       inv_P_weight_Pt_P_weight_ = inv_P_weight_Pt_ * P_weight_;
       c_vec_ = inv_P_weight_Pt_P_weight_ * f_vec_;
 
       // project point onto the surface - TODO: make (at least approximate) orthogonal projection
-      if (c_vec_[0]*c_vec_[0] < points_sqr_distances_[cp][i]*3) /// maybe make some different check here !!!
+      if (c_vec_[0]*c_vec_[0] < points_sqr_distances_[cp][0]*3) /// maybe make some different check here !!!
       {
         //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
-        cloud_fit_->points[cp].x += c_vec[0] * plane_parameters[0];
-        cloud_fit_->points[cp].y += c_vec[0] * plane_parameters[1];
-        cloud_fit_->points[cp].z += c_vec[0] * plane_parameters[2];
+        cloud_fit_->points[cp].x += c_vec_[0] * plane_parameters[0];
+        cloud_fit_->points[cp].y += c_vec_[0] * plane_parameters[1];
+        cloud_fit_->points[cp].z += c_vec_[0] * plane_parameters[2];
       }
       else
       {
@@ -342,7 +345,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
         }
 
         // move the point to the corresponding surface point
-        Eigen::Vector3d movement = u_coord * u + v_coord * v + h_coord * plane_parameters.start<3>();
+        Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.start<3>();
         cloud_fit_->points[cp].x += movement[0];
         cloud_fit_->points[cp].y += movement[1];
         cloud_fit_->points[cp].z += movement[2];
@@ -357,9 +360,14 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
       ts_tmp = ros::Time::now ();
       // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively,
       // evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * c_vec[order_+1];
-      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * c_vec[1];
-      plane_parameters.start<3>() = n_a.cross (nb).normalize ();
+      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * c_vec_[order_+1];
+      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * c_vec_[1];
+      //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
+      //plane_parameters[0] = n[0];
+      //plane_parameters[1] = n[1];
+      //plane_parameters[2] = n[2];
+      plane_parameters.start<3>() = n_a.cross (n_b);
+      plane_parameters.start<3>().normalize ();
       /*ANNpoint n = annAllocPt(3);
       n[0] = -c_vec[order+1][0];
       n[1] = -c_vec[1][0];
@@ -385,8 +393,8 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
     }
 
     // STEP4: Compute local features
-    if (viewpoint_cloud_) /// @NOTE: the point where the normal is placed is from cloud_fit
-      cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_fit_->points[cp], viewpoint_cloud_);
+    if (viewpoint_cloud_ == NULL) /// @NOTE: the point where the normal is placed is from cloud_fit
+      cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_fit_->points[cp], *viewpoint_cloud_);
     cloud_fit_->channels[original_chan_size + 0].values[cp] = plane_parameters (0);
     cloud_fit_->channels[original_chan_size + 1].values[cp] = plane_parameters (1);
     cloud_fit_->channels[original_chan_size + 2].values[cp] = plane_parameters (2);
@@ -412,7 +420,7 @@ std::string MovingLeastSquares::process (sensor_msgs::PointCloudConstPtr cloud)
 
   // Finish
   ROS_INFO ("MLS fit done in %g seconds.", (ros::Time::now () - global_time).toSec ());
-  pub_.publish (cloud_fit_);
+  pub_.publish (*cloud_fit_);
   return std::string("ok");
 }
 
