@@ -35,7 +35,7 @@ template <class algo>
   : nh_ (nh), a (alg)
   {
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_output_topic (), 5);
-    sub_ = nh_.subscribe <typename algo::InputType> (a.default_output_topic, 1, &CloudAlgoNode<algo>::cloud_cb);
+    sub_ = nh_.subscribe (a.default_input_topic (), 1, &CloudAlgoNode<algo>::cloud_cb, this);
   }
 
   void cloud_cb (const sensor_msgs::PointCloudConstPtr &cloud)

@@ -12,7 +12,7 @@ class NormalEstimation : public CloudAlgo
     {return std::string ("cloud_pcd");}
 
 
-  std::string default_output_topic () 
+  std::string default_output_topic ()
     {return std::string ("cloud_normals");};
 
   std::string default_node_name () 
