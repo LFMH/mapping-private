@@ -14,6 +14,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
   src/rotational_estimation.cpp
   src/region_growing.cpp
   src/register_plugins.cpp
+  src/depth_image_triangulation.cpp
 )
 
 #rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
@@ -30,3 +31,6 @@ set_target_properties (rotational_estimation_node PROPERTIES COMPILE_FLAGS -DCRE
 
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangulation.cpp)
+set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
