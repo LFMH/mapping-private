@@ -11,13 +11,13 @@ class PlanarEstimation : public CloudAlgo
   typedef sensor_msgs::PointCloud OutputType;
   typedef geometry_msgs::Point32 InputType;
 
-  std::string default_input_topic ()
+  static std::string default_input_topic ()
     {return std::string ("cloud_pcd");}
 
-  std::string default_output_topic ()
+  static std::string default_output_topic ()
     {return std::string ("cloud_normals");};
 
-  std::string default_node_name () 
+  static std::string default_node_name () 
     {return std::string ("normal_estimation_node");};
 
   void init (ros::NodeHandle&);

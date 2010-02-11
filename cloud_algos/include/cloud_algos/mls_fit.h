@@ -52,15 +52,15 @@ class MovingLeastSquares : public CloudAlgo
   geometry_msgs::PointStamped *viewpoint_cloud_; // viewpoint towards which the normals have to point
 
   // Topic name to advertise
-  std::string default_output_topic ()
+  static std::string default_output_topic ()
     {return std::string ("cloud_mls");}
 
   // Topic name to subscribe to
-  std::string default_input_topic ()
+  static std::string default_input_topic ()
     {return std::string ("cloud_pcd");}
 
   // Node name
-  std::string default_node_name ()
+  static std::string default_node_name ()
     {return std::string ("mls_fit_node");}
 
   // Algorithm methods
