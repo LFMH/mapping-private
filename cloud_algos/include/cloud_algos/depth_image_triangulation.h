@@ -39,19 +39,19 @@ class DepthImageTriangulation : public CloudAlgo
   typedef mapping_msgs::PolygonalMap OutputType;
 
   // Topic name to advertise
-  std::string default_output_topic ()
+  static std::string default_output_topic ()
   {
     return std::string ("cloud_triangulated");
   }
   
   // Topic name to subscribe to
-  std::string default_input_topic ()
+  static std::string default_input_topic ()
     {
-      return std::string ("cloud_pcd");
+      return std::string ("/cloud_pcd");
     }
 
   // Node name
-  std::string default_node_name ()
+  static std::string default_node_name ()
     {
       return std::string ("depth_image_triangulation_node");
     }

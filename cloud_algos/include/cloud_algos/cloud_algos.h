@@ -64,7 +64,7 @@ template <class algo>
 template <class algo>
   int standalone_node (int argc, char* argv[])
 {
-  ros::init (argc, argv, algo::default_node_name ());
+  ros::init (argc, argv, algo::default_node_name());
   algo a;
   ros::NodeHandle nh ("~");
   CloudAlgoNode<algo> c(nh, a);
