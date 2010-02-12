@@ -10,8 +10,44 @@
 #include <iostream>
 #include <math.h>
 #include <map>
+//for savePCDFile ()
+#include <point_cloud_mapping/cloud_io.h>
 
 using namespace cloud_algos;
+
+
+
+void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<const InputType>& cloud_in)
+{
+  cloud_with_line_ = *cloud_in;
+  int scan_id = 0;
+  int point_id = 0;
+  int temp_point_id = 0;
+  ros::Time ts = ros::Time::now ();
+  cloud_with_line_.channels.resize(cloud_with_line_.channels.size()+1);
+  cloud_with_line_.channels[cloud_with_line_.channels.size()-1].name = "line";
+  for (unsigned int j = 0; j < cloud_with_line_.channels.size(); j++)
+  {
+    if ( cloud_with_line_.channels[j].name == "index")
+    {
+      cloud_with_line_.channels[j+1].values.resize(cloud_with_line_.channels[j].values.size());
+      for (unsigned int k = 0; k < cloud_with_line_.channels[j].values.size()-1; k++)
+      {
+        point_id = cloud_with_line_.channels[j].values[k];
+        temp_point_id =  cloud_with_line_.channels[j].values[k+1];
+        cloud_with_line_.channels[j+1].values[k] = scan_id;
+        //new line found
+        if (temp_point_id < point_id)
+        {
+          scan_id++;
+        }
+        
+      }
+    }
+  }
+  //cloud_io::savePCDFile ("cloud_line.pcd", cloud_with_line_, false);
+  ROS_INFO("Scan ID: %d, Point ID: %d Completed in %g seconds", scan_id, point_id,  (ros::Time::now () - ts).toSec ());
+}
 
 void DepthImageTriangulation::init (ros::NodeHandle &nh)
 {
@@ -30,9 +66,14 @@ std::vector<std::string> DepthImageTriangulation::post ()
     return std::vector<std::string>();
   }
 
-std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud)
+std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
   {
-    ROS_INFO("PointCloud msg with size %ld received", cloud->points.size());
+    
+    ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
+    {
+      boost::mutex::scoped_lock lock(cloud_lock_);
+      get_scan_and_point_id(cloud_in);
+    }
     return std::string("");
   }
 

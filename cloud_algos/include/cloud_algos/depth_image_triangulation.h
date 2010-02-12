@@ -27,12 +27,17 @@
 
 //PolygonalMap to output triangles
 #include <mapping_msgs/PolygonalMap.h>
+
+//boost
+#include <boost/thread/mutex.hpp>
+
 namespace cloud_algos
 {
 
 class DepthImageTriangulation : public CloudAlgo
 {
  public:
+ 
 
   // Input/Output type
   typedef sensor_msgs::PointCloud InputType;
@@ -62,7 +67,10 @@ class DepthImageTriangulation : public CloudAlgo
   std::vector<std::string> post ();
   std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
-  //get scan and point id for hokuyo scans
+  /*****************************************************************************
+   * \brief  get scan and point id for hokuyo scans
+   * \param sensor_msg::PointCloud
+   ******************************************************************************/
   void get_scan_and_point_id (const boost::shared_ptr<const InputType>&);
 
 
@@ -77,8 +85,14 @@ class DepthImageTriangulation : public CloudAlgo
   }
 
 private:
+  //lock the function when restoring line id
+  //NB: pointer because mutex is not copyable
+  boost::mutex  cloud_lock_;
   // ROS stuff
   ros::NodeHandle nh_;
+
+    // ROS messages
+  sensor_msgs::PointCloud cloud_with_line_;
 };
 
 }
