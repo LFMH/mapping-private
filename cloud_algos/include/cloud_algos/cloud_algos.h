@@ -34,7 +34,7 @@ template <class algo>
   class CloudAlgoNode
 {
  public:
-  CloudAlgoNode (ros::NodeHandle& nh, algo alg)
+  CloudAlgoNode (ros::NodeHandle& nh, algo &alg)
   : nh_ (nh), a (alg)
   {
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_output_topic (), 5);
