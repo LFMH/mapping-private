@@ -43,8 +43,8 @@ class MovingLeastSquares : public CloudAlgo
   enum TangentMethod {PCA, WPCA, IWPCA, SAC};
   TangentMethod approximating_tangent_; // method for getting the approximate tangent plane of the underlying surface
   double radius_;          // search radius for getting the nearest neighbors
-  double max_nn_;          // maximum number of nearest neighbors to consider
-  double order_;           // order of the polynomial to be fit
+  int max_nn_;             // maximum number of nearest neighbors to consider
+  int order_;              // order of the polynomial to be fit
   bool filter_points_;     // should the generated/provided points be filtered based on proximity to the underlying surface?
   bool polynomial_fit_;    // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
   bool compute_moments_;   // switch to compute moment invariants (j1, j2, j3)
@@ -79,14 +79,32 @@ class MovingLeastSquares : public CloudAlgo
   // Clearing previously set data
   void clear ()
   {
-    kdtree_ = NULL;
-    cloud_fit_ = NULL;
+    points_indices_.clear ();
+    points_sqr_distances_.clear ();
+    if (kdtree_ != NULL)
+    {
+      delete kdtree_;
+      kdtree_ = NULL;
+    }
+    if (cloud_fit_ != NULL)
+    {
+      delete cloud_fit_;
+      cloud_fit_ = NULL;
+    }
+    if (viewpoint_cloud_ != NULL)
+    {
+      delete viewpoint_cloud_;
+      viewpoint_cloud_ = NULL;
+    }
   }
 
   // Constructor-Destructor
   MovingLeastSquares () : CloudAlgo ()
   {
-    clear ();
+    kdtree_ = NULL;
+    cloud_fit_ = NULL;
+    viewpoint_cloud_ = NULL;
+
     point_generation_ = COPY;
     approximating_tangent_ = PCA;
     radius_ = 0.03;
@@ -100,12 +118,7 @@ class MovingLeastSquares : public CloudAlgo
   }
   ~MovingLeastSquares ()
   {
-    points_indices_.clear ();
-    points_sqr_distances_.clear ();
-    if (kdtree_ != NULL)
-      delete kdtree_;
-    if (cloud_fit_ != NULL)
-      delete cloud_fit_;
+    clear ();
   }
 
  private:
@@ -125,19 +138,23 @@ class MovingLeastSquares : public CloudAlgo
   // number of coefficients, to be computed from the provided order_
   int nr_coeff_;
 
+  // TODO should these be floats instead? would that work with double vectors we use/get from elsewhere
+
+  /*
   // diagonal weight matrix
-  Eigen::MatrixXf weight_;
+  Eigen::MatrixXd weight_;
   // matrix for the powers of the polynomial representation evaluated for the neighborhood
-  Eigen::MatrixXf P_;
+  Eigen::MatrixXd P_;
   // vector for storing function values
-  Eigen::VectorXf f_vec_;
+  Eigen::VectorXd f_vec_;
   // vector for storing coefficients
-  Eigen::VectorXf c_vec_;
+  Eigen::VectorXd c_vec_;
   // matrices for intermediary results
-  Eigen::MatrixXf P_weight_;
-  Eigen::MatrixXf P_weight_Pt_;
-  Eigen::MatrixXf inv_P_weight_Pt_;
-  Eigen::MatrixXf inv_P_weight_Pt_P_weight_;
+  Eigen::MatrixXd P_weight_;
+  Eigen::MatrixXd P_weight_Pt_;
+  Eigen::MatrixXd inv_P_weight_Pt_;
+  Eigen::MatrixXd inv_P_weight_Pt_P_weight_;
+  //*/
 };
 
 }

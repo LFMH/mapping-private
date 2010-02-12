@@ -10,7 +10,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
-  src/mls_fit.cpp
+#  src/mls_fit.cpp
   src/rotational_estimation.cpp
   src/region_growing.cpp
   src/register_plugins.cpp

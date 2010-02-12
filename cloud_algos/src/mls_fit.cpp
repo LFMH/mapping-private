@@ -54,17 +54,6 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
   // node handler and publisher
   nh_ = nh;
   pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
-
-  // allocating space for "global" matrices - TODO here?
-  nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
-  weight_ = Eigen::MatrixXf::Zero (max_nn_, max_nn_);
-  P_.resize (nr_coeff_, max_nn_);
-  f_vec_.resize (max_nn_);
-  c_vec_.resize (nr_coeff_);
-  P_weight_.resize (nr_coeff_, max_nn_);
-  P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
-  inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
-  inv_P_weight_Pt_P_weight_.resize (nr_coeff_, max_nn_);
 }
 
 std::vector<std::string> MovingLeastSquares::pre ()
@@ -103,6 +92,9 @@ std::vector<std::string> MovingLeastSquares::post ()
 
 std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLeastSquares::InputType> &cloud)
 {
+  // TODO where to put this?
+  clear ();
+
   // TODO Figure out the viewpoint value in the cloud_frame frame
   //geometry_msgs::PointStamped viewpoint_cloud;
   //getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
@@ -143,6 +135,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         ROS_INFO ("Initial point positions are copied from the original cloud.");
         copied_points = true;
         filter_points_ = false; // no use of filtering them if they are the same as the measurements
+        cloud_fit_ = new sensor_msgs::PointCloud ();
         cloud_fit_->header   = cloud->header;
         cloud_fit_->points   = cloud->points;
         cloud_fit_->channels = cloud->channels;
@@ -168,10 +161,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     cloud_fit_->channels[original_chan_size + 4].name = "j1";
     cloud_fit_->channels[original_chan_size + 5].name = "j2";
     cloud_fit_->channels[original_chan_size + 6].name = "j3";
-    ROS_INFO ("Added extra channels: nx ny nz curvature j1 j2 j3");
   }
-  else
-    ROS_INFO ("Added extra channels: nx ny nz curvature");
 
   // Resize the extra channels
   for (size_t d = original_chan_size; d < cloud_fit_->channels.size (); d++)
@@ -211,7 +201,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       kdtree_->radiusSearch (*pit, radius_, *iit, *dit, max_nn_);
   }
   /// TODO compare to fixed k search with k = average neighborhood size
-  ROS_INFO ("Nearest neighbors found in %g seconds.\n", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
 
   // Go through all the points that have to be fitted
   ts = ros::Time::now ();
@@ -231,6 +221,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       /// @TODO get it from _Clouds/src/ResamplingMLS/RMLS.h (not important for general use)
       sum_ts_filter += (ros::Time::now () - ts_tmp).toSec ();
     }
+    //cerr << "original point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
     // STEP2: Get a good plane approximating the local surface and project point onto it (+ other features)
     ts_tmp = ros::Time::now ();
@@ -256,12 +247,31 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       }
     }
     sum_ts_tangent += (ros::Time::now () - ts_tmp).toSec ();
+    //cerr << "plane_parameters:" << endl << plane_parameters << endl;
+    if (cp == 0)
+      cerr << "projd point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
     // STEP3: Perform polynomial fitting
     if (polynomial_fit_)
     {
       // initialize timer
       ts_tmp = ros::Time::now ();
+
+      // allocating space for "global" matrices - TODO here?
+      nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
+      // TODO for some reason if defined elsewhere they produce random segmentation faults
+      Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      Eigen::MatrixXd P_(nr_coeff_, max_nn_);
+      Eigen::VectorXd f_vec_(max_nn_);
+      Eigen::VectorXd c_vec_; //(nr_coeff_);
+      Eigen::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
+      Eigen::MatrixXd P_weight_Pt_; //(nr_coeff_, nr_coeff_);
+      Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
+      Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
+      /*weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      P_.resize (nr_coeff_, max_nn_);
+      f_vec_.resize (max_nn_);
+      inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
 
       // update neighborhood, since point was projected
       /// TODO: leaving this out, as it is not as important
@@ -272,6 +282,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // get local coordinate system
       Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
       Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
+      //cout << "sum of dot product of local coordinate axes: " << u.dot (v) + u.dot (plane_parameters.start<3>()) + v.dot (plane_parameters.start<3>()) << endl;
       // TODO is this faster or: getCoordinateSystemOnPlane (plane_parameters, u, v);
 
       // build up matrices for getting the coefficients
@@ -309,14 +320,30 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         }
         //cerr << "==============" << endl;
       }
+      //cerr << "weights:" << endl << weight_.diagonal () << endl;
+      if (cp == 0)
+        cerr << f_vec_.transpose () << endl;
+      //cerr << "term matrix:" << P_ << endl;
 
       // compute coefficients
       P_weight_ = P_ * weight_;
       // TODO .part<Eigen::SelfAdjoint>()
       P_weight_Pt_ = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
-      inv_P_weight_Pt_.computeInverse(&P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
+      if (cp == 0)
+        cout << P_weight_Pt_ << endl;
+      P_weight_Pt_.computeInverse(&inv_P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
+      if (cp == 0)
+        cout << "inverse:" << endl << inv_P_weight_Pt_ << endl;
       inv_P_weight_Pt_P_weight_ = inv_P_weight_Pt_ * P_weight_;
       c_vec_ = inv_P_weight_Pt_P_weight_ * f_vec_;
+      if (cp == 0)
+        cout << "coefficients: " << c_vec_.transpose () << endl;
+
+      Eigen::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
+      if (identity_check.isIdentity(1e-3))
+        cout << "+";
+      else
+        cout << "-";
 
       // project point onto the surface - TODO: make (at least approximate) orthogonal projection
       double du = 0.0; // value of partial derivative at the current point, see below
@@ -364,6 +391,8 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         cloud_fit_->points[cp].y += movement[1];
         cloud_fit_->points[cp].z += movement[2];
       }
+      if (cp == 0)
+        cerr << "final point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
       // "stop" timer
       sum_ts_polynomial += (ros::Time::now () - ts_tmp).toSec ();
@@ -383,6 +412,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       n[0] = -c_vec[order+1][0];
       n[1] = -c_vec[1][0];
       n[2] = 1;*/
+      //cerr << "recomputed normal:" << endl << plane_parameters.start<3>() << endl;
       sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
 
       /**
@@ -404,7 +434,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     }
 
     // STEP4: Compute local features
-    if (viewpoint_cloud_ == NULL) /// @NOTE: the point where the normal is placed is from cloud_fit
+    if (viewpoint_cloud_ != NULL) /// @NOTE: the point where the normal is placed is from cloud_fit
       cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_fit_->points[cp], *viewpoint_cloud_);
     cloud_fit_->channels[original_chan_size + 0].values[cp] = plane_parameters (0);
     cloud_fit_->channels[original_chan_size + 1].values[cp] = plane_parameters (1);
@@ -423,20 +453,22 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     }
     // TODO: bool cloud_geometry::nearest::isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
   }
-  ROS_INFO ("Fitted points in %g seconds.\n", (ros::Time::now () - ts).toSec ());
-  ROS_INFO ("- time spent filtering points: %g seconds.\n", sum_ts_filter);
-  ROS_INFO ("- time spent approximating tangent: %g seconds.\n", sum_ts_tangent);
-  ROS_INFO ("- time spent computing polynomial: %g seconds.\n", sum_ts_polynomial);
-  ROS_INFO ("- time spent computing extra features: %g seconds.\n", sum_ts_extra);
+  ROS_INFO ("Fitted points in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("- time spent filtering points: %g seconds.", sum_ts_filter);
+  ROS_INFO ("- time spent approximating tangent: %g seconds.", sum_ts_tangent);
+  ROS_INFO ("- time spent computing polynomial: %g seconds.", sum_ts_polynomial);
+  ROS_INFO ("- time spent computing extra features: %g seconds.", sum_ts_extra);
+
+  cerr << endl << endl << endl;
 
   // Finish
-  ROS_INFO ("MLS fit done in %g seconds.", (ros::Time::now () - global_time).toSec ());
-  pub_.publish (*cloud_fit_);
+  ROS_INFO ("MLS fit done in %g seconds.\n", (ros::Time::now () - global_time).toSec ());
+  //pub_.publish (*cloud_fit_);
   return std::string("ok");
 }
 
 MovingLeastSquares::OutputType MovingLeastSquares::output ()
-  {return OutputType();}
+  {return *cloud_fit_;}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])
