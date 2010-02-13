@@ -74,6 +74,198 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
       boost::mutex::scoped_lock lock(cloud_lock_);
       get_scan_and_point_id(cloud_in);
     }
+    //std::vector<triangle> det_triangles_2(ANNpointArray points, PCD_Header header, int sidIdx, int pidIdx, int height, int width, int *nr_tr)
+    //{
+  std::vector<triangle> tr;
+
+  //  tr.resize(2*width*height);
+
+  int nr = 0; //number of triangles
+  int nrpd = 0; // for progress bar
+  
+  int a=0, b, c, d, e;
+  bool skipped = false;
+  
+  float max_length = 0.03;
+
+  for (int i = (int)header.minPD[pidIdx]; i < (int)header.minPD[pidIdx] + height; i++)
+  {
+    for (int j = (int)header.minPD[sidIdx]; j < (int)header.minPD[sidIdx] + width; j++)
+    {
+    
+      // find top left corner
+      if (points[a][pidIdx] == i && points[a][sidIdx] == j)
+      {
+        //printf("found point a = %d\n", a);
+
+        b = -1;
+        c = -1;
+        d = -1;
+        e = -1;
+
+        // find top right corner
+        if (a+1 < header.nr_points && points[a+1][pidIdx] == i && points[a+1][sidIdx] == j+1)
+          b = a+1;
+
+        //printf("resolved point b = %d\n", b);
+
+        // go to next line
+        int test = a;
+        while (test < header.nr_points && points[test][pidIdx] < i+1)
+          test++;
+
+        //printf("resolved next line\n");
+
+        // if next line exists
+        if (test < header.nr_points && points[test][pidIdx] == i+1)
+        {
+          // a skipped triangle exists because of missing 'a'
+          if (skipped)
+          {
+            skipped = false; // reset var
+
+            // go to column j-1
+            while (test < header.nr_points && points[test][sidIdx] < j-1)
+              test++;
+
+            // if not at the end of dataset
+            if (test < header.nr_points)
+            {
+              // if column exists
+              if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j-1)
+              {
+                e = test;
+                test++;
+              }
+            }
+          }
+          else
+          {
+            // go to column j
+            while (test < header.nr_points && points[test][sidIdx] < j)
+              test++;
+          }
+
+          // if not at the end of dataset
+          if (test < header.nr_points)
+          {
+            // if column exists
+            if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j)
+            {
+              c = test;
+              if (c+1 < header.nr_points && points[c+1][pidIdx] == i+1 && points[c+1][sidIdx] == j+1)
+                d = c+1;
+            }
+            // if next column was found
+            else if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j+1)
+              d = test;
+          }
+        }
+
+        if (c != -1)
+        {
+          double AC = DIST_3D(a, c);
+          if (e != -1)
+          {
+              //printf ("a c e\n");
+              // a c e
+            double AE = DIST_3D (a, e);
+            double CE = DIST_3D (c, e);
+            if (AC < max_length && CE < max_length && AE < max_length)
+            {
+              tr[nr].a = a;
+              tr[nr].b = c;
+              tr[nr].c = e;
+              nr++;
+            }
+          }
+
+          if (b != -1)
+          {
+             //printf ("a b c\n");
+            // a b c
+            double AB = DIST_3D(a, b);
+            double BC = DIST_3D(b, c);
+            double AC = DIST_3D(a, c);
+            if (AB < max_length && BC < max_length && AC < max_length)
+            {
+              tr[nr].a = a;
+              tr[nr].b = b;
+              tr[nr].c = c;
+              nr++;
+            }
+
+            if (d != -1)
+            {
+              //printf ("b c d\n");
+              // b c d
+              double BD = DIST_3D (b, d);
+              double CD = DIST_3D (c, d);
+              if (BD < max_length && BC < max_length && CD < max_length)
+              {
+                tr[nr].a = b;
+                tr[nr].b = c;
+                tr[nr].c = d;
+                nr++;
+              }
+            }
+          }
+          else if (d != -1)
+               {
+                 //printf ("a c d\n");
+                 // a c d
+                 double AD = DIST_3D (a, d);
+                 double CD = DIST_3D (c, d);
+                 if (AD < max_length && CD < max_length && AC < max_length)
+                 {
+                   tr[nr].a = a;
+                   tr[nr].b = c;
+                   tr[nr].c = d;
+                   nr++;
+                 }
+               }
+        }
+        else if (b != -1 && d != -1)
+             {
+               //printf ("a b d\n");
+               // a b d
+               double AB = DIST_3D(a, b);
+               double AD = DIST_3D (a, d);
+               double BD = DIST_3D (b, d);
+               if (AD < max_length && BD < max_length && AB < max_length)
+               {
+                 tr[nr].a = a;
+                 tr[nr].b = b;
+                 tr[nr].c = d;
+                 nr++;
+               }
+             }
+
+        // move to next point
+        a++;
+        //skipped = false;
+        if (a >= header.nr_points)
+          break;
+      } // END OF: top left corner found
+      else
+        skipped = true;
+    }
+    if (a >= header.nr_points)
+      break;
+  }
+  printf("\n");
+  printf("nr = %d\n", nr);
+  *nr_tr = nr;
+
+  tr.resize(nr);
+
+  //printf("Printing HoleMap:\n");
+  //for (HoleMap::iterator it = holes.begin (); it != holes.end (); it++)
+  //  printf ("<%i, %i> : %i\n", it->first.first, it->first.second, it->second);
+
+  return tr;
+}
+
     return std::string("");
   }
 
