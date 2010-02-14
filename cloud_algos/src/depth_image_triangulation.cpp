@@ -13,6 +13,7 @@
 //for savePCDFile ()
 #include <point_cloud_mapping/cloud_io.h>
 
+//#define DEBUG 1
 using namespace cloud_algos;
 
 void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<const InputType>& cloud_in)
@@ -48,7 +49,7 @@ void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<con
   //nr of lines in point cloud
   max_line_ = scan_id;
   //cloud_io::savePCDFile ("cloud_line.pcd", cloud_with_line_, false);
-  ROS_INFO("Scan ID: %d, Point ID: %d Completed in %g seconds", scan_id, point_id,  (ros::Time::now () - ts).toSec ());
+  ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 }
 
 float DepthImageTriangulation::dist_3d(const sensor_msgs::PointCloud &cloud_in, int a, int b)
@@ -87,8 +88,9 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   }
   ros::Time ts = ros::Time::now ();
   std::vector<triangle> tr;
-    
   tr.resize(2*max_line_*max_index_);    
+  pmap_.polygons.resize(2*max_line_*max_index_);
+
   int nr = 0; //number of triangles
   int nr_tr;
     
@@ -266,14 +268,36 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   printf("nr = %d\n", nr);
   nr_tr = nr;
   tr.resize(nr);
-
-  ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec ());
+  geometry_msgs::Polygon poly;
+  poly.points.resize(3);
+  pmap_.header = cloud_with_line_.header;
+#ifdef DEBUG  
+  ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
+#endif
+  for (unsigned long i = 0; i < tr.size(); i++)
+  {
+    //a
+    poly.points[0].x = cloud_with_line_.points[tr[i].a].x;
+    poly.points[0].y = cloud_with_line_.points[tr[i].a].y;
+    poly.points[0].z = cloud_with_line_.points[tr[i].a].z;
+    //b
+    poly.points[1].x = cloud_with_line_.points[tr[i].b].x;
+    poly.points[1].y = cloud_with_line_.points[tr[i].b].y;
+    poly.points[1].z = cloud_with_line_.points[tr[i].b].z;
+    //c
+    poly.points[2].x = cloud_with_line_.points[tr[i].c].x;
+    poly.points[2].y = cloud_with_line_.points[tr[i].c].y;
+    poly.points[2].z = cloud_with_line_.points[tr[i].c].z;
+    pmap_.polygons[i] = poly;
+  }
+  pmap_.polygons.resize(nr);
+  ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
 
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
-    return OutputType();
+    return pmap_;
   }
 
 

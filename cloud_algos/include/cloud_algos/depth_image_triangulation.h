@@ -46,7 +46,7 @@ class DepthImageTriangulation : public CloudAlgo
   // Topic name to advertise
   static std::string default_output_topic ()
   {
-    return std::string ("cloud_triangulated");
+    return std::string ("/cloud_triangulated");
   }
   
   // Topic name to subscribe to
@@ -113,10 +113,12 @@ private:
     int a,b,c;
   };
 
-  //! max allowed length between triangle's line segments
+  //! \brief max allowed length between triangle's line segments
   float max_length;
-};
 
+  // \brief resultant output triangulated map
+  OutputType pmap_;
+};
 }
 #endif
 
