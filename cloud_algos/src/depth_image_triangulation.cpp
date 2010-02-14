@@ -15,8 +15,6 @@
 
 using namespace cloud_algos;
 
-
-
 void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<const InputType>& cloud_in)
 {
   cloud_with_line_ = *cloud_in;
@@ -40,13 +38,25 @@ void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<con
         if (temp_point_id < point_id)
         {
           scan_id++;
+          //find max point index  in the whole point cloud
+          if (point_id > max_index_)
+            max_index_ = point_id;
         }
-        
       }
     }
   }
+  //nr of lines in point cloud
+  max_line_ = scan_id;
   //cloud_io::savePCDFile ("cloud_line.pcd", cloud_with_line_, false);
   ROS_INFO("Scan ID: %d, Point ID: %d Completed in %g seconds", scan_id, point_id,  (ros::Time::now () - ts).toSec ());
+}
+
+float DepthImageTriangulation::dist_3d(const sensor_msgs::PointCloud &cloud_in, int a, int b)
+{
+
+  return sqrt( (cloud_in.points[a].x - cloud_in.points[b].x) * (cloud_in.points[a].x - cloud_in.points[b].x)
+               + (cloud_in.points[a].y - cloud_in.points[b].y) * (cloud_in.points[a].y - cloud_in.points[b].y) 
+               + (cloud_in.points[a].z - cloud_in.points[b].z) * (cloud_in.points[a].z - cloud_in.points[b].z) );
 }
 
 void DepthImageTriangulation::init (ros::NodeHandle &nh)
@@ -67,72 +77,69 @@ std::vector<std::string> DepthImageTriangulation::post ()
   }
 
 std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
-  {
+{
     
-    ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
-    {
-      boost::mutex::scoped_lock lock(cloud_lock_);
-      get_scan_and_point_id(cloud_in);
-    }
-    //std::vector<triangle> det_triangles_2(ANNpointArray points, PCD_Header header, int sidIdx, int pidIdx, int height, int width, int *nr_tr)
-    //{
+  ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
+  {
+    boost::mutex::scoped_lock lock(cloud_lock_);
+    //cloud_in gets processed and copied into cloud_with_line_;
+    get_scan_and_point_id(cloud_in);
+  }
   std::vector<triangle> tr;
-
-  //  tr.resize(2*width*height);
-
+    
+  tr.resize(2*max_line_*max_index_);    
   int nr = 0; //number of triangles
-  int nrpd = 0; // for progress bar
-  
+  int nr_tr;
+    
   int a=0, b, c, d, e;
   bool skipped = false;
-  
-  float max_length = 0.03;
-
-  for (int i = (int)header.minPD[pidIdx]; i < (int)header.minPD[pidIdx] + height; i++)
-  {
-    for (int j = (int)header.minPD[sidIdx]; j < (int)header.minPD[sidIdx] + width; j++)
-    {
     
-      // find top left corner
-      if (points[a][pidIdx] == i && points[a][sidIdx] == j)
+  //scan line
+  for (int i = 0; i <=  max_line_; i++)
+  {
+    //laser beam in a scan line
+    for (int j = 0; j <= max_index_; j++)
+    {       
+     // find top left corner
+      if (cloud_with_line_.channels[1].values[a] == i && cloud_with_line_.channels[0].values[a] == j)
       {
         //printf("found point a = %d\n", a);
-
         b = -1;
         c = -1;
         d = -1;
         e = -1;
-
+          
         // find top right corner
-        if (a+1 < header.nr_points && points[a+1][pidIdx] == i && points[a+1][sidIdx] == j+1)
+        if (a+1 < (cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[a+1] == i
+                   && cloud_with_line_.channels[0].values[a+1] == j+1))
           b = a+1;
-
+          
         //printf("resolved point b = %d\n", b);
-
+          
         // go to next line
         int test = a;
-        while (test < header.nr_points && points[test][pidIdx] < i+1)
+        while ((unsigned long)test < cloud_with_line_.points.size() &&  cloud_with_line_.channels[1].values[test] < i+1)
           test++;
-
+          
         //printf("resolved next line\n");
-
+          
         // if next line exists
-        if (test < header.nr_points && points[test][pidIdx] == i+1)
+        if ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[test] == i+1)
         {
           // a skipped triangle exists because of missing 'a'
           if (skipped)
           {
             skipped = false; // reset var
-
+              
             // go to column j-1
-            while (test < header.nr_points && points[test][sidIdx] < j-1)
+            while ((unsigned long)test <  cloud_with_line_.points.size() &&  cloud_with_line_.channels[0].values[test] < j-1)
               test++;
-
+              
             // if not at the end of dataset
-            if (test < header.nr_points)
+            if ((unsigned long)test <  cloud_with_line_.points.size())
             {
               // if column exists
-              if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j-1)
+              if (cloud_with_line_.channels[1].values[test] == i+1 && cloud_with_line_.channels[0].values[test])
               {
                 e = test;
                 test++;
@@ -142,35 +149,36 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
           else
           {
             // go to column j
-            while (test < header.nr_points && points[test][sidIdx] < j)
+            while ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[0].values[test] < j)
               test++;
           }
-
+            
           // if not at the end of dataset
-          if (test < header.nr_points)
+          if ((unsigned long)test < cloud_with_line_.points.size())
           {
             // if column exists
-            if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j)
+            if (cloud_with_line_.channels[1].values[test] == i+1 && cloud_with_line_.channels[0].values[test] == j)
             {
               c = test;
-              if (c+1 < header.nr_points && points[c+1][pidIdx] == i+1 && points[c+1][sidIdx] == j+1)
+              if ((unsigned long)c+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[c+1] == i+1
+                  && cloud_with_line_.channels[0].values[c+1] == j+1)
                 d = c+1;
             }
             // if next column was found
-            else if (points[test][pidIdx] == i+1 && points[test][sidIdx] == j+1)
+            else if (cloud_with_line_.channels[1].values[test] == i+1 && cloud_with_line_.channels[0].values[test] == j+1)
               d = test;
           }
         }
-
+          
         if (c != -1)
         {
-          double AC = DIST_3D(a, c);
+          float AC = dist_3d (cloud_with_line_, a, c);
           if (e != -1)
           {
-              //printf ("a c e\n");
-              // a c e
-            double AE = DIST_3D (a, e);
-            double CE = DIST_3D (c, e);
+            //printf ("a c e\n");
+            // a c e
+            float AE = dist_3d (cloud_with_line_, a, e);
+            float CE = dist_3d (cloud_with_line_, c, e);
             if (AC < max_length && CE < max_length && AE < max_length)
             {
               tr[nr].a = a;
@@ -179,14 +187,14 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
               nr++;
             }
           }
-
+            
           if (b != -1)
           {
-             //printf ("a b c\n");
+            //printf ("a b c\n");
             // a b c
-            double AB = DIST_3D(a, b);
-            double BC = DIST_3D(b, c);
-            double AC = DIST_3D(a, c);
+            float AB = dist_3d (cloud_with_line_, a, b);
+            float BC = dist_3d (cloud_with_line_, b, c);
+            float AC = dist_3d (cloud_with_line_, a, c);
             if (AB < max_length && BC < max_length && AC < max_length)
             {
               tr[nr].a = a;
@@ -194,13 +202,13 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
               tr[nr].c = c;
               nr++;
             }
-
+              
             if (d != -1)
             {
               //printf ("b c d\n");
               // b c d
-              double BD = DIST_3D (b, d);
-              double CD = DIST_3D (c, d);
+              float BD = dist_3d (cloud_with_line_, b, d);
+              float CD = dist_3d (cloud_with_line_, c, d);
               if (BD < max_length && BC < max_length && CD < max_length)
               {
                 tr[nr].a = b;
@@ -211,63 +219,57 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
             }
           }
           else if (d != -1)
-               {
-                 //printf ("a c d\n");
-                 // a c d
-                 double AD = DIST_3D (a, d);
-                 double CD = DIST_3D (c, d);
-                 if (AD < max_length && CD < max_length && AC < max_length)
-                 {
-                   tr[nr].a = a;
-                   tr[nr].b = c;
-                   tr[nr].c = d;
-                   nr++;
-                 }
-               }
+          {
+            //printf ("a c d\n");
+            // a c d
+            float AD = dist_3d (cloud_with_line_, a, d);
+            float CD = dist_3d (cloud_with_line_, c, d);
+            if (AD < max_length && CD < max_length && AC < max_length)
+            {
+              tr[nr].a = a;
+              tr[nr].b = c;
+              tr[nr].c = d;
+              nr++;
+            }
+          }
         }
         else if (b != -1 && d != -1)
-             {
-               //printf ("a b d\n");
-               // a b d
-               double AB = DIST_3D(a, b);
-               double AD = DIST_3D (a, d);
-               double BD = DIST_3D (b, d);
-               if (AD < max_length && BD < max_length && AB < max_length)
-               {
-                 tr[nr].a = a;
-                 tr[nr].b = b;
-                 tr[nr].c = d;
-                 nr++;
-               }
-             }
-
+        {
+          //printf ("a b d\n");
+          // a b d
+          float AB = dist_3d (cloud_with_line_, a, b);
+          float AD = dist_3d (cloud_with_line_, a, d);
+          float BD = dist_3d (cloud_with_line_, b, d);
+          if (AD < max_length && BD < max_length && AB < max_length)
+          {
+            tr[nr].a = a;
+            tr[nr].b = b;
+            tr[nr].c = d;
+            nr++;
+          }
+        }
+          
         // move to next point
         a++;
         //skipped = false;
-        if (a >= header.nr_points)
+        if ((unsigned long)a >= cloud_with_line_.points.size())
           break;
       } // END OF: top left corner found
       else
         skipped = true;
     }
-    if (a >= header.nr_points)
+    if ((unsigned long)a >= cloud_with_line_.points.size())
       break;
   }
   printf("\n");
   printf("nr = %d\n", nr);
-  *nr_tr = nr;
-
+  nr_tr = nr;
   tr.resize(nr);
 
-  //printf("Printing HoleMap:\n");
-  //for (HoleMap::iterator it = holes.begin (); it != holes.end (); it++)
-  //  printf ("<%i, %i> : %i\n", it->first.first, it->first.second, it->second);
-
-  return tr;
+  ROS_INFO("Found %ld triangles!", tr.size());  
+    
+  return std::string("");
 }
-
-    return std::string("");
-  }
 
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
@@ -281,16 +283,6 @@ int main (int argc, char* argv[])
   return standalone_node <DepthImageTriangulation> (argc, argv);
 }
 #endif
-
-
-
-
-
-
-
-
-
-
 
 
 // //#define PI 3.14159265 

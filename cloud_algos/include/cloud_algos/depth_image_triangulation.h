@@ -67,17 +67,27 @@ class DepthImageTriangulation : public CloudAlgo
   std::vector<std::string> post ();
   std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
-  /*****************************************************************************
+
+  /**
    * \brief  get scan and point id for hokuyo scans
    * \param sensor_msg::PointCloud
-   ******************************************************************************/
+   */
   void get_scan_and_point_id (const boost::shared_ptr<const InputType>&);
+
+  /**
+   * \brief  computes distance between 2 points
+   * \param cloud_in
+   * \param int a
+   * \param int b
+   */
+  float dist_3d (const sensor_msgs::PointCloud &cloud_in, int a, int b);
 
 
   // Constructor-Destructor
   DepthImageTriangulation () : CloudAlgo ()
   {
-
+    max_length = 0.03;
+    max_index_ = max_line_ = 0;
   }
   ~DepthImageTriangulation ()
   {
@@ -85,14 +95,26 @@ class DepthImageTriangulation : public CloudAlgo
   }
 
 private:
-  //lock the function when restoring line id
-  //NB: pointer because mutex is not copyable
+  //! \brief lock the function when restoring line id
   boost::mutex  cloud_lock_;
+  
   // ROS stuff
   ros::NodeHandle nh_;
 
-    // ROS messages
+  //! \brief working point cloud
   sensor_msgs::PointCloud cloud_with_line_;
+  
+  //! \brief max index and max line in point cloud
+  int max_index_, max_line_;
+
+  //! \brief triangle points
+  struct triangle 
+  {  
+    int a,b,c;
+  };
+
+  //! max allowed length between triangle's line segments
+  float max_length;
 };
 
 }
