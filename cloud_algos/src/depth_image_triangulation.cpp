@@ -85,6 +85,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     //cloud_in gets processed and copied into cloud_with_line_;
     get_scan_and_point_id(cloud_in);
   }
+  ros::Time ts = ros::Time::now ();
   std::vector<triangle> tr;
     
   tr.resize(2*max_line_*max_index_);    
@@ -266,8 +267,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   nr_tr = nr;
   tr.resize(nr);
 
-  ROS_INFO("Found %ld triangles!", tr.size());  
-    
+  ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec ());
   return std::string("");
 }
 
