@@ -37,7 +37,11 @@ namespace cloud_algos
 class DepthImageTriangulation : public CloudAlgo
 {
  public:
- 
+  //! \brief triangle points
+  struct triangle 
+  {  
+    int a,b,c;
+  };
 
   // Input/Output type
   typedef sensor_msgs::PointCloud InputType;
@@ -83,6 +87,17 @@ class DepthImageTriangulation : public CloudAlgo
   float dist_3d (const sensor_msgs::PointCloud &cloud_in, int a, int b);
 
 
+  /**
+   * \brief  writes triangulation result to a VTK file for visualization purposes
+   * \param output[] output vtk file
+   * \param triangles vector of triangles
+   * \param &cloud_in
+   * \param nr_tr number of triangles
+   * \param iIdx - TODO 
+   */
+  void write_vtk_file(char output[], std::vector<triangle> triangles,  const sensor_msgs::PointCloud &cloud_in,
+                      int nr_tr, int iIdx);
+
   // Constructor-Destructor
   DepthImageTriangulation () : CloudAlgo ()
   {
@@ -106,12 +121,6 @@ private:
   
   //! \brief max index and max line in point cloud
   int max_index_, max_line_;
-
-  //! \brief triangle points
-  struct triangle 
-  {  
-    int a,b,c;
-  };
 
   //! \brief max allowed length between triangle's line segments
   float max_length;

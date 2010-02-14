@@ -12,6 +12,7 @@
 //#define DEBUG 1
 using namespace cloud_algos;
 
+////////////////////////////////////////////////////////////////////////////////
 void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<const InputType>& cloud_in)
 {
   cloud_with_line_ = *cloud_in;
@@ -48,6 +49,7 @@ void DepthImageTriangulation::get_scan_and_point_id (const boost::shared_ptr<con
   ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 }
 
+////////////////////////////////////////////////////////////////////////////////
 float DepthImageTriangulation::dist_3d(const sensor_msgs::PointCloud &cloud_in, int a, int b)
 {
 
@@ -56,6 +58,7 @@ float DepthImageTriangulation::dist_3d(const sensor_msgs::PointCloud &cloud_in, 
                + (cloud_in.points[a].z - cloud_in.points[b].z) * (cloud_in.points[a].z - cloud_in.points[b].z) );
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void DepthImageTriangulation::init (ros::NodeHandle &nh)
 {
   // node handler and publisher
@@ -63,16 +66,19 @@ void DepthImageTriangulation::init (ros::NodeHandle &nh)
   ROS_INFO("DepthImageTriangulation Node initialized");
 }
 
+////////////////////////////////////////////////////////////////////////////////
 std::vector<std::string> DepthImageTriangulation::pre () 
   {
     return std::vector<std::string>();
   }
 
+////////////////////////////////////////////////////////////////////////////////
 std::vector<std::string> DepthImageTriangulation::post ()
   {
     return std::vector<std::string>();
   }
 
+////////////////////////////////////////////////////////////////////////////////
 std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
 {
     
@@ -295,6 +301,65 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   return std::string("");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void DepthImageTriangulation::write_vtk_file(char output[], std::vector<triangle> triangles,  
+                                             const sensor_msgs::PointCloud &cloud_in,
+                                             int nr_tr, int iIdx)
+{
+  /* writing VTK file */
+  
+  FILE *f;
+  
+  f = fopen(output,"w");
+  
+  fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",cloud_with_line_.points.size());
+  unsigned long i;
+  
+  for (i=0; i<cloud_with_line_.points.size(); i+=3)
+  {
+    for (unsigned long j=0; (j<3) && (i+j<cloud_with_line_.points.size()); j++)
+      fprintf (f,"%f %f %f ", cloud_with_line_.points[i+j].x, cloud_with_line_.points[i+j].y,
+               cloud_with_line_.points[i+j].z);
+    fprintf (f,"\n");
+  }
+  
+  fprintf(f,"VERTICES %ld %ld\n", cloud_with_line_.points.size(), 2*cloud_with_line_.points.size());
+  for (i=0; i<cloud_with_line_.points.size(); i++)
+    fprintf(f,"1 %ld\n", i);
+    
+  /*
+  fprintf(f,"\nPOLYGONS %d %d\n",triangles.size(), 4*triangles.size());
+  for (std::vector<triangle>::iterator it = triangles.begin(); it != triangles.end(); it++)
+  fprintf(f,"3 %d %d %d\n",(*it).a, (*it).c, (*it).b);
+  */
+
+  printf("vector: %ld, nr: %d\n", triangles.size(), nr_tr);
+  
+  fprintf(f,"\nPOLYGONS %d %d\n", nr_tr, 4*nr_tr);
+  for (int i=0; i<nr_tr; i++)
+  {
+    if ((unsigned long)triangles[i].a >= cloud_with_line_.points.size() || triangles[i].a < 0 || isnan(triangles[i].a))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, cloud_with_line_.points.size());
+    else if ((unsigned long)triangles[i].b >= cloud_with_line_.points.size() || triangles[i].b < 0 || isnan(triangles[i].b))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, cloud_with_line_.points.size());
+    else if ((unsigned long)triangles[i].c >= cloud_with_line_.points.size() || triangles[i].c < 0 || isnan(triangles[i].c))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, cloud_with_line_.points.size());
+    else if (triangles[i].a == triangles[i].b || triangles[i].a == triangles[i].c || triangles[i].b == triangles[i].c)
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, cloud_with_line_.points.size());
+    else
+      fprintf(f,"3 %d %d %d\n",triangles[i].a, triangles[i].c, triangles[i].b);
+  }
+
+  fprintf (f, "\nPOINT_DATA %ld\nSCALARS scalars double\nLOOKUP_TABLE default\n", cloud_with_line_.points.size());
+  for (i=0; i<cloud_with_line_.points.size(); i+=9)
+  {
+    for (int j=0; (j<9) && (i+j<cloud_with_line_.points.size()); j++)
+      fprintf (f, "%d ", (int)cloud_with_line_.channels[0].values[i+j]);
+    fprintf (f,"\n");
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
     return pmap_;
@@ -309,56 +374,3 @@ int main (int argc, char* argv[])
 #endif
 
 
-// void write_vtk_file(char output[], std::vector<triangle> triangles, ANNpointArray points, PCD_Header header, int nr_tr, int iIdx)
-// {
-//   /* writing VTK file */
-
-//   FILE *f;
-
-//   f = fopen(output,"w");
-
-//   fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %d float\n", header.nr_points);
-//   int i;
-  
-//   for (i=0; i<header.nr_points; i+=3)
-//   {
-//     for (int j=0; (j<3) && (i+j<header.nr_points); j++)
-//       fprintf (f,"%f %f %f ", points[i+j][0], points[i+j][1], points[i+j][2]);
-//     fprintf (f,"\n");
-//   }
-  
-//   fprintf(f,"VERTICES %d %d\n", header.nr_points, 2*header.nr_points);
-//   for (i=0; i<header.nr_points; i++)
-//     fprintf(f,"1 %d\n", i);
-    
-//   /*
-//   fprintf(f,"\nPOLYGONS %d %d\n",triangles.size(), 4*triangles.size());
-//   for (std::vector<triangle>::iterator it = triangles.begin(); it != triangles.end(); it++)
-//   fprintf(f,"3 %d %d %d\n",(*it).a, (*it).c, (*it).b);
-//   */
-
-//   printf("vector: %d, nr: %d\n", triangles.size(), nr_tr);
-  
-//   fprintf(f,"\nPOLYGONS %d %ld\n", nr_tr, 4*nr_tr);
-//   for (int i=0; i<nr_tr; i++)
-//   {
-//     if (triangles[i].a >= header.nr_points || triangles[i].a < 0 || isnan(triangles[i].a))
-//       ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, header.nr_points);
-//     else if (triangles[i].b >= header.nr_points || triangles[i].b < 0 || isnan(triangles[i].b))
-//       ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, header.nr_points);
-//     else if (triangles[i].c >= header.nr_points || triangles[i].c < 0 || isnan(triangles[i].c))
-//       ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, header.nr_points);
-//     else if (triangles[i].a == triangles[i].b || triangles[i].a == triangles[i].c || triangles[i].b == triangles[i].c)
-//       ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, header.nr_points);
-//     else
-//       fprintf(f,"3 %d %d %d\n",triangles[i].a, triangles[i].c, triangles[i].b);
-//   }
-
-//   fprintf (f, "\nPOINT_DATA %d\nSCALARS scalars double\nLOOKUP_TABLE default\n", header.nr_points);
-//   for (i=0; i<header.nr_points; i+=9)
-//   {
-//     for (int j=0; (j<9) && (i+j<header.nr_points); j++)
-//       fprintf (f, "%d ", (int)points[i+j][iIdx]);
-//     fprintf (f,"\n");
-//   }
-// }
