@@ -89,7 +89,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     get_scan_and_point_id(cloud_in);
   }
   if (cloud_with_line_.channels.size() < 2 || cloud_with_line_.channels[0].name != "index" || 
-       cloud_with_line_.channels[0].name != "line")
+       cloud_with_line_.channels[1].name != "line")
   {
     ROS_ERROR("Clouds's channel[0] and channel[1] must be index (index) in one line scan and line's id (line) respectively!!!"); 
     exit(2);
