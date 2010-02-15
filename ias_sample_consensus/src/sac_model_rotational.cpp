@@ -404,7 +404,7 @@ namespace ias_sample_consensus
           if (samples[i] == samples[j])
             same = true;
       } while (same);
-    samples = std::vector<int> (indices_);
+//    samples = std::vector<int> (indices_);
     return;
   }
 

@@ -1,18 +1,18 @@
 <library path="lib/libcloud_algos">
   <!--Sensors -->
-  <class name="NormalEstimation" type="NormalEstimation" base_class_type="PCD_Algo">
+  <class name="NormalEstimation" type="NormalEstimation" base_class_type="CloudAlgo">
     <description>
       This plugin estimates normal vectors.
     </description>
   </class>
 
-  <class name="PlanarEstimation" type="PlanarEstimation" base_class_type="PCD_Algo">
+  <class name="PlanarEstimation" type="PlanarEstimation" base_class_type="CloudAlgo">
     <description>
       This plugin estimates planar surfaces.
     </description>
   </class>
   
-  <class name="RotationalEstimation" type="RotationalEstimation" base_class_type="PCD_Algo">
+  <class name="RotationalEstimation" type="RotationalEstimation" base_class_type="CloudAlgo">
     <description>
       This plugin estimates rotational objects / surfaces of revolution.
     </description>

@@ -24,6 +24,8 @@
 #include <vision_msgs/cop_answer.h>
 #include <vision_srvs/clip_polygon.h>
 
+using namespace cloud_algos;
+
 struct dummy_deleter
 {
   void operator()(void const *) const
@@ -502,7 +504,7 @@ class TableMemory
     void 
       load_plugins ()
     {
-      cl = new pluginlib::ClassLoader <CloudAlgo> ("dyn_obj_store", "CloudAlgo");
+      cl = new pluginlib::ClassLoader <CloudAlgo> ("cloud_algos", "CloudAlgo");
 
       ROS_INFO("ClassLoader instantiated");
       std::vector<std::string> plugins = cl->getDeclaredClasses();
@@ -566,7 +568,7 @@ class TableMemory
           }
 	  std::vector<std::string> bla = alg_rot_est->pre ();//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
           std::cerr << "[reconstruct_table_objects] Calling with a PCD with " << to->point_cluster.points.size () << " points." << std::endl;
-	  std::string blastring = alg_rot_est->process (sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter()));//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
+	  std::string blastring = ((RotationalEstimation*)alg_rot_est)->process (sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter()));//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
           ROS_INFO("got response: %s", blastring.c_str ());
 
           break; 
