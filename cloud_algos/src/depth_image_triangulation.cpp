@@ -121,8 +121,8 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
         e = -1;
           
         // find top right corner
-        if (a+1 < (cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[a+1] == i
-                   && cloud_with_line_.channels[0].values[a+1] == j+1))
+        if (a+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[a+1] == i
+                   && cloud_with_line_.channels[0].values[a+1] == j+1)
           b = a+1;
           
         //ROS_INFO("resolved point b = %d\n", b);
@@ -297,20 +297,22 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     pmap_.polygons[i] = poly;
   }
   pmap_.polygons.resize(nr);
+
+  write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
   ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void DepthImageTriangulation::write_vtk_file(char output[], std::vector<triangle> triangles,  
+void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<triangle> triangles,  
                                              const sensor_msgs::PointCloud &cloud_in,
-                                             int nr_tr, int iIdx)
+                                             int nr_tr)
 {
   /* writing VTK file */
   
   FILE *f;
   
-  f = fopen(output,"w");
+  f = fopen(output.c_str(),"w");
   
   fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",cloud_with_line_.points.size());
   unsigned long i;
@@ -350,13 +352,13 @@ void DepthImageTriangulation::write_vtk_file(char output[], std::vector<triangle
       fprintf(f,"3 %d %d %d\n",triangles[i].a, triangles[i].c, triangles[i].b);
   }
 
-  fprintf (f, "\nPOINT_DATA %ld\nSCALARS scalars double\nLOOKUP_TABLE default\n", cloud_with_line_.points.size());
-  for (i=0; i<cloud_with_line_.points.size(); i+=9)
-  {
-    for (int j=0; (j<9) && (i+j<cloud_with_line_.points.size()); j++)
-      fprintf (f, "%d ", (int)cloud_with_line_.channels[0].values[i+j]);
-    fprintf (f,"\n");
-  }
+//   fprintf (f, "\nPOINT_DATA %ld\nSCALARS scalars double\nLOOKUP_TABLE default\n", cloud_with_line_.points.size());
+//   for (i=0; i<cloud_with_line_.points.size(); i+=9)
+//   {
+//     for (int j=0; (j<9) && (i+j<cloud_with_line_.points.size()); j++)
+//       fprintf (f, "%d ", (int)cloud_with_line_.channels[0].values[i+j]);
+//     fprintf (f,"\n");
+//   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

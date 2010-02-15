@@ -93,15 +93,14 @@ class DepthImageTriangulation : public CloudAlgo
    * \param triangles vector of triangles
    * \param &cloud_in
    * \param nr_tr number of triangles
-   * \param iIdx - TODO 
    */
-  void write_vtk_file(char output[], std::vector<triangle> triangles,  const sensor_msgs::PointCloud &cloud_in,
-                      int nr_tr, int iIdx);
+  void write_vtk_file(std::string output, std::vector<triangle> triangles,  const sensor_msgs::PointCloud &cloud_in,
+                      int nr_tr);
 
   // Constructor-Destructor
   DepthImageTriangulation () : CloudAlgo ()
   {
-    max_length = 0.03;
+    max_length = 0.05;
     max_index_ = max_line_ = 0;
   }
   ~DepthImageTriangulation ()
