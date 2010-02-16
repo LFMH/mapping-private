@@ -32,6 +32,8 @@
 
 #include <gtest/gtest.h>
 #include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/PointStamped.h>
+#include <ros/ros.h>
 
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
@@ -42,10 +44,12 @@
 #include <point_cloud_mapping/sample_consensus/mlesac.h>
 #include <point_cloud_mapping/sample_consensus/sac_model.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_cylinder.h>
-#include <ros/ros.h>
 
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 #include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/geometry/angles.h>
 
 using namespace sample_consensus;
 
@@ -73,6 +77,9 @@ class CylinderFit
     clusters_sub_ = n_.subscribe (cloud_topic_, 1, &CylinderFit::cloud_cb, this);
     model_ = new SACModelCylinder ();
     sac_ = new RANSAC (model_, 0.05);
+    nx_ = ny_ = nz_ = -1;
+    channels_size_ = 0;
+    k_ = 20;
  }
   
   ///////////////////////////////////////////////////////////////////////////////
@@ -85,6 +92,7 @@ class CylinderFit
     delete sac_;
   }
 
+
   ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief cloud_cb
@@ -93,10 +101,158 @@ class CylinderFit
   {
     ROS_INFO ("PointCloud message received on %s with %d points.", cloud_topic_.c_str (), (int)cloud->points.size ());
     points_ = *cloud;
-    find_model();
+    for (unsigned long i = 0; i < points_.channels.size(); i++)
+    {
+      if(points_.channels[i].name == "nx")
+        nx_ = i;
+      if(points_.channels[i].name == "ny")
+        ny_ = i;
+      if(points_.channels[i].name == "nz")
+        nz_ = i;
+    }
+    channels_size_ = (int)points_.channels.size();
+    //no normals, estimate them
+    if (nx_ == -1 || ny_ == -1 || nz_ == -1) 
+    {
+      points_.channels.resize (channels_size_ + 3);
+      points_.channels[channels_size_ + 0].name = "nx";
+      points_.channels[channels_size_ + 1].name = "ny";
+      points_.channels[channels_size_ + 2].name = "nz";
+      estimatePointNormals(points_);
+    }
+    find_model(points_);
+  }
+
+  
+    ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief estimates point cloud normals
+   */
+  void estimatePointNormals (sensor_msgs::PointCloud &cloud)
+  {
+    ROS_INFO ("+ estimatePointNormals, %i", cloud.points.size ());
+    cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
+    std::vector<std::vector<int> > points_k_indices;
+    ROS_INFO ("1 estimatePointNormals");
+    // Allocate enough space for point indices
+    points_k_indices.resize (cloud.points.size ());
+    ROS_INFO ("2 estimatePointNormals %i", k_);
+    for (int i = 0; i < (int)cloud.points.size (); i++)
+        points_k_indices[i].resize (k_);
+    // Get the nerest neighbors for all the point indices in the bounds
+    ROS_INFO ("3 estimatePointNormals");
+    std::vector<float> distances;
+    for (int i = 0; i < (int)cloud.points.size (); i++)
+      kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
+    
+    ROS_INFO ("4 estimatePointNormals");
+    // Figure out the viewpoint value in the point cloud frame
+    geometry_msgs::PointStamped viewpoint_laser, viewpoint_cloud;
+
+    ////////////////////////////////////////////////////////////////////////////
+    //TODO: uncomment when getting point clouds from the robot
+    ////////////////////////////////////////////////////////////////////////////
+    //viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
+    
+    // Set the viewpoint in the laser coordinate system to 0,0,0
+    ROS_INFO ("5 estimatePointNormals");
+    viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+    
+    ////////////////////////////////////////////////////////////////////////////
+    //TODO: uncomment when getting point clouds from the robot
+    ////////////////////////////////////////////////////////////////////////////
+//     try
+//     {
+//       tf_.transformPoint (cloud.header.frame_id, viewpoint_laser, viewpoint_cloud);
+//     }
+//     catch (tf::TransformException)
+//     {
+//       viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
+//     }
+    
+    
+    ROS_INFO ("5 estimatePointNormals");
+    //#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < (int)cloud.points.size (); i++)
+    {
+      // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+      Eigen::Vector4d plane_parameters;
+      double curvature;
+      cloud_geometry::nearest::computePointNormal (cloud, points_k_indices[i], plane_parameters, curvature);
+      
+      cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud.points[i], viewpoint_cloud);
+      
+      cloud.channels[channels_size_ + 0].values[i] = plane_parameters (0);
+      cloud.channels[channels_size_ + 1].values[i] = plane_parameters (1);
+      cloud.channels[channels_size_ + 2].values[i] = plane_parameters (2);
+    }
+    // Delete the kd-tree
+    delete kdtree;
+    ROS_INFO ("- estimatePointNormals");
   }
   
-  ////////////////////////////////////////////////////////////////////////////////
+
+ ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * actual model fitting happens here
+   */
+void find_model(sensor_msgs::PointCloud &cloud)
+  {
+    if(cloud.points.size() != 0)
+    {
+      model_->setDataSet (&cloud);
+      //EXPECT_EQ ((int)model_->getCloud ()->points.size (), 20);
+      
+      bool result = sac_->computeModel ();
+      //EXPECT_EQ (result, true);
+      if(result)
+      {
+        std::vector<int> inliers = sac_->getInliers ();
+        ROS_INFO("inliers size %ld", inliers.size());
+        cloud_geometry::getPointCloud (cloud, inliers, cylinder_points_);
+        //EXPECT_EQ ((int)inliers.size (), 20);
+        
+        std::vector<double> coeff;
+        sac_->computeCoefficients (coeff);
+        //EXPECT_EQ ((int)coeff.size (), 7);
+        //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+        //EXPECT_NEAR (coeff[0], -0.5, 1e-1);
+        //EXPECT_NEAR (coeff[1], 1.7, 1e-1);
+        //EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+        
+        std::vector<double> coeff_ref;
+        sac_->refineCoefficients (coeff_ref);
+        //EXPECT_EQ ((int)coeff_ref.size (), 7);
+        //EXPECT_NEAR (coeff_ref[6], 0.5, 1e-1);
+        
+        //int nr_points_left = sac_->removeInliers ();
+        //EXPECT_EQ (nr_points_left, 0);
+        //cloud_pub_.publish (points_);
+        //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
+        cylinder_pub_.publish (cylinder_points_);
+        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cylinder_topic_).c_str (), 
+                  cylinder_points_.points.size());
+      }
+    }
+  }
+
+
+ ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * spin
+   */
+  bool spin ()
+  {
+    ros::Duration delay(5.0);
+    while (n_.ok())
+    { 
+      ros::spinOnce();
+      delay.sleep();
+    }
+    return true;
+  }
+
+    ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief creates a mini circle pointcloud
    */
@@ -156,67 +312,17 @@ class CylinderFit
     points_.channels[0].values[19] = 0.420154;  points_.channels[1].values[19] = -0.907445; points_.channels[2].values[19] = 0.000075;
   }
 
-void find_model()
-  {
-    if(points_.points.size() != 0)
-    {
-      model_->setDataSet (&points_);
-      //EXPECT_EQ ((int)model_->getCloud ()->points.size (), 20);
-      
-      bool result = sac_->computeModel ();
-      //EXPECT_EQ (result, true);
-      if(result)
-      {
-        std::vector<int> inliers = sac_->getInliers ();
-        ROS_INFO("inliers size %ld", inliers.size());
-        cloud_geometry::getPointCloud (points_, inliers, cylinder_points_);
-        //EXPECT_EQ ((int)inliers.size (), 20);
-        
-        std::vector<double> coeff;
-        sac_->computeCoefficients (coeff);
-        //EXPECT_EQ ((int)coeff.size (), 7);
-        //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
-        //EXPECT_NEAR (coeff[0], -0.5, 1e-1);
-        //EXPECT_NEAR (coeff[1], 1.7, 1e-1);
-        //EXPECT_NEAR (coeff[6], 0.5, 1e-1);
-        
-        std::vector<double> coeff_ref;
-        sac_->refineCoefficients (coeff_ref);
-        //EXPECT_EQ ((int)coeff_ref.size (), 7);
-        //EXPECT_NEAR (coeff_ref[6], 0.5, 1e-1);
-        
-        //int nr_points_left = sac_->removeInliers ();
-        //EXPECT_EQ (nr_points_left, 0);
-        //cloud_pub_.publish (points_);
-        //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
-        cylinder_pub_.publish (cylinder_points_);
-        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cylinder_topic_).c_str (), 
-                  cylinder_points_.points.size());
-      }
-    }
-  }
-
-
-  ////////////////////////////////////////////////////////////////////////////////
-  /**
-   * spin - actual model fitting happens here
-   */
-  bool spin ()
-  {
-    ros::Duration delay(5.0);
-    while (n_.ok())
-    { 
-      ros::spinOnce();
-      delay.sleep();
-    }
-    return true;
-  }
-
   protected:
   ros::NodeHandle n_;
   ros::Publisher cloud_pub_;
   ros::Publisher cylinder_pub_;
   ros::Subscriber clusters_sub_;
+  //normals' indices in PointCloud.channels
+  int nx_, ny_, nz_;
+  //needed to append channels for normals if PointCloud.channels.size() =! 0
+  int channels_size_;
+  //KD Tree parameter
+  int k_;
 };
 
 // TEST (RANSAC, SACModelCylinder)
