@@ -53,6 +53,7 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/geometry/angles.h>
 
+#include <tf/tf.h>
 using namespace sample_consensus;
 
 class CylinderFit
@@ -256,6 +257,13 @@ class CylinderFit
    */  
   void publish_model_rviz (std::vector<double> &coeff)
   {
+    //axis angle to quaternion conversion
+    btVector3 axis(coeff[3], coeff[4], coeff[5]);
+    btVector3 marker_axis(0, 0, 1);
+    
+    btQuaternion qt(marker_axis.cross(axis), marker_axis.angle(axis));
+    ROS_INFO("qt x, y, z, w %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
+    
     visualization_msgs::Marker marker;
     marker.header.frame_id = "base_link";
     marker.header.stamp = ros::Time();
@@ -266,13 +274,13 @@ class CylinderFit
     marker.pose.position.x = coeff[0];
     marker.pose.position.y = coeff[1];
     marker.pose.position.z = coeff[2];
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.1;
-    marker.scale.y = 0.1;
-    marker.scale.z = 0.1;
+    marker.pose.orientation.x = qt.x();
+    marker.pose.orientation.y = qt.y();
+    marker.pose.orientation.z = qt.z();
+    marker.pose.orientation.w = qt.w();
+    marker.scale.x = coeff[6];
+    marker.scale.y = coeff[6];
+    marker.scale.z = 1;
     marker.color.a = 1.0;
     marker.color.r = 0.0;
     marker.color.g = 1.0;
