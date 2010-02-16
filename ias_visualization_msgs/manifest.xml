@@ -1,0 +1,14 @@
+<package>
+  <description brief="ias_visualization_msgs">
+     Messages for visualization purposes
+  </description>
+  <author>Nico Blodow</author>
+  <license>BSD</license>
+
+  <depend package="std_msgs" />
+  <depend package="geometry_msgs" />
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
