@@ -132,29 +132,29 @@ class PlaneClustersSR
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
       axis_.x = 0; axis_.y = 0; axis_.z = 1;
 
-      nh_.param ("~downsample_factor", downsample_factor_, 4); // Use every nth point
-      nh_.param ("~search_k_closest", k_, 2);                  // 5 k-neighbors by default
-      nh_.param ("~k_max_z", max_z_, 0.03);
+      nh_.param ("downsample_factor", downsample_factor_, 4); // Use every nth point
+      nh_.param ("search_k_closest", k_, 2);                  // 5 k-neighbors by default
+      nh_.param ("k_max_z", max_z_, 0.03);
 
-      nh_.param ("~normal_eps_angle", eps_angle_, 15.0);       // 15 degrees
+      nh_.param ("normal_eps_angle", eps_angle_, 15.0);       // 15 degrees
       eps_angle_ = angles::from_degrees (eps_angle_);          // convert to radians
 
-      nh_.param ("~clusters_min_pts", clusters_min_pts_, 10);  // 10 points
+      nh_.param ("clusters_min_pts", clusters_min_pts_, 10);  // 10 points
 
-      nh_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.07);   // 7cm between two objects
-      nh_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);         // 30 points per object cluster
+      nh_.param ("object_cluster_tolerance", object_cluster_tolerance_, 0.07);   // 7cm between two objects
+      nh_.param ("object_cluster_min_pts", object_cluster_min_pts_, 30);         // 30 points per object cluster
 
-      nh_.param ("~table_delta_z", delta_z_, 0.03);                              // consider objects starting at 3cm from the table
-      nh_.param ("~object_min_distance_from_table", object_min_dist_from_table_, 0.1); // objects which have their support more 10cm from the table will not be considered
+      nh_.param ("table_delta_z", delta_z_, 0.03);                              // consider objects starting at 3cm from the table
+      nh_.param ("object_min_distance_from_table", object_min_dist_from_table_, 0.1); // objects which have their support more 10cm from the table will not be considered
       
-      nh_.param ("~filtering_min_angle", min_angle_, 10.0);
-      nh_.param ("~filtering_max_angle", max_angle_, 170.0);
+      nh_.param ("filtering_min_angle", min_angle_, 10.0);
+      nh_.param ("filtering_max_angle", max_angle_, 170.0);
 
-      nh_.param ("~input_cloud_topic", input_cloud_topic_, string ("/cloud_sr"));
+      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/swissranger_test/cloud_sr"));
       plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
-      nh_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+      nh_.param ("sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
 
       cloud_table_pub_ = nh_.advertise<PointCloud> ("cloud_table", 1);
       cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
@@ -166,8 +166,8 @@ class PlaneClustersSR
    void
       updateParametersFromServer ()
     {
-      nh_.getParam ("~input_cloud_topic", input_cloud_topic_);
-      nh_.getParam ("~downsample_factor", downsample_factor_);
+      nh_.getParam ("input_cloud_topic", input_cloud_topic_);
+      nh_.getParam ("downsample_factor", downsample_factor_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
