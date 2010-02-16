@@ -76,7 +76,7 @@ class CylinderFit
     //cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_, 1);
     clusters_sub_ = n_.subscribe (cloud_topic_, 1, &CylinderFit::cloud_cb, this);
     model_ = new SACModelCylinder ();
-    sac_ = new RANSAC (model_, 0.05);
+    sac_ = new RANSAC (model_, 0.001);
     nx_ = ny_ = nz_ = -1;
     channels_size_ = 0;
     k_ = 20;
@@ -118,6 +118,9 @@ class CylinderFit
       points_.channels[channels_size_ + 0].name = "nx";
       points_.channels[channels_size_ + 1].name = "ny";
       points_.channels[channels_size_ + 2].name = "nz";
+      
+      for (unsigned int d = channels_size_; d < (channels_size_ + 3); d++)
+        points_.channels[d].values.resize (points_.points.size ());
       estimatePointNormals(points_);
     }
     find_model(points_);
@@ -130,7 +133,8 @@ class CylinderFit
    */
   void estimatePointNormals (sensor_msgs::PointCloud &cloud)
   {
-    ROS_INFO ("+ estimatePointNormals, %i", cloud.points.size ());
+    ros::Time ts = ros::Time::now ();
+    ROS_INFO ("+ estimatePointNormals, %ld", cloud.points.size ());
     cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
     std::vector<std::vector<int> > points_k_indices;
     ROS_INFO ("1 estimatePointNormals");
@@ -188,7 +192,7 @@ class CylinderFit
     }
     // Delete the kd-tree
     delete kdtree;
-    ROS_INFO ("- estimatePointNormals");
+    ROS_INFO("estimatePointNormals completed in %f seconds",(ros::Time::now () - ts).toSec ());
   }
   
 
@@ -198,6 +202,10 @@ class CylinderFit
    */
 void find_model(sensor_msgs::PointCloud &cloud)
   {
+    // cylinder coefficients:
+    // point_on_axis - 3
+    // axis_direction - 3
+    // cylinder radius - 1
     if(cloud.points.size() != 0)
     {
       model_->setDataSet (&cloud);
@@ -215,7 +223,7 @@ void find_model(sensor_msgs::PointCloud &cloud)
         std::vector<double> coeff;
         sac_->computeCoefficients (coeff);
         //EXPECT_EQ ((int)coeff.size (), 7);
-        //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+        ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
         //EXPECT_NEAR (coeff[0], -0.5, 1e-1);
         //EXPECT_NEAR (coeff[1], 1.7, 1e-1);
         //EXPECT_NEAR (coeff[6], 0.5, 1e-1);
@@ -229,6 +237,7 @@ void find_model(sensor_msgs::PointCloud &cloud)
         //EXPECT_EQ (nr_points_left, 0);
         //cloud_pub_.publish (points_);
         //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
+        cylinder_points_.channels[0].name = "intensities";
         cylinder_pub_.publish (cylinder_points_);
         ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cylinder_topic_).c_str (), 
                   cylinder_points_.points.size());
