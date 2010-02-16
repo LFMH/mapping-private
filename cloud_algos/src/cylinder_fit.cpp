@@ -59,15 +59,49 @@ class CylinderFit
   std::string cloud_topic_, cylinder_topic_;
   ///////////////////////////////////////////////////////////////////////////////
   /**
-   *Contructor
+   * \brief Contructor
    */
   CylinderFit(ros::NodeHandle &n) :
     n_(n)
   {
-    cloud_topic_ = "cloud";
+    cloud_topic_ = "/cloud_pcd";
     cylinder_topic_ = "cylinder";
-    cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_, 1);
     cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(cylinder_topic_ ,1);
+    //use either next 2 or the 3rd line
+    //create_point_cloud();
+    //cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_, 1);
+    clusters_sub_ = n_.subscribe (cloud_topic_, 1, &CylinderFit::cloud_cb, this);
+    model_ = new SACModelCylinder ();
+    sac_ = new RANSAC (model_, 0.05);
+ }
+  
+  ///////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Destructor
+   */
+  ~CylinderFit()
+  {
+    delete model_;
+    delete sac_;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief cloud_cb
+   */
+  void cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
+  {
+    ROS_INFO ("PointCloud message received on %s with %d points.", cloud_topic_.c_str (), (int)cloud->points.size ());
+    points_ = *cloud;
+    find_model();
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief creates a mini circle pointcloud
+   */
+  void create_point_cloud()
+  {
     points_.header.frame_id = "/base_link";
     points_.points.resize (20);
     
@@ -120,56 +154,58 @@ class CylinderFit
     points_.channels[0].values[17] = -0.953769; points_.channels[1].values[17] = -0.300571; points_.channels[2].values[17] = -0.000030;
     points_.channels[0].values[18] = -0.404035; points_.channels[1].values[18] = -0.914700; points_.channels[2].values[18] = -0.000046;
     points_.channels[0].values[19] = 0.420154;  points_.channels[1].values[19] = -0.907445; points_.channels[2].values[19] = 0.000075;
-    model_ = new SACModelCylinder ();
-    sac_ = new LMedS (model_, 0.2);
- }
-  
-  ///////////////////////////////////////////////////////////////////////////////
-  /**
-   *Destructor
-   */
-  ~CylinderFit()
-  {
-    delete model_;
-    delete sac_;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // Spin (!)
-  bool spin ()
+void find_model()
   {
-    ros::Duration delay(5.0);
-    while (n_.ok())
-    {   
+    if(points_.points.size() != 0)
+    {
       model_->setDataSet (&points_);
       //EXPECT_EQ ((int)model_->getCloud ()->points.size (), 20);
       
       bool result = sac_->computeModel ();
       //EXPECT_EQ (result, true);
-      
-      std::vector<int> inliers = sac_->getInliers ();
-      cloud_geometry::getPointCloud (points_, inliers, cylinder_points_);
-      //EXPECT_EQ ((int)inliers.size (), 20);
-      
-      std::vector<double> coeff;
-      sac_->computeCoefficients (coeff);
-      //EXPECT_EQ ((int)coeff.size (), 7);
-      //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
-      //EXPECT_NEAR (coeff[0], -0.5, 1e-1);
-      //EXPECT_NEAR (coeff[1], 1.7, 1e-1);
-      //EXPECT_NEAR (coeff[6], 0.5, 1e-1);
-      
-      std::vector<double> coeff_ref;
-      sac_->refineCoefficients (coeff_ref);
-      //EXPECT_EQ ((int)coeff_ref.size (), 7);
-      //EXPECT_NEAR (coeff_ref[6], 0.5, 1e-1);
-      
-      int nr_points_left = sac_->removeInliers ();
-      //EXPECT_EQ (nr_points_left, 0);
-      cloud_pub_.publish (points_);
-      ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
-      cylinder_pub_.publish (cylinder_points_);
-      ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cylinder_topic_).c_str ());
+      if(result)
+      {
+        std::vector<int> inliers = sac_->getInliers ();
+        ROS_INFO("inliers size %ld", inliers.size());
+        cloud_geometry::getPointCloud (points_, inliers, cylinder_points_);
+        //EXPECT_EQ ((int)inliers.size (), 20);
+        
+        std::vector<double> coeff;
+        sac_->computeCoefficients (coeff);
+        //EXPECT_EQ ((int)coeff.size (), 7);
+        //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+        //EXPECT_NEAR (coeff[0], -0.5, 1e-1);
+        //EXPECT_NEAR (coeff[1], 1.7, 1e-1);
+        //EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+        
+        std::vector<double> coeff_ref;
+        sac_->refineCoefficients (coeff_ref);
+        //EXPECT_EQ ((int)coeff_ref.size (), 7);
+        //EXPECT_NEAR (coeff_ref[6], 0.5, 1e-1);
+        
+        //int nr_points_left = sac_->removeInliers ();
+        //EXPECT_EQ (nr_points_left, 0);
+        //cloud_pub_.publish (points_);
+        //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
+        cylinder_pub_.publish (cylinder_points_);
+        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cylinder_topic_).c_str (), 
+                  cylinder_points_.points.size());
+      }
+    }
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * spin - actual model fitting happens here
+   */
+  bool spin ()
+  {
+    ros::Duration delay(5.0);
+    while (n_.ok())
+    { 
       ros::spinOnce();
       delay.sleep();
     }
