@@ -24,6 +24,8 @@
   <depend package="perception_msgs" />
   <depend package="perception_srvs" />
   <depend package="tabletop_msgs" />
+  <depend package="player_log_actarray" />
+
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_algos"/>
     <cloud_algos plugin="${prefix}/plugins.xml"/>
