@@ -33,6 +33,8 @@
 #include <gtest/gtest.h>
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/PointStamped.h>
+#include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 #include <ros/ros.h>
 
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -60,7 +62,7 @@ class CylinderFit
   sensor_msgs::PointCloud cylinder_points_;
   SACModel *model_;
   SAC *sac_;
-  std::string cloud_topic_, cylinder_topic_;
+  std::string cloud_topic_, cylinder_topic_, marker_topic_;
   ///////////////////////////////////////////////////////////////////////////////
   /**
    * \brief Contructor
@@ -70,7 +72,9 @@ class CylinderFit
   {
     cloud_topic_ = "/cloud_pcd";
     cylinder_topic_ = "cylinder";
+    marker_topic_ = "";
     cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(cylinder_topic_ ,1);
+    vis_pub = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     //use either next 2 or the 3rd line
     //create_point_cloud();
     //cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_, 1);
@@ -123,7 +127,8 @@ class CylinderFit
         points_.channels[d].values.resize (points_.points.size ());
       estimatePointNormals(points_);
     }
-    find_model(points_);
+    find_model(points_, coeff);
+    publish_model_rviz(coeff);
   }
 
   
@@ -200,7 +205,7 @@ class CylinderFit
   /**
    * actual model fitting happens here
    */
-void find_model(sensor_msgs::PointCloud &cloud)
+  void find_model(sensor_msgs::PointCloud &cloud, std::vector<double> &coeff)
   {
     // cylinder coefficients:
     // point_on_axis - 3
@@ -220,7 +225,6 @@ void find_model(sensor_msgs::PointCloud &cloud)
         cloud_geometry::getPointCloud (cloud, inliers, cylinder_points_);
         //EXPECT_EQ ((int)inliers.size (), 20);
         
-        std::vector<double> coeff;
         sac_->computeCoefficients (coeff);
         //EXPECT_EQ ((int)coeff.size (), 7);
         ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
@@ -248,7 +252,37 @@ void find_model(sensor_msgs::PointCloud &cloud)
 
  ////////////////////////////////////////////////////////////////////////////////
   /**
-   * spin
+   * \brief publishes model marker (to rviz)
+   */  
+  void publish_model_rviz (std::vector<double> &coeff)
+  {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "base_link";
+    marker.header.stamp = ros::Time();
+    marker.ns = "my_namespace";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::CYLINDER;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = coeff[0];
+    marker.pose.position.y = coeff[1];
+    marker.pose.position.z = coeff[2];
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.a = 1.0;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+    ROS_INFO("Publishing on /visualization_marker topic");
+    vis_pub.publish( marker );
+  }
+ ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief spin
    */
   bool spin ()
   {
@@ -326,12 +360,16 @@ void find_model(sensor_msgs::PointCloud &cloud)
   ros::Publisher cloud_pub_;
   ros::Publisher cylinder_pub_;
   ros::Subscriber clusters_sub_;
+  //model rviz publisher
+  ros::Publisher vis_pub;
   //normals' indices in PointCloud.channels
   int nx_, ny_, nz_;
   //needed to append channels for normals if PointCloud.channels.size() =! 0
   int channels_size_;
   //KD Tree parameter
   int k_;
+  //model's coefficients, i.e. geometrical description
+  std::vector<double> coeff;
 };
 
 // TEST (RANSAC, SACModelCylinder)
