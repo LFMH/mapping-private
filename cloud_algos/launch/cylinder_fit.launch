@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(find cloud_algos)/data/cylinder_small.pcd 5" />
+
+  <node pkg="cloud_algos" type="cylinder_fit_node" name="cylinder_fit_node" output="screen" respawn="true">
+  </node>
+</launch>
