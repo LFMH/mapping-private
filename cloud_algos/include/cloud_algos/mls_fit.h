@@ -153,8 +153,8 @@ class MovingLeastSquares : public CloudAlgo
   Eigen::MatrixXd P_weight_;
   Eigen::MatrixXd P_weight_Pt_;
   Eigen::MatrixXd inv_P_weight_Pt_;
-  Eigen::MatrixXd inv_P_weight_Pt_P_weight_;
-  //*/
+  //Eigen::MatrixXd inv_P_weight_Pt_P_weight_;
+  */
 };
 
 }

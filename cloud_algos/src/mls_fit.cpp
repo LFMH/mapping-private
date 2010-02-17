@@ -94,6 +94,25 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 {
   // TODO where to put this?
   clear ();
+  nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
+#ifdef GLOBAL
+  // allocating space for "global" matrices - TODO here?
+  //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+  Eigen::VectorXd weight_vec_(max_nn_);
+  Eigen::MatrixXd P_(nr_coeff_, max_nn_);
+  Eigen::VectorXd f_vec_(max_nn_);
+  Eigen::VectorXd c_vec_; //(nr_coeff_);
+  Eigen::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
+  Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
+  Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
+  //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
+  /*//weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+  weight_vec_.resize (max_nn_);
+  P_.resize (nr_coeff_, max_nn_);
+  f_vec_.resize (max_nn_);
+  P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
+  inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
+#endif
 
   // TODO Figure out the viewpoint value in the cloud_frame frame
   //geometry_msgs::PointStamped viewpoint_cloud;
@@ -205,26 +224,49 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
   // Go through all the points that have to be fitted
   ts = ros::Time::now ();
+  #ifdef PARTIAL_TIMES
   ros::Time ts_tmp;
   double sum_ts_filter = 0.0;
   double sum_ts_tangent = 0.0;
   double sum_ts_polynomial = 0.0;
   double sum_ts_extra = 0.0;
+  #endif
   /// TODO #pragma omp parallel for schedule(dynamic) and boost::mutex m_lock_; .lock () / .unlock ()
   ///      which combination of parallelism/global variables is best?
+  #ifndef PARALLEL
+  int zero_determinant = 0, not_inverse = 0;
+  int k_min = max_nn_, k_max = 0, not_enough_nn = 0, nr_orthogonal = 0;
+  double max_bad_det = 0.0, min_good_det = 0.01;
+  #else
+  #pragma omp parallel for schedule(dynamic)
+  #endif
   for (size_t cp = 0; cp < cloud_fit_->points.size (); cp++)
   {
+    // STEP0: Init
+    int k = points_indices_[cp].size (); // TODO: save k as a channel
+    #ifndef PARALELL
+      if (k > k_max) k_max = k;
+      if (k < k_min) k_min = k;
+    #endif
+    // TODO: perhaps move nn search here if not parallelized
+
     // STEP1: Check neighborhood
     if (filter_points_)
     {
+      #ifdef PARTIAL_TIMES
       ts_tmp = ros::Time::now ();
+      #endif
       /// @TODO get it from _Clouds/src/ResamplingMLS/RMLS.h (not important for general use)
+      #ifdef PARTIAL_TIMES
       sum_ts_filter += (ros::Time::now () - ts_tmp).toSec ();
+      #endif
     }
     //cerr << "original point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
     // STEP2: Get a good plane approximating the local surface and project point onto it (+ other features)
+    #ifdef PARTIAL_TIMES
     ts_tmp = ros::Time::now ();
+    #endif
     Eigen::Vector4d plane_parameters; /// @NOTE: both () and [] is defined for Eigen vectors !!!
     double curvature, j1, j2, j3;
     /// @NOTE: while the neighborhood of the points from cloud_fit is used, the plane has to be computed from cloud
@@ -246,32 +288,47 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         cloud_fit_->points[cp].z -= distance * plane_parameters[2];
       }
     }
+    #ifdef PARTIAL_TIMES
     sum_ts_tangent += (ros::Time::now () - ts_tmp).toSec ();
+    #endif
     //cerr << "plane_parameters:" << endl << plane_parameters << endl;
-    if (cp == 0)
-      cerr << "projd point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
+    //cerr << "projd point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
     // STEP3: Perform polynomial fitting
+    if (k < nr_coeff_)
+    {
+      #ifndef PARALELL
+        not_enough_nn++;
+      #endif
+    }
+    else
     if (polynomial_fit_)
     {
       // initialize timer
+      #ifdef PARTIAL_TIMES
       ts_tmp = ros::Time::now ();
+      #endif
 
+      //#ifdef PARALELL
+#ifndef GLOBAL
+      max_nn_ = k;
       // allocating space for "global" matrices - TODO here?
-      nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
-      // TODO for some reason if defined elsewhere they produce random segmentation faults
-      Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      Eigen::VectorXd weight_vec_(max_nn_);
       Eigen::MatrixXd P_(nr_coeff_, max_nn_);
       Eigen::VectorXd f_vec_(max_nn_);
       Eigen::VectorXd c_vec_; //(nr_coeff_);
       Eigen::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
-      Eigen::MatrixXd P_weight_Pt_; //(nr_coeff_, nr_coeff_);
+      Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
       Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
-      Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
-      /*weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
+      /*//weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+      weight_vec_.resize (max_nn_);
       P_.resize (nr_coeff_, max_nn_);
       f_vec_.resize (max_nn_);
+      P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
       inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
+      #endif
 
       // update neighborhood, since point was projected
       /// TODO: leaving this out, as it is not as important
@@ -282,7 +339,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // get local coordinate system
       Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
       Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
-      //cout << "sum of dot product of local coordinate axes: " << u.dot (v) + u.dot (plane_parameters.start<3>()) + v.dot (plane_parameters.start<3>()) << endl;
       // TODO is this faster or: getCoordinateSystemOnPlane (plane_parameters, u, v);
 
       // build up matrices for getting the coefficients
@@ -291,7 +347,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       for (size_t i = 0; i != points_indices_[cp].size (); i++)
       {
         // (re-)compute weights
-        weight_(i,i) = THETA(cp,i);
+        weight_vec_(i) = THETA(cp,i);
 
         // transforming coordinates
         de_meaned[0] = cloud->points[points_indices_[cp][i]].x - cloud_fit_->points[cp].x;
@@ -300,7 +356,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         // TODO which one is better, faster? dot, * or macro?
         u_coord = de_meaned.dot (u);
         v_coord = de_meaned.dot (v);
-        // plane_parameters has 4 values, need only first 3
         f_vec_(i) = de_meaned.dot (plane_parameters.start<3>());
         //cerr << "f_vec[" << i << "] = " << f_vec[i] << endl;
 
@@ -320,146 +375,201 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         }
         //cerr << "==============" << endl;
       }
-      //cerr << "weights:" << endl << weight_.diagonal () << endl;
-      if (cp == 0)
-        cerr << f_vec_.transpose () << endl;
-      //cerr << "term matrix:" << P_ << endl;
 
       // compute coefficients
-      P_weight_ = P_ * weight_;
-      // TODO .part<Eigen::SelfAdjoint>()
-      P_weight_Pt_ = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
-      if (cp == 0)
-        cout << P_weight_Pt_ << endl;
-      P_weight_Pt_.computeInverse(&inv_P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
-      if (cp == 0)
-        cout << "inverse:" << endl << inv_P_weight_Pt_ << endl;
-      inv_P_weight_Pt_P_weight_ = inv_P_weight_Pt_ * P_weight_;
-      c_vec_ = inv_P_weight_Pt_P_weight_ * f_vec_;
-      if (cp == 0)
-        cout << "coefficients: " << c_vec_.transpose () << endl;
+      P_weight_ = P_ * weight_vec_.asDiagonal();
+      //P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
+      //P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
 
-      Eigen::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
-      if (identity_check.isIdentity(1e-3))
-        cout << "+";
-      else
-        cout << "-";
-
-      // project point onto the surface - TODO: make (at least approximate) orthogonal projection
-      double du = 0.0; // value of partial derivative at the current point, see below
-      double dv = 0.0; // value of partial derivative at the current point, see below
-      if (c_vec_[0]*c_vec_[0] < points_sqr_distances_[cp][0]*3) /// maybe make some different check here !!!
+      //if (cp < 10)
+      //  cerr << P_weight_Pt_.determinant () << " ";
+      #ifndef PARALLEL
+      double det = P_weight_Pt_.determinant ();
+      if (det <= max_bad_det)
+        zero_determinant++;
+      else // det > max_bad_det
+      #endif
       {
-        //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
-        cloud_fit_->points[cp].x += c_vec_[0] * plane_parameters[0];
-        cloud_fit_->points[cp].y += c_vec_[0] * plane_parameters[1];
-        cloud_fit_->points[cp].z += c_vec_[0] * plane_parameters[2];
-        // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively evaluated at (0,0)
-        du = c_vec_[order_+1];
-        dv = c_vec_[1];
-      }
-      else
-      {
-        /// @NOTE: simple approximation of orthogonal projection, in case adjusting the height at (0,0) seems inappropriate
-        // get the u and v coordinates of the closest point
-        u_coord = P_(order_+1,0); // value of u^1*v^0 = u
-        v_coord = P_(1,0);        // value of u^0*v^1 = v
+        P_weight_Pt_.computeInverse(&inv_P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
+        //if (cp < 10)
+        //{
+        //  Eigen::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
+        //  cerr << "identity: " << identity_check.isIdentity(1e-5) << endl;// << identity_check << endl;
+        //  cerr << "diagonal has values between " << identity_check.diagonal().minCoeff() << " and " << identity_check.diagonal().maxCoeff() << endl;
+        //  cerr << "off-diagonal max: " << (identity_check - identity_check.diagonal().asDiagonal()).maxCoeff() << endl;
+        //}
 
-        // compute the value of the polynomial at the nearest point
-        // and the partial derivative of the polynomial w.r.t. u and v at (u_coord,v_coord)
-        double height = 0.0;
-        int j = 0;
-        u_pow = 1;
-        for (int ui=0; ui<=order_; ui++)
+        bool inverse_ok = false;
+        #ifndef PARALLEL
+        if (det < min_good_det)
         {
-          v_pow = 1;
-          for (int vi=0; vi<=order_-ui; vi++)
+          if ((P_weight_Pt_ * inv_P_weight_Pt_).isIdentity(1e-5))
           {
-            double term = c_vec_[j] * u_pow * v_pow;
-            height += term;
-            du += ui * term / u_coord;
-            dv += vi * term / v_coord;
-            j++;
-            v_pow *= v_coord;
+            min_good_det = det;
+            inverse_ok = true;
           }
-          u_pow *= u_coord;
+          else
+          {
+            max_bad_det = det;
+            not_inverse++;
+          }
+          ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
         }
+        #else
+        if ((P_weight_Pt_ * inv_P_weight_Pt_).isIdentity(1e-5))
+          inverse_ok = true;
+        #endif
 
-        // move the point to the corresponding surface point
-        Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.start<3>();
-        cloud_fit_->points[cp].x += movement[0];
-        cloud_fit_->points[cp].y += movement[1];
-        cloud_fit_->points[cp].z += movement[2];
-      }
-      if (cp == 0)
-        cerr << "final point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
+        if (inverse_ok)
+        {
+          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
+          //c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
 
-      // "stop" timer
-      sum_ts_polynomial += (ros::Time::now () - ts_tmp).toSec ();
+          //if (cp < 10)
+          //  cerr << "coefficients: " << c_vec_.transpose () << endl;
+          //cerr << c_vec_(0) << " ";
 
-      // re-compute surface normal - TODO: update curvature as well after polynomial fit?
-      ts_tmp = ros::Time::now ();
-      // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-      Eigen::Vector3d n_a = u + plane_parameters.start<3>() * du;
-      Eigen::Vector3d n_b = v + plane_parameters.start<3>() * dv;
-      //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
-      //plane_parameters[0] = n[0];
-      //plane_parameters[1] = n[1];
-      //plane_parameters[2] = n[2];
-      plane_parameters.start<3>() = n_a.cross (n_b);
-      plane_parameters.start<3>().normalize ();
-      /*ANNpoint n = annAllocPt(3);
-      n[0] = -c_vec[order+1][0];
-      n[1] = -c_vec[1][0];
-      n[2] = 1;*/
-      //cerr << "recomputed normal:" << endl << plane_parameters.start<3>() << endl;
-      sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
+          // project point onto the surface - TODO: make (at least approximate) orthogonal projection
+          double du = 0.0; // value of partial derivative at the current point, see below
+          double dv = 0.0; // value of partial derivative at the current point, see below
+          if (c_vec_[0] < 0.03) /// maybe make some different check here !!!
+          {
+            //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
+            cloud_fit_->points[cp].x += c_vec_[0] * plane_parameters[0];
+            cloud_fit_->points[cp].y += c_vec_[0] * plane_parameters[1];
+            cloud_fit_->points[cp].z += c_vec_[0] * plane_parameters[2];
+            //if (cp < 10)
+            //  cerr << "moving point with " << c_vec_[0] << " along Darboux normal" << endl;
 
-      /**
-       *  5   4   3   2   1   0
-       * 2,0 1,1 1,0 0,2 0,1 0,0
-       *  a   b   d   c   e   f
-      **/
+            // c_vec[order_+1] and c_vec[1] is the partial derivative of the polynomial w.r.t. u and v respectively evaluated at (0,0)
+            du = c_vec_[order_+1];
+            dv = c_vec_[1];
+          }
+          else
+          {
+            #ifndef PARALELL
+            nr_orthogonal++;
+            #endif
 
-      /*if (order == 2)
-      {
-        // Calculating Gaussian curvature K and mean curvature H
-        double d_sum = 1 + SQR(c_vec[3]);
-        double e_sum = 1 + SQR(c_vec[1]);
-        double div = SQR(d_sum + e_sum - 1);
-        mls_point[10] = (4*(c_vec[5])*(c_vec[2]) - SQR(c_vec[4])) / div;
-        mls_point[11] = (c_vec[5]*e_sum - c_vec[4]*c_vec[3]*c_vec[1] + c_vec[2]*d_sum) / div;
-        //cerr << "K=" << mls_point[10] << ", H=" << mls_point[11] << endl;
-      }*/
-    }
+            /// @NOTE: simple approximation of orthogonal projection, in case adjusting the height at (0,0) seems inappropriate
+            // get the u and v coordinates of the closest point
+            u_coord = P_(order_+1,0); // value of u^1*v^0 = u
+            v_coord = P_(1,0);        // value of u^0*v^1 = v
 
-    // STEP4: Compute local features
+            // compute the value of the polynomial at the nearest point
+            // and the partial derivative of the polynomial w.r.t. u and v at (u_coord,v_coord)
+            double height = 0.0;
+            int j = 0;
+            u_pow = 1;
+            for (int ui=0; ui<=order_; ui++)
+            {
+              v_pow = 1;
+              for (int vi=0; vi<=order_-ui; vi++)
+              {
+                double term = c_vec_[j] * u_pow * v_pow;
+                height += term;
+                du += ui * term / u_coord;
+                dv += vi * term / v_coord;
+                j++;
+                v_pow *= v_coord;
+              }
+              u_pow *= u_coord;
+            }
+
+            // move the point to the corresponding surface point
+            Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.start<3>();
+            cloud_fit_->points[cp].x += movement[0];
+            cloud_fit_->points[cp].y += movement[1];
+            cloud_fit_->points[cp].z += movement[2];
+            //if (cp < 10)
+            //  cerr << "moving point with " << movement.norm() << " along " << movement.transpose() << endl;
+          }
+          //if (cp < 10)
+          //  cerr << "final point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
+
+          // "stop" timer
+          #ifdef PARTIAL_TIMES
+          sum_ts_polynomial += (ros::Time::now () - ts_tmp).toSec ();
+          #endif
+
+          // STEP4: Compute local features
+          #ifdef PARTIAL_TIMES
+          ts_tmp = ros::Time::now ();
+          #endif
+          // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
+          Eigen::Vector3d n_a = u + plane_parameters.start<3>() * du;
+          Eigen::Vector3d n_b = v + plane_parameters.start<3>() * dv;
+          //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
+          //plane_parameters[0] = n[0];
+          //plane_parameters[1] = n[1];
+          //plane_parameters[2] = n[2];
+          plane_parameters.start<3>() = n_a.cross (n_b);
+          plane_parameters.start<3>().normalize ();
+          /*ANNpoint n = annAllocPt(3);
+          n[0] = -c_vec[order+1][0];
+          n[1] = -c_vec[1][0];
+          n[2] = 1;*/
+          //cerr << "recomputed normal:" << endl << plane_parameters.start<3>() << endl;
+
+          /**
+           *  5   4   3   2   1   0
+           * 2,0 1,1 1,0 0,2 0,1 0,0
+           *  a   b   d   c   e   f
+          **/
+
+          /*if (order == 2)
+          {
+            // Calculating Gaussian curvature K and mean curvature H
+            double d_sum = 1 + SQR(c_vec[3]);
+            double e_sum = 1 + SQR(c_vec[1]);
+            double div = SQR(d_sum + e_sum - 1);
+            mls_point[10] = (4*(c_vec[5])*(c_vec[2]) - SQR(c_vec[4])) / div;
+            mls_point[11] = (c_vec[5]*e_sum - c_vec[4]*c_vec[3]*c_vec[1] + c_vec[2]*d_sum) / div;
+            //cerr << "K=" << mls_point[10] << ", H=" << mls_point[11] << endl;
+          }*/
+        } // inverse was ok
+      } // determinant was ok
+    } // polynomial fit
+
+    // reset surface normal - TODO: update curvature as well after polynomial fit?
     if (viewpoint_cloud_ != NULL) /// @NOTE: the point where the normal is placed is from cloud_fit
       cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_fit_->points[cp], *viewpoint_cloud_);
     cloud_fit_->channels[original_chan_size + 0].values[cp] = plane_parameters (0);
     cloud_fit_->channels[original_chan_size + 1].values[cp] = plane_parameters (1);
     cloud_fit_->channels[original_chan_size + 2].values[cp] = plane_parameters (2);
     cloud_fit_->channels[original_chan_size + 3].values[cp] = curvature;
-    sum_ts_tangent += (ros::Time::now () - ts_tmp).toSec ();
     if (compute_moments_)
     {
-      ts_tmp = ros::Time::now ();
       /// @NOTE: the moments have to be computed from the original cloud OR from cloud_fit *after* fitting (TODO?)
       cloud_geometry::nearest::computeMomentInvariants (*cloud, points_indices_[cp], j1, j2, j3);
       cloud_fit_->channels[original_chan_size + 4].values[cp] = j1;
       cloud_fit_->channels[original_chan_size + 5].values[cp] = j2;
       cloud_fit_->channels[original_chan_size + 6].values[cp] = j3;
-      sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
     }
     // TODO: bool cloud_geometry::nearest::isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
+    #ifdef PARTIAL_TIMES
+    sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
+    #endif
   }
+  ROS_INFO ("Neighborhood sizes varied from %d to %d.", k_min, k_max);
   ROS_INFO ("Fitted points in %g seconds.", (ros::Time::now () - ts).toSec ());
+  #ifdef PARTIAL_TIMES
   ROS_INFO ("- time spent filtering points: %g seconds.", sum_ts_filter);
   ROS_INFO ("- time spent approximating tangent: %g seconds.", sum_ts_tangent);
   ROS_INFO ("- time spent computing polynomial: %g seconds.", sum_ts_polynomial);
   ROS_INFO ("- time spent computing extra features: %g seconds.", sum_ts_extra);
-
-  cerr << endl << endl << endl;
+  #endif
+  if (polynomial_fit_)
+  {
+    ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
+    #ifndef PARALELL
+    ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
+    ROS_WARN ("Matrix to be inverted had a bad determinant %d times (%g%%) and failed to invert %d times (%g%%).", zero_determinant, zero_determinant*100.0/cloud_fit_->points.size (), not_inverse, not_inverse*100.0/cloud_fit_->points.size ());
+    ROS_WARN ("%d (%g%%) points would have had a probably inaccurate parallel projection.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
+    #endif
+  }
+  //cerr << endl << endl << endl;
 
   // Finish
   ROS_INFO ("MLS fit done in %g seconds.\n", (ros::Time::now () - global_time).toSec ());
