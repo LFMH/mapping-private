@@ -93,7 +93,7 @@ class CylinderFit
     k_ = 20;
     axis_.x = 1;
     axis_.y = axis_.z = 0;
-    rotate_inliers_ = 45.0;
+    rotate_inliers_ = 0.0;
  }
   
   ///////////////////////////////////////////////////////////////////////////////
@@ -275,15 +275,16 @@ class CylinderFit
     // P (points[i].x, points[i].y, points[i].z) - a point on the cylinder
     btVector3 p0(coeff[0], coeff[1], coeff[2]);
     btVector3 direction(coeff[3], coeff[4], coeff[5]);
+    //direction.normalize();
     double min_t = DBL_MAX, max_t = -DBL_MAX;
     for (size_t i = 0; i < inliers.size (); i++)
     {
       // dot product of (P-P0) and direction to get the distance of P's projection from P0 ("t" in the parametric equation of the axis)
-      double t = (points[i].x-p0.x())*direction.x() + (points[i].y-p0.y())*direction.y() + (points[i].z-p0.z())*direction.z();
+      double t = (points[i].x-p0.x())*direction.normalize().x() + (points[i].y-p0.y())*direction.normalize().y() + (points[i].z-p0.z())*direction.normalize().z();
       if (t < min_t) min_t = t;
       if (t > max_t) max_t = t;
     }
-    std::cerr << min_t << " " << max_t << std::endl;
+    ROS_INFO("min, max t %lf - %lf = %f ", min_t, max_t, max_t - min_t);
     // update coefficients with the two extreme points on the axis line
     coeff[0] = p0.x() + min_t * direction.x ();
     coeff[1] = p0.y() + min_t * direction.y ();
