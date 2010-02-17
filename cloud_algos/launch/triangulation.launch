@@ -1,0 +1,8 @@
+<!-- Note you have to custumize the path to your .pcd file   -->
+<launch>
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(env HOME)/work/triangulation/breakfast_cup_missing.pcd 5" />
+
+  <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true">
+  </node>
+</launch>
