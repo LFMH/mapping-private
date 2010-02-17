@@ -50,7 +50,7 @@ namespace positionstring_rviz_plugin
 PositionStringDisplay::PositionStringDisplay(const std::string & name, rviz::VisualizationManager * manager)
 : Display(name, manager)
 , color_(0.1f, 1.0f, 0.0f)
-, override_color_(false)
+, character_height_(0.1)
 , tf_filter_(*manager->getTFClient(), "", 2, update_nh_)
 {
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
@@ -58,11 +58,8 @@ PositionStringDisplay::PositionStringDisplay(const std::string & name, rviz::Vis
   static int count = 0;
   std::stringstream ss;
   ss << "PositionString " << count++;
-  manual_object_ = scene_manager_->createManualObject(ss.str());
-  manual_object_->setDynamic(true);
-  scene_node_->attachObject(manual_object_);
 
-  text_ = new ogre_tools::MovableText("positionstring", "Arial",0.1, Ogre::ColourValue::White);
+  text_ = new ogre_tools::MovableText("positionstring", "Arial", character_height_, Ogre::ColourValue::White);
   //text_ = new ogre_tools::MovableText("positionstring");
   scene_node_->attachObject(text_);
 
@@ -73,17 +70,10 @@ PositionStringDisplay::PositionStringDisplay(const std::string & name, rviz::Vis
 PositionStringDisplay::~PositionStringDisplay()
 {
   unsubscribe();
-  clear();
-
-  scene_manager_->destroyManualObject(manual_object_);
 
   delete text_;
 }
 
-void PositionStringDisplay::clear()
-{
-  manual_object_->clear();
-}
 
 void PositionStringDisplay::setTopic(const std::string & topic)
 {
@@ -105,12 +95,11 @@ void PositionStringDisplay::setColor(const rviz::Color & color)
   causeRender();
 }
 
-void PositionStringDisplay::setOverrideColor(bool override)
+void PositionStringDisplay::setCharacterHeight(const double & h)
 {
-  override_color_ = override;
+  character_height_ = h;
 
-  propertyChanged(override_color_property_);
-
+  propertyChanged(character_height_property_);
   processMessage(current_message_);
   causeRender();
 }
@@ -140,14 +129,12 @@ void PositionStringDisplay::onEnable()
 void PositionStringDisplay::onDisable()
 {
   unsubscribe();
-  clear();
   scene_node_->setVisible(false);
 }
 
 void PositionStringDisplay::fixedFrameChanged()
 {
   tf_filter_.setTargetFrame(fixed_frame_);
-  clear();
 }
 
 void PositionStringDisplay::update(float wall_dt, float ros_dt)
@@ -156,17 +143,17 @@ void PositionStringDisplay::update(float wall_dt, float ros_dt)
 
 void PositionStringDisplay::processMessage(const ias_visualization_msgs::PositionString::ConstPtr& msg)
 {
-  clear();
-
   if (!msg)
   {
     return;
   }
   
   text_->setCaption (msg->text);
+  text_->setCharacterHeight (character_height_);
+  text_->setColor (Ogre::ColourValue(color_.r_, color_.g_, color_.b_));
 
-  tf::Stamped<tf::Pose> pose(btTransform(btQuaternion(0.0f, 0.0f, 0.0f),
-      btVector3(0.0f, 0.0f, 0.0f)), msg->header.stamp,
+  tf::Stamped<tf::Pose> pose(btTransform(btQuaternion(1.0f, 0.0f, 0.0f, 0.0f),
+      btVector3(msg->pose.x, msg->pose.y, msg->pose.z)), msg->header.stamp,
       msg->header.frame_id);
 
   try
@@ -176,97 +163,15 @@ void PositionStringDisplay::processMessage(const ias_visualization_msgs::Positio
   catch (tf::TransformException & e)
   {
     ROS_ERROR("Error transforming from frame '%s' to frame '%s'",
-        msg->header.frame_id, fixed_frame_.c_str());
+        msg->header.frame_id.c_str(), fixed_frame_.c_str());
   }
 
   Ogre::Vector3 position = Ogre::Vector3(pose.getOrigin().x(),
       pose.getOrigin().y(), pose.getOrigin().z());
+
   rviz::robotToOgre(position);
 
-  btScalar yaw, pitch, roll;
-  pose.getBasis().getEulerZYX(yaw, pitch, roll);
-
-  Ogre::Matrix3 orientation(rviz::ogreMatrixFromRobotEulers(yaw, pitch, roll));
-
-  manual_object_->clear();
-
-  Ogre::ColourValue color;
-
-//  // If we render points, we don't care about the order
-//  if (render_operation_ == collision_render_ops::CPoints)
-//  {
-//    typedef std::vector<ogre_tools::PointCloud::Point> V_Point;
-//    V_Point points;
-//    if (num_boxes > 0)
-//    {
-//      points.resize(num_boxes);
-//      for (uint32_t i = 0; i < num_boxes; i++)
-//      {
-//        ogre_tools::PointCloud::Point & current_point = points[i];
-//
-//        current_point.x = msg->boxes[i].center.x;
-//        current_point.y = msg->boxes[i].center.y;
-//        current_point.z = msg->boxes[i].center.z;
-//        color = Ogre::ColourValue(color_.r_, color_.g_, color_.b_, alpha_);
-//        current_point.setColor(color.r, color.g, color.b);
-//      }
-//    }
-//    cloud_->clear();
-//
-//    if (!points.empty())
-//    {
-//      cloud_->addPoints(&points.front(), points.size());
-//    }
-//  }
-//  else
-//  {
-//    geometry_msgs::Point32 center, extents;
-//    color = Ogre::ColourValue(color_.r_, color_.g_, color_.b_, alpha_);
-//    if (num_boxes > 0)
-//    {
-//      for (uint32_t i = 0; i < num_boxes; i++)
-//      {
-//        manual_object_->estimateVertexCount(8);
-//        manual_object_->begin("BaseWhiteNoLighting",
-//            Ogre::RenderOperation::OT_LINE_STRIP);
-//        center.x = msg->boxes[i].center.x;
-//        center.y = msg->boxes[i].center.y;
-//        center.z = msg->boxes[i].center.z;
-//        extents.x = msg->boxes[i].extents.x;
-//        extents.y = msg->boxes[i].extents.y;
-//        extents.z = msg->boxes[i].extents.z;
-//
-//        manual_object_->position(center.x - extents.x, center.y - extents.y,
-//            center.z - extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x - extents.x, center.y + extents.y,
-//            center.z - extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x + extents.x, center.y + extents.y,
-//            center.z - extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x + extents.x, center.y - extents.y,
-//            center.z - extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x + extents.x, center.y - extents.y,
-//            center.z + extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x + extents.x, center.y + extents.y,
-//            center.z + extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x - extents.x, center.y + extents.y,
-//            center.z + extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->position(center.x - extents.x, center.y - extents.y,
-//            center.z + extents.z);
-//        manual_object_->colour(color);
-//        manual_object_->end();
-//      }
-//    }
-//  }
-//
   scene_node_->setPosition(position);
-  scene_node_->setOrientation(orientation);
 }
 
 void PositionStringDisplay::incomingMessage(const ias_visualization_msgs::PositionString::ConstPtr& message)
@@ -277,7 +182,6 @@ void PositionStringDisplay::incomingMessage(const ias_visualization_msgs::Positi
 
 void PositionStringDisplay::reset()
 {
-  clear();
 }
 
 void PositionStringDisplay::targetFrameChanged()
@@ -286,10 +190,8 @@ void PositionStringDisplay::targetFrameChanged()
 
 void PositionStringDisplay::createProperties()
 {
-  override_color_property_ = property_manager_->createProperty<rviz::BoolProperty> ("Override Color", property_prefix_,
-                                                                                    boost::bind(&PositionStringDisplay::getOverrideColor, this),
-                                                                                    boost::bind(&PositionStringDisplay::setOverrideColor, this, _1), parent_category_,
-                                                                                    this);
+  character_height_property_ = property_manager_->createProperty<rviz::DoubleProperty> ("Character Height", property_prefix_, boost::bind(&PositionStringDisplay::getCharacterHeight, this),
+                                                                            boost::bind(&PositionStringDisplay::setCharacterHeight, this, _1), parent_category_, this);
   color_property_ = property_manager_->createProperty<rviz::ColorProperty> ("Color", property_prefix_, boost::bind(&PositionStringDisplay::getColor, this),
                                                                             boost::bind(&PositionStringDisplay::setColor, this, _1), parent_category_, this);
   topic_property_ = property_manager_->createProperty<rviz::ROSTopicStringProperty> ("Topic", property_prefix_, boost::bind(&PositionStringDisplay::getTopic, this),

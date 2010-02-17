@@ -79,11 +79,11 @@ public:
   {
     return (color_);
   }
-
-  void setOverrideColor(bool override);
-  bool getOverrideColor()
+  
+  void setCharacterHeight(const double & h);
+  const double& getCharacterHeight()
   {
-    return (override_color_);
+    return (character_height_);
   }
 
   // Overrides from Display
@@ -106,7 +106,7 @@ protected:
 
   std::string topic_;
   rviz::Color color_;
-  bool override_color_;
+  double character_height_;
   ias_visualization_msgs::PositionString::ConstPtr current_message_;
   Ogre::SceneNode* scene_node_;
   Ogre::SceneNode* text_node_;
@@ -116,9 +116,9 @@ protected:
   message_filters::Subscriber<ias_visualization_msgs::PositionString> sub_;
   tf::MessageFilter<ias_visualization_msgs::PositionString> tf_filter_;
 
+  rviz::DoublePropertyWPtr character_height_property_;
   rviz::ColorPropertyWPtr color_property_;
   rviz::ROSTopicStringPropertyWPtr topic_property_;
-  rviz::BoolPropertyWPtr override_color_property_;
 };
 
 } // namespace positionstring_rviz_plugin
