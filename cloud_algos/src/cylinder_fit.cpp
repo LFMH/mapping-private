@@ -93,7 +93,7 @@ class CylinderFit
     k_ = 20;
     axis_.x = 1;
     axis_.y = axis_.z = 0;
-    rotate_inliers_ = 0.0;
+    rotate_inliers_ = 45.0;
  }
   
   ///////////////////////////////////////////////////////////////////////////////
@@ -241,14 +241,16 @@ class CylinderFit
         cloud_geometry::getPointCloud (cloud, inliers, cylinder_points_);
         
         sac_->computeCoefficients (coeff);
-        ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+        ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
         
-        //std::vector<double> coeff_ref;
-        sac_->refineCoefficients (coeff);
+        // // std::vector<double> coeff_ref;
+        //sac_->refineCoefficients (coeff);
+
 
         // transform coefficients to get the limits of the cylinder
         changeAxisToMinMax(cloud.points, inliers, coeff);
-        
+        ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+
         //int nr_points_left = sac_->removeInliers ();
 
         //cloud_pub_.publish (points_);
@@ -271,22 +273,24 @@ class CylinderFit
     // P0 (coeff[0], coeff[1], coeff[2]) - a point on the axis
     // direction (coeff[3], coeff[4], coeff[5]) - the direction vector of the axis
     // P (points[i].x, points[i].y, points[i].z) - a point on the cylinder
+    btVector3 p0(coeff[0], coeff[1], coeff[2]);
     btVector3 direction(coeff[3], coeff[4], coeff[5]);
-    double min_t = DBL_MAX, max_t = DBL_MIN;
+    double min_t = DBL_MAX, max_t = -DBL_MAX;
     for (size_t i = 0; i < inliers.size (); i++)
     {
       // dot product of (P-P0) and direction to get the distance of P's projection from P0 ("t" in the parametric equation of the axis)
-      double t = (points[i].x-coeff[0])*direction[0] + (points[i].y-coeff[1])*direction[1] + (points[i].z-coeff[2])*direction[2];
-      if (t > min_t) min_t = t;
-      if (t < max_t) max_t = t;
+      double t = (points[i].x-p0.x())*direction.x() + (points[i].y-p0.y())*direction.y() + (points[i].z-p0.z())*direction.z();
+      if (t < min_t) min_t = t;
+      if (t > max_t) max_t = t;
     }
+    std::cerr << min_t << " " << max_t << std::endl;
     // update coefficients with the two extreme points on the axis line
-    coeff[0] += min_t * direction.x ();
-    coeff[1] += min_t * direction.y ();
-    coeff[2] += min_t * direction.z ();
-    coeff[3] += max_t * direction.x ();
-    coeff[4] += max_t * direction.y ();
-    coeff[5] += max_t * direction.z ();
+    coeff[0] = p0.x() + min_t * direction.x ();
+    coeff[1] = p0.y() + min_t * direction.y ();
+    coeff[2] = p0.z() + min_t * direction.z ();
+    coeff[3] = p0.x() + max_t * direction.x ();
+    coeff[4] = p0.y() + max_t * direction.y ();
+    coeff[5] = p0.z() + max_t * direction.z ();
   }
 
  ////////////////////////////////////////////////////////////////////////////////
@@ -316,8 +320,8 @@ class CylinderFit
     marker.pose.orientation.y = qt.y();
     marker.pose.orientation.z = qt.z();
     marker.pose.orientation.w = qt.w();
-    marker.scale.x = coeff[6];
-    marker.scale.y = coeff[6];
+    marker.scale.x = 2*coeff[6];
+    marker.scale.y = 2*coeff[6];
     marker.scale.z = axis.length ();
     marker.color.a = 1.0;
     marker.color.r = 0.0;
