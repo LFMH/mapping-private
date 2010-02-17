@@ -60,7 +60,7 @@ PositionStringDisplay::PositionStringDisplay(const std::string & name, rviz::Vis
   ss << "PositionString " << count++;
 
   text_ = new ogre_tools::MovableText("positionstring", "Arial", character_height_, Ogre::ColourValue::White);
-  //text_ = new ogre_tools::MovableText("positionstring");
+  text_->showOnTop (true);
   scene_node_->attachObject(text_);
 
   tf_filter_.connectInput(sub_);
