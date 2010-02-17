@@ -243,8 +243,11 @@ class CylinderFit
         sac_->computeCoefficients (coeff);
         ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
         
-        std::vector<double> coeff_ref;
-        sac_->refineCoefficients (coeff_ref);
+        //std::vector<double> coeff_ref;
+        sac_->refineCoefficients (coeff);
+
+        // transform coefficients to get the limits of the cylinder
+        changeAxisToMinMax(cloud.points, inliers, coeff);
         
         //int nr_points_left = sac_->removeInliers ();
 
@@ -258,6 +261,33 @@ class CylinderFit
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////////////
+   /**
+   * \brief change the axis to be defined by the top-most and bottom-most points
+   * instead of an arbitrary point and a direction
+   */
+  void changeAxisToMinMax (const std::vector<geometry_msgs::Point32> &points, std::vector<int> &inliers, std::vector<double> &coeff)
+  {
+    // P0 (coeff[0], coeff[1], coeff[2]) - a point on the axis
+    // direction (coeff[3], coeff[4], coeff[5]) - the direction vector of the axis
+    // P (points[i].x, points[i].y, points[i].z) - a point on the cylinder
+    btVector3 direction(coeff[3], coeff[4], coeff[5]);
+    double min_t = DBL_MAX, max_t = DBL_MIN;
+    for (size_t i = 0; i < inliers.size (); i++)
+    {
+      // dot product of (P-P0) and direction to get the distance of P's projection from P0 ("t" in the parametric equation of the axis)
+      double t = (points[i].x-coeff[0])*direction[0] + (points[i].y-coeff[1])*direction[1] + (points[i].z-coeff[2])*direction[2];
+      if (t > min_t) min_t = t;
+      if (t < max_t) max_t = t;
+    }
+    // update coefficients with the two extreme points on the axis line
+    coeff[0] += min_t * direction.x ();
+    coeff[1] += min_t * direction.y ();
+    coeff[2] += min_t * direction.z ();
+    coeff[3] += max_t * direction.x ();
+    coeff[4] += max_t * direction.y ();
+    coeff[5] += max_t * direction.z ();
+  }
 
  ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -266,7 +296,7 @@ class CylinderFit
   void publish_model_rviz (std::vector<double> &coeff)
   {
     //axis angle to quaternion conversion
-    btVector3 axis(coeff[3], coeff[4], coeff[5]);
+    btVector3 axis(coeff[3]-coeff[0], coeff[4]-coeff[1], coeff[5]-coeff[2]);
     btVector3 marker_axis(0, 0, 1);
     
     btQuaternion qt(marker_axis.cross(axis), marker_axis.angle(axis));
@@ -279,16 +309,16 @@ class CylinderFit
     marker.id = 0;
     marker.type = visualization_msgs::Marker::CYLINDER;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = coeff[0];
-    marker.pose.position.y = coeff[1];
-    marker.pose.position.z = coeff[2];
+    marker.pose.position.x = coeff[0]+axis.x()/2;
+    marker.pose.position.y = coeff[1]+axis.y()/2;
+    marker.pose.position.z = coeff[2]+axis.z()/2;
     marker.pose.orientation.x = qt.x();
     marker.pose.orientation.y = qt.y();
     marker.pose.orientation.z = qt.z();
     marker.pose.orientation.w = qt.w();
     marker.scale.x = coeff[6];
     marker.scale.y = coeff[6];
-    marker.scale.z = 1;
+    marker.scale.z = axis.length ();
     marker.color.a = 1.0;
     marker.color.r = 0.0;
     marker.color.g = 1.0;
