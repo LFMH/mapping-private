@@ -248,7 +248,7 @@ class CylinderFit
 
 
         // transform coefficients to get the limits of the cylinder
-        changeAxisToMinMax(cloud.points, inliers, coeff);
+        changeAxisToMinMax(cylinder_points_.points, inliers, coeff);
         ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
 
         //int nr_points_left = sac_->removeInliers ();
