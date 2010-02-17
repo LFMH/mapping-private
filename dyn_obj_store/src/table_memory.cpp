@@ -15,6 +15,7 @@
 
 // cloud_algos plugin stuff
 #include <cloud_algos/rotational_estimation.h>
+#include <cloud_algos/mls_fit.h>
 #include <pluginlib/class_loader.h>
 
 // COP/JLO stuff
@@ -517,21 +518,21 @@ class TableMemory
  
       try
       {
-        cl->loadLibraryForClass("RotationalEstimation");
-        ROS_INFO("Loaded library with plugin RotationalEstimation inside");
+        cl->loadLibraryForClass("MovingLeastSquares");
+        ROS_INFO("Loaded library with plugin MovingLeastSquares inside");
       }
       catch(pluginlib::PluginlibException &ex)
       {
-        ROS_INFO("Failed to load library with plugin RotationalEstimation inside. Exception: %s", ex.what());
+        ROS_INFO("Failed to load library with plugin MovingLeastSquares inside. Exception: %s", ex.what());
       }
     
-      if (cl->isClassLoaded("RotationalEstimation"))
+      if (cl->isClassLoaded("MovingLeastSquares"))
       {
-        ROS_INFO("Can create RotationalEstimation");
-        alg_rot_est = cl->createClassInstance("RotationalEstimation");
+        ROS_INFO("Can create MovingLeastSquares");
+        alg_rot_est = cl->createClassInstance("MovingLeastSquares");
         alg_rot_est->init (nh_);
       }
-      else ROS_INFO("RotationalEstimation Class not loaded");
+      else ROS_INFO("MovingLeastSquares Class not loaded");
     }
     
     /*!
@@ -542,14 +543,14 @@ class TableMemory
     {
       //return;
       
-      if (cl->isClassLoaded("RotationalEstimation"))
+      if (cl->isClassLoaded("MovingLeastSquares"))
       {
-        ROS_INFO("RotationalEstimation is loaded");
+        ROS_INFO("MovingLeastSquares is loaded");
         // use the class
       }
       else 
       {
-        ROS_INFO("RotationalEstimation Class not loaded");
+        ROS_INFO("MovingLeastSquares Class not loaded");
         return;
       }
 
@@ -568,8 +569,11 @@ class TableMemory
           }
 	  std::vector<std::string> bla = alg_rot_est->pre ();//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
           std::cerr << "[reconstruct_table_objects] Calling with a PCD with " << to->point_cluster.points.size () << " points." << std::endl;
-	  std::string blastring = ((RotationalEstimation*)alg_rot_est)->process (sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter()));//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
+	  std::string blastring = ((MovingLeastSquares*)alg_rot_est)->process (sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter()));//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
           ROS_INFO("got response: %s", blastring.c_str ());
+
+          ros::Publisher pub_ = nh_.advertise <MovingLeastSquares::OutputType> (((MovingLeastSquares*)alg_rot_est)->default_output_topic (), 5);
+          pub_.publish (((MovingLeastSquares*)alg_rot_est)->output ());
 
           break; 
 

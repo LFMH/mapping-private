@@ -95,6 +95,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   // TODO where to put this?
   clear ();
   nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
+#define GLOBAL
 #ifdef GLOBAL
   // allocating space for "global" matrices - TODO here?
   //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
@@ -311,21 +312,20 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
       //#ifdef PARALELL
 #ifndef GLOBAL
-      max_nn_ = k;
       // allocating space for "global" matrices - TODO here?
-      //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
-      Eigen::VectorXd weight_vec_(max_nn_);
-      Eigen::MatrixXd P_(nr_coeff_, max_nn_);
-      Eigen::VectorXd f_vec_(max_nn_);
+      //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (k, k);
+      Eigen::VectorXd weight_vec_(k);
+      Eigen::MatrixXd P_(nr_coeff_, k);
+      Eigen::VectorXd f_vec_(k);
       Eigen::VectorXd c_vec_; //(nr_coeff_);
-      Eigen::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
+      Eigen::MatrixXd P_weight_; //(nr_coeff_, k);
       Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
       Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
-      //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
-      /*//weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
-      weight_vec_.resize (max_nn_);
-      P_.resize (nr_coeff_, max_nn_);
-      f_vec_.resize (max_nn_);
+      //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, k);
+      /*//weight_ = Eigen::MatrixXd::Zero (k, k);
+      weight_vec_.resize (k);
+      P_.resize (nr_coeff_, k);
+      f_vec_.resize (k);
       P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
       inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
       #endif
@@ -336,12 +336,14 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // TODO maybe put all these variables as global - unless it messes up parallelism !!!
       /// @NOTE: probably not worth having the result of plane_parameters.start<3>() saved...
 
-      // get local coordinate system
+      // get local coordinate system (Darboux frame)
       Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
       Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
       // TODO is this faster or: getCoordinateSystemOnPlane (plane_parameters, u, v);
 
-      // build up matrices for getting the coefficients
+      // --[ Build up matrices for getting the coefficients ]--
+
+      // go through neighbors, transform them in the local coordinate system, save height and the evaluation of the polynome's terms
       Eigen::Vector3d de_meaned;
       double u_coord, v_coord, u_pow, v_pow;
       for (size_t i = 0; i != points_indices_[cp].size (); i++)
@@ -359,7 +361,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         f_vec_(i) = de_meaned.dot (plane_parameters.start<3>());
         //cerr << "f_vec[" << i << "] = " << f_vec[i] << endl;
 
-        // compute members
+        // compute the polynomial's terms at the current point
         int j = 0;
         u_pow = 1;
         for (int ui=0; ui<=order_; ui++)
@@ -376,14 +378,20 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         //cerr << "==============" << endl;
       }
 
-      // compute coefficients
-      P_weight_ = P_ * weight_vec_.asDiagonal();
-      //P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
-      //P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose (); // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
+      // --[ Computing coefficients ]--
+
+      // storing partial result for reuse
+      //P_weight_ = P_ * weight_vec_.asDiagonal();
+      P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
+
+      // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
+      //P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose ();
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
 
       //if (cp < 10)
       //  cerr << P_weight_Pt_.determinant () << " ";
+
+      // check if the determinant is zero - for inversion
       #ifndef PARALLEL
       double det = P_weight_Pt_.determinant ();
       if (det <= max_bad_det)
@@ -391,7 +399,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       else // det > max_bad_det
       #endif
       {
+        // invert matrix
         P_weight_Pt_.computeInverse(&inv_P_weight_Pt_); /// @NOTE: according to documentation, this is the optimal way (no alloc!)
+
         //if (cp < 10)
         //{
         //  Eigen::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
@@ -400,6 +410,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         //  cerr << "off-diagonal max: " << (identity_check - identity_check.diagonal().asDiagonal()).maxCoeff() << endl;
         //}
 
+        // check if the inversion was successful - Eigen doesn't return error code :(
         bool inverse_ok = false;
         #ifndef PARALLEL
         if (det < min_good_det)
@@ -414,23 +425,25 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             max_bad_det = det;
             not_inverse++;
           }
-          ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
+          //ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
         }
         #else
         if ((P_weight_Pt_ * inv_P_weight_Pt_).isIdentity(1e-5))
           inverse_ok = true;
         #endif
 
+        // check if results are correct
         if (inverse_ok)
         {
-          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
-          //c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
+          // solve the equation system
+          //c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
+          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
 
           //if (cp < 10)
           //  cerr << "coefficients: " << c_vec_.transpose () << endl;
           //cerr << c_vec_(0) << " ";
 
-          // project point onto the surface - TODO: make (at least approximate) orthogonal projection
+          // project point onto the surface
           double du = 0.0; // value of partial derivative at the current point, see below
           double dv = 0.0; // value of partial derivative at the current point, see below
           if (c_vec_[0] < 0.03) /// maybe make some different check here !!!
@@ -446,13 +459,13 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             du = c_vec_[order_+1];
             dv = c_vec_[1];
           }
-          else
+          else /// @NOTE: simple approximation of orthogonal projection, in case adjusting the height at (0,0) seems inappropriate
           {
+            // this one is slower obviously than the projection along the Darboux normal
             #ifndef PARALELL
             nr_orthogonal++;
             #endif
 
-            /// @NOTE: simple approximation of orthogonal projection, in case adjusting the height at (0,0) seems inappropriate
             // get the u and v coordinates of the closest point
             u_coord = P_(order_+1,0); // value of u^1*v^0 = u
             v_coord = P_(1,0);        // value of u^0*v^1 = v
@@ -485,6 +498,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             //if (cp < 10)
             //  cerr << "moving point with " << movement.norm() << " along " << movement.transpose() << endl;
           }
+
           //if (cp < 10)
           //  cerr << "final point: " << cloud_fit_->points[cp].x << " " << cloud_fit_->points[cp].y << " " << cloud_fit_->points[cp].z << endl;
 
@@ -562,11 +576,11 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   #endif
   if (polynomial_fit_)
   {
-    ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
+    if (not_enough_nn != 0) ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
     #ifndef PARALELL
-    ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
-    ROS_WARN ("Matrix to be inverted had a bad determinant %d times (%g%%) and failed to invert %d times (%g%%).", zero_determinant, zero_determinant*100.0/cloud_fit_->points.size (), not_inverse, not_inverse*100.0/cloud_fit_->points.size ());
-    ROS_WARN ("%d (%g%%) points would have had a probably inaccurate parallel projection.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
+    ROS_INFO ("Interval for the value of the determinant in order to be correctly invertible converged to: (%g,%g).", max_bad_det, min_good_det);
+    if (zero_determinant != 0) ROS_WARN ("Matrix to be inverted had a bad determinant %d times (%g%%) and failed to invert %d times (%g%%).", zero_determinant, zero_determinant*100.0/cloud_fit_->points.size (), not_inverse, not_inverse*100.0/cloud_fit_->points.size ());
+    if (nr_orthogonal != 0) ROS_WARN ("%d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
     #endif
   }
   //cerr << endl << endl << endl;

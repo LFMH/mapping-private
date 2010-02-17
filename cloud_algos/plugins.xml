@@ -6,6 +6,12 @@
     </description>
   </class>
 
+  <class name="MovingLeastSquares" type="MovingLeastSquares" base_class_type="CloudAlgo">
+    <description>
+      This plugin does mls to resample and update normals.
+    </description>
+  </class>
+
   <class name="PlanarEstimation" type="PlanarEstimation" base_class_type="CloudAlgo">
     <description>
       This plugin estimates planar surfaces.

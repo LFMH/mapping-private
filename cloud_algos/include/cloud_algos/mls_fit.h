@@ -1,5 +1,5 @@
-#ifndef CLOUD_ALGOS_PLANAR_ESTIMATION_H
-#define CLOUD_ALGOS_PLANAR_ESTIMATION_H
+#ifndef CLOUD_ALGOS_MLS_FIT_H
+#define CLOUD_ALGOS_MLS_FIT_H
 #include <cloud_algos/cloud_algos.h>
 
 // For extra Eigen functions
@@ -108,8 +108,8 @@ class MovingLeastSquares : public CloudAlgo
     point_generation_ = COPY;
     approximating_tangent_ = PCA;
     radius_ = 0.03;
-    max_nn_ = 30;
-    order_ = 3;
+    max_nn_ = 100;
+    order_ = 2;
     filter_points_ = false;
     polynomial_fit_ = true;
     compute_moments_ = false;

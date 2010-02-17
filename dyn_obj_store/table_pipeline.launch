@@ -10,7 +10,8 @@
   
   <!-- Box Filter -->
   <node pkg="dyn_obj_store" type="box_filter" name="box_filter" output="screen">
-    <param name="input_cloud_topic" value="/cloud_pcd_normals" />
+    <!--<param name="input_cloud_topic" value="/cloud_pcd_normals" />-->
+    <param name="input_cloud_topic" value="/cloud_pcd" />
     <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
     <param name="box_min_y" value="-4.0" />
   </node>
