@@ -304,6 +304,7 @@ namespace ias_sample_consensus
     }
     
     geometry_msgs::Point32 centroid;
+    geometry_msgs::Polygon best_poly;
     geometry_msgs::Point32 axis;
     geometry_msgs::Point32 n1;
     geometry_msgs::Point32 n2;
@@ -351,7 +352,7 @@ namespace ias_sample_consensus
         std::vector<double> segment = LineToLineSegment (line_a, line_b, 1e-5);
    temp_coefficients = segment; 
         double err = 0;
-        //MinimizeAxisDistancesToSamples (samples, temp_coefficients, err);
+        MinimizeAxisDistancesToSamples (samples, temp_coefficients, err);
         
     std::vector<double> vals_2d_x;
     std::vector<double> vals_2d_y;
@@ -372,12 +373,14 @@ namespace ias_sample_consensus
         if (err <= min_err)
         {
           min_err = err;
+          best_poly = p;
 //          pmap_.polygons.clear ();
-          pmap_.polygons.push_back (p);
+//          pmap_.polygons.push_back (p);
         }
       }
     ROS_INFO ("created pmap with %i lines", (int)pmap_.polygons.size ());
 
+    pmap_.polygons.push_back (best_poly);
     return true;
   }
   

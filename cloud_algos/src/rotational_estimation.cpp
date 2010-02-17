@@ -60,9 +60,9 @@ void
       int after, before = inliers.size ();
       do
       {
-        break;
         std::vector<double> backup_coeff (coeffs);
         std::vector<int> backup_inliers (inliers);
+        break;
         before = inliers.size ();
         ROS_WARN ("before refit: %i inliers", (int)inliers.size());
         if (sac_model_->RefitAxis  (inliers, coeffs))

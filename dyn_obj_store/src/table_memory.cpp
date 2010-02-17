@@ -13,6 +13,8 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <geometry_msgs/Polygon.h>
 
+#include <ias_visualization_msgs/PositionStringList.h>
+
 // cloud_algos plugin stuff
 #include <cloud_algos/rotational_estimation.h>
 #include <cloud_algos/mls_fit.h>
@@ -38,7 +40,7 @@ struct dummy_deleter
 /// holds a single object on a table, with timestamp, orig. pcd data and reconstructed representations
 struct TableObject
 {
-  TableObject (): type (-1), lo_id (0) { }
+  TableObject (): type (-1), lo_id (0), name("") { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -49,6 +51,7 @@ struct TableObject
   double score;
   std::vector<int> triangles;
   std::string semantic_type;
+  std::string name;
   std::vector<std::string> color;
 };
 
@@ -121,9 +124,11 @@ class TableMemory
     std::string input_cop_topic_;
     std::string output_cloud_topic_;
     std::string output_table_state_topic_;
+    std::string output_cluster_name_topic_;
 
     // publishers and subscribers
     ros::Publisher mem_state_pub_;
+    ros::Publisher cluster_name_pub_;
     ros::Publisher cloud_pub_;
     ros::Subscriber table_sub_;
     ros::Subscriber cop_sub_;
@@ -132,6 +137,7 @@ class TableMemory
     ros::ServiceServer table_memory_clusters_service_;
     ros::ServiceClient table_reconstruct_clusters_client_;
 
+    int cluster_name_counter_;
     int counter_;
     float color_probability_;
     std::string global_frame_;
@@ -177,11 +183,12 @@ class TableMemory
      }
 
   public:
-    TableMemory (ros::NodeHandle &anode) : nh_(anode), counter_(0), color_probability_(0.2), lo_id_tmp_(0)
+    TableMemory (ros::NodeHandle &anode) : nh_(anode), cluster_name_counter_(0), counter_(0), color_probability_(0.2), lo_id_tmp_(0)
     {
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
+      nh_.param ("output_cluster_name_topic", output_cluster_name_topic_, std::string("cluster_names"));       // 15 degrees
       nh_.param ("output_table_state_topic", output_table_state_topic_, std::string("table_mem_state"));       // 15 degrees
       nh_.param ("/global_frame_id", global_frame_, std::string("/map"));
 
@@ -189,6 +196,7 @@ class TableMemory
 //       cop_sub_ = nh_.subscribe (input_cop_topic_, 1, &TableMemory::cop_cb, this);
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
+      cluster_name_pub_ = nh_.advertise<ias_visualization_msgs::PositionStringList> (output_cluster_name_topic_, 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       
       load_plugins ();
@@ -536,6 +544,47 @@ class TableMemory
     }
     
     /*!
+     * \brief tries to match clusters to "track" them over time
+    */
+    void
+      name_table_objects (int table_num)
+    {
+      Table &t = tables[table_num];
+      ROS_WARN ("[name_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
+      TableStateInstance *t_now = t.getCurrentInstance();
+      std::vector<TableStateInstance*> t_temp = t.getLastInstances(2);
+      if (t_temp.size() < 2)
+        return;
+      TableStateInstance *t_last = t_temp [1];
+      
+      for (int i = 0; i < (signed int) t_now->objects.size (); i++)
+      {
+        TableObject* to_now = t_now->objects.at (i);
+        for (int j = 0; j < (signed int) t_last->objects.size (); j++)
+        {
+          TableObject* to_last = t_last->objects.at (j);
+          geometry_msgs::Point32 diff;
+          diff.x = to_now->center.x - to_last->center.x;
+          diff.y = to_now->center.y - to_last->center.y;
+          diff.z = to_now->center.z - to_last->center.z;
+          double d = sqrt (diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
+          
+          if (d < 0.1)
+          {
+            to_now->name = to_last->name;
+            break;
+          }
+        }
+        if (to_now->name.length() == 0)
+        {
+          std::stringstream name;
+          name << "cluster_" << cluster_name_counter_++; 
+          to_now->name = name.str();
+        }
+      }
+    }
+    
+    /*!
      * \brief employs different reconstruction algorithms for the current set of point clusters on table specified by table_num
     */
     void
@@ -656,6 +705,7 @@ class TableMemory
         update_table (table_found, table);
       }
       
+      name_table_objects (table_found);
       reconstruct_table_objects (table_found);
       update_table_instance_objects(table_found);
       //update_jlo (table_found);
@@ -667,6 +717,7 @@ class TableMemory
     void
       publish_mem_state (int table_num)
     {
+      // publish table boundaries
       mapping_msgs::PolygonalMap pmap;
       pmap.header.frame_id = global_frame_;
 
@@ -680,7 +731,7 @@ class TableMemory
       }
       mem_state_pub_.publish (pmap);
 
-
+      // publish clusters point cloud
       sensor_msgs::PointCloud pc;
       pc.header.frame_id = global_frame_;
       for (unsigned int i = 0; i < tables.size(); i++)
@@ -690,6 +741,21 @@ class TableMemory
             pc.points.push_back (tables[i].getCurrentInstance ()->objects[ob_i]->point_cluster.points[pc_i]);
       }
       cloud_pub_.publish (pc);
+
+      // publish cluster names 
+      ias_visualization_msgs::PositionStringList names;
+      names.header.frame_id = global_frame_;
+      for (unsigned int i = 0; i < tables.size(); i++)
+      {
+        for (unsigned int ob_i = 0; ob_i < tables[i].getCurrentInstance ()->objects.size(); ob_i++)
+        {
+          std::stringstream cluster_label;
+          cluster_label << tables[i].getCurrentInstance ()->objects[ob_i]->name << std::string("\non table ") << i;
+          names.texts.push_back (cluster_label.str());
+          names.poses.push_back (tables[i].getCurrentInstance ()->objects[ob_i]->center);
+        }
+      }
+      cluster_name_pub_.publish (names);
     }
 
     void 
