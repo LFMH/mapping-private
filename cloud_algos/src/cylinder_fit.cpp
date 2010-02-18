@@ -66,7 +66,7 @@ class CylinderFit
  public:
   sensor_msgs::PointCloud points_;
   sensor_msgs::PointCloud cylinder_points_;
-  sensor_msgs::PointCloud points_roated_;
+  sensor_msgs::PointCloud points_rotated_;
   SACModel *model_;
   SAC *sac_;
   std::string cloud_topic_, cylinder_topic_, marker_topic_;
@@ -119,8 +119,8 @@ class CylinderFit
     //note, you also have to set axis_
     if (rotate_inliers_ != 0.0)
     {
-      player_log_actarray::transform::rotatePointCloud(points_, points_roated_, angles::from_degrees(rotate_inliers_), axis_);
-      points_ = points_roated_;
+      player_log_actarray::transform::rotatePointCloud(points_, points_rotated_, angles::from_degrees(rotate_inliers_), axis_);
+      points_ = points_rotated_;
     }
     
     for (unsigned long i = 0; i < points_.channels.size(); i++)
