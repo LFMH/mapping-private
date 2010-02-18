@@ -25,6 +25,7 @@
   <depend package="perception_srvs" />
   <depend package="tabletop_msgs" />
   <depend package="player_log_actarray" />
+  <depend package="descriptors_3d"/>
 
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_algos"/>
