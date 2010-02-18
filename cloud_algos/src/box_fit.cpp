@@ -59,14 +59,14 @@
 //bullet
 #include <tf/tf.h>
 
+#include <tools/transform.h>
+#include <angles/angles.h>
 using namespace std;
 
 
 class BoxFit
 {
  public:
-  sensor_msgs::PointCloud points_;
-  sensor_msgs::PointCloud box_points_;
 
   ///////////////////////////////////////////////////////////////////////////////
   /**
@@ -75,9 +75,15 @@ class BoxFit
   BoxFit(ros::NodeHandle &n) :
     n_(n)
   {
-    cloud_topic_ = "/cloud_pcd";
+    cloud_topic_ = "/cloud_out";
     box_topic_ = "/box";
     coeff_.resize(6);
+    cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_ ,1);
+    //box_pub_ = n_.advertise<sensor_msgs::PointCloud>(box_topic_ ,1);
+    vis_pub_ = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+    axis_.x = 1;
+    axis_.y = axis_.z = 0;
+    rotate_inliers_ = 30.0;
   }
 
 
@@ -95,20 +101,18 @@ class BoxFit
   /**
    * actual model fitting happens here
    */
-  void find_model(sensor_msgs::PointCloud &cloud, std::vector<double> &coeff)
+  void find_model(const sensor_msgs::PointCloud &cloud, std::vector<double> &coeff)
   {
     // ----------------------------------------------
     // Read point cloud data and create Kd-tree that represents points.
     // We will compute features for all points in the point cloud.
-    sensor_msgs::PointCloud data;
-    create_point_cloud(data);
-    cloud_kdtree::KdTreeANN data_kdtree(data);
+    cloud_kdtree::KdTreeANN data_kdtree(cloud);
     std::vector<const geometry_msgs::Point32*> interest_pts;
-    interest_pts.reserve(data.points.size());
+    interest_pts.reserve(cloud.points.size());
     //std::vector<const geometry_msgs::Point32*> interest_pts(data.points.size());
-    for (size_t i = 0 ; i < data.points.size() ; i++)
+    for (size_t i = 0 ; i < cloud.points.size() ; i++)
     {
-      interest_pts.push_back(&(data.points[i]));
+      interest_pts.push_back(&(cloud.points[i]));
     }
     
     // ----------------------------------------------
@@ -118,7 +122,8 @@ class BoxFit
     // eigenvectors and values.  Here, we set it to look at neighborhoods
   // within a radius of 5.0 around each interest point.
     SpectralAnalysis sa(5.0);
-    BoundingBoxSpectral bbox_spectral(6.0, sa);
+    BoundingBoxSpectral bbox_spectral(70.0, sa);
+    //BoundingBoxRaw bbox_spectral(70.0);
     
     // ----------------------------------------------
     // Put all descriptors into a vector
@@ -140,7 +145,7 @@ class BoxFit
     vector<std::vector<std::vector<float> > > all_descriptor_results(nbr_descriptors);
     for (unsigned int i = 0 ; i < nbr_descriptors ; i++)
     {
-      descriptors_3d[i]->compute(data, data_kdtree, interest_pts, all_descriptor_results[i]);
+      descriptors_3d[i]->compute(cloud, data_kdtree, interest_pts, all_descriptor_results[i]);
     }
     
     //   // ----------------------------------------------
@@ -149,11 +154,14 @@ class BoxFit
     cout << "Bounding box features size: " <<  pt0_bbox_features.size() << endl;
     for (size_t i = 0 ; i < pt0_bbox_features.size() ; i++)
     {
-      cout << " " << pt0_bbox_features[i];
       if (i < 3)
+      {
+        ROS_INFO("Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
         coeff[i+3] = pt0_bbox_features[i];
+      }
+      else
+        ROS_WARN("Box dimensions bigger than 3 - unusual");
     }
-    cout << endl;    
   }
 
     
@@ -199,15 +207,18 @@ class BoxFit
 
   void create_point_cloud(sensor_msgs::PointCloud& data)
   {
-    unsigned int nbr_pts = 5000;
+    data.header.frame_id = "/base_link";
+    unsigned int nbr_pts = 2000;
     data.points.resize(nbr_pts);
     
     for (unsigned int i = 0 ; i < nbr_pts ; i++)
     {
       data.points[i].x = rand() % 50;
-      data.points[i].y = rand() % 50;
+      data.points[i].y = rand() % 30;
       data.points[i].z = rand() % 50;
     }
+    player_log_actarray::transform::rotatePointCloud(points_, points_rotated_, angles::from_degrees(rotate_inliers_), axis_);
+    data = points_rotated_;
   }
 
 
@@ -217,7 +228,7 @@ class BoxFit
    */
   bool spin ()
   {
-    ros::Duration delay(10.0);
+    ros::Duration delay(5.0);
     while (n_.ok())
     { 
       //process part
@@ -227,7 +238,9 @@ class BoxFit
       coeff_[1] = box_centroid_.y;
       coeff_[2] = box_centroid_.z;
       find_model(points_, coeff_);
-      cloud_pub_.publish (points_);
+      ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cloud_topic_).c_str (),
+                points_.points.size()); 
+      cloud_pub_.publish(points_);
       publish_model_rviz(coeff_);
       
       //sleeping part
@@ -238,9 +251,15 @@ class BoxFit
   }
   
 protected:
+  sensor_msgs::PointCloud points_;
+  sensor_msgs::PointCloud box_points_;
+  sensor_msgs::PointCloud points_rotated_;
   ros::NodeHandle n_;
+  //publishes original, input cloud
   ros::Publisher cloud_pub_;
+  //publishes points inside the box
   ros::Publisher box_pub_;
+  //subscribes to input cloud (cluster)
   ros::Subscriber clusters_sub_;
   //model rviz publisher
   ros::Publisher vis_pub_;
@@ -248,6 +267,8 @@ protected:
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;
   std::string cloud_topic_, box_topic_;
+  geometry_msgs::Point32 axis_;
+  float rotate_inliers_;
 
 };
 
