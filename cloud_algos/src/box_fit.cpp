@@ -83,7 +83,7 @@ class BoxFit
     vis_pub_ = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     axis_.x = 1;
     axis_.y = axis_.z = 0;
-    rotate_inliers_ = 30.0;
+    rotate_inliers_ = 0.0;
   }
 
 
@@ -121,9 +121,9 @@ class BoxFit
     // It performs eigen-analyis of local neighborhoods and extracts
     // eigenvectors and values.  Here, we set it to look at neighborhoods
   // within a radius of 5.0 around each interest point.
-    SpectralAnalysis sa(5.0);
-    BoundingBoxSpectral bbox_spectral(70.0, sa);
-    //BoundingBoxRaw bbox_spectral(70.0);
+    //SpectralAnalysis sa(5.0);
+    //BoundingBoxSpectral bbox_spectral(70.0, sa);
+    BoundingBoxRaw bbox_spectral(70.0);
     
     // ----------------------------------------------
     // Put all descriptors into a vector
