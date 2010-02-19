@@ -153,8 +153,6 @@ namespace ias_sample_consensus
       sum += ll;
     }
     
-    fprintf (stderr, "sum = %.12f\n", sum);
-
     return (0);
   }
 
