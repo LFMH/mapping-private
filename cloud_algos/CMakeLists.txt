@@ -10,6 +10,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
+  src/registration.cpp
   src/mls_fit.cpp
   src/rotational_estimation.cpp
   src/region_growing.cpp
@@ -28,6 +29,9 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 
 rosbuild_add_executable (rotational_estimation_node src/rotational_estimation.cpp)
 set_target_properties (rotational_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (registration_node src/registration.cpp)
+set_target_properties (registration_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
