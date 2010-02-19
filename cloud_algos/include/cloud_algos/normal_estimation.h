@@ -14,7 +14,6 @@ class NormalEstimation : public CloudAlgo
   static std::string default_input_topic ()
     {return std::string ("cloud_pcd");}
 
-
   static std::string default_output_topic ()
     {return std::string ("cloud_normals");};
 

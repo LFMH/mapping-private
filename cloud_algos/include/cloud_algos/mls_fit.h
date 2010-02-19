@@ -2,7 +2,7 @@
 #define CLOUD_ALGOS_MLS_FIT_H
 #include <cloud_algos/cloud_algos.h>
 
-// For extra Eigen functions
+// Eigen
 #include <Eigen/Array>
 // if needed:
 #include <Eigen/LU> // matrix inversion
@@ -21,9 +21,9 @@
 #include <point_cloud_mapping/geometry/statistics.h>
 
 // Sample Consensus
-#include <point_cloud_mapping/sample_consensus/sac.h>
-#include <point_cloud_mapping/sample_consensus/msac.h>
-#include <point_cloud_mapping/sample_consensus/ransac.h>
+//#include <point_cloud_mapping/sample_consensus/sac.h>
+//#include <point_cloud_mapping/sample_consensus/msac.h>
+//#include <point_cloud_mapping/sample_consensus/ransac.h>
 
 namespace cloud_algos
 {
@@ -33,7 +33,7 @@ class MovingLeastSquares : public CloudAlgo
 {
  public:
 
-  // Output type
+  // Input/output type
   typedef sensor_msgs::PointCloud OutputType;
   typedef sensor_msgs::PointCloud InputType;
 
@@ -42,13 +42,14 @@ class MovingLeastSquares : public CloudAlgo
   GenerationMethod point_generation_; // method for generating the points to be fit to the underlying surface
   enum TangentMethod {PCA, WPCA, IWPCA, SAC};
   TangentMethod approximating_tangent_; // method for getting the approximate tangent plane of the underlying surface
-  double radius_;          // search radius for getting the nearest neighbors
-  int max_nn_;             // maximum number of nearest neighbors to consider
-  int order_;              // order of the polynomial to be fit
-  bool filter_points_;     // should the generated/provided points be filtered based on proximity to the underlying surface?
-  bool polynomial_fit_;    // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
-  bool compute_moments_;   // switch to compute moment invariants (j1, j2, j3)
-  double sqr_gauss_param_; // parameter for distance based weighting of neighbors (radius_*radius_ works ok)
+  double radius_;           // search radius for getting the nearest neighbors
+  double radius_curvature_; // to have the curvature estimates in the same interval as normal estimation using PCA would provide it, set it to the same radius that would be used there
+  int max_nn_;              // maximum number of nearest neighbors to consider
+  int order_;               // order of the polynomial to be fit
+  bool filter_points_;      // should the generated/provided points be filtered based on proximity to the underlying surface?
+  bool polynomial_fit_;     // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
+  bool compute_moments_;    // switch to compute moment invariants (j1, j2, j3)
+  double sqr_gauss_param_;  // parameter for distance based weighting of neighbors (radius_*radius_ works ok)
   geometry_msgs::PointStamped *viewpoint_cloud_; // viewpoint towards which the normals have to point
 
   // Topic name to advertise
@@ -73,6 +74,7 @@ class MovingLeastSquares : public CloudAlgo
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!!
   void setKdTree (cloud_kdtree::KdTree *kdtree)
     {kdtree_ = kdtree;}
+  // TODO void setCloud2Fit (boost::shared_ptr<sensor_msgs::PointCloud> &cloud_fit)
   void setCloud2Fit (sensor_msgs::PointCloud *cloud_fit)
     {cloud_fit_ = cloud_fit;}
 
@@ -108,6 +110,7 @@ class MovingLeastSquares : public CloudAlgo
     point_generation_ = COPY;
     approximating_tangent_ = PCA;
     radius_ = 0.03;
+    radius_curvature_ = 0.02;
     max_nn_ = 100;
     order_ = 2;
     filter_points_ = false;
@@ -128,7 +131,10 @@ class MovingLeastSquares : public CloudAlgo
   ros::Publisher pub_;
 
   // ROS messages
+  // TODO boost::shared_ptr<sensor_msgs::PointCloud> cloud_fit_;
   sensor_msgs::PointCloud *cloud_fit_;
+
+  /// TODO add setters for the vectors too, passed by &
 
   // Kd-tree stuff
   cloud_kdtree::KdTree *kdtree_;

@@ -7,13 +7,10 @@ using namespace std;
 using namespace cloud_algos;
 
 
-/// TODO request this version from Radu :)
+/// TODO request this version from Radu? :)
+/*
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal
-  * \param plane_coeff the plane coefficients (containing n, the plane normal)
-  * \param u the resultant u direction
-  * \param v the resultant v direction
-  */
+// Get a u-v-n coordinate system that lies on a plane defined by its normal
 inline void
   getCoordinateSystemOnPlane (const Eigen::Vector4d &plane_coeff, Eigen::Vector3d &u, Eigen::Vector3d &v)
 {
@@ -48,12 +45,14 @@ inline void
   u (1) /= u_length;
   u (2) /= u_length;
 }
+*/
 
 void MovingLeastSquares::init (ros::NodeHandle &nh)
 {
   // node handler and publisher
-  nh_ = nh;
-  pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
+  // TODO needed?
+  //nh_ = nh;
+  //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
 }
 
 std::vector<std::string> MovingLeastSquares::pre ()
@@ -244,10 +243,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   for (size_t cp = 0; cp < cloud_fit_->points.size (); cp++)
   {
     // STEP0: Init
-    int k = points_indices_[cp].size (); // TODO: save k as a channel
+    int k = points_indices_[cp].size (); // TODO: save k as a channel, and set it + min-max when creating neighborhoods
     #ifndef PARALELL
-      if (k > k_max) k_max = k;
-      if (k < k_min) k_min = k;
+    if (k > k_max) k_max = k;
+    if (k < k_min) k_min = k;
     #endif
     // TODO: perhaps move nn search here if not parallelized
 
@@ -526,6 +525,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           n[2] = 1;*/
           //cerr << "recomputed normal:" << endl << plane_parameters.start<3>() << endl;
 
+          // estimate surface curvature analogously to the PCA way of \lambda_0 / \sum{\lambda}
+          double height_variation = f_vec_.maxCoeff() - f_vec_.minCoeff();
+          curvature = height_variation / (height_variation + 4*radius_curvature_);
+
           /**
            *  5   4   3   2   1   0
            * 2,0 1,1 1,0 0,2 0,1 0,0
@@ -542,11 +545,18 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             mls_point[11] = (c_vec[5]*e_sum - c_vec[4]*c_vec[3]*c_vec[1] + c_vec[2]*d_sum) / div;
             //cerr << "K=" << mls_point[10] << ", H=" << mls_point[11] << endl;
           }*/
+
+          #ifdef PARTIAL_TIMES
+          sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
+          #endif
         } // inverse was ok
       } // determinant was ok
     } // polynomial fit
 
-    // reset surface normal - TODO: update curvature as well after polynomial fit?
+    // set surface normal and curvature
+    #ifdef PARTIAL_TIMES
+    ts_tmp = ros::Time::now ();
+    #endif
     if (viewpoint_cloud_ != NULL) /// @NOTE: the point where the normal is placed is from cloud_fit
       cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_fit_->points[cp], *viewpoint_cloud_);
     cloud_fit_->channels[original_chan_size + 0].values[cp] = plane_parameters (0);
@@ -592,6 +602,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 }
 
 MovingLeastSquares::OutputType MovingLeastSquares::output ()
+  // TODO {return cloud_fit_.get ();}
   {return *cloud_fit_;}
 
 #ifdef CREATE_NODE

@@ -12,6 +12,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/planar_estimation.cpp
   src/registration.cpp
   src/mls_fit.cpp
+#  src/pfh.cpp
   src/rotational_estimation.cpp
   src/region_growing.cpp
   src/register_plugins.cpp
@@ -35,6 +36,9 @@ set_target_properties (registration_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (pfh_node src/pfh.cpp)
+set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangulation.cpp)
 set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
