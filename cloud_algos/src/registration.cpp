@@ -37,7 +37,7 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   cloud_geometry::nearest::computeCentroid (target_, tgt, target_centroid);
 
   Eigen::VectorXd b(src.size());
-  Eigen::MatrixXd A(6, tgt.size());
+  Eigen::MatrixXd A(tgt.size(), 6);
 
   for (int i = 0; i < (int)src.size(); i++)
   {
@@ -46,12 +46,12 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
     double normal_z = target_->channels[nzIdx_].values[tgt[i]];
     b[i] = normal_x*target_->points[tgt[i]].x + normal_y*target_->points[tgt[i]].y + normal_z*target_->points[tgt[i]].z
          - normal_x*source->points[src[i]].x - normal_y*source->points[src[i]].y - normal_z*source->points[src[i]].z;
-    A(0, i) = normal_z*source->points[src[i]].y - normal_y*source->points[src[i]].z;
-    A(1, i) = normal_x*source->points[src[i]].z - normal_z*source->points[src[i]].x;
-    A(2, i) = normal_y*source->points[src[i]].x - normal_x*source->points[src[i]].y;
-    A(3, i) = normal_x;
-    A(4, i) = normal_y;
-    A(5, i) = normal_z;
+    A(i, 0) = normal_z*source->points[src[i]].y - normal_y*source->points[src[i]].z;
+    A(i, 1) = normal_x*source->points[src[i]].z - normal_z*source->points[src[i]].x;
+    A(i, 2) = normal_y*source->points[src[i]].x - normal_x*source->points[src[i]].y;
+    A(i, 3) = normal_x;
+    A(i, 4) = normal_y;
+    A(i, 5) = normal_z;
   }
   Eigen::SVD<Eigen::MatrixXd::PlainMatrixType> svd = A.svd();
 
@@ -64,7 +64,33 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
     if (S_plus[i] != 0.0)
       S_plus[i] = 1.0f / S_plus[i];
       
-  Eigen::MatrixXd A_plus = V*S_plus*U.transpose();
+  Eigen::MatrixXd A_plus = V*S_plus.col(0).asDiagonal()*U.transpose();
+  Eigen::VectorXd x_opt = A_plus * b;
+  std::cout << "Solution: " << x_opt << std::endl;
+  
+  Eigen::MatrixXd T (4,4);
+  T.setIdentity ();
+  T(0, 3) = x_opt(3);
+  T(1, 3) = x_opt(4);
+  T(2, 3) = x_opt(5);
+
+  double alpha = x_opt(0);
+  double beta  = x_opt(1);
+  double gamma = x_opt(2);
+
+  Eigen::MatrixXd R (4,4);
+  R.setIdentity ();
+  R(1, 1) =   cos(gamma) * cos(beta);
+  R(1, 2) = - sin(gamma) * cos(alpha) + cos(gamma) * sin(beta) * sin(alpha);
+  R(1, 3) =   sin(gamma) * sin(alpha) + cos(gamma) * sin(beta) * cos(alpha);
+  R(2, 1) =   sin(gamma) * cos(beta);
+  R(2, 2) =   cos(gamma) * cos(alpha) + sin(gamma) * sin(beta) * sin(alpha);
+  R(2, 3) = - cos(gamma) * sin(alpha) + sin(gamma) * sin(beta) * cos(alpha);
+  R(3, 1) = - sin(beta);
+  R(3, 2) =   cos(beta) * sin(alpha);
+  R(3, 3) =   cos(beta) * cos(alpha);
+
+  transform = T * R * transform;
   //Eigen::Matrix
   //x = A_plus
 
@@ -73,23 +99,28 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
 
 double Registration::oneIteration (const boost::shared_ptr<const sensor_msgs::PointCloud>& source, Eigen::Matrix4d &transform)
 {
-  // TODO: this method to get random samples is low on code, but high on mem..
-  std::vector<int> rand_sample (indices_sorted_);
-  std::random_shuffle (rand_sample.begin (), rand_sample.end());
-  
-  std::vector<int> source_corr(source->points.size());
-  std::vector<int> target_corr(source->points.size());
-  for (unsigned int i = 0; i < 0.1*source->points.size(); i++)
+  std::vector<bool> drawn (source->points.size(), false);
+ 
+  std::vector<int> source_corr((unsigned int)(0.01*source->points.size()));
+  std::vector<int> target_corr((unsigned int)(0.01*source->points.size()));
+  for (unsigned int i = 0; i < (unsigned int)(0.01*source->points.size()); i++)
   {
     geometry_msgs::Point32 query_point;
 
     std::vector<int> k_indices;
     std::vector<float> k_distances;
-    kdtree_->nearestKSearch (source->points[rand_sample[i]], 1, k_indices, k_distances);
-    target_corr[i] = k_indices[0];
-    source_corr[i] = rand_sample[i];
-  }
+    
+    int random_idx;
+    do {
+     random_idx = (int) (rand () * (source->points.size() / (RAND_MAX + 1.0)));
+    } while (drawn [random_idx]);
+    drawn[random_idx] = true;
 
+    kdtree_->nearestKSearch (source->points[random_idx], 1, k_indices, k_distances);
+    target_corr[i] = k_indices[0];
+    source_corr[i] = random_idx;
+  }
+  ROS_INFO ("selected %i sample points", source_corr.size());
   double error = RigidTransformSVD (source, target_corr, source_corr, transform);
   return error;
 }
@@ -102,9 +133,9 @@ std::string Registration::process (const boost::shared_ptr<const Registration::I
 
   if (target_.get() != 0) // if we have a registration target set
   { 
-    indices_sorted_ = std::vector<int>(source->points.size());
-    for (unsigned int i = 0; i < source->points.size(); i++)
-      indices_sorted_[i] = i;
+    //indices_sorted_ = std::vector<int>(source->points.size());
+    //for (unsigned int i = 0; i < source->points.size(); i++)
+      //indices_sorted_[i] = i;
 
     //TODO: make these parameters
     int max_iterations_ = 100;
@@ -116,8 +147,9 @@ std::string Registration::process (const boost::shared_ptr<const Registration::I
     for (int iterations = 0; iterations < max_iterations_; iterations++)
     {
       double error = oneIteration (source, transform);
-      if (error < error_bound)
-        break;
+      ROS_INFO ("iteration %i: %f ", iterations, error);
+//      if (error < error_bound)
+//        break;
     }
   }
 
