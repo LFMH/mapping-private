@@ -1,0 +1,24 @@
+<launch>
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(optenv pcd /home/marton/work/datasets/NICO/teapot_at0.pcd) $(optenv period 5)" />
+
+  <node pkg="cloud_algos" type="mls_fit_node" name="mls_fit_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="cloud_pcd" />
+  </node>
+
+  <node pkg="cloud_algos" type="pfh_node" name="pfh_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="/mls_fit_node/cloud_mls" />
+  </node>
+
+<!--
+  <node pkg="cloud_algos" type="cylinder_fit_node" name="cylinder_fit_node" output="screen" respawn="true">
+  </node>
+-->
+
+ <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+   <param name="input_cloud_topic" value="/pfh_node/cloud_pfh"/>
+   <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
+   <param name="continous" type="bool" value="true"/>
+ </node>
+
+</launch>

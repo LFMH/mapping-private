@@ -12,7 +12,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/planar_estimation.cpp
   src/registration.cpp
   src/mls_fit.cpp
-#  src/pfh.cpp
+  src/pfh.cpp
   src/rotational_estimation.cpp
   src/region_growing.cpp
   src/register_plugins.cpp

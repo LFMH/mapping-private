@@ -94,8 +94,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   // TODO where to put this?
   clear ();
   nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
-#define GLOBAL
-#ifdef GLOBAL
+
+  //#define GLOBAL
+  #ifdef GLOBAL
   // allocating space for "global" matrices - TODO here?
   //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
   Eigen::VectorXd weight_vec_(max_nn_);
@@ -112,18 +113,26 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   f_vec_.resize (max_nn_);
   P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
   inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
-#endif
+  #endif
 
   // TODO Figure out the viewpoint value in the cloud_frame frame
   //geometry_msgs::PointStamped viewpoint_cloud;
   //getCloudViewPoint (cloud->header.frame_id, viewpoint_cloud, tf_);
+  if (viewpoint_cloud_ == NULL)
+  {
+    /// @NOTE: assume sensor position to be at the origin - TODO modify point_cloud_assembler...
+    viewpoint_cloud_ = new geometry_msgs::PointStamped ();
+    viewpoint_cloud_->point.x = 0;
+    viewpoint_cloud_->point.y = 0;
+    viewpoint_cloud_->point.z = 0;
+  }
 
   // Timers
   ros::Time global_time = ros::Time::now ();
   ros::Time ts;
 
   // Conditions for faster nearest neighbor search
-  bool copied_points = false; /// @TODO: this might be taken from point_generation_ (if safe.. since it's the default switch)
+  bool copied_points = false; /// TODO: this might be taken from point_generation_ (if safe.. since it's the default switch)
   bool complete_tree = false; /// TODO: if this actually turns out to help, we should specify this also when the tree is set
 
   // Create Kd-Tree
@@ -131,7 +140,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   {
     ts = ros::Time::now ();
     complete_tree = true;
-    /// @TODO: should we also set epsilon / bucket size?
     kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);
     ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
@@ -199,15 +207,14 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     points_sqr_distances_[i].resize (k_);
   }*/
 
-  // Get the nearest neighbors for all points to be fitted
-  /// TODO done for parallelism - evaluate usefulness and maybe do it for other shared variables as well !!!
+  // Get the nearest neighbors for all points to be fitted -- for parallelism
   ts = ros::Time::now ();
   /// @NOTE: the indexed version seems faster, as the point does not have to be converted to ANNpoint
   /// BUT: we are not using the PCD represented by the internal ANNpointArray, but the new one!
   /// ALSO: if the KD-Tree was created on only a subset of the cloud it doesn't work!
   if (complete_tree && copied_points)
   {
-    /// TODO: check if this is really faster and leave it out if not...
+    /// @NOTE: this is a tiny bit faster :)
     for (size_t i = 0; i < cloud_fit_->points.size (); i++)
       kdtree_->radiusSearch (i, radius_, points_indices_[i], points_sqr_distances_[i], max_nn_);
   }
@@ -219,7 +226,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     for (/*to avoid long/multiple lines*/; pit != cloud_fit_->points.end (); pit++, iit++, dit++)
       kdtree_->radiusSearch (*pit, radius_, *iit, *dit, max_nn_);
   }
-  /// TODO compare to fixed k search with k = average neighborhood size
   ROS_INFO ("Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
 
   // Go through all the points that have to be fitted
@@ -272,7 +278,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     /// @NOTE: while the neighborhood of the points from cloud_fit is used, the plane has to be computed from cloud
     switch (approximating_tangent_)
     {
-      /// @TODO get them from _Clouds/src/ResamplingMLS/RMLS.h (not important for general use)
+      /// TODO get them from _Clouds/src/ResamplingMLS/RMLS.h
       //case WPCA:
       //case IWPCA:
       //case SAC:
@@ -310,8 +316,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       #endif
 
       //#ifdef PARALELL
-#ifndef GLOBAL
-      // allocating space for "global" matrices - TODO here?
+      #ifndef GLOBAL
       //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (k, k);
       Eigen::VectorXd weight_vec_(k);
       Eigen::MatrixXd P_(nr_coeff_, k);
@@ -332,13 +337,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // update neighborhood, since point was projected
       /// TODO: leaving this out, as it is not as important
 
-      // TODO maybe put all these variables as global - unless it messes up parallelism !!!
-      /// @NOTE: probably not worth having the result of plane_parameters.start<3>() saved...
-
       // get local coordinate system (Darboux frame)
       Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
       Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
-      // TODO is this faster or: getCoordinateSystemOnPlane (plane_parameters, u, v);
 
       // --[ Build up matrices for getting the coefficients ]--
 
@@ -354,7 +355,6 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         de_meaned[0] = cloud->points[points_indices_[cp][i]].x - cloud_fit_->points[cp].x;
         de_meaned[1] = cloud->points[points_indices_[cp][i]].y - cloud_fit_->points[cp].y;
         de_meaned[2] = cloud->points[points_indices_[cp][i]].z - cloud_fit_->points[cp].z;
-        // TODO which one is better, faster? dot, * or macro?
         u_coord = de_meaned.dot (u);
         v_coord = de_meaned.dot (v);
         f_vec_(i) = de_meaned.dot (plane_parameters.start<3>());
@@ -380,12 +380,18 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // --[ Computing coefficients ]--
 
       // storing partial result for reuse
-      //P_weight_ = P_ * weight_vec_.asDiagonal();
+      #ifndef GLOBAL
+      P_weight_ = P_ * weight_vec_.asDiagonal();
+      #else
       P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
+      #endif
 
-      // TODO optimize: result is symmetrical... maybe concat with prev and use lazy()
-      //P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose ();
+      /// @NOTE: result is symmetrical... hopefully part<SelfAdjoint>() is the only thing that Eigen needs to fully optimize it
+      #ifndef GLOBAL
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose ();
+      #else
       P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
+      #endif
 
       //if (cp < 10)
       //  cerr << P_weight_Pt_.determinant () << " ";
@@ -426,6 +432,8 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           }
           //ROS_INFO ("Interval for the value of the determinant in order for correct inversion converged to: (%g,%g).", max_bad_det, min_good_det);
         }
+        else
+          inverse_ok = true;
         #else
         if ((P_weight_Pt_ * inv_P_weight_Pt_).isIdentity(1e-5))
           inverse_ok = true;
@@ -435,8 +443,11 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         if (inverse_ok)
         {
           // solve the equation system
-          //c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
+          #ifndef GLOBAL
+          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
+          #else
           c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
+          #endif
 
           //if (cp < 10)
           //  cerr << "coefficients: " << c_vec_.transpose () << endl;
@@ -525,9 +536,13 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           n[2] = 1;*/
           //cerr << "recomputed normal:" << endl << plane_parameters.start<3>() << endl;
 
-          // estimate surface curvature analogously to the PCA way of \lambda_0 / \sum{\lambda}
-          double height_variation = f_vec_.maxCoeff() - f_vec_.minCoeff();
-          curvature = height_variation / (height_variation + 4*radius_curvature_);
+          // TODO estimate surface curvature analogously to the PCA way of \lambda_0 / \sum{\lambda}
+          /// @NOTE: dependency on order? does it differ if plane is only PCA, and same radius is used?
+          //#ifndef GLOBAL - you don't need sub-vectors !!!
+          //double height_variation = f_vec_.start(k).maxCoeff() - f_vec_.start(k).minCoeff();
+          //cerr << height_variation << " ";
+          //curvature = height_variation / (height_variation + 4*radius_curvature_);
+          //cerr << weight_vec_.start(k).minCoeff() << " ";
 
           /**
            *  5   4   3   2   1   0
@@ -589,7 +604,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     if (not_enough_nn != 0) ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
     #ifndef PARALELL
     ROS_INFO ("Interval for the value of the determinant in order to be correctly invertible converged to: (%g,%g).", max_bad_det, min_good_det);
-    if (zero_determinant != 0) ROS_WARN ("Matrix to be inverted had a bad determinant %d times (%g%%) and failed to invert %d times (%g%%).", zero_determinant, zero_determinant*100.0/cloud_fit_->points.size (), not_inverse, not_inverse*100.0/cloud_fit_->points.size ());
+    if ((zero_determinant != 0) || (not_inverse != 0)) ROS_WARN ("Inverting squared weighted term matrix failed %d times (%g%%), and a bad determinant was detected %d times (%g%%).", not_inverse, not_inverse*100.0/cloud_fit_->points.size (), zero_determinant, zero_determinant*100.0/cloud_fit_->points.size ());
     if (nr_orthogonal != 0) ROS_WARN ("%d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
     #endif
   }
@@ -602,7 +617,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 }
 
 MovingLeastSquares::OutputType MovingLeastSquares::output ()
-  // TODO {return cloud_fit_.get ();}
+  // TODO {return *(cloud_fit_.get ());}
   {return *cloud_fit_;}
 
 #ifdef CREATE_NODE

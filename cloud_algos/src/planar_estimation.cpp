@@ -3,11 +3,11 @@
 
 using namespace cloud_algos;
 
-void PlanarEstimation::init (ros::NodeHandle&) 
+void PlanarEstimation::init (ros::NodeHandle&)
 {
 }
 
-std::vector<std::string> PlanarEstimation::pre () 
+std::vector<std::string> PlanarEstimation::pre ()
   {return std::vector<std::string>();}
 
 std::vector<std::string> PlanarEstimation::post ()
