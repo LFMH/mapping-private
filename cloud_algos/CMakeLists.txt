@@ -10,6 +10,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
+#  src/cylinder_fit.cpp
+#  src/box_fit.cpp
+#  src/gfpfh.cpp
   src/registration.cpp
   src/mls_fit.cpp
   src/pfh.cpp
@@ -47,6 +50,10 @@ rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangul
 set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (cylinder_fit_node src/cylinder_fit.cpp)
+#set_target_properties (cylinder_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 #rosbuild_add_executable (box_fit_node src/box_fit.cpp)
+#set_target_properties (box_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
+#rosbuild_add_executable (gfpfh_node src/gfpfh.cpp)
+#set_target_properties (gfpfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
