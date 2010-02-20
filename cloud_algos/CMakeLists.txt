@@ -40,6 +40,9 @@ set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 rosbuild_add_executable (pfh_node src/pfh.cpp)
 set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
+rosbuild_add_executable (svm_classification_node src/svm_classification.cpp)
+set_target_properties (svm_classification_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
 rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangulation.cpp)
 set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
