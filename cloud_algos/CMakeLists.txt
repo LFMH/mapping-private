@@ -47,3 +47,6 @@ rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangul
 set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (cylinder_fit_node src/cylinder_fit.cpp)
+
+#rosbuild_add_executable (box_fit_node src/box_fit.cpp)
+
