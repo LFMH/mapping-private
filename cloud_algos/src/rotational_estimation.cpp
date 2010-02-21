@@ -10,7 +10,7 @@ using namespace cloud_algos;
 
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
-                         int max_iterations_, sensor_msgs::PointCloud &cloud_synth, mapping_msgs::PolygonalMap &pmap)
+                         int max_iterations_, boost::shared_ptr<sensor_msgs::PointCloud> cloud_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap)
 {
   int debug = 2;
   ias_sample_consensus::SACModelRotational *sac_model_ = new ias_sample_consensus::SACModelRotational (pmap);
@@ -112,6 +112,7 @@ void
   if (best_model.size () != 0)
   {
     std::cerr << "before" <<std::endl;
+    sac_model_->samplePointsOnRotational (best_coeffs, cloud_synth);
     //double score = sac_model_->computeScore (best_coeffs, sample_consensus::getMinMaxK (cloud, best_coeffs, best_inliers) , best_inliers, cloud_synth, threshold_);
     std::cerr << "after" <<std::endl;
     //if (debug > 0)
@@ -131,29 +132,40 @@ void
 void RotationalEstimation::init (ros::NodeHandle &nh)
 {
   nh_ = nh;
-  pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
-  pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
+  vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
+  vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
 }
 
 std::vector<std::string> RotationalEstimation::pre () 
-  {return std::vector<std::string> ();}
+{
+  vis_pmap_ = boost::shared_ptr<mapping_msgs::PolygonalMap> 
+                           (new mapping_msgs::PolygonalMap ());
+  vis_cloud_ = boost::shared_ptr<sensor_msgs::PointCloud> 
+                           (new sensor_msgs::PointCloud ());
+  return std::vector<std::string> ();
+}
 
 std::vector<std::string> RotationalEstimation::post ()
-  {return std::vector<std::string>();}
+{
+  vis_pmap_pub_.publish (vis_pmap_);
+  vis_cloud_pub_.publish (vis_cloud_);
+  return std::vector<std::string>();
+}
 
 std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> &cloud)
 {
-  sensor_msgs::PointCloud pc;
-  double threshold_ = 0.005;
+  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  double threshold_ = 0.01;
   double probability_ = 0.99;
-  int max_iterations_ = 500;
-  mapping_msgs::PolygonalMap pmap;
-  pmap.header.frame_id = cloud->header.frame_id;
+  int max_iterations_ = 100;
   
-  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, pc, pmap);
+  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, vis_cloud_, vis_pmap_);
   
-  pub_.publish (pc);
-  pmap_pub_.publish (pmap);
+  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  vis_pmap_->header.frame_id = cloud->header.frame_id;
+  vis_cloud_->header.frame_id = cloud->header.frame_id;
+  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   return std::string("ok");
 }
 

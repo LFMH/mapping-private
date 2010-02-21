@@ -1,6 +1,7 @@
 #ifndef CLOUD_ALGOS_ROTATIONAL_ESTIMATION_H
 #define CLOUD_ALGOS_ROTATIONAL_ESTIMATION_H
 #include <cloud_algos/cloud_algos.h>
+#include <mapping_msgs/PolygonalMap.h>
 
 namespace cloud_algos
 {
@@ -28,9 +29,11 @@ class RotationalEstimation : public CloudAlgo
   OutputType output ();
  
  private: 
+  boost::shared_ptr<mapping_msgs::PolygonalMap> vis_pmap_;
+  boost::shared_ptr<sensor_msgs::PointCloud> vis_cloud_;
   ros::NodeHandle nh_;
-  ros::Publisher pub_;
-  ros::Publisher pmap_pub_;
+  ros::Publisher vis_cloud_pub_;
+  ros::Publisher vis_pmap_pub_;
 };
 
 }

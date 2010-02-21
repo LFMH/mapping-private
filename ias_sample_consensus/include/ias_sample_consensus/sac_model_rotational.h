@@ -13,7 +13,7 @@ namespace ias_sample_consensus
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for SACModelRotational. */
-      SACModelRotational (mapping_msgs::PolygonalMap& pmap) : pmap_(pmap) 
+      SACModelRotational (boost::shared_ptr<mapping_msgs::PolygonalMap> pmap) : pmap_(pmap) 
       { 
         nx_idx_ = ny_idx_ = nz_idx_ = -1;
       }
@@ -48,14 +48,15 @@ namespace ias_sample_consensus
       /** \brief Return an unique id for this model (666 for now). */
       virtual int getModelType () { return (666); }
       
+      void samplePointsOnRotational (const std::vector<double> modelCoefficients, boost::shared_ptr<sensor_msgs::PointCloud>);
       static int functionToOptimizeAxis (void *p, int m, int n, const double *x, double *fvec, int iflag);
       bool MinimizeAxisDistancesToSamples (const std::vector<int> samples, std::vector<double> &model_coefficients, double &err);
       double PointToRotationalDistance (const std::vector<double> &model_coefficients, const geometry_msgs::Point32 &p);
       bool EstimateAxisFromSamples (const std::vector<int> samples, std::vector<double> &model_coefficients);
-      void EstimateContourFromSamples (const std::vector<int> samples, std::vector<double> &model_coefficients);
+      bool EstimateContourFromSamples (const std::vector<int> samples, std::vector<double> &model_coefficients);
       bool RefitAxis (const std::vector<int> &inliers, std::vector<double> &refit_coefficients);
       void RefitContour (const std::vector<int> &inliers, std::vector<double> &refit_coefficients);
-      mapping_msgs::PolygonalMap& pmap_;
+      boost::shared_ptr<mapping_msgs::PolygonalMap> pmap_;
       int nx_idx_;
       int ny_idx_;
       int nz_idx_;

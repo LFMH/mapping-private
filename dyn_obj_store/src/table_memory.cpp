@@ -153,6 +153,7 @@ class TableMemory
     // plugin loader
     pluginlib::ClassLoader<CloudAlgo> *cl;
     CloudAlgo * alg_rot_est;
+    CloudAlgo * alg_mls;
  
     // this is a map<LO Id, vector[tableId, instId, objectId]> that maps a LO id to indices into our tables struct
     std::map <unsigned long long, std::vector<long> > lo_ids;
@@ -534,11 +535,29 @@ class TableMemory
         ROS_INFO("Failed to load library with plugin MovingLeastSquares inside. Exception: %s", ex.what());
       }
     
+      try
+      {
+        cl->loadLibraryForClass("RotationalEstimation");
+        ROS_INFO("Loaded library with plugin RotationalEstimation inside");
+      }
+      catch(pluginlib::PluginlibException &ex)
+      {
+        ROS_INFO("Failed to load library with plugin RotationalEstimation inside. Exception: %s", ex.what());
+      }
+    
+      if (cl->isClassLoaded("RotationalEstimation"))
+      {
+        ROS_INFO("Can create RotationalEstimation");
+        alg_rot_est = cl->createClassInstance("RotationalEstimation");
+        alg_rot_est->init (nh_);
+      }
+      else ROS_INFO("RotationalEstimation Class not loaded");
+      
       if (cl->isClassLoaded("MovingLeastSquares"))
       {
         ROS_INFO("Can create MovingLeastSquares");
-        alg_rot_est = cl->createClassInstance("MovingLeastSquares");
-        alg_rot_est->init (nh_);
+        alg_mls = cl->createClassInstance("MovingLeastSquares");
+        alg_mls->init (nh_);
       }
       else ROS_INFO("MovingLeastSquares Class not loaded");
     }
@@ -608,6 +627,8 @@ class TableMemory
       //if (table_reconstruct_clusters_client_.exists ())
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
+        std::vector<std::string> pre_rot = alg_rot_est->pre ();
+        
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
           TableObject* to = t.getCurrentInstance ()->objects.at (i); 
@@ -616,43 +637,30 @@ class TableMemory
             ROS_WARN ("[reconstruct_table_objects] Table object has 0 points.");
             continue;
           }
-	  std::vector<std::string> bla = alg_rot_est->pre ();//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
-          std::cerr << "[reconstruct_table_objects] Calling with a PCD with " << to->point_cluster.points.size () << " points." << std::endl;
-	  std::string blastring = ((MovingLeastSquares*)alg_rot_est)->process (sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter()));//ocess (sensor_msgs::PointCloudConstPtr (&to->point_cluster));
-          ROS_INFO("got response: %s", blastring.c_str ());
 
-          ros::Publisher pub_ = nh_.advertise <MovingLeastSquares::OutputType> (((MovingLeastSquares*)alg_rot_est)->default_output_topic (), 5);
-          pub_.publish (((MovingLeastSquares*)alg_rot_est)->output ());
+          boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
+          // call MLS
+          std::vector<std::string> pre_mls = alg_mls->pre ();
+          std::cerr << "[reconstruct_table_objects] Calling MLS with a PCD with " << 
+                        to->point_cluster.points.size () << " points." << std::endl;
+          std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process  
+                      (cluster);
+          ROS_INFO("got response: %s", process_answer_mls.c_str ());
+          ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType> 
+                      (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
+          pub_mls.publish (((MovingLeastSquares*)alg_mls)->output ());
 
-          break; 
-
-
-///////////////////////
-//          // formulate a request
-//          ias_table_srvs::ias_reconstruct_object::Request req;
-//          req.cloud_in = to->point_cluster;
-//          req.prob_thresh = 0.99;
-//          req.ransac_thresh = 0.05;
-//          req.angle_thresh = 10;
-//          req.interesting_types = ias_table_msgs::TableObjectReconstructed::PLANE;
-//          
-//          //call service
-//          ias_table_srvs::ias_reconstruct_object::Response resp;
-//          table_reconstruct_clusters_client_.call (req, resp); 
-//          
-//          // update our table object with detected shapes
-//          if (resp.objects.size () > 0)
-//          {
-//            ias_table_msgs::TableObjectReconstructed rto = resp.objects.at(0);
-//            to->type = rto.type;
-//            to->coeffs = rto.coefficients;
-//            to->score = rto.score;
-//            //to->center;
-//            //to->triangles;
-//            //TODO: what if we saw multiple things in one cluster??
-//          }
-///////////////////////
+          // call rotational estimation
+          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " << 
+                        to->point_cluster.points.size () << " points." << std::endl;
+          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process  
+                      (cluster);
+          ROS_INFO("got response: %s", process_answer_rot.c_str ());
+          ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType> 
+                      (((RotationalEstimation*)alg_rot_est)->default_output_topic (), 5);
+          pub_rot.publish (((RotationalEstimation*)alg_rot_est)->output ());
         }
+        std::vector<std::string> post_rot = alg_rot_est->post ();
       }
     }
 
