@@ -4,18 +4,6 @@
 using namespace std;
 using namespace cloud_algos;
 
-// TODO: instead of maintaining a patch to ROS, we provide a copy of this function
-int
-  getIndexWithBSP (const boost::shared_ptr<const sensor_msgs::PointCloud> points, std::string value)
-{
-  // Get the index we need
-  for (unsigned int d = 0; d < points->get_channels_size (); d++)
-    if (points->channels[d].name == value)
-      return (d);
-
-  return (-1);
-}
-
 void PointFeatureHistogram::init (ros::NodeHandle&)
 {
   // node handler and publisher
@@ -69,12 +57,20 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
   // TODO where to put this?
   clear ();
 
-  int nxIdx = getIndexWithBSP(cloud, "nx");
+  // Check if normals exist TODO: solve issue with getIndex(cloud, "nx");
+  int nxIdx = -1;
+  for (unsigned int d = 0; d < cloud->get_channels_size (); d++)
+    if (cloud->channels[d].name == "nx")
+    {
+      nxIdx = d;
+      break;
+    }
   if (nxIdx == -1)
   {
-    ROS_ERROR ("Provided point cloud does not have normals. Use the normal_estimation or mls_fit nodes first!");
+    ROS_ERROR ("Provided point cloud does not have normals. Use the normal_estimation or mls_fit first!");
     return std::string("missing normals");
   }
+  /// @NOTE: we assume that if nx exists then ny and nz are the channels following it
 
   // compute number of bins
   nr_features_ = use_dist_ ? 4:3;
@@ -128,8 +124,11 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     else if (i == nr_bins_-1)
       ROS_INFO ("Added channel: %s [done]", dim_name);
   }
-  cloud_pfh_->channels[fIdx + nr_bins_].name = "sp";
-  ROS_INFO ("Added channel: %s", cloud_pfh_->channels[fIdx + nr_bins_].name.c_str ());
+  if (point_label_ != -1)
+  {
+    cloud_pfh_->channels[fIdx + nr_bins_].name = "point_label";
+    ROS_INFO ("Added channel: %s", cloud_pfh_->channels[fIdx + nr_bins_].name.c_str ());
+  }
 
   // Allocate space for histograms
   vector<vector<float> > histograms (nr_bins_);
@@ -180,10 +179,13 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
   for (size_t cp = 0; cp < cloud_pfh_->points.size (); cp++)
   {
     // specify class label - if known
-    cloud_pfh_->channels[fIdx + nr_bins_].values[cp] = sp_val_;
+    if (point_label_ != -1)
+      cloud_pfh_->channels[fIdx + nr_bins_].values[cp] = point_label_;
 
     // increment for the bins
     double npsqr = 100.0 / points_indices_[cp].size ();
+
+    // TODO add cached version!
 
     // for all neighbors (so skip the first in points_indices_[cp] because it is cp itself)
     for (size_t ni = 1; ni < points_indices_[cp].size (); ni++)

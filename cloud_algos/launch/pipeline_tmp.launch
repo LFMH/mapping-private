@@ -11,6 +11,10 @@
   </node>
 
 <!--
+  <node pkg="cloud_algos" type="svm_classification_node" name="svm_classification_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="/pfh_node/cloud_pfh" />
+  </node>
+
   <node pkg="cloud_algos" type="cylinder_fit_node" name="cylinder_fit_node" output="screen" respawn="true">
   </node>
 -->

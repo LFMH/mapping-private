@@ -38,7 +38,7 @@ class PointFeatureHistogram : public CloudAlgo
   bool check_flip_;  // enable to make source-target selection consistent
   bool abs_angles_;  // enable to use absolute values of angles instead of the 'directional' values
   bool average_;     // enable to create the final histogram by a weighted average of the neighboring ones (useful if only star-like connections were used)
-  int sp_val_;        // set the value for the class label (-1 if not known / to be classified)
+  int point_label_ ; // set the value for the class label (-1 if not known / to be classified)
 
   // Topic name to subscribe to
   static std::string default_input_topic ()
@@ -76,6 +76,7 @@ class PointFeatureHistogram : public CloudAlgo
   {
     kdtree_ = NULL;
 
+    // set default values for parameters to produce FPFHs
     radius_ = 0.03;
     max_nn_ = 100;
     quantum_ = 9;
@@ -85,7 +86,7 @@ class PointFeatureHistogram : public CloudAlgo
     check_flip_ = true;
     abs_angles_ = false;
     average_ = true;
-    sp_val_ = -1;
+    point_label_ = 0; // TODO initialize to -1 if classification algo is ready
   }
   ~PointFeatureHistogram ()
   {
