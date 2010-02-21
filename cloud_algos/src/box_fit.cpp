@@ -81,9 +81,10 @@ class BoxFit
     cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_ ,1);
     //box_pub_ = n_.advertise<sensor_msgs::PointCloud>(box_topic_ ,1);
     vis_pub_ = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-    axis_.x = 1;
-    axis_.y = axis_.z = 0;
-    rotate_inliers_ = -45.0;
+    axis_.x = 1.0;
+    axis_.y = 0.0;
+    axis_.z = 1.0;
+    rotate_inliers_ = -70.0;
     r_ = g_ = 0.0;
     b_ = 1.0;
   }
@@ -177,24 +178,12 @@ class BoxFit
    */  
   void publish_model_rviz (std::vector<double> &coeff)
   {
-    //axis angle to quaternion conversion
-    // btVector3 axis(coeff[3]-coeff[0], coeff[4]-coeff[1], coeff[5]-coeff[2]);
-    btVector3 marker_axis(0, 0, 1);
-    btVector3 axis (coeff[6], coeff[7], coeff[8]);
-    btVector3 axis2 (coeff[9], coeff[10], coeff[11]);
-    btVector3 axis3 (coeff[12], coeff[13], coeff[14]);
-    ROS_INFO("Angles between 0, 0, 1 and axis: %f, axis2: %f, axis3: %f",  
-             marker_axis.angle(axis),  marker_axis.angle(axis2),  marker_axis.angle(axis3));
-     btQuaternion qt1(marker_axis.cross(axis), marker_axis.angle(axis));
-     btQuaternion qt2(marker_axis.cross(axis2), marker_axis.angle(axis2));
-     btQuaternion qt3(marker_axis.cross(axis3), marker_axis.angle(axis3));
-     btQuaternion qt_tmp;
-     btQuaternion qt;
-     qt_tmp = qt1*qt2;
-     qt = qt_tmp * qt3;
-     //qt*=qt3;
-     //btQuaternion qt(0, 0, 0, 1);
-//     ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
+    btMatrix3x3 box_rot (coeff[6], coeff[7], coeff[8],
+                           coeff[9], coeff[10], coeff[11],
+                           coeff[12], coeff[13], coeff[14]);
+    btMatrix3x3 box_rot_trans (box_rot.transpose());
+    btQuaternion qt;
+    box_rot_trans.getRotation(qt);
 
     visualization_msgs::Marker marker;
     marker.header.frame_id = "base_link";
