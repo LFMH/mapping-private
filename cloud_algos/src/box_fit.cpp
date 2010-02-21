@@ -83,7 +83,9 @@ class BoxFit
     vis_pub_ = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     axis_.x = 1;
     axis_.y = axis_.z = 0;
-    rotate_inliers_ = 0.0;
+    rotate_inliers_ = 45.0;
+    r_ = g_ = 0.0;
+    b_ = 1.0;
   }
 
 
@@ -121,9 +123,10 @@ class BoxFit
     // It performs eigen-analyis of local neighborhoods and extracts
     // eigenvectors and values.  Here, we set it to look at neighborhoods
   // within a radius of 5.0 around each interest point.
-    //SpectralAnalysis sa(5.0);
-    //BoundingBoxSpectral bbox_spectral(70.0, sa);
-    BoundingBoxRaw bbox_spectral(70.0);
+    double r = 70.0;
+    SpectralAnalysis sa(r);
+    BoundingBoxSpectral bbox_spectral(r, sa);
+    //BoundingBoxRaw bbox_spectral(70.0);
     
     // ----------------------------------------------
     // Put all descriptors into a vector
@@ -154,14 +157,17 @@ class BoxFit
     cout << "Bounding box features size: " <<  pt0_bbox_features.size() << endl;
     for (size_t i = 0 ; i < pt0_bbox_features.size() ; i++)
     {
-      if (i < 3)
-      {
-        ROS_INFO("Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
+      if (i < 12)
+      {     
         coeff[i+3] = pt0_bbox_features[i];
       }
       else
         ROS_WARN("Box dimensions bigger than 3 - unusual");
     }
+    ROS_INFO("Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
+    ROS_INFO("Eigen vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f", pt0_bbox_features[3], pt0_bbox_features[4], 
+             pt0_bbox_features[5], pt0_bbox_features[6], pt0_bbox_features[7], pt0_bbox_features[8], 
+             pt0_bbox_features[9], pt0_bbox_features[10],pt0_bbox_features[11]);
   }
 
     
@@ -178,7 +184,7 @@ class BoxFit
 //     btQuaternion qt(marker_axis.cross(axis), marker_axis.angle(axis));
     btQuaternion qt(0, 0, 0, 1);
 //     ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
-    
+
     visualization_msgs::Marker marker;
     marker.header.frame_id = "base_link";
     marker.header.stamp = ros::Time();
@@ -205,20 +211,37 @@ class BoxFit
   }
 
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Create synthetic point cloud
+   * \param point cloud
+   */
   void create_point_cloud(sensor_msgs::PointCloud& data)
   {
     data.header.frame_id = "/base_link";
     unsigned int nbr_pts = 2000;
     data.points.resize(nbr_pts);
-    
+    data.channels.resize(3);
+    data.channels[0].name = "r";
+    data.channels[1].name = "g";
+    data.channels[2].name = "b";
+    data.channels[0].values.resize(nbr_pts);
+    data.channels[1].values.resize(nbr_pts);
+    data.channels[2].values.resize(nbr_pts);
+
     for (unsigned int i = 0 ; i < nbr_pts ; i++)
     {
-      data.points[i].x = rand() % 50;
-      data.points[i].y = rand() % 30;
+      data.points[i].x = rand() % 40;
+      data.points[i].y = rand() % 20;
       data.points[i].z = rand() % 50;
+      data.channels[0].values[i] = r_;
+      data.channels[1].values[i] = g_;
+      data.channels[2].values[i] = b_;
     }
-    player_log_actarray::transform::rotatePointCloud(points_, points_rotated_, angles::from_degrees(rotate_inliers_), axis_);
-    data = points_rotated_;
+    if(rotate_inliers_ != 0.0)
+    {
+      player_log_actarray::transform::rotatePointCloud(points_, points_rotated_, angles::from_degrees(rotate_inliers_), axis_);
+      data = points_rotated_;
+    }
   }
 
 
@@ -263,13 +286,15 @@ protected:
   ros::Subscriber clusters_sub_;
   //model rviz publisher
   ros::Publisher vis_pub_;
-  //box coefficients
+  //box coefficients: cx, cy, cz, dx, dy, dz
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;
   std::string cloud_topic_, box_topic_;
   geometry_msgs::Point32 axis_;
   float rotate_inliers_;
 
+  //point color
+  float r_, g_, b_;
 };
 
 
