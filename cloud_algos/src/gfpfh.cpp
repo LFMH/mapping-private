@@ -212,11 +212,14 @@ int
     return (-1);
   }
   
+  // TODO: not needed
   vector<vector<int> > regions = getRegionInformationFromPoints (points, header.nr_points, reg_idx, -1, false);
 
   /// Create a fixed-size octree decomposition
   ANNpoint minB = annAllocPt (3); for (int d = 0; d < 3; d++) minB[d] = header.minPD[d];
   ANNpoint maxB = annAllocPt (3); for (int d = 0; d < 3; d++) maxB[d] = header.maxPD[d];
+
+  /// TODO: cloud_octree::Octree (float cx, float cy, float cz, float dx, float dy, float dz, int max_depth);
   LevelOctree<vector<int> > *tree = CreateOctreeFromANN (points, header, width, minB, maxB);
 
 #if GUI
@@ -232,6 +235,7 @@ int
 
   set<LinearOctreeIndex> cells;
   // Select only the occupied leaves
+  // TODO: getOccupiedLeaves
   getOccupiedCells (tree, points, header.nr_points, cells);
   print_info (stderr, "Creating an octree representation of level "); print_value (stderr, "%d", tree->n_level); fprintf (stderr, " with "); print_value (stderr, "%d", cells.size ());
   fprintf (stderr, " voxels ("); print_value (stderr, "%d x %d x %d", tree->size (), tree->size (), tree->size ()); fprintf (stderr, ")\n");
@@ -250,9 +254,11 @@ int
   {
     // Get a cell
     LinearOctreeIndex loi_i = *it_i;
+    /// TODO leaf_it->cen[0] leaf_it->cen[1] leaf_it->cen[2]
     loi_i.get (X_i[0], X_i[1], X_i[2]);
 
     // Get its contents
+    /// TODO leaf_it->getIndices ()
     if (((*tree) (X_i[0], X_i[1], X_i[2])).size () == 0)
       continue;
 
@@ -283,6 +289,7 @@ int
     for (it_j = it_i /*cells.begin ()*/; it_j != cells.end (); ++it_j)
 #endif
     {
+     /// TODO: just start for from it_i+1
      if (it_i == it_j)
        continue;
 
@@ -335,6 +342,7 @@ int
         iren->Start ();
 #endif
 
+      /// TODO: line defined by a point and direction: p = 1st centroid, dir = 2nd - 1st centroid
       for (int d = 0; d < 3; d++)
       {
         line_p1[d] = centroid_i[d];
@@ -349,7 +357,7 @@ int
 
       vtkActorCollection* intersected_leaves_actors = vtkActorCollection::New ();
       // Iterate over leaves
-      for (z = minZ; z < maxZ+1; ++z)
+      for (z = minZ; z <= maxZ+1; ++z)
       {
         for (y = minY; y < maxY+1; ++y)
         {
@@ -362,6 +370,7 @@ int
               continue;
 
             // Get the bounds of this leaf
+            // TODO computeCellBounds
             getLeafBounds (tree, x, y, z, box_bounds);
 
             // Check if we intersect with it
