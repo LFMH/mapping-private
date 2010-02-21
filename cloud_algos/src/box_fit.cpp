@@ -40,7 +40,7 @@
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // include all descriptors for you
-#include <descriptors_3d/all_descriptors.h>
+#include <ias_descriptors_3d/all_descriptors.h>
 
 //computeCentroid
 #include <point_cloud_mapping/geometry/nearest.h>

@@ -25,7 +25,7 @@
   <depend package="perception_srvs" />
   <depend package="tabletop_msgs" />
   <depend package="player_log_actarray" />
-  <depend package="descriptors_3d"/>
+  <depend package="ias_descriptors_3d"/>
   <depend package="libsvm"/>
 
   <export>
