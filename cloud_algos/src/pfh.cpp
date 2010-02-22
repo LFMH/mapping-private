@@ -315,19 +315,24 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
       // Normalize histograms
       for (int b = 0; b < nr_bins_; b++)
         cloud_pfh_->channels[fIdx+b].values[cp] /= sum_weight;
-
-      // Subtract for each feature's histogram bins the value of the previous histogram bin (from the same feature)
-      if (!combine_ && diferential_)
-      {
-        for (int f = 0; f < nr_features_; f++)
-        {
-          int baseIdx = fIdx + f*quantum_;
-          for (int b = 1; b < quantum_; b++)
-            cloud_pfh_->channels[baseIdx+b].values[cp] -= cloud_pfh_->channels[baseIdx+b-1].values[cp];
-        }
-      }
     }
     ROS_INFO ("Computed weighted averages of histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
+  }
+
+  // TODO where to put this?
+  // Subtract for each feature's histogram bins the value of the previous histogram bin (from the same feature)
+  if (!combine_ && diferential_)
+  {
+    // TODO parallelize!
+    for (size_t cp = 0; cp < cloud_pfh_->points.size (); cp++)
+    {
+      for (int f = 0; f < nr_features_; f++)
+      {
+        int baseIdx = fIdx + f*quantum_;
+        for (int b = quantum_-1; b > quantum_; b++)
+          cloud_pfh_->channels[baseIdx+b].values[cp] -= cloud_pfh_->channels[baseIdx+b-1].values[cp];
+      }
+    }
   }
 
   // Finish

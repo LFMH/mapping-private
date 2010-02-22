@@ -20,7 +20,7 @@
 -->
 
  <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
-   <param name="input_cloud_topic" value="/pfh_node/cloud_pfh"/>
+   <param name="input_cloud_topic" value="/svm_classification_node/cloud_svm"/>
    <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
    <param name="continous" type="bool" value="true"/>
  </node>

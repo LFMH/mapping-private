@@ -46,7 +46,7 @@ class SVMClassification : public CloudAlgo
   static std::string default_output_topic ()
     {return std::string ("cloud_svm");};
   static std::string default_node_name () 
-    {return std::string ("svm_node");};
+    {return std::string ("svm_classification_node");};
 
   // Algorithm methods
   void init (ros::NodeHandle&);
@@ -58,8 +58,8 @@ class SVMClassification : public CloudAlgo
   // Constructor-Destructor
   SVMClassification () : CloudAlgo ()
   {
-    model_file_name_ = std::string ("svm/fpfh.model");
-    scale_file_name_ = std::string ("svm/fpfh.scp");
+    model_file_name_ = std::string ("svm/dfpfh.model");
+    scale_file_name_ = std::string ("svm/dfpfh.scp");
     scale_ = true;
   }
 
