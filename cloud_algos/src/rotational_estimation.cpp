@@ -62,11 +62,10 @@ void
       {
         std::vector<double> backup_coeff (coeffs);
         std::vector<int> backup_inliers (inliers);
-        break;
         before = inliers.size ();
         ROS_WARN ("before refit: %i inliers", (int)inliers.size());
-        if (sac_model_->RefitAxis  (inliers, coeffs))
-          sac_model_->selectWithinDistance (coeffs, threshold_, inliers);
+        sac_model_->refitModel  (inliers, coeffs);
+        sac_model_->selectWithinDistance (coeffs, threshold_, inliers);
         ROS_WARN ("after refit: %i inliers", (int)inliers.size());
         after = inliers.size ();
         if (after > before)
@@ -112,7 +111,7 @@ void
   if (best_model.size () != 0)
   {
     std::cerr << "before" <<std::endl;
-    sac_model_->samplePointsOnRotational (best_coeffs, cloud_synth);
+    sac_model_->samplePointsOnRotational (best_coeffs, best_inliers, cloud_synth);
     //double score = sac_model_->computeScore (best_coeffs, sample_consensus::getMinMaxK (cloud, best_coeffs, best_inliers) , best_inliers, cloud_synth, threshold_);
     std::cerr << "after" <<std::endl;
     //if (debug > 0)

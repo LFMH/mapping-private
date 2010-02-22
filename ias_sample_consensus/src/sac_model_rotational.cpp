@@ -174,9 +174,9 @@ namespace ias_sample_consensus
       point_normal_line[5] = point_normal_line[2] + model->cloud_->channels[model->nz_idx_].values[model->tmp_inliers_->at(i)];
       
       double ll = LineToLineDistance (rot_coeff, point_normal_line, 1e-5); 
-      p1.x = model->cloud_->channels[model->nx_idx_].values[model->tmp_inliers_->at(i)];
-      p1.y = model->cloud_->channels[model->ny_idx_].values[model->tmp_inliers_->at(i)];
-      p1.z = model->cloud_->channels[model->nz_idx_].values[model->tmp_inliers_->at(i)];
+      //p1.x = model->cloud_->channels[model->nx_idx_].values[model->tmp_inliers_->at(i)];
+      //p1.y = model->cloud_->channels[model->ny_idx_].values[model->tmp_inliers_->at(i)];
+      //p1.z = model->cloud_->channels[model->nz_idx_].values[model->tmp_inliers_->at(i)];
       //double weight = (cos(cloud_geometry::angles::getAngle3D(p1,p2) * 2.0) + 3.0) * .25;
       fvec[i] = ll * ll;// * weight;
 //       fvec[i] = pointToRotationalDistance (model->cloud_->points[model->tmp_inliers_->at (i)], rot_coeff, model->polynomial_order) - x[6];
@@ -526,7 +526,7 @@ namespace ias_sample_consensus
     for (int d = 0; d < 10; d++)
       refit_coefficients[d] = model_coefficients_ [d];
     
-    RefitAxis (inliers, refit_coefficients);
+    //RefitAxis (inliers, refit_coefficients);
     RefitContour (inliers, refit_coefficients);
   }
 
@@ -576,18 +576,32 @@ namespace ias_sample_consensus
   }
   
   void
-    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, boost::shared_ptr<sensor_msgs::PointCloud> ret)
+    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<sensor_msgs::PointCloud> ret)
   {
     static int count = 0;
     count++;
+    
+    // compute minimal and maximal points of the axis (min_k, max_k)
+    std::vector<double> vals_2d_x;
+    std::vector<double> vals_2d_y;
+    double min_k, max_k;
+    std::vector<double> model_coefficients (modelCoefficients);
+    Collect3DPointsInRotatedPlane (inliers, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
+    
+    model_coefficients[0] = model_coefficients [0] + (model_coefficients[3]-model_coefficients[0]) * min_k; 
+    model_coefficients[1] = model_coefficients [1] + (model_coefficients[4]-model_coefficients[1]) * min_k; 
+    model_coefficients[2] = model_coefficients [2] + (model_coefficients[5]-model_coefficients[2]) * min_k; 
+    model_coefficients[3] = model_coefficients [0] + (model_coefficients[3]-model_coefficients[0]) * max_k;
+    model_coefficients[4] = model_coefficients [1] + (model_coefficients[4]-model_coefficients[1]) * max_k; 
+    model_coefficients[5] = model_coefficients [2] + (model_coefficients[5]-model_coefficients[2]) * max_k; 
 
     geometry_msgs::Point32 axis, point0;
-    axis.x = modelCoefficients[3] - modelCoefficients[0];
-    axis.y = modelCoefficients[4] - modelCoefficients[1];
-    axis.z = modelCoefficients[5] - modelCoefficients[2];
-    point0.x = modelCoefficients[0];
-    point0.y = modelCoefficients[1];
-    point0.z = modelCoefficients[2];
+    axis.x = model_coefficients[3] - model_coefficients[0];
+    axis.y = model_coefficients[4] - model_coefficients[1];
+    axis.z = model_coefficients[5] - model_coefficients[2];
+    point0.x = model_coefficients[0];
+    point0.y = model_coefficients[1];
+    point0.z = model_coefficients[2];
     
     double norm = sqrt(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z);
     
@@ -606,7 +620,7 @@ namespace ias_sample_consensus
       
       // evaluate polynomial at position X
       for (int w = 0; w < 4; w++)
-        Y += modelCoefficients[6+w] * pow(X,(double)w);
+        Y += model_coefficients[6+w] * pow(X,(double)w);
       geometry_msgs::Point32 p;
       for (int j = 0; j < res_radial; j++)
       {
@@ -630,9 +644,9 @@ namespace ias_sample_consensus
         cloud_geometry::transforms::convertAxisAngleToRotationMatrix (z_axis_vec, i+M_PI*2.0*((double)j)/res_radial, rotation2);
         Eigen::Matrix4d transformation;
         cloud_geometry::transforms::getPlaneToPlaneTransformation (z_axis, norm_rot_axis,
-            modelCoefficients[0],
-            modelCoefficients[1],
-            modelCoefficients[2], transformation);
+            model_coefficients[0],
+            model_coefficients[1],
+            model_coefficients[2], transformation);
         
         Eigen::Vector3d p_0 (p.x, p.y, p.z);
         p_0 = rotation2 * p_0;
