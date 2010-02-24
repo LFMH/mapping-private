@@ -16,8 +16,9 @@ class MsgToPCD
     ros::Subscriber cloud_sub_;
     int counter_;
     //for continous saving of pcds
-    bool continous_; 
+    int continous_; 
     bool debug_;
+    std::string name_;
     //lock while saving to pcd
     boost::mutex m_lock_;
     boost::format filename_format_;
@@ -26,8 +27,9 @@ class MsgToPCD
   MsgToPCD () :  nh_("~"), counter_(0), debug_(false)
     {
       nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
+      nh_.param ("name", name_, std::string("cloud"));
       nh_.param ("dir", dir_, std::string(""));       
-      nh_.param ("continous", continous_, false);   
+      nh_.param ("continous", continous_, 0);   
       if(debug_)
       ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);
@@ -39,16 +41,16 @@ class MsgToPCD
       //std::ostringstream filename;
       //filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
       //filename << dir_ << "cloud_" <<  << ".pcd";
-      filename_format_.parse(std::string("cloud_%f.pcd"));
+      filename_format_.parse(name_ + std::string("_%f.pcd"));
       std::string filename = dir_ + (filename_format_ %  ros::Time::now().toSec()).str();
       if(debug_)
       ROS_INFO("parameter continous: %d", continous_);
-      if ((counter_ == 0) && (!continous_))
+      if ((counter_ == 0) && (continous_ == 0))
       {
         ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.c_str ());
         cloud_io::savePCDFile (filename.c_str (), *cloud, true);
       }
-      if ((counter_ >= 0) && (continous_))
+      if ((counter_ < continous_) && (continous_ != 0))
       {
         ROS_INFO ("PointCloud message received on %s with %d points. Saving to %s", input_cloud_topic_.c_str (), (int)cloud->points.size (), filename.c_str ());
         m_lock_.lock ();
@@ -76,9 +78,9 @@ class MsgToPCD
       while (nh_.ok())
       {
         ros::spinOnce ();
-        if ((counter_ == 1) && (!continous_))
+        if (counter_ > continous_)
           return true;
-        updateParametersFromServer();
+        //updateParametersFromServer();
       }
       return true;
     }
