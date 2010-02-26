@@ -2,6 +2,7 @@
 #define CLOUD_ALGOS_SVM_CLASSIFICATION_H
 #include <cloud_algos/cloud_algos.h>
 
+#include <float.h>
 // TODO: keep only needed ones
 #include <iostream>
 #include <sstream>
@@ -38,7 +39,8 @@ class SVMClassification : public CloudAlgo
   // Options
   std::string model_file_name_; // filename where the model should be loaded from
   std::string scale_file_name_; // filename where the model should be loaded from
-  bool scale_;                  // should data be scaled first or not (see: scale_file_name_)
+  bool scale_self_;             // should data be scaled first or not (see: scale_file)
+  bool scale_file_;             // if scale_self_ disabled, get scale parameters from scale_file_name_
 
   // Default names
   static std::string default_input_topic ()
@@ -58,13 +60,15 @@ class SVMClassification : public CloudAlgo
   // Constructor-Destructor
   SVMClassification () : CloudAlgo ()
   {
-    model_file_name_ = std::string ("svm/dfpfh.model");
-    scale_file_name_ = std::string ("svm/dfpfh.scp");
-    scale_ = true;
+    model_file_name_ = std::string ("svm/fpfh.model");
+    //scale_file_name_ = std::string ("svm/fpfh.scp");
+    scale_file_name_ = std::string ("svm/teapot_smooth_fpfh.scp");
+    scale_self_ = false;
+    scale_file_ = true; // gets considered only if scale_self is false
   }
 
   static inline double
-    scale_feature (int index, double value, double **min_max_values, double lower, double upper)
+    scaleFeature (int index, double value, double **min_max_values, double lower, double upper)
   {
     // Skip single-valued attributes
     if(min_max_values[0][index] == min_max_values[1][index])
@@ -82,9 +86,46 @@ class SVMClassification : public CloudAlgo
     return value;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
+  // TODO make this a general function which gets a list of channels / all channels... point_cloud_mapping::statistics doesn't have it
   static inline double**
-    ParseScaleParameterFile (const char *fileName, double &lower, double &upper, int nr_values, bool verbose = true)
+    computeScaleParameters (const boost::shared_ptr<const InputType>& cloud, int startIdx, int nr_values)
+  {
+    // Allocate result vector for min and max values
+    double*  p   = new double[2*nr_values];
+    for (int i = 0; i < nr_values; i++)
+    {
+      p[i] = DBL_MAX;
+      p[nr_values + i] = -DBL_MAX;
+    }
+    double** res = new double*[2];
+    for (int i = 0; i < 2; i++)
+      res[i] = & ( p[i*nr_values] );
+
+    for (int i = 0; i < nr_values; i++)
+      std::cerr << i << ": " << res[0][i] << " " << res[1][i] << std::endl;
+
+    // Go through all the channels and compute min&max
+    for (size_t cp = 0; cp < cloud->points.size (); cp++)
+    {
+      // TODO: parallelize, maybe put this as outer for
+      for (int i = 0; i < nr_values; i++)
+      {
+        if (res[0][i] > cloud->channels[startIdx+i].values[cp])
+          res[0][i] = cloud->channels[startIdx+i].values[cp];
+        else if (res[1][i] < cloud->channels[startIdx+i].values[cp])
+          res[1][i] = cloud->channels[startIdx+i].values[cp];
+      }
+    }
+
+    for (int i = 0; i < nr_values; i++)
+      std::cerr << i << ": " << res[0][i] << " " << res[1][i] << std::endl;
+
+    // Return result
+    return res;
+  }
+
+  static inline double**
+    parseScaleParameterFile (const char *fileName, double &lower, double &upper, int nr_values, bool verbose = true)
   {
     // Allocate result vector for min and max values
     double*  p   = new double[2*nr_values];

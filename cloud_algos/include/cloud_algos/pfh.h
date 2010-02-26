@@ -82,7 +82,7 @@ class PointFeatureHistogram : public CloudAlgo
     quantum_ = 9;
     use_dist_ = 0;
     combine_ = false;
-    diferential_ = true;
+    diferential_ = false;
     check_flip_ = true;
     abs_angles_ = false;
     average_ = true;

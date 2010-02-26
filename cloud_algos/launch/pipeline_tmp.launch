@@ -6,6 +6,15 @@
     <remap from="~cloud_pcd" to="cloud_pcd" />
   </node>
 
+
+<!--
+ <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+   <param name="input_cloud_topic" value="/mls_fit_node/cloud_mls"/>
+   <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
+   <param name="continous" type="bool" value="true"/>
+ </node>
+-->
+
   <node pkg="cloud_algos" type="pfh_node" name="pfh_node" output="screen" respawn="true">
     <remap from="~cloud_pcd" to="/mls_fit_node/cloud_mls" />
   </node>
@@ -17,6 +26,12 @@
 
   <node pkg="cloud_algos" type="cylinder_fit_node" name="cylinder_fit_node" output="screen" respawn="true">
   </node>
+
+ <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+   <param name="input_cloud_topic" value="/svm_classification_node/cloud_svm"/>
+   <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
+   <param name="continous" type="bool" value="true"/>
+ </node>
 -->
 
  <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">

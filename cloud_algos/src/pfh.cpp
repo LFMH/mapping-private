@@ -329,7 +329,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
       for (int f = 0; f < nr_features_; f++)
       {
         int baseIdx = fIdx + f*quantum_;
-        for (int b = quantum_-1; b > quantum_; b++)
+        for (int b = quantum_-1; b > 0; b--)
           cloud_pfh_->channels[baseIdx+b].values[cp] -= cloud_pfh_->channels[baseIdx+b-1].values[cp];
       }
     }

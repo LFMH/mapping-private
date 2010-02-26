@@ -63,13 +63,20 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
   // If scale enabled....
   double lower, upper;
   double** value_ranges = NULL;
-  if (scale_)
+  if (scale_self_)
   {
-    value_ranges = ParseScaleParameterFile (scale_file_name_.c_str (), lower, upper, nr_values);
+    lower = -1;
+    upper = +1;
+    value_ranges = computeScaleParameters (cloud, fIdx, nr_values);
+    ROS_INFO ("Scaling data to the interval (%g,%g) enabled.", lower, upper);
+  }
+  else if (scale_file_)
+  {
+    value_ranges = parseScaleParameterFile (scale_file_name_.c_str (), lower, upper, nr_values);
     if (value_ranges == NULL)
       ROS_WARN ("Scaling requested from file %s but it is not possible!", scale_file_name_.c_str ());
     else
-      ROS_INFO ("Scaling to the interval (%g,%g) enabled.", lower, upper);
+      ROS_INFO ("Scaling according to the limits from %s to the interval (%g,%g) enabled.", scale_file_name_.c_str (), lower, upper);
   }
 
   // Timers
@@ -101,7 +108,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
       node[i].index = i+1;
       double feature_value = cloud_svm_->channels[fIdx + i].values[cp];
       if (value_ranges != NULL)
-        node[i].value = scale_feature (i, feature_value, value_ranges, lower, upper);
+        node[i].value = scaleFeature (i, feature_value, value_ranges, lower, upper);
       else
         node[i].value = feature_value; //points[cp][fIdx + i];
     }
