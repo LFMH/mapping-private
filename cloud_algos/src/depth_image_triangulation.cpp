@@ -67,13 +67,25 @@ void DepthImageTriangulation::init (ros::NodeHandle &nh)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<std::string> DepthImageTriangulation::pre () 
+void DepthImageTriangulation::pre () 
+  {
+
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+void DepthImageTriangulation::post ()
+  {
+ 
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<std::string> DepthImageTriangulation::requires () 
   {
     return std::vector<std::string>();
   }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<std::string> DepthImageTriangulation::post ()
+std::vector<std::string> DepthImageTriangulation::provides ()
   {
     return std::vector<std::string>();
   }

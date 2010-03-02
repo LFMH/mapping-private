@@ -9,6 +9,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <algorithm>
 #include <iterator>
+#include <Eigen/Cholesky>
 #include <Eigen/LU>
  
 //#include <lm.h>
@@ -20,17 +21,18 @@ void print_vector (T vec)
   copy (vec.begin(), vec.end(), std::ostream_iterator<double> (std::cerr, " "));
   std::cerr << std::endl;
 }
-
+int polynomial_order = 7;
 namespace ias_sample_consensus
 {
   // Some helper functions
   inline void
-    Transform3DTo2D (const geometry_msgs::Point32 &p, double &x, double &y, const geometry_msgs::Point32 &axis, const geometry_msgs::Point32 &point0)
+    Transform3DTo2D (const geometry_msgs::Point32 &p, double &x, double &y, const geometry_msgs::Point32 &axis, const geometry_msgs::Point32 &point0, const geometry_msgs::Point32 &origin_point)
   {
     // the position (x-value?) of the projection of current point on the rot. axis
     x =  (cloud_geometry::dot (p, axis) 
-        - cloud_geometry::dot (point0, axis)) 
-        / cloud_geometry::dot (axis, axis);
+        - cloud_geometry::dot (origin_point, axis))
+        / sqrt(cloud_geometry::dot (axis, axis));
+
     y = cloud_geometry::distances::pointToLineDistance (p, point0, axis);
   }
 
@@ -39,22 +41,25 @@ namespace ias_sample_consensus
     SACModelRotational::PointToRotationalDistance (const std::vector<double> &model_coefficients, const geometry_msgs::Point32 &p)
   { 
     /** @todo: test me */
-    geometry_msgs::Point32 axis, point0;
+    geometry_msgs::Point32 axis, point0, origin_point;
     axis.x = model_coefficients[3] - model_coefficients[0];
     axis.y = model_coefficients[4] - model_coefficients[1];
     axis.z = model_coefficients[5] - model_coefficients[2];
     point0.x = model_coefficients[0];
     point0.y = model_coefficients[1];
     point0.z = model_coefficients[2];
+    origin_point.x = model_coefficients[6];
+    origin_point.y = model_coefficients[7];
+    origin_point.z = model_coefficients[8];
     
     // project 3D point onto 2D plane
     double k,y;
-    Transform3DTo2D (p, k, y, axis, point0);
+    Transform3DTo2D (p, k, y, axis, point0, origin_point);
 
     // evaluate polynomial at position k
     double r = 0.0; 
-    for (int w = 0; w < 4; w++)
-      r += model_coefficients[6+w] * pow (k, (double)w);
+    for (int w = 0; w < polynomial_order + 1; w++)
+      r += model_coefficients[9+w] * pow (k, (double)w);
 
     return fabs(y - fabs(r));
   }
@@ -251,23 +256,29 @@ namespace ias_sample_consensus
                                    const std::vector<double> model_coefficients,
                                    std::vector<double> &vals_2d_x, std::vector<double> &vals_2d_y, double &min_k, double &max_k)
   {
+    vals_2d_x.clear();
+    vals_2d_y.clear();
     min_k = FLT_MAX;
     max_k = -FLT_MAX;
-    geometry_msgs::Point32 axis, point0;
+    geometry_msgs::Point32 axis, point0, origin_point;
     axis.x = model_coefficients[3] - model_coefficients[0];
     axis.y = model_coefficients[4] - model_coefficients[1];
     axis.z = model_coefficients[5] - model_coefficients[2];
     point0.x = model_coefficients[0];
     point0.y = model_coefficients[1];
     point0.z = model_coefficients[2];
+    origin_point.x = model_coefficients[6];
+    origin_point.y = model_coefficients[7];
+    origin_point.z = model_coefficients[8];
     
     for (unsigned int i = 0; i < samples.size(); i++)
     {
       double k,y;
-      Transform3DTo2D (cloud.points.at(samples[i]), k, y, axis, point0);
+      Transform3DTo2D (cloud.points.at(samples[i]), k, y, axis, point0, origin_point);
 
       vals_2d_x.push_back (k);
       vals_2d_y.push_back (y);
+      
       if (k < min_k)
         min_k = k;
       if (k > max_k)
@@ -285,7 +296,7 @@ namespace ias_sample_consensus
     // compute mean: double mv = accumulate (cont.begin(), cont.end(), 0) / distance(cont.begin(),cont.end());
 
     // refit polynomial
-    Eigen::MatrixXf A = Eigen::MatrixXf (samples.size(), 4); // 4 == polynomial order + 1
+    Eigen::MatrixXf A = Eigen::MatrixXf (samples.size(), polynomial_order+1); // 4 == polynomial order + 1
     Eigen::VectorXf b = Eigen::VectorXf (samples.size());
     Eigen::VectorXf xvec;
 
@@ -293,28 +304,55 @@ namespace ias_sample_consensus
     for (unsigned int d1 = 0; d1 < vals_2d_x.size(); d1++)
     {
       b[d1] = vals_2d_y[d1];
-      for (int d2 = 0; d2 < 4; d2++)
+      for (int d2 = 0; d2 < polynomial_order+1; d2++)
         A(d1,d2) = pow (vals_2d_x[d1], (double) d2);
     }
  
-    /** @todo : is this the right use of Eigen? 
-        maybe : xvec = (A.transpose() * A).inverse() * A.transpose() * b; ?? 
-        what about invertibility? */
-    Eigen::MatrixXf A_temp = A.transpose () * A;
+Eigen::MatrixXf D = A;
+Eigen::MatrixXf better_A = D.transpose() * D;
+Eigen::VectorXf better_b = D.transpose() * b;
+//Eigen::VectorXf x;
+//A.llt().solve(b,&x);   // using a LLT factorization
+//A.ldlt().solve(b,&x);  // using a LDLT factorization
+better_A.llt().solveInPlace(better_b);
+for (int i = 0; i < polynomial_order + 1; i++)
+  if (isnan (better_b[i]) || isinf (better_b[i]))
+    return false;
+
+
+
+
+for (int i = 0; i < polynomial_order + 1; i++)
+  model_coefficients[9+i] = better_b[i];
+
+
+//    /** @todo : is this the right use of Eigen? 
+//        maybe : xvec = (A.transpose() * A).inverse() * A.transpose() * b; ?? 
+//        what about invertibility? */
+//    Eigen::MatrixXf A_temp = A.transpose () * A;
+//    
+//    // let's see if this matrix is invertible... inversible?
+//    if (A_temp.determinant () == 0)
+//      return false;
+//    
+//    // solve for x
+//    xvec = A_temp.inverse () * A.transpose () * b;
+//    
+//    // and dismount..
+//    for (int i = 0; i < 4; i++)
+//      model_coefficients[9+i] = xvec[i];
     
-    // let's see if this matrix is invertible... inversible?
-    if (A_temp.determinant () == 0)
-      return false;
-    
-    // solve for x
-    xvec = A_temp.inverse () * A.transpose () * b;
-    
-    // and dismount..
-    for (int i = 0; i < 4; i++)
-      model_coefficients[6+i] = xvec[i];
-    
+
+    std::cerr << "[EstimateContourFromSamples] polynomial : " << better_b[0] << " + x*"<<better_b[1] << " + x*x*" << better_b[2] << " + x*x*x*" << better_b[3] << std::endl;
+    //std::cerr << "[EstimateContourFromSamples] polynomial : " << xvec[0] << " + x*"<<xvec[1] << " + x*x*" << xvec[2] << " + x*x*x*" << xvec[3] << std::endl;
     std::cerr << "[EstimateContourFromSamples] shape coefficients: ";
     print_vector (model_coefficients);
+    std::cerr << "[EstimateContourFromSamples] range: " << min_k << ", " << max_k << std::endl;
+    std::cerr << "[EstimateContourFromSamples] x_values: ";
+    print_vector (vals_2d_x);
+    std::cerr << "[EstimateContourFromSamples] y_values: ";
+    print_vector (vals_2d_y);
+    model_coefficients_ = model_coefficients;
     return true; 
   }
   
@@ -366,11 +404,13 @@ namespace ias_sample_consensus
     geometry_msgs::Point32 n1;
     geometry_msgs::Point32 n2;
     
-    std::vector<double> temp_coefficients (model_coefficients.size());
+    std::vector<double> temp_coefficients (model_coefficients.size(), 0.0);
 
     double min_err = FLT_MAX;
 
-    for (unsigned int i = 0; i < samples.size(); i++)
+// @todo: fix me. this is legacy code from the EGI-visualized axis 
+// estimation for noisy crap mixed with regular axis est.
+    for (unsigned int i = 0; i < 2/*samples.size()*/; i++)
       for (unsigned int j = 0; j < i; j++)
       {
         cloud_geometry::nearest::computeCentroid (*cloud_, samples, centroid);
@@ -391,6 +431,10 @@ namespace ias_sample_consensus
         temp_coefficients [3] = centroid.x + 0;//axis.x;
         temp_coefficients [4] = centroid.y + 0;//axis.y; 
         temp_coefficients [5] = centroid.z + 1;//axis.z; 
+        // origin_point
+        temp_coefficients [6] = centroid.x;
+        temp_coefficients [7] = centroid.y; 
+        temp_coefficients [8] = centroid.z; 
 
         std::vector<double> line_a(6), line_b(6);
         line_a[0] = cloud_->points.at (samples[i]).x;
@@ -407,7 +451,7 @@ namespace ias_sample_consensus
         line_b[4] = cloud_->points.at (samples[j]).y + n2.y;
         line_b[5] = cloud_->points.at (samples[j]).z + n2.z;
         std::vector<double> segment = LineToLineSegment (line_a, line_b, 1e-5);
-   //temp_coefficients = segment; 
+        //temp_coefficients = segment; 
         double err = 0;
         MinimizeAxisDistancesToSamples (samples, temp_coefficients, err);
         
@@ -417,23 +461,38 @@ namespace ias_sample_consensus
     double min_k, max_k;
     Collect3DPointsInRotatedPlane (samples, *cloud_, temp_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
     
-        temp_coefficients[0] = temp_coefficients [0] + (temp_coefficients[3]-temp_coefficients[0]) * min_k; 
-        temp_coefficients[1] = temp_coefficients [1] + (temp_coefficients[4]-temp_coefficients[1]) * min_k; 
-        temp_coefficients[2] = temp_coefficients [2] + (temp_coefficients[5]-temp_coefficients[2]) * min_k; 
-        temp_coefficients[3] = temp_coefficients [0] + (temp_coefficients[3]-temp_coefficients[0]) * max_k;
-        temp_coefficients[4] = temp_coefficients [1] + (temp_coefficients[4]-temp_coefficients[1]) * max_k; 
-        temp_coefficients[5] = temp_coefficients [2] + (temp_coefficients[5]-temp_coefficients[2]) * max_k; 
-        
+    Eigen::Vector3d point0 (temp_coefficients[0], temp_coefficients[1], temp_coefficients[2]);
+    Eigen::Vector3d axis (temp_coefficients[3] - temp_coefficients[0],
+                          temp_coefficients[4] - temp_coefficients[1],
+                          temp_coefficients[5] - temp_coefficients[2] );
+    Eigen::Vector3d axis_normalized = axis.normalized ();
+
+    Eigen::Vector3d origin (temp_coefficients[6], temp_coefficients[7], temp_coefficients[8]);
+    origin = point0 + (origin - point0).dot (axis_normalized) * axis_normalized;
+   
+    Eigen::Vector3d p1 = origin + min_k * axis_normalized; 
+    Eigen::Vector3d p2 = origin + max_k * axis_normalized; 
+    
+        temp_coefficients[0] = p1[0];
+        temp_coefficients[1] = p1[1];
+        temp_coefficients[2] = p1[2];
+        temp_coefficients[3] = p2[0];
+        temp_coefficients[4] = p2[1];
+        temp_coefficients[5] = p2[2];
+        temp_coefficients[6] = centroid.x;
+        temp_coefficients[7] = centroid.y; 
+        temp_coefficients[8] = centroid.z; 
+
         geometry_msgs::Polygon p;
-        geometry_msgs::Point32 p1,p2;
-        p1.x = temp_coefficients [0]; 
-        p1.y = temp_coefficients [1]; 
-        p1.z = temp_coefficients [2]; 
-        p2.x = temp_coefficients [3];
-        p2.y = temp_coefficients [4]; 
-        p2.z = temp_coefficients [5]; 
-        p.points.push_back (geometry_msgs::Point32(p1));
-        p.points.push_back (geometry_msgs::Point32(p2));
+        geometry_msgs::Point32 ros_p1,ros_p2;
+        ros_p1.x = temp_coefficients [0]; 
+        ros_p1.y = temp_coefficients [1]; 
+        ros_p1.z = temp_coefficients [2]; 
+        ros_p2.x = temp_coefficients [3];
+        ros_p2.y = temp_coefficients [4]; 
+        ros_p2.z = temp_coefficients [5]; 
+        p.points.push_back (ros_p1);
+        p.points.push_back (ros_p2);
 
         if (err <= min_err)
         {
@@ -441,11 +500,12 @@ namespace ias_sample_consensus
           best_poly = p;
 //          pmap_.polygons.clear ();
 //          pmap_.polygons.push_back (p);
+          model_coefficients.swap (temp_coefficients);
         }
       }
     ROS_INFO ("created pmap with %i lines", (int)pmap_->polygons.size ());
+    assert (model_coefficients.size() == 9+polynomial_order+1);
 
-    model_coefficients.swap (temp_coefficients);
     pmap_->polygons.push_back (best_poly);
     return true;
   }
@@ -502,12 +562,12 @@ namespace ias_sample_consensus
   {
     std::cerr << "... sample points:";
     print_vector (samples);    
-    model_coefficients_.resize (10);
+    model_coefficients_.resize (9+polynomial_order+1);
     
     if (!EstimateAxisFromSamples (samples, model_coefficients_))
       return false;
-    
-    if (!EstimateContourFromSamples (samples, model_coefficients_))
+     
+    if (!EstimateContourFromSamples (indices_, model_coefficients_))
       return false;
 
     return (true);
@@ -518,14 +578,13 @@ namespace ias_sample_consensus
   {
     if (inliers.size () == 0)
     {
-      ROS_ERROR ("[SACModelRotational::RefitModel] Cannot re-fit 0 inliers!");
+      ROS_ERROR ("[SACModelRotational::refitModel] Cannot re-fit 0 inliers!");
       refit_coefficients = model_coefficients_;
       return;
     }
-    refit_coefficients.resize (10);
-    for (int d = 0; d < 10; d++)
-      refit_coefficients[d] = model_coefficients_ [d];
+    refit_coefficients = model_coefficients_;
     
+    ROS_WARN ("[SACModelRotational::refitModel] About to refit");
     //RefitAxis (inliers, refit_coefficients);
     RefitContour (inliers, refit_coefficients);
   }
@@ -587,66 +646,78 @@ namespace ias_sample_consensus
     double min_k, max_k;
     std::vector<double> model_coefficients (modelCoefficients);
     Collect3DPointsInRotatedPlane (inliers, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
-    
-    model_coefficients[0] = model_coefficients [0] + (model_coefficients[3]-model_coefficients[0]) * min_k; 
-    model_coefficients[1] = model_coefficients [1] + (model_coefficients[4]-model_coefficients[1]) * min_k; 
-    model_coefficients[2] = model_coefficients [2] + (model_coefficients[5]-model_coefficients[2]) * min_k; 
-    model_coefficients[3] = model_coefficients [0] + (model_coefficients[3]-model_coefficients[0]) * max_k;
-    model_coefficients[4] = model_coefficients [1] + (model_coefficients[4]-model_coefficients[1]) * max_k; 
-    model_coefficients[5] = model_coefficients [2] + (model_coefficients[5]-model_coefficients[2]) * max_k; 
+   
+    Eigen::Vector3d point0 (model_coefficients[0], model_coefficients[1], model_coefficients[2]);
+    geometry_msgs::Point32 point0_point;
+    point0_point.x = point0[0];
+    point0_point.y = point0[1];
+    point0_point.z = point0[2];
 
-    geometry_msgs::Point32 axis, point0;
-    axis.x = model_coefficients[3] - model_coefficients[0];
-    axis.y = model_coefficients[4] - model_coefficients[1];
-    axis.z = model_coefficients[5] - model_coefficients[2];
-    point0.x = model_coefficients[0];
-    point0.y = model_coefficients[1];
-    point0.z = model_coefficients[2];
-    
-    double norm = sqrt(axis.x*axis.x + axis.y*axis.y + axis.z*axis.z);
-    
-    //cross product with (0,0,1) is cheap:
-    geometry_msgs::Point32 rotationaxis;
-    rotationaxis.x = axis.y/norm;
-    rotationaxis.y = -axis.x/norm;
-    rotationaxis.z = 0.0;
+    Eigen::Vector3d axis (model_coefficients[3] - model_coefficients[0],
+                          model_coefficients[4] - model_coefficients[1],
+                          model_coefficients[5] - model_coefficients[2] );
+    Eigen::Vector3d axis_normalized = axis.normalized ();
+    geometry_msgs::Point32 axis_point;
+    axis_point.x = axis_normalized[0];
+    axis_point.y = axis_normalized[1];
+    axis_point.z = axis_normalized[2];
 
+    Eigen::Vector3d origin (model_coefficients[6], model_coefficients[7], model_coefficients[8]);
+    geometry_msgs::Point32 origin_point;
+    origin_point.x = origin[0];
+    origin_point.y = origin[1];
+    origin_point.z = origin[2];
+    
+    origin = point0 + (origin - point0).dot (axis_normalized) * axis_normalized;
+   
+    Eigen::Vector3d p1 = origin + min_k * axis_normalized; 
+    Eigen::Vector3d p2 = origin + max_k * axis_normalized; 
+
+    ROS_ERROR ("------------------------ min_k, max_k = %f <-> %f", min_k, max_k);
+    
     double res_axial = 50.0;
     double res_radial = 30.0;
     for (int i = 0; i < res_axial; i++)
     {
       double X = i / res_axial;
-      double Y = 0.0;
       
+      geometry_msgs::Point32 X_3D;
+      Eigen::Vector3d p_temp = p1 + (p2-p1) * X; 
+      X_3D.x = p_temp[0];
+      X_3D.y = p_temp[1];
+      X_3D.z = p_temp[2];
+
+      double y_dummy;
+      // note: this function is overwriting X
+      Transform3DTo2D (X_3D, X, y_dummy, axis_point, point0_point, origin_point);
+
       // evaluate polynomial at position X
-      for (int w = 0; w < 4; w++)
-        Y += model_coefficients[6+w] * pow(X,(double)w);
+      double Y = 0.0;
+      for (int w = 0; w < polynomial_order + 1; w++)
+        Y += model_coefficients[9+w] * pow(X,(double)w);
+
       geometry_msgs::Point32 p;
       for (int j = 0; j < res_radial; j++)
       {
         p.x = Y;
         p.y = 0.0;
-        p.z = ((double)i/res_axial)*norm;
+        p.z = ((double)i/res_axial)*(p2-p1).norm();
 
         Eigen::Matrix3d rotation1, rotation2;
         geometry_msgs::Point32 z_axis_vec;
         z_axis_vec.x = 0;
         z_axis_vec.y = 0;
         z_axis_vec.z = 1;
-        std::vector<double> norm_rot_axis(3);
-        norm_rot_axis[0] = axis.x/norm;
-        norm_rot_axis[1] = axis.y/norm;
-        norm_rot_axis[2] = axis.z/norm;
         std::vector<double> z_axis(3);
         z_axis[0] = 0;
         z_axis[1] = 0;
         z_axis[2] = 1;
         cloud_geometry::transforms::convertAxisAngleToRotationMatrix (z_axis_vec, i+M_PI*2.0*((double)j)/res_radial, rotation2);
         Eigen::Matrix4d transformation;
-        cloud_geometry::transforms::getPlaneToPlaneTransformation (z_axis, norm_rot_axis,
-            model_coefficients[0],
-            model_coefficients[1],
-            model_coefficients[2], transformation);
+        cloud_geometry::transforms::getPlaneToPlaneTransformation (z_axis, axis_point,
+            p1[0],
+            p1[1],
+            p1[2], transformation);
         
         Eigen::Vector3d p_0 (p.x, p.y, p.z);
         p_0 = rotation2 * p_0;

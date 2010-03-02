@@ -21,10 +21,19 @@ void Registration::init (ros::NodeHandle &nh)
   nh_ = nh;
 }
 
-std::vector<std::string> Registration::pre () 
+void Registration::pre ()
+{
+
+}
+
+void Registration::post ()
+{
+
+}
+std::vector<std::string> Registration::requires () 
   {return std::vector<std::string>();}
 
-std::vector<std::string> Registration::post ()
+std::vector<std::string> Registration::provides ()
   {return std::vector<std::string>();}
 
 

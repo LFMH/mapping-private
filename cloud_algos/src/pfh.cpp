@@ -12,7 +12,17 @@ void PointFeatureHistogram::init (ros::NodeHandle&)
   //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_pfh", 1);
 }
 
-std::vector<std::string> PointFeatureHistogram::pre ()
+void PointFeatureHistogram::pre ()
+{
+
+}
+
+void PointFeatureHistogram::post ()
+{
+
+}
+
+std::vector<std::string> PointFeatureHistogram::requires ()
 {
   std::vector<std::string> requires;
   // requires 3D coordinates
@@ -26,7 +36,7 @@ std::vector<std::string> PointFeatureHistogram::pre ()
   return requires;
 }
 
-std::vector<std::string> PointFeatureHistogram::post ()
+std::vector<std::string> PointFeatureHistogram::provides ()
 {
   // compute number of bins
   nr_features_ = use_dist_ ? 4:3;

@@ -24,8 +24,10 @@ class CloudAlgo
   
   virtual void init (ros::NodeHandle&) = 0;
 
-  virtual std::vector<std::string> pre  () = 0;
-  virtual std::vector<std::string> post () = 0;
+  virtual void pre () = 0;
+  virtual void post () = 0;
+  virtual std::vector<std::string> requires () = 0;
+  virtual std::vector<std::string> provides () = 0;
 //  virtual std::string process (const boost::shared_ptr<const InputType>&) = ;
   OutputType output ();
 };
@@ -43,13 +45,18 @@ template <class algo>
              a.default_node_name().c_str(),
              a.default_input_topic().c_str(), 
 	     a.default_output_topic().c_str());
+    a.init (nh_);
   }
 
   void input_cb (const boost::shared_ptr<const typename algo::InputType> &input)
   {
     ROS_INFO("Received message.");
+    a.pre();
+    ROS_INFO("Algo.pre () returned.");
     a.process (input);
     ROS_INFO("Processed message.");
+    a.post();
+    ROS_INFO("Algo.post () returned.");
     pub_.publish (a.output());
     ROS_INFO("Published result message.");
   }

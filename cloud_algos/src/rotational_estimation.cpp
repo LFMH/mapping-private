@@ -10,7 +10,7 @@ using namespace cloud_algos;
 
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
-                         int max_iterations_, boost::shared_ptr<sensor_msgs::PointCloud> cloud_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap)
+                         int max_iterations_, boost::shared_ptr<sensor_msgs::PointCloud> cloud_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text)
 {
   int debug = 2;
   ias_sample_consensus::SACModelRotational *sac_model_ = new ias_sample_consensus::SACModelRotational (pmap);
@@ -111,15 +111,25 @@ void
   if (best_model.size () != 0)
   {
     std::cerr << "before" <<std::endl;
+    //cloud_geometry::getPointCloud (cloud, best_inliers, *cloud_synth);
     sac_model_->samplePointsOnRotational (best_coeffs, best_inliers, cloud_synth);
+    std::stringstream ss;
+    ss << best_inliers.size() << " inliers";
+    vis_text->texts.push_back (ss.str());
+    geometry_msgs::Point32 p;
+    p.x = best_coeffs[0];
+    p.y = best_coeffs[1];
+    p.z = best_coeffs[2];
+    vis_text->poses.push_back (p);
     //double score = sac_model_->computeScore (best_coeffs, sample_consensus::getMinMaxK (cloud, best_coeffs, best_inliers) , best_inliers, cloud_synth, threshold_);
     std::cerr << "after" <<std::endl;
     //if (debug > 0)
     //  std::cerr << "[RANSAC::computeModel] Model found: " << n_best_inliers_count << " inliers, score is: " << score << std::endl;
     sac_model_->setBestModel (best_model);
     sac_model_->setBestInliers (best_inliers);
-    //      pmap.polygons.resize (1);
-    //      pmap.polygons[0].points.push_back ();
+//          pmap->polygons.resize (1);
+//          for (unsigned int i = 0 ; i < best_model.size() ; i++)
+//            pmap->polygons[0].points.push_back (cloud.points[best_model[i]]);
     return;
   }
   else
@@ -133,37 +143,50 @@ void RotationalEstimation::init (ros::NodeHandle &nh)
   nh_ = nh;
   vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
   vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
+  vis_text_pub_ = nh_.advertise <ias_visualization_msgs::PositionStringList> ("vis_rotational_objects_text", 1);
 }
 
-std::vector<std::string> RotationalEstimation::pre () 
+void RotationalEstimation::pre ()
 {
   vis_pmap_ = boost::shared_ptr<mapping_msgs::PolygonalMap> 
                            (new mapping_msgs::PolygonalMap ());
   vis_cloud_ = boost::shared_ptr<sensor_msgs::PointCloud> 
                            (new sensor_msgs::PointCloud ());
-  return std::vector<std::string> ();
+  vis_text_ = boost::shared_ptr<ias_visualization_msgs::PositionStringList> 
+                           (new ias_visualization_msgs::PositionStringList ());
 }
 
-std::vector<std::string> RotationalEstimation::post ()
+void RotationalEstimation::post ()
 {
   vis_pmap_pub_.publish (vis_pmap_);
   vis_cloud_pub_.publish (vis_cloud_);
+  vis_text_pub_.publish (vis_text_);
+}
+
+std::vector<std::string> RotationalEstimation::requires () 
+{
+  return std::vector<std::string> ();
+}
+
+std::vector<std::string> RotationalEstimation::provides ()
+{
   return std::vector<std::string>();
 }
 
-std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> &cloud)
+std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> cloud)
 {
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  double threshold_ = 0.01;
+  double threshold_ = 0.008;
   double probability_ = 0.99;
-  int max_iterations_ = 100;
+  int max_iterations_ = 500;
   
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, vis_cloud_, vis_pmap_);
+  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, vis_cloud_, vis_pmap_, vis_text_);
   
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   vis_pmap_->header.frame_id = cloud->header.frame_id;
   vis_cloud_->header.frame_id = cloud->header.frame_id;
+  vis_text_->header.frame_id = cloud->header.frame_id;
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   return std::string("ok");
 }

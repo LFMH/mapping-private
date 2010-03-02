@@ -66,8 +66,10 @@ class MovingLeastSquares : public CloudAlgo
 
   // Algorithm methods
   void init (ros::NodeHandle&);
-  std::vector<std::string> pre  ();
-  std::vector<std::string> post ();
+  void pre  ();
+  void post ();
+  std::vector<std::string> requires ();
+  std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
 

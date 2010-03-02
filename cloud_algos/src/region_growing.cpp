@@ -20,10 +20,20 @@ void RegionGrowing::init (ros::NodeHandle &nh)
   stop_at_ = RegionGrowing::StopAt();
 }
 
-std::vector<std::string> RegionGrowing::pre () 
+void RegionGrowing::pre ()
+{
+
+}
+
+void RegionGrowing::post ()
+{
+
+}
+
+std::vector<std::string> RegionGrowing::requires () 
   {return std::vector<std::string> ();}
 
-std::vector<std::string> RegionGrowing::post ()
+std::vector<std::string> RegionGrowing::provides ()
   {return std::vector<std::string>();}
 
 void RegionGrowing::setRadius (double radius)

@@ -8,6 +8,7 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="ias_sample_consensus" />
+  <depend package="ias_visualization_msgs" />
   <depend package="pluginlib" />
   <depend package="joy" />
   <depend package="roscpp" />

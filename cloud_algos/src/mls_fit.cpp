@@ -55,7 +55,17 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
   //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
 }
 
-std::vector<std::string> MovingLeastSquares::pre ()
+void MovingLeastSquares::pre ()
+{
+
+}
+
+void MovingLeastSquares::post ()
+{
+
+}
+
+std::vector<std::string> MovingLeastSquares::requires ()
 {
   std::vector<std::string> requires;
   // requires 3D coordinates
@@ -65,7 +75,7 @@ std::vector<std::string> MovingLeastSquares::pre ()
   return requires;
 }
 
-std::vector<std::string> MovingLeastSquares::post ()
+std::vector<std::string> MovingLeastSquares::provides ()
 {
   std::vector<std::string> provides(3);
   // provides updated 3D coordinates

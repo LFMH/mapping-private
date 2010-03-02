@@ -7,10 +7,20 @@ void PlanarEstimation::init (ros::NodeHandle&)
 {
 }
 
-std::vector<std::string> PlanarEstimation::pre ()
+void PlanarEstimation::pre ()
+{
+
+}
+
+void PlanarEstimation::pre ()
+{
+
+}
+
+std::vector<std::string> PlanarEstimation::requires ()
   {return std::vector<std::string>();}
 
-std::vector<std::string> PlanarEstimation::post ()
+std::vector<std::string> PlanarEstimation::provides ()
   {return std::vector<std::string>();}
 
 std::string PlanarEstimation::process (const boost::shared_ptr<const PlanarEstimation::InputType>&)
