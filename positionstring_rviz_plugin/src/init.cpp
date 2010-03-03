@@ -31,9 +31,11 @@
 
 #include "positionstring_display.h"
 #include "positionstringlist_display.h"
+#include "triangularmesh_display.h"
 
 extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
 {
   reg->registerDisplay<positionstring_rviz_plugin::PositionStringDisplay>("positionstring_rviz_plugin::PositionStringDisplay");
   reg->registerDisplay<positionstring_rviz_plugin::PositionStringListDisplay>("positionstring_rviz_plugin::PositionStringListDisplay");
+  reg->registerDisplay<positionstring_rviz_plugin::TriangularMeshDisplay>("positionstring_rviz_plugin::TriangularMeshDisplay");
 }

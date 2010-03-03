@@ -20,6 +20,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 set(SOURCE_FILES src/positionstring_display.cpp
                  src/positionstringlist_display.cpp
+                 src/triangularmesh_display.cpp
                  src/init.cpp)
 
 include(CMakeDetermineSystem)
