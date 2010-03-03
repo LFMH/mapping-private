@@ -21,7 +21,10 @@ void print_vector (T vec)
   copy (vec.begin(), vec.end(), std::ostream_iterator<double> (std::cerr, " "));
   std::cerr << std::endl;
 }
-int polynomial_order = 7;
+
+int polynomial_order = 5;
+int min_nr_samples = 10; // for axis estimation, then polynomial fit - actual number will be max of this and order+1
+
 namespace ias_sample_consensus
 {
   // Some helper functions
@@ -296,9 +299,8 @@ namespace ias_sample_consensus
     // compute mean: double mv = accumulate (cont.begin(), cont.end(), 0) / distance(cont.begin(),cont.end());
 
     // refit polynomial
-    Eigen::MatrixXf A = Eigen::MatrixXf (samples.size(), polynomial_order+1); // 4 == polynomial order + 1
-    Eigen::VectorXf b = Eigen::VectorXf (samples.size());
-    Eigen::VectorXf xvec;
+    Eigen::MatrixXd A = Eigen::MatrixXd (samples.size(), polynomial_order+1); // 4 == polynomial order + 1
+    Eigen::VectorXd b = Eigen::VectorXd (samples.size());
 
     // fill in A and b from the 2d arrays (vals_2d_[x,y])
     for (unsigned int d1 = 0; d1 < vals_2d_x.size(); d1++)
@@ -307,51 +309,34 @@ namespace ias_sample_consensus
       for (int d2 = 0; d2 < polynomial_order+1; d2++)
         A(d1,d2) = pow (vals_2d_x[d1], (double) d2);
     }
- 
-Eigen::MatrixXf D = A;
-Eigen::MatrixXf better_A = D.transpose() * D;
-Eigen::VectorXf better_b = D.transpose() * b;
-//Eigen::VectorXf x;
-//A.llt().solve(b,&x);   // using a LLT factorization
-//A.ldlt().solve(b,&x);  // using a LDLT factorization
-better_A.llt().solveInPlace(better_b);
-for (int i = 0; i < polynomial_order + 1; i++)
-  if (isnan (better_b[i]) || isinf (better_b[i]))
-    return false;
 
+    // allocate and initialize the parts of the equation system
+    Eigen::MatrixXd M (polynomial_order+1,polynomial_order+1);
+    M.part<Eigen::SelfAdjoint>() = A.transpose() * A;
+    Eigen::VectorXd x = A.transpose() * b;
 
+    // solve
+    //Eigen::VectorXd x1 = x;
+    M.llt().solveInPlace(x);
 
+    //Eigen::VectorXd x2 = M.inverse() * x;
+    //std::cerr << x1.transpose() << std::endl << x2.transpose() << std::endl << (x1-x2).norm() << std::endl;
 
-for (int i = 0; i < polynomial_order + 1; i++)
-  model_coefficients[9+i] = better_b[i];
+    // and dismount..
+    for (int i = 0; i < polynomial_order+1; i++)
+      model_coefficients[9+i] = x[i];
 
-
-//    /** @todo : is this the right use of Eigen? 
-//        maybe : xvec = (A.transpose() * A).inverse() * A.transpose() * b; ?? 
-//        what about invertibility? */
-//    Eigen::MatrixXf A_temp = A.transpose () * A;
-//    
-//    // let's see if this matrix is invertible... inversible?
-//    if (A_temp.determinant () == 0)
-//      return false;
-//    
-//    // solve for x
-//    xvec = A_temp.inverse () * A.transpose () * b;
-//    
-//    // and dismount..
-//    for (int i = 0; i < 4; i++)
-//      model_coefficients[9+i] = xvec[i];
-    
-
-    std::cerr << "[EstimateContourFromSamples] polynomial : " << better_b[0] << " + x*"<<better_b[1] << " + x*x*" << better_b[2] << " + x*x*x*" << better_b[3] << std::endl;
+    //std::cerr << "[EstimateContourFromSamples] polynomial : " << better_b[0] << " + x*"<<better_b[1] << " + x*x*" << better_b[2] << " + x*x*x*" << better_b[3] << std::endl;
     //std::cerr << "[EstimateContourFromSamples] polynomial : " << xvec[0] << " + x*"<<xvec[1] << " + x*x*" << xvec[2] << " + x*x*x*" << xvec[3] << std::endl;
-    std::cerr << "[EstimateContourFromSamples] shape coefficients: ";
-    print_vector (model_coefficients);
-    std::cerr << "[EstimateContourFromSamples] range: " << min_k << ", " << max_k << std::endl;
-    std::cerr << "[EstimateContourFromSamples] x_values: ";
-    print_vector (vals_2d_x);
-    std::cerr << "[EstimateContourFromSamples] y_values: ";
-    print_vector (vals_2d_y);
+    //std::cerr << "[EstimateContourFromSamples] shape coefficients: ";
+    //print_vector (model_coefficients);
+    //std::cerr << "[EstimateContourFromSamples] range: " << min_k << ", " << max_k << std::endl;
+    //std::cerr << "[EstimateContourFromSamples] x_values: ";
+    //print_vector (vals_2d_x);
+    //std::cerr << "[EstimateContourFromSamples] y_values: ";
+    //print_vector (vals_2d_y);
+    //for (unsigned int i = 0; i < vals_2d_x.size(); i++)
+    //    std::cerr << vals_2d_x.at(i) << "\t" << vals_2d_y.at(i) << std::endl;
     model_coefficients_ = model_coefficients;
     return true; 
   }
@@ -504,7 +489,7 @@ for (int i = 0; i < polynomial_order + 1; i++)
         }
       }
     ROS_INFO ("created pmap with %i lines", (int)pmap_->polygons.size ());
-    assert (model_coefficients.size() == 9+polynomial_order+1);
+    assert ((int)model_coefficients.size() == 9+polynomial_order+1);
 
     pmap_->polygons.push_back (best_poly);
     return true;
@@ -513,7 +498,7 @@ for (int i = 0; i < polynomial_order + 1; i++)
   void
     SACModelRotational::getSamples (int &iterations, std::vector<int> &samples)
   {
-    samples.resize (6);
+    samples.resize (min_nr_samples > polynomial_order+1 ? 6 : polynomial_order+1);
     double trand = indices_.size () / (RAND_MAX + 1.0);
 
     // Get a random number between 1 and indices.size ()
@@ -567,7 +552,8 @@ for (int i = 0; i < polynomial_order + 1; i++)
     if (!EstimateAxisFromSamples (samples, model_coefficients_))
       return false;
      
-    if (!EstimateContourFromSamples (indices_, model_coefficients_))
+    if (!EstimateContourFromSamples (samples, model_coefficients_))
+    //if (!EstimateContourFromSamples (indices_, model_coefficients_))
       return false;
 
     return (true);
@@ -646,6 +632,7 @@ for (int i = 0; i < polynomial_order + 1; i++)
     double min_k, max_k;
     std::vector<double> model_coefficients (modelCoefficients);
     Collect3DPointsInRotatedPlane (inliers, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
+    //Collect3DPointsInRotatedPlane (indices_, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
    
     Eigen::Vector3d point0 (model_coefficients[0], model_coefficients[1], model_coefficients[2]);
     geometry_msgs::Point32 point0_point;

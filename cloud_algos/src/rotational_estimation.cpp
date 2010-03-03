@@ -107,6 +107,7 @@ void
       }
     }
   }
+  std::cerr << "[findRotationalObjects] finished after " << iterations_ << " iteration" << std::endl;
 
   if (best_model.size () != 0)
   {
@@ -176,9 +177,9 @@ std::vector<std::string> RotationalEstimation::provides ()
 std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> cloud)
 {
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  double threshold_ = 0.008;
-  double probability_ = 0.99;
-  int max_iterations_ = 500;
+  double threshold_ = 0.004;
+  double probability_ = 1-1e-10;
+  int max_iterations_ = 1000;
   
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, vis_cloud_, vis_pmap_, vis_text_);
