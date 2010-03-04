@@ -82,7 +82,7 @@ class DepthImageTriangulation : public CloudAlgo
    * \brief  get scan and point id for hokuyo scans
    * \param sensor_msg::PointCloud
    */
-  void get_scan_and_point_id (const boost::shared_ptr<const InputType>&);
+  void get_scan_and_point_id (signed int &line_index);
 
   /**
    * \brief  computes distance between 2 points
@@ -109,6 +109,7 @@ class DepthImageTriangulation : public CloudAlgo
     max_length = 0.05;
     max_index_ = max_line_ = 0;
     write_to_vtk_ = false;
+    line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
   ~DepthImageTriangulation ()
   {
@@ -127,6 +128,9 @@ private:
   
   //! \brief max index and max line in point cloud
   int max_index_, max_line_;
+
+  //! \brief channel indices for line and index in point cloud msg
+  signed int line_nr_in_channel_, index_nr_in_channel_;
 
   //! \brief write output to vtk yes/no
   bool write_to_vtk_;
