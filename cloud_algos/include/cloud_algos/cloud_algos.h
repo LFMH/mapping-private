@@ -39,8 +39,24 @@ template <class algo>
   CloudAlgoNode (ros::NodeHandle& nh, algo &alg)
   : nh_ (nh), a (alg)
   {
+    //check if input topic is advertised
+    std::vector<ros::master::TopicInfo> t_list;
+    bool topic_found = false;
+    ros::master::getTopics (t_list);
+    for (std::vector<ros::master::TopicInfo>::iterator it = t_list.begin (); it != t_list.end (); it++)
+    {
+      if (it->name == a.default_input_topic())
+      {
+        topic_found = true;
+        break;
+      }
+    }
+    if (!topic_found)
+      ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", a.default_input_topic().c_str());
+
     pub_ = nh_.advertise <typename algo::OutputType> (a.default_output_topic (), 5);
     sub_ = nh_.subscribe (a.default_input_topic (), 1, &CloudAlgoNode<algo>::input_cb, this);
+   
     ROS_INFO("CloudAlgoNode (%s) created. SUB [%s], PUB[%s]",
              a.default_node_name().c_str(),
              a.default_input_topic().c_str(), 
