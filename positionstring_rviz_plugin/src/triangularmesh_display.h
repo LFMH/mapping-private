@@ -102,16 +102,24 @@ protected:
   std::string topic_;
   rviz::Color color_;
   ias_table_msgs::TriangularMesh::ConstPtr current_message_;
+  
   Ogre::SceneNode* scene_node_;
-  Ogre::ManualObject* manual_object_;
+  
+  //this stuff needs to be freed every time we get a new message..
   Ogre::MeshPtr mesh_;
   Ogre::SubMesh* submesh_;
+  Ogre::HardwareVertexBufferSharedPtr vbuf; 
+  Ogre::VertexData* data;
+  Ogre::HardwareIndexBufferSharedPtr ibuf;
+  Ogre::Entity* entity_;
 
   message_filters::Subscriber<ias_table_msgs::TriangularMesh> sub_;
   tf::MessageFilter<ias_table_msgs::TriangularMesh> tf_filter_;
 
   rviz::ColorPropertyWPtr color_property_;
   rviz::ROSTopicStringPropertyWPtr topic_property_;
+  
+  int count;
 };
 
 } // namespace positionstring_rviz_plugin

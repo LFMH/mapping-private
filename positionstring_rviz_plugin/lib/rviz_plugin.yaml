@@ -12,7 +12,7 @@ displays:
     description: |
           Displays multiple strings from a ias_visualization_msgs::PositionStringList message at given positions.
   -
-    class_name: positionstring_rviz_plugin::TriangleMeshDisplay
+    class_name: positionstring_rviz_plugin::TriangularMeshDisplay
     display_name: Triangle Mesh
     description: |
           Displays a triangular mesh from a ias_visualization_msgs::TriangleMesh message

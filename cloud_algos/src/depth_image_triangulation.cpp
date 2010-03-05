@@ -148,8 +148,8 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   std::vector<triangle> tr;
   //resize big time to prevent seg fault
   tr.resize(2*max_line_*max_index_);    
-  mesh_pub_.points.resize(2*max_line_*max_index_);
-  mesh_pub_.triangles.resize(2*max_line_*max_index_);
+  mesh_.points.resize(0);//2*max_line_*max_index_);
+  mesh_.triangles.resize(0);//2*max_line_*max_index_);
 
   int nr = 0; //number of triangles
   int nr_tr;
@@ -326,7 +326,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   }
   nr_tr = nr;
   tr.resize(nr);
-  mesh_pub_.header = cloud_with_line_.header;   
+  mesh_.header = cloud_with_line_.header;   
   geometry_msgs::Point32 tr_i, tr_j, tr_k;
   ias_table_msgs::Triangle tr_mesh;
 
@@ -334,36 +334,22 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
 #endif
   //fill up TriangularMesh msg and send it on the topic
+  for (unsigned long i = 0; i < cloud_with_line_.points.size(); i++)
+    mesh_.points.push_back(cloud_with_line_.points[i]);
+
   for (unsigned long i = 0; i < tr.size(); i++)
   {
-    //a (i)
-    tr_i.x = cloud_with_line_.points[tr[i].a].x;
-    tr_i.y = cloud_with_line_.points[tr[i].a].y;
-    tr_i.z = cloud_with_line_.points[tr[i].a].z;
     tr_mesh.i.data = tr[i].a;
-
-    //b (j)
-    tr_j.x = cloud_with_line_.points[tr[i].b].x;
-    tr_j.y = cloud_with_line_.points[tr[i].b].y;
-    tr_j.z = cloud_with_line_.points[tr[i].b].z;
     tr_mesh.j.data = tr[i].b;
-
-    //c (k)
-    tr_k.x = cloud_with_line_.points[tr[i].c].x;
-    tr_k.y = cloud_with_line_.points[tr[i].c].y;
-    tr_k.z = cloud_with_line_.points[tr[i].c].z;
     tr_mesh.k.data = tr[i].c;
-    mesh_pub_.triangles.push_back(tr_mesh);
-    mesh_pub_.points.push_back(tr_i);
-    mesh_pub_.points.push_back(tr_j);
-    mesh_pub_.points.push_back(tr_k);
+    mesh_.triangles.push_back(tr_mesh);
   }
 
   //set indices back to initial values
   line_nr_in_channel_ = index_nr_in_channel_ = -1;
   
-  mesh_pub_.triangles.resize(nr);
-  mesh_pub_.points.resize(nr*3);
+//  mesh_.triangles.resize(nr);
+//  mesh_.points.resize(nr*3);
   
   //write to vtk file for display in e.g. Viewer
   if(write_to_vtk_)
@@ -419,7 +405,7 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
 ////////////////////////////////////////////////////////////////////////////////
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
-    return mesh_pub_;
+    return mesh_;
   }
 
 

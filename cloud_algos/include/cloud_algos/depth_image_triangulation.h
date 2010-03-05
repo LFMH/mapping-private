@@ -138,7 +138,7 @@ private:
 
   // \brief resultant output triangulated map
   //OutputType pmap_;
-  OutputType mesh_pub_;
+  OutputType mesh_;
 };
 }
 #endif
