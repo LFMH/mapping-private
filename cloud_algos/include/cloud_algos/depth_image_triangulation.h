@@ -25,9 +25,10 @@
 #include <point_cloud_mapping/sample_consensus/msac.h>
 #include <point_cloud_mapping/sample_consensus/ransac.h>
 
-//PolygonalMap to output triangles
-#include <mapping_msgs/PolygonalMap.h>
+//TriangularMesh to output resultant triangles
 #include <sensor_msgs/PointCloud.h>
+#include <geometry_msgs/Point32.h>
+#include <ias_table_msgs/TriangularMesh.h>
 //boost
 #include <boost/thread/mutex.hpp>
 
@@ -45,8 +46,8 @@ class DepthImageTriangulation : public CloudAlgo
 
   // Input/Output type
   typedef sensor_msgs::PointCloud InputType;
-  typedef mapping_msgs::PolygonalMap OutputType;
-
+  //typedef mapping_msgs::PolygonalMap OutputType;
+  typedef ias_table_msgs::TriangularMesh OutputType;
   // Topic name to advertise
   static std::string default_output_topic ()
   {
@@ -104,6 +105,8 @@ class DepthImageTriangulation : public CloudAlgo
   {
     max_length = 0.05;
     max_index_ = max_line_ = 0;
+    write_to_vtk_ = false;
+    save_pcd_ = false;
     line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
   ~DepthImageTriangulation ()
@@ -127,12 +130,15 @@ private:
   //! \brief channel indices for line and index in point cloud msg
   signed int line_nr_in_channel_, index_nr_in_channel_;
 
-
   //! \brief max allowed length between triangle's line segments
   float max_length;
 
+  //! \brief write output to vtk yes/no, save PCD file yes/no
+  bool write_to_vtk_, save_pcd_;
+
   // \brief resultant output triangulated map
-  OutputType pmap_;
+  //OutputType pmap_;
+  OutputType mesh_pub_;
 };
 }
 #endif

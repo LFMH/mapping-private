@@ -44,7 +44,8 @@ void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cl
   }
   //nr of lines in point cloud
   max_line_ = scan_id;
-  //cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
+  if(save_pcd_)
+    cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
   ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 }
 
@@ -106,7 +107,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     if (cloud_with_line_.channels[i].name == "index")
       index_nr_in_channel_ = i;
   }
-  ROS_INFO("line %d, index %d", line_nr_in_channel_, index_nr_in_channel_);
+  ROS_INFO("line index: %d, index index: %d", line_nr_in_channel_, index_nr_in_channel_);
 
   //format of this pcd is not known
   if (index_nr_in_channel_ == -1)
@@ -115,6 +116,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     return std::string("");
   }
   
+  //Hokuyo data, compute line
   if (line_nr_in_channel_ == -1)
   {
     line_nr_in_channel_ =  cloud_with_line_.channels.size();
@@ -126,17 +128,12 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     }
   }
 
-//   if (cloud_with_line_.channels.size() < 2 || cloud_with_line_.channels[1].name != "index" || 
-//        cloud_with_line_.channels[2].name != "line")
-//   {
-//     ROS_ERROR("Clouds's channel[0] and channel[1] must be index (index) in one line scan and line's id (line) respectively!!!"); 
-//     exit(2);
-//   }
-
   ros::Time ts = ros::Time::now ();
   std::vector<triangle> tr;
+  //resize big time to prevent seg fault
   tr.resize(2*max_line_*max_index_);    
-  pmap_.polygons.resize(2*max_line_*max_index_);
+  mesh_pub_.points.resize(2*max_line_*max_index_);
+  mesh_pub_.triangles.resize(2*max_line_*max_index_);
 
   int nr = 0; //number of triangles
   int nr_tr;
@@ -313,33 +310,48 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   }
   nr_tr = nr;
   tr.resize(nr);
-  geometry_msgs::Polygon poly;
-  poly.points.resize(3);
-  pmap_.header = cloud_with_line_.header;
+  mesh_pub_.header = cloud_with_line_.header;   
+  geometry_msgs::Point32 tr_i, tr_j, tr_k;
+  ias_table_msgs::Triangle tr_mesh;
+
 #ifdef DEBUG  
   ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
 #endif
+  //fill up TriangularMesh msg and send it on the topic
   for (unsigned long i = 0; i < tr.size(); i++)
   {
-    //a
-    poly.points[0].x = cloud_with_line_.points[tr[i].a].x;
-    poly.points[0].y = cloud_with_line_.points[tr[i].a].y;
-    poly.points[0].z = cloud_with_line_.points[tr[i].a].z;
-    //b
-    poly.points[1].x = cloud_with_line_.points[tr[i].b].x;
-    poly.points[1].y = cloud_with_line_.points[tr[i].b].y;
-    poly.points[1].z = cloud_with_line_.points[tr[i].b].z;
-    //c
-    poly.points[2].x = cloud_with_line_.points[tr[i].c].x;
-    poly.points[2].y = cloud_with_line_.points[tr[i].c].y;
-    poly.points[2].z = cloud_with_line_.points[tr[i].c].z;
-    pmap_.polygons[i] = poly;
+    //a (i)
+    tr_i.x = cloud_with_line_.points[tr[i].a].x;
+    tr_i.y = cloud_with_line_.points[tr[i].a].y;
+    tr_i.z = cloud_with_line_.points[tr[i].a].z;
+    tr_mesh.i.data = tr[i].a;
+
+    //b (j)
+    tr_j.x = cloud_with_line_.points[tr[i].b].x;
+    tr_j.y = cloud_with_line_.points[tr[i].b].y;
+    tr_j.z = cloud_with_line_.points[tr[i].b].z;
+    tr_mesh.j.data = tr[i].b;
+
+    //c (k)
+    tr_k.x = cloud_with_line_.points[tr[i].c].x;
+    tr_k.y = cloud_with_line_.points[tr[i].c].y;
+    tr_k.z = cloud_with_line_.points[tr[i].c].z;
+    tr_mesh.k.data = tr[i].c;
+    mesh_pub_.triangles.push_back(tr_mesh);
+    mesh_pub_.points.push_back(tr_i);
+    mesh_pub_.points.push_back(tr_j);
+    mesh_pub_.points.push_back(tr_k);
   }
-  pmap_.polygons.resize(nr);
 
   //set indices back to initial values
   line_nr_in_channel_ = index_nr_in_channel_ = -1;
-  write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
+  
+  mesh_pub_.triangles.resize(nr);
+  mesh_pub_.points.resize(nr*3);
+  
+  //write to vtk file for display in e.g. Viewer
+  if(write_to_vtk_)
+    write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
   ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
@@ -391,7 +403,7 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
 ////////////////////////////////////////////////////////////////////////////////
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
-    return pmap_;
+    return mesh_pub_;
   }
 
 
