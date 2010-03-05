@@ -6,6 +6,7 @@
 #include <iostream>
 #include <math.h>
 #include <map>
+#include <algorithm>
 //for savePCDFile ()
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -46,7 +47,9 @@ void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cl
   max_line_ = scan_id;
   if(save_pcd_)
     cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
+#ifdef DEBUG
   ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,8 +96,10 @@ std::vector<std::string> DepthImageTriangulation::provides ()
 ////////////////////////////////////////////////////////////////////////////////
 std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
 {
+#ifdef DEBUG
   ROS_INFO("\n");
   ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
+#endif
 
   cloud_with_line_ = *cloud_in;
   //we assume here having either SICK LMS400 data which has line and index coeff
@@ -102,9 +107,9 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   //Hokuyo UTM 30LX which only returns index coeff, line has to be computed
   for (unsigned int i = 0; i < cloud_with_line_.channels.size(); i++)
   {
-    if (cloud_with_line_.channels[i].name == "line")
+    if (cloud_with_line_.channels[i].name == "line" || cloud_with_line_.channels[i].name == "pid")
       line_nr_in_channel_ = i;
-    if (cloud_with_line_.channels[i].name == "index")
+    if (cloud_with_line_.channels[i].name == "index" || cloud_with_line_.channels[i].name == "sid")
       index_nr_in_channel_ = i;
   }
   ROS_INFO("line index: %d, index index: %d", line_nr_in_channel_, index_nr_in_channel_);
@@ -126,6 +131,17 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
       //cloud_in gets processed and copied into cloud_with_line_;
       get_scan_and_point_id(cloud_with_line_, line_nr_in_channel_);
     }
+  }
+
+  if (max_line_ == 0 || max_index_ == 0)
+  {
+    max_line_ =  *max_element(cloud_with_line_.channels[line_nr_in_channel_].values.begin(), 
+                              cloud_with_line_.channels[line_nr_in_channel_].values.end());
+
+    max_index_ =  *max_element(cloud_with_line_.channels[index_nr_in_channel_].values.begin(), 
+                                  cloud_with_line_.channels[index_nr_in_channel_].values.end());
+    ROS_INFO("max line: %d, max index: %d", max_line_, max_index_);
+    //exit(2);
   }
 
   ros::Time ts = ros::Time::now ();
