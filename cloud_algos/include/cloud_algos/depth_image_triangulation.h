@@ -27,9 +27,7 @@
 
 //PolygonalMap to output triangles
 #include <mapping_msgs/PolygonalMap.h>
-
-#include <geometry_msgs/Point32.h>
-#include <ias_table_msgs/TriangularMesh.h>
+#include <sensor_msgs/PointCloud.h>
 //boost
 #include <boost/thread/mutex.hpp>
 
@@ -47,9 +45,7 @@ class DepthImageTriangulation : public CloudAlgo
 
   // Input/Output type
   typedef sensor_msgs::PointCloud InputType;
-  //typedef mapping_msgs::PolygonalMap OutputType;
-  typedef ias_table_msgs::TriangularMesh OutputType;
-  
+  typedef mapping_msgs::PolygonalMap OutputType;
 
   // Topic name to advertise
   static std::string default_output_topic ()
@@ -82,7 +78,7 @@ class DepthImageTriangulation : public CloudAlgo
    * \brief  get scan and point id for hokuyo scans
    * \param sensor_msg::PointCloud
    */
-  void get_scan_and_point_id (signed int &line_index);
+  void get_scan_and_point_id (sensor_msgs::PointCloud &cloud, signed int &line_index);
 
   /**
    * \brief  computes distance between 2 points
@@ -108,7 +104,6 @@ class DepthImageTriangulation : public CloudAlgo
   {
     max_length = 0.05;
     max_index_ = max_line_ = 0;
-    write_to_vtk_ = false;
     line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
   ~DepthImageTriangulation ()
@@ -128,19 +123,16 @@ private:
   
   //! \brief max index and max line in point cloud
   int max_index_, max_line_;
-
+  
   //! \brief channel indices for line and index in point cloud msg
   signed int line_nr_in_channel_, index_nr_in_channel_;
 
-  //! \brief write output to vtk yes/no
-  bool write_to_vtk_;
 
   //! \brief max allowed length between triangle's line segments
   float max_length;
 
-  //! \brief resultant output triangulated map
-  //OutputType pmap_;
-  OutputType mesh_pub_;
+  // \brief resultant output triangulated map
+  OutputType pmap_;
 };
 }
 #endif

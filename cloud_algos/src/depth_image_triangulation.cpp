@@ -13,26 +13,24 @@
 using namespace cloud_algos;
 
 ////////////////////////////////////////////////////////////////////////////////
-void DepthImageTriangulation::get_scan_and_point_id (signed int &line_index)
+void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cloud, signed int &line_index)
 {
   int scan_id = 0;
   int point_id = 0;
   int temp_point_id = 0;
   ros::Time ts = ros::Time::now ();
-  cloud_with_line_.channels.resize(line_index + 1);
-  cloud_with_line_.channels[line_index].name = "line";
-  //iterate over all channels
-  for (unsigned int j = 0; j < cloud_with_line_.channels.size(); j++)
+  cloud.channels.resize(cloud.channels.size()+1);
+  cloud.channels[line_index].name = "line";
+  for (unsigned int j = 0; j < cloud.channels.size(); j++)
   {
-    if ( cloud_with_line_.channels[j].name == "index")
+    if ( cloud.channels[j].name == "index")
     {
-      cloud_with_line_.channels[line_index].values.resize(cloud_with_line_.channels[j].values.size());
-      //iterate over all values of indices in channel "index"
-      for (unsigned int k = 0; k < cloud_with_line_.channels[j].values.size()-1; k++)
+      cloud.channels[line_index].values.resize(cloud.channels[j].values.size());
+      for (unsigned int k = 0; k < cloud.channels[j].values.size()-1; k++)
       {
-        point_id = cloud_with_line_.channels[j].values[k];
-        temp_point_id =  cloud_with_line_.channels[j].values[k+1];
-        cloud_with_line_.channels[line_index].values[k] = scan_id;
+        point_id = cloud.channels[j].values[k];
+        temp_point_id =  cloud.channels[j].values[k+1];
+        cloud.channels[line_index].values[k] = scan_id;
         //new line found
         if (temp_point_id < point_id)
         {
@@ -46,7 +44,7 @@ void DepthImageTriangulation::get_scan_and_point_id (signed int &line_index)
   }
   //nr of lines in point cloud
   max_line_ = scan_id;
-  cloud_io::savePCDFile ("cloud_line.pcd", cloud_with_line_, false);
+  //cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
   ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 }
 
@@ -94,8 +92,9 @@ std::vector<std::string> DepthImageTriangulation::provides ()
 ////////////////////////////////////////////////////////////////////////////////
 std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
 {
-    
+  ROS_INFO("\n");
   ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
+
   cloud_with_line_ = *cloud_in;
   //we assume here having either SICK LMS400 data which has line and index coeff
   //or
@@ -106,33 +105,38 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
       line_nr_in_channel_ = i;
     if (cloud_with_line_.channels[i].name == "index")
       index_nr_in_channel_ = i;
-    //ROS_INFO("line %d, index %d", line_nr_in_channel_, index_nr_in_channel_);
   }
-  
+  ROS_INFO("line %d, index %d", line_nr_in_channel_, index_nr_in_channel_);
+
   //format of this pcd is not known
   if (index_nr_in_channel_ == -1)
   {
     ROS_ERROR("Channel index is missing - this is NOT allowed");
     return std::string("");
   }
-
-  //Hokuyo UTM 30LX data
+  
   if (line_nr_in_channel_ == -1)
   {
     line_nr_in_channel_ =  cloud_with_line_.channels.size();
+    
     {
       boost::mutex::scoped_lock lock(cloud_lock_);
       //cloud_in gets processed and copied into cloud_with_line_;
-      get_scan_and_point_id(line_nr_in_channel_);
+      get_scan_and_point_id(cloud_with_line_, line_nr_in_channel_);
     }
   }
+
+//   if (cloud_with_line_.channels.size() < 2 || cloud_with_line_.channels[1].name != "index" || 
+//        cloud_with_line_.channels[2].name != "line")
+//   {
+//     ROS_ERROR("Clouds's channel[0] and channel[1] must be index (index) in one line scan and line's id (line) respectively!!!"); 
+//     exit(2);
+//   }
 
   ros::Time ts = ros::Time::now ();
   std::vector<triangle> tr;
   tr.resize(2*max_line_*max_index_);    
-  //pmap_.polygons.resize(2*max_line_*max_index_);
-  mesh_pub_.points.resize(2*max_line_*max_index_);
-  mesh_pub_.triangles.resize(2*max_line_*max_index_);
+  pmap_.polygons.resize(2*max_line_*max_index_);
 
   int nr = 0; //number of triangles
   int nr_tr;
@@ -147,7 +151,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     for (int j = 0; j <= max_index_; j++)
     {       
      // find top left corner
-      if (cloud_with_line_.channels[line_nr_in_channel_].values[a] == i && cloud_with_line_.channels[index_nr_in_channel_].values[a] == j)
+      if (cloud_with_line_.channels[2].values[a] == i && cloud_with_line_.channels[1].values[a] == j)
       {
         //ROS_INFO("found point a = %d\n", a);
         b = -1;
@@ -156,21 +160,21 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
         e = -1;
           
         // find top right corner
-        if (a+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[line_nr_in_channel_].values[a+1] == i
-                   && cloud_with_line_.channels[index_nr_in_channel_].values[a+1] == j+1)
+        if (a+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[2].values[a+1] == i
+                   && cloud_with_line_.channels[1].values[a+1] == j+1)
           b = a+1;
           
         //ROS_INFO("resolved point b = %d\n", b);
           
         // go to next line
         int test = a;
-        while ((unsigned long)test < cloud_with_line_.points.size() &&  cloud_with_line_.channels[line_nr_in_channel_].values[test] < i+1)
+        while ((unsigned long)test < cloud_with_line_.points.size() &&  cloud_with_line_.channels[2].values[test] < i+1)
           test++;
           
         //ROS_INFO("resolved next line\n");
           
         // if next line exists
-        if ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[line_nr_in_channel_].values[test] == i+1)
+        if ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[2].values[test] == i+1)
         {
           // a skipped triangle exists because of missing 'a'
           if (skipped)
@@ -178,14 +182,14 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
             skipped = false; // reset var
               
             // go to column j-1
-            while ((unsigned long)test <  cloud_with_line_.points.size() &&  cloud_with_line_.channels[index_nr_in_channel_].values[test] < j-1)
+            while ((unsigned long)test <  cloud_with_line_.points.size() &&  cloud_with_line_.channels[1].values[test] < j-1)
               test++;
               
             // if not at the end of dataset
             if ((unsigned long)test <  cloud_with_line_.points.size())
             {
               // if column exists
-              if (cloud_with_line_.channels[line_nr_in_channel_].values[test] == i+1 && cloud_with_line_.channels[index_nr_in_channel_].values[test])
+              if (cloud_with_line_.channels[2].values[test] == i+1 && cloud_with_line_.channels[1].values[test])
               {
                 e = test;
                 test++;
@@ -195,7 +199,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
           else
           {
             // go to column j
-            while ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[index_nr_in_channel_].values[test] < j)
+            while ((unsigned long)test < cloud_with_line_.points.size() && cloud_with_line_.channels[1].values[test] < j)
               test++;
           }
             
@@ -203,15 +207,15 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
           if ((unsigned long)test < cloud_with_line_.points.size())
           {
             // if column exists
-            if (cloud_with_line_.channels[line_nr_in_channel_].values[test] == i+1 && cloud_with_line_.channels[index_nr_in_channel_].values[test] == j)
+            if (cloud_with_line_.channels[2].values[test] == i+1 && cloud_with_line_.channels[1].values[test] == j)
             {
               c = test;
-              if ((unsigned long)c+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[line_nr_in_channel_].values[c+1] == i+1
-                  && cloud_with_line_.channels[index_nr_in_channel_].values[c+1] == j+1)
+              if ((unsigned long)c+1 < cloud_with_line_.points.size() && cloud_with_line_.channels[2].values[c+1] == i+1
+                  && cloud_with_line_.channels[1].values[c+1] == j+1)
                 d = c+1;
             }
             // if next column was found
-            else if (cloud_with_line_.channels[line_nr_in_channel_].values[test] == i+1 && cloud_with_line_.channels[index_nr_in_channel_].values[test] == j+1)
+            else if (cloud_with_line_.channels[2].values[test] == i+1 && cloud_with_line_.channels[1].values[test] == j+1)
               d = test;
           }
         }
@@ -311,11 +315,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   tr.resize(nr);
   geometry_msgs::Polygon poly;
   poly.points.resize(3);
-  //pmap_.header = cloud_with_line_.header;
-  mesh_pub_.header = cloud_with_line_.header;
-  
-  geometry_msgs::Point32 tr_i, tr_j, tr_k;
-  ias_table_msgs::Triangle tr_mesh;
+  pmap_.header = cloud_with_line_.header;
 #ifdef DEBUG  
   ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
 #endif
@@ -325,42 +325,21 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     poly.points[0].x = cloud_with_line_.points[tr[i].a].x;
     poly.points[0].y = cloud_with_line_.points[tr[i].a].y;
     poly.points[0].z = cloud_with_line_.points[tr[i].a].z;
-
-    tr_i.x = cloud_with_line_.points[tr[i].a].x;
-    tr_i.y = cloud_with_line_.points[tr[i].a].y;
-    tr_i.z = cloud_with_line_.points[tr[i].a].z;
-    tr_mesh.i.data = tr[i].a;
     //b
     poly.points[1].x = cloud_with_line_.points[tr[i].b].x;
     poly.points[1].y = cloud_with_line_.points[tr[i].b].y;
     poly.points[1].z = cloud_with_line_.points[tr[i].b].z;
-
-    tr_j.x = cloud_with_line_.points[tr[i].b].x;
-    tr_j.y = cloud_with_line_.points[tr[i].b].y;
-    tr_j.z = cloud_with_line_.points[tr[i].b].z;
-    tr_mesh.j.data = tr[i].b;
-
     //c
     poly.points[2].x = cloud_with_line_.points[tr[i].c].x;
     poly.points[2].y = cloud_with_line_.points[tr[i].c].y;
     poly.points[2].z = cloud_with_line_.points[tr[i].c].z;
-
-    tr_k.x = cloud_with_line_.points[tr[i].c].x;
-    tr_k.y = cloud_with_line_.points[tr[i].c].y;
-    tr_k.z = cloud_with_line_.points[tr[i].c].z;
-    tr_mesh.k.data = tr[i].c;
-
-    //pmap_.polygons[i] = poly;
-    mesh_pub_.triangles.push_back(tr_mesh);
-    mesh_pub_.points.push_back(tr_i);
-    mesh_pub_.points.push_back(tr_j);
-    mesh_pub_.points.push_back(tr_k);
+    pmap_.polygons[i] = poly;
   }
-  //pmap_.polygons.resize(nr);
-  mesh_pub_.triangles.resize(nr);
-  mesh_pub_.points.resize(nr*3);
-  if(write_to_vtk_)
-    write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
+  pmap_.polygons.resize(nr);
+
+  //set indices back to initial values
+  line_nr_in_channel_ = index_nr_in_channel_ = -1;
+  write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
   ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
@@ -391,13 +370,7 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
   for (i=0; i<cloud_with_line_.points.size(); i++)
     fprintf(f,"1 %ld\n", i);
     
-  /*
-  fprintf(f,"\nPOLYGONS %d %d\n",triangles.size(), 4*triangles.size());
-  for (std::vector<triangle>::iterator it = triangles.begin(); it != triangles.end(); it++)
-  fprintf(f,"3 %d %d %d\n",(*it).a, (*it).c, (*it).b);
-  */
-
-  printf("vector: %ld, nr: %d\n", triangles.size(), nr_tr);
+  ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
   
   fprintf(f,"\nPOLYGONS %d %d\n", nr_tr, 4*nr_tr);
   for (int i=0; i<nr_tr; i++)
@@ -413,21 +386,12 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
     else
       fprintf(f,"3 %d %d %d\n",triangles[i].a, triangles[i].c, triangles[i].b);
   }
-
-//   fprintf (f, "\nPOINT_DATA %ld\nSCALARS scalars double\nLOOKUP_TABLE default\n", cloud_with_line_.points.size());
-//   for (i=0; i<cloud_with_line_.points.size(); i+=9)
-//   {
-//     for (int j=0; (j<9) && (i+j<cloud_with_line_.points.size()); j++)
-//       fprintf (f, "%d ", (int)cloud_with_line_.channels[index_nr_in_channel_].values[i+j]);
-//     fprintf (f,"\n");
-//   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
   {
-    //return pmap_;
-    return mesh_pub_;
+    return pmap_;
   }
 
 
