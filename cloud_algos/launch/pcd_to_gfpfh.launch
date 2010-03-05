@@ -1,0 +1,53 @@
+<launch>
+
+<!--publish a point cloud to "cloud_pcd" topic, REPLACE this to work on the data from real robot-->
+<!--output: cloud_pcd -->
+<node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+      args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/cup_handle_front_1267025929.541979.pcd) $(optenv period 5)" />
+
+
+<!--Moving Least Squares, performs smoothing of the data-->
+<!--input: cloud_pcd -->
+<!--output: /mls_fit_node/cloud_mls -->
+<node pkg="cloud_algos" type="mls_fit_node" name="mls_fit_node" output="screen" respawn="true">
+  <remap from="~cloud_pcd" to="cloud_pcd" />
+</node>
+
+
+<!--Point Feature Histogram Estimator-->
+<!--intput: /mls_fit_node/cloud_mls -->
+<!--output: /pfh_node/cloud_pfh -->
+<node pkg="cloud_algos" type="pfh_node" name="pfh_node" output="screen" respawn="true">
+  <remap from="~cloud_pcd" to="/mls_fit_node/cloud_mls" />
+</node>
+
+
+<!--Support Vector Machine Classifier-->
+<!--intput:  /pfh_node/cloud_pfh  -->
+<!--output: /svm_classification_node/cloud_svm -->
+<!--
+    <node pkg="cloud_algos" type="svm_classification_node" name="svm_classification_node" output="screen" respawn="true">
+      <remap from="~cloud_pcd" to="/pfh_node/cloud_pfh" />
+    </node>
+-->
+
+
+<!--Global Fast Point Feature Classifier-->
+<!--input: /svm_classification_node/cloud_svm -->
+<!--output: /gfpfh_node/cloud_gfpfh -->
+<!--
+    <node pkg="cloud_algos" type="gfpfh_node" name="gfpfh_node" output="screen" respawn="true">
+      <remap from="~cloud_pcd" to="/svm_classification_node/cloud_svm" />
+    </node>
+-->
+
+
+<!--dump output of svm classifiers-->
+<!-- 
+     <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+       <param name="input_cloud_topic" value="/svm_classification_node/cloud_svm"/>
+       <param name="dir" value="$(env HOME)/work/gfpfh/"/>
+       <param name="continous" type="bool" value="true"/>
+     </node>
+-->
+</launch>
