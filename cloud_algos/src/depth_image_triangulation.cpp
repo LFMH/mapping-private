@@ -22,27 +22,25 @@ void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cl
   ros::Time ts = ros::Time::now ();
   cloud.channels.resize(cloud.channels.size()+1);
   cloud.channels[line_index].name = "line";
-  for (unsigned int j = 0; j < cloud.channels.size(); j++)
+  
+  int j = cloud_io::getIndex (cloud, "index");
+  
+  cloud.channels[line_index].values.resize(cloud.channels[j].values.size());
+  for (unsigned int k = 0; k < cloud.channels[j].values.size()-1; k++)
   {
-    if ( cloud.channels[j].name == "index")
+    point_id = cloud.channels[j].values[k];
+    temp_point_id =  cloud.channels[j].values[k+1];
+    cloud.channels[line_index].values[k] = scan_id;
+    //new line found
+    if (temp_point_id < point_id)
     {
-      cloud.channels[line_index].values.resize(cloud.channels[j].values.size());
-      for (unsigned int k = 0; k < cloud.channels[j].values.size()-1; k++)
-      {
-        point_id = cloud.channels[j].values[k];
-        temp_point_id =  cloud.channels[j].values[k+1];
-        cloud.channels[line_index].values[k] = scan_id;
-        //new line found
-        if (temp_point_id < point_id)
-        {
-          scan_id++;
-          //find max point index  in the whole point cloud
-          if (point_id > max_index_)
-            max_index_ = point_id;
-        }
-      }
+      scan_id++;
+      //find max point index  in the whole point cloud
+      if (point_id > max_index_)
+        max_index_ = point_id;
     }
   }
+  
   //nr of lines in point cloud
   max_line_ = scan_id;
   if(save_pcd_)
@@ -101,7 +99,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
 #endif
 
-  cloud_with_line_ = *cloud_in;
+  cloud_with_line_ = *(cloud_in.get());
   //we assume here having either SICK LMS400 data which has line and index coeff
   //or
   //Hokuyo UTM 30LX which only returns index coeff, line has to be computed
@@ -334,15 +332,26 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
 #endif
   //fill up TriangularMesh msg and send it on the topic
-  for (unsigned long i = 0; i < cloud_with_line_.points.size(); i++)
-    mesh_.points.push_back(cloud_with_line_.points[i]);
+  for (unsigned long i=0; i<cloud_with_line_.points.size(); i++)
+    mesh_.points.push_back (cloud_with_line_.points[i]);
 
-  for (unsigned long i = 0; i < tr.size(); i++)
+  for (unsigned long i = 0; i < nr; i++)
   {
-    tr_mesh.i.data = tr[i].a;
-    tr_mesh.j.data = tr[i].b;
-    tr_mesh.k.data = tr[i].c;
-    mesh_.triangles.push_back(tr_mesh);
+    if ((unsigned long)tr[i].a >= cloud_with_line_.points.size() || tr[i].a < 0 || isnan(tr[i].a))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, tr[i].a, tr[i].b, tr[i].c, cloud_with_line_.points.size());
+    else if ((unsigned long)tr[i].b >= cloud_with_line_.points.size() || tr[i].b < 0 || isnan(tr[i].b))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, tr[i].a, tr[i].b, tr[i].c, cloud_with_line_.points.size());
+    else if ((unsigned long)tr[i].c >= cloud_with_line_.points.size() || tr[i].c < 0 || isnan(tr[i].c))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, tr[i].a, tr[i].b, tr[i].c, cloud_with_line_.points.size());
+    else if (tr[i].a == tr[i].b || tr[i].a == tr[i].c || tr[i].b == tr[i].c)
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, tr[i].a, tr[i].b, tr[i].c, cloud_with_line_.points.size());
+    else
+    {
+      tr_mesh.i = tr[i].a;
+      tr_mesh.j = tr[i].c;
+      tr_mesh.k = tr[i].b;
+      mesh_.triangles.push_back(tr_mesh);
+    } 
   }
 
   //set indices back to initial values
@@ -372,11 +381,10 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
   fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",cloud_with_line_.points.size());
   unsigned long i;
   
-  for (i=0; i<cloud_with_line_.points.size(); i+=3)
+  for (i=0; i<cloud_with_line_.points.size(); i++)
   {
-    for (unsigned long j=0; (j<3) && (i+j<cloud_with_line_.points.size()); j++)
-      fprintf (f,"%f %f %f ", cloud_with_line_.points[i+j].x, cloud_with_line_.points[i+j].y,
-               cloud_with_line_.points[i+j].z);
+    fprintf (f,"%f %f %f ", cloud_with_line_.points[i].x, cloud_with_line_.points[i].y,
+               cloud_with_line_.points[i].z);
     fprintf (f,"\n");
   }
   

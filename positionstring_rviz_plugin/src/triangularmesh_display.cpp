@@ -42,6 +42,49 @@
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreBillboardSet.h>
 
+typedef struct {int a,b,c;} triangle;
+////////////////////////////////////////////////////////////////////////////////
+void write_vtk_file(std::string output, std::vector<triangle> triangles, std::vector<geometry_msgs::Point32> points, 
+                                             int nr_tr)
+{
+  /* writing VTK file */
+  
+  FILE *f;
+  
+  f = fopen(output.c_str(),"w");
+  
+  fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",points.size());
+  unsigned long i;
+  
+  for (i=0; i<points.size(); i++)
+  {
+    fprintf (f,"%f %f %f ", points[i].x, points[i].y,
+               points[i].z);
+    fprintf (f,"\n");
+  }
+  
+  fprintf(f,"VERTICES %ld %ld\n", points.size(), 2*points.size());
+  for (i=0; i<points.size(); i++)
+    fprintf(f,"1 %ld\n", i);
+    
+  ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
+  
+  fprintf(f,"\nPOLYGONS %d %d\n", nr_tr, 4*nr_tr);
+  for (int i=0; i<nr_tr; i++)
+  {
+    if ((unsigned long)triangles[i].a >= points.size() || triangles[i].a < 0 || isnan(triangles[i].a))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, points.size());
+    else if ((unsigned long)triangles[i].b >= points.size() || triangles[i].b < 0 || isnan(triangles[i].b))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, points.size());
+    else if ((unsigned long)triangles[i].c >= points.size() || triangles[i].c < 0 || isnan(triangles[i].c))
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, points.size());
+    else if (triangles[i].a == triangles[i].b || triangles[i].a == triangles[i].c || triangles[i].b == triangles[i].c)
+      ;//printf("triangle %d/%d: %d %d %d / %d\n", i, nr_tr, triangles[i].a, triangles[i].b, triangles[i].c, points.size());
+    else
+      fprintf(f,"3 %d %d %d\n",triangles[i].a, triangles[i].c, triangles[i].b);
+  }
+}
+
 namespace positionstring_rviz_plugin
 {
 
@@ -146,27 +189,30 @@ void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh:
     Ogre::MeshManager::getSingleton().unload ("triangularmesh");
     Ogre::MeshManager::getSingleton().remove ("triangularmesh");
   }
-
+//  std::vector<triangle> triangles;
+//  for (unsigned int i = 0; i < msg->triangles.size(); i++)
+//  {
+//    triangle tr;
+//    tr.a = msg->triangles[i].i;
+//    tr.b = msg->triangles[i].j;
+//    tr.c = msg->triangles[i].k;
+//    triangles.push_back (tr);
+//  }
+//  write_vtk_file("output.vtk", triangles, msg->points, triangles.size());
   mesh_ = Ogre::MeshManager::getSingleton().createManual ("triangularmesh", "General");
   submesh_ = mesh_->createSubMesh();
 
-ROS_INFO ("a %i", __LINE__);
   // We first create a VertexData
   data = new Ogre::VertexData();
-ROS_INFO ("a %i", __LINE__);
   // Then, we link it to our Mesh/SubMesh :
   mesh_->sharedVertexData = data;
   // submesh_->useSharedVertices = false; // This value is 'true' by default
-ROS_INFO ("a %i", __LINE__);
   // submesh_->vertexData = data;
   // We have to provide the number of verteices we'll put into this Mesh/SubMesh
   data->vertexCount = msg->points.size();
-ROS_INFO ("a %i", __LINE__);
   // Then we can create our VertexDeclaration
   Ogre::VertexDeclaration* decl = data->vertexDeclaration;
-ROS_INFO ("a %i", __LINE__);
   decl->addElement (0,0, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
-ROS_INFO ("a %i", __LINE__);
   /** @todo: should add more elements, specifically normal vectors! */
   
   // create a vertex buffer
@@ -176,18 +222,14 @@ ROS_INFO ("a %i", __LINE__);
     Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY // Properties
   );
  
-ROS_INFO ("a %i", __LINE__);
   double min_x=FLT_MAX,  min_y=FLT_MAX,  min_z=FLT_MAX;
   double max_x=-FLT_MAX, max_y=-FLT_MAX, max_z=-FLT_MAX;
   float* array = (float*) malloc (sizeof(float)*3*msg->points.size());
-ROS_INFO ("a %i", __LINE__);
   for (unsigned int i = 0; i < msg->points.size(); i++)
   {
-ROS_INFO ("a %i", __LINE__);
     array[i*3+0] = msg->points[i].x;
     array[i*3+1] = msg->points[i].y;
     array[i*3+2] = msg->points[i].z;
-ROS_INFO ("a %i", __LINE__);
     if (msg->points[i].x < min_x) min_x = msg->points[i].x;
     if (msg->points[i].y < min_y) min_y = msg->points[i].y;
     if (msg->points[i].z < min_z) min_z = msg->points[i].z;
@@ -195,7 +237,7 @@ ROS_INFO ("a %i", __LINE__);
     if (msg->points[i].y > max_y) max_y = msg->points[i].y;
     if (msg->points[i].z > max_z) max_z = msg->points[i].z;
   }
-ROS_INFO ("a %i", __LINE__);
+ROS_INFO ("a %i: %f, %f, %f, %f, %f, %f", __LINE__, min_x, min_y, min_z, max_x, max_y, max_z);
   
   vbuf->writeData (0, vbuf->getSizeInBytes(), array, true); 
   free (array);
@@ -203,41 +245,45 @@ ROS_INFO ("a %i", __LINE__);
   Ogre::VertexBufferBinding* bind = data->vertexBufferBinding;
   bind->setBinding (0, vbuf);
   
+  bool back_face_duplicate = true;
+  int stride = 3;  
+  if (back_face_duplicate)
+    stride = 6;
+
   // create index buffer
   ibuf = Ogre::HardwareBufferManager::getSingleton().createIndexBuffer(
-    Ogre::HardwareIndexBuffer::IT_16BIT,        // You can use several different value types here
-    msg->triangles.size()*3,                    // The number of indices you'll put in that buffer
+    Ogre::HardwareIndexBuffer::IT_32BIT,        // You can use several different value types here
+    msg->triangles.size()*stride,                    // The number of indices you'll put in that buffer
     Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY // Properties
   );
   
-ROS_INFO ("a %i", __LINE__);
   submesh_->indexData->indexBuffer = ibuf;     // The pointer to the index buffer
-  submesh_->indexData->indexCount = msg->triangles.size()*3*2; // The number of indices we'll use
+
+  submesh_->indexData->indexCount = msg->triangles.size()*stride; // The number of indices we'll use
   submesh_->indexData->indexStart = 0;
 
-ROS_INFO ("a %i", __LINE__);
-  unsigned short *index = (unsigned short*) malloc (sizeof(unsigned short)*3*msg->triangles.size()*2);
+  unsigned int *index;
+  index = (unsigned int*) malloc (sizeof(unsigned int)*stride*msg->triangles.size());
   for (unsigned int i = 0; i < msg->triangles.size(); i++)
   {
-ROS_INFO ("a %i", __LINE__);
-    index[i*6+0] = msg->triangles[i].i.data;
-    index[i*6+1] = msg->triangles[i].j.data;
-    index[i*6+2] = msg->triangles[i].k.data;
-    index[i*6+3] = msg->triangles[i].i.data;
-    index[i*6+4] = msg->triangles[i].k.data;
-    index[i*6+5] = msg->triangles[i].j.data;
+    index[i*stride+0] = msg->triangles[i].i;
+    index[i*stride+1] = msg->triangles[i].j;
+    index[i*stride+2] = msg->triangles[i].k;
+    if (back_face_duplicate)
+    {
+      index[i*stride+3] = msg->triangles[i].i;
+      index[i*stride+4] = msg->triangles[i].k;
+      index[i*stride+5] = msg->triangles[i].j;
+    }
   }
 
-ROS_INFO ("a %i", __LINE__);
   ibuf->writeData (0, ibuf->getSizeInBytes(), index, true); 
   free (index);
  
   mesh_->_setBounds (Ogre::AxisAlignedBox (min_x, min_y, min_z, max_x, max_y, max_z));
-ROS_INFO ("a %i", __LINE__);
   mesh_->_setBoundingSphereRadius (std::max(max_x-min_x, std::max(max_y-min_y, max_z-min_z))/2.0f);
 
   mesh_->load ();
-ROS_INFO ("a %i", __LINE__);
 
 //  MaterialPtr material = MaterialManager::getSingleton().create(
 //    "Test/ColourTest", ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
@@ -246,20 +292,10 @@ ROS_INFO ("a %i", __LINE__);
   std::stringstream ss;
   ss << "tm" << count;
   entity_ = scene_manager_->createEntity(ss.str(), "triangularmesh");
-
-ROS_INFO ("a %i", __LINE__);
-  //thisEntity->setMaterialName("Test/ColourTest");
-//  scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
-//ROS_INFO ("a %i", __LINE__);
-//  thisSceneNode->setPosition(0, 0, 0);
-ROS_INFO ("a %i", __LINE__);
   scene_node_->attachObject(entity_);
-ROS_INFO ("a %i", __LINE__);
 
-/////////////////////////////////
-//  text_->setCaption (msg->text);
-//  text_->setColor (Ogre::ColourValue(color_.r_, color_.g_, color_.b_));
-  tf::Stamped<tf::Pose> pose(btTransform(btQuaternion(1.0f, 0.0f, 0.0f, 0.0f),
+  // finally, make sure we get everything in RVIZ's coordinate system
+  tf::Stamped<tf::Pose> pose(btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f),
       btVector3(0, 0, 0)), msg->header.stamp,
       msg->header.frame_id);
 
@@ -275,10 +311,14 @@ ROS_INFO ("a %i", __LINE__);
 
   Ogre::Vector3 position = Ogre::Vector3(pose.getOrigin().x(),
       pose.getOrigin().y(), pose.getOrigin().z());
+  
+  Ogre::Quaternion orientation = Ogre::Quaternion (pose.getRotation().w(), pose.getRotation().x(), pose.getRotation().y(), pose.getRotation().z()); 
 
   rviz::robotToOgre(position);
+  rviz::robotToOgre(orientation);
 
-  scene_node_->setPosition(position);
+  scene_node_->setOrientation (orientation);
+  scene_node_->setPosition (position);
 
 ///////////////////////////////////
 }

@@ -105,7 +105,7 @@ class DepthImageTriangulation : public CloudAlgo
   {
     max_length = 0.05;
     max_index_ = max_line_ = 0;
-    write_to_vtk_ = false;
+    write_to_vtk_ = true;
     save_pcd_ = false;
     line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
