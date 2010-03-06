@@ -11,7 +11,7 @@
  <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
    <param name="input_cloud_topic" value="/mls_fit_node/cloud_mls"/>
    <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
-   <param name="continous" type="bool" value="true"/>
+   <param name="nr_saved_pcds" type="int" value="0"/>
  </node>
 -->
 
