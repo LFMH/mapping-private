@@ -51,7 +51,7 @@ class SVMClassification : public CloudAlgo
     {return std::string ("svm_classification_node");};
 
   // Algorithm methods
-  void init (ros::NodeHandle&);
+  void init (ros::NodeHandle& nh);
   void pre ();
   void post ();
   std::vector<std::string> requires  ();
@@ -62,9 +62,12 @@ class SVMClassification : public CloudAlgo
   // Constructor-Destructor
   SVMClassification () : CloudAlgo ()
   {
-    model_file_name_ = std::string ("svm/fpfh.model");
-    //scale_file_name_ = std::string ("svm/fpfh.scp");
-    scale_file_name_ = std::string ("svm/teapot_smooth_fpfh.scp");
+    
+    // model_file_name_ = std::string ("svm/fpfh.model");
+    // scale_file_name_ = std::string ("svm/fpfh.scp");
+    //scale_file_name_ = std::string ("svm/teapot_smooth_fpfh.scp");
+    nh_.param ("/" + default_node_name() + "/model_file_name", model_file_name_, std::string("svm/fpfh.model"));
+    nh_.param ("/" + default_node_name() + "/scale_file_name", scale_file_name_, std::string("svm/teapot_smooth_fpfh.scp"));
     scale_self_ = false;
     scale_file_ = true; // gets considered only if scale_self is false
   }

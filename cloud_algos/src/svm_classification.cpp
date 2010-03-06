@@ -3,8 +3,9 @@
 
 using namespace cloud_algos;
 
-void SVMClassification::init (ros::NodeHandle&)
+void SVMClassification::init (ros::NodeHandle& nh)
 {
+  //  nh_ = nh;
 }
 
 void SVMClassification::pre ()
