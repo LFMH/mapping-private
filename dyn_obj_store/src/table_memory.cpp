@@ -627,7 +627,8 @@ class TableMemory
       //if (table_reconstruct_clusters_client_.exists ())
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
-        std::vector<std::string> pre_rot = alg_rot_est->pre ();
+        //std::vector<std::string> pre_rot =
+        alg_rot_est->pre ();
         
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
@@ -640,7 +641,8 @@ class TableMemory
 
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
           // call MLS
-          std::vector<std::string> pre_mls = alg_mls->pre ();
+          //std::vector<std::string> pre_mls = alg_mls->pre ();
+          alg_mls->pre ();
           std::cerr << "[reconstruct_table_objects] Calling MLS with a PCD with " << 
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process  
@@ -660,7 +662,8 @@ class TableMemory
                       (((RotationalEstimation*)alg_rot_est)->default_output_topic (), 5);
           pub_rot.publish (((RotationalEstimation*)alg_rot_est)->output ());
         }
-        std::vector<std::string> post_rot = alg_rot_est->post ();
+        //std::vector<std::string> post_rot = alg_rot_est->post ();
+        alg_rot_est->post ();
       }
     }
 
