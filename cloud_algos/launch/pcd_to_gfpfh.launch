@@ -1,16 +1,61 @@
 <launch>
-
+  <param name="global_frame_id" value="/base_link" />	
 <!--publish a point cloud to "cloud_pcd" topic, REPLACE this to work on the data from real robot-->
 <!--output: cloud_pcd -->
-<node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
-      args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/cup_handle_front_1267025929.541979.pcd) $(optenv period 5)" />
+<!-- <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
+<!--       args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/cup_handle_front_1267025929.541979.pcd) $(optenv period 5)" /> -->
+
+<!--publish multiple point clouds to "cloud_pcd" topic-->
+<!--output: cloud_pcd -->
+<node pkg="player_log_actarray" type="multi_pcd_to_msg" name="multi_pcd_to_msg_node" output="screen" respawn="true"
+      args="$(optenv pcds_dir /home/pangerci/work/iros_cad/hokuyo/) $(optenv period 10)">
+  <param name="pcd_name_position_param" type="string" value="1.5 0.0 0.5" />
+  <param name="output_cluster_name_topic" type="string" value="cluster_names" />
+</node>
+
+
+
+<!-- Box Filter, cuts out the box part of the pointcloud -->
+<!--input: /multi_pcd_to_msg_node/cloud_pcd -->
+<!--output: /shoulder_cloud_clipped -->
+<node pkg="dyn_obj_store" type="box_filter" name="box_filter" output="screen">
+  <!--<param name="input_cloud_topic" value="/cloud_pcd_normals" />-->
+  <param name="input_cloud_topic" value="/multi_pcd_to_msg_node/cloud_pcd" />
+  <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
+  <param name="box_min_x" value="0.0" />
+  <param name="box_max_x" value="1.3" />
+  <param name="box_min_y" value="-1.0" />
+  <param name="box_max_y" value="1.0" />
+  <param name="box_min_z" value="-0.5" />
+  <param name="box_max_z" value="0.5" />
+</node>
+
+
+
+<!-- Table Object Detector (passive version) -->
+<!--input: /shoulder_cloud_clipped -->
+<!--output: 
+    /table_with_objects -  
+    /table_object_detector_passive/cloud_annotated - clusters
+    /table_object_detector_passive/semantic_polygonal_map - table polygon
+-->
+<node pkg="dyn_obj_store" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen">
+  <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
+  <param name="table_delta_z" value="0.02" />
+  <param name="output_table_topic" value="/table_with_objects" />
+  <param name="sac_distance_threshold" value="0.015" />
+  <param name="normal_eps_angle" value="5" />
+  <param name="table_min_height" value="-1.0" />
+  <param name="table_delta_z" value="0.01" />
+</node>
+
 
 
 <!--Moving Least Squares, performs smoothing of the data-->
-<!--input: cloud_pcd -->
+<!--input: /table_object_detector_passive/cloud_annotated -->
 <!--output: /mls_fit_node/cloud_mls -->
 <node pkg="cloud_algos" type="mls_fit_node" name="mls_fit_node" output="screen" respawn="true">
-  <remap from="~cloud_pcd" to="cloud_pcd" />
+  <remap from="~cloud_pcd" to="/table_object_detector_passive/cloud_annotated" />
 </node>
 
 
@@ -25,11 +70,11 @@
 <!--Support Vector Machine Classifier-->
 <!--intput:  /pfh_node/cloud_pfh  -->
 <!--output: /svm_classification_node/cloud_svm -->
-<!--
-    <node pkg="cloud_algos" type="svm_classification_node" name="svm_classification_node" output="screen" respawn="true">
-      <remap from="~cloud_pcd" to="/pfh_node/cloud_pfh" />
-    </node>
--->
+<node pkg="cloud_algos" type="svm_classification_node" name="svm_classification_node" output="screen" respawn="true">
+  <remap from="~cloud_pcd" to="/pfh_node/cloud_pfh" />
+  <param name="model_file_name" type="string" value="$(find cloud_algos)/svm/fpfh.model"/>
+  <param name="scale_file_name" type="string" value="$(find cloud_algos)/svm/teapot_smooth_fpfh.scp"/>
+</node>
 
 
 <!--Global Fast Point Feature Classifier-->
@@ -42,12 +87,11 @@
 -->
 
 
-<!--dump output of svm classifiers-->
-<!-- 
-     <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
-       <param name="input_cloud_topic" value="/svm_classification_node/cloud_svm"/>
-       <param name="dir" value="$(env HOME)/work/gfpfh/"/>
-       <param name="nr_saved_pcds" type="int" value="1"/>
-     </node>
--->
+<!--dump output of svm classifier-->
+<node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+  <param name="input_cloud_topic" value="/svm_classification_node/cloud_svm"/>
+  <param name="dir" value="$(env HOME)/work/gfpfh/pfh/"/>
+  <param name="nr_saved_pcds" type="int" value="1"/>
+  <param name="get_name_from_param_server" type="string" value="/multi_pcd_to_msg_node/export_pcd_name"/>
+</node>
 </launch>
