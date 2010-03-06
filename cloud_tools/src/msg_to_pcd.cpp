@@ -6,13 +6,15 @@
 #include <point_cloud_mapping/cloud_io.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/format.hpp>
-
+#include <ros/ros.h>
 class MsgToPCD
 {
   protected:
     ros::NodeHandle nh_;
     //dir_ - destination folder for pcds
     std::string input_cloud_topic_, dir_;
+    //check if there is someone exporting the name for our pcd
+    std::string get_name_from_param_server_;
     ros::Subscriber cloud_sub_;
     int counter_;
     //for continous saving of pcds
@@ -30,6 +32,7 @@ class MsgToPCD
       nh_.param ("name", name_, std::string("cloud"));
       nh_.param ("dir", dir_, std::string(""));       
       nh_.param ("nr_saved_pcds", nr_saved_pcds_, 0);   
+      nh_.param ("get_name_from_param_server", get_name_from_param_server_, std::string(""));
       if(debug_)
       ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);
@@ -41,6 +44,11 @@ class MsgToPCD
       //std::ostringstream filename;
       //filename << dir_ << "cloud_" << time (NULL) << "_" << getpid () << ".pcd";
       //filename << dir_ << "cloud_" <<  << ".pcd";
+      if(get_name_from_param_server_ != "")
+      {
+        ros::param::get(get_name_from_param_server_, name_);
+        std::cerr << "name: " << name_ << std::endl;
+      }
       filename_format_.parse(name_ + std::string("_%f.pcd"));
       std::string filename = dir_ + (filename_format_ %  ros::Time::now().toSec()).str();
       if(debug_)
