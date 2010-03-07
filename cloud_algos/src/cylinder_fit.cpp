@@ -69,7 +69,7 @@ class CylinderFit
   sensor_msgs::PointCloud points_rotated_;
   SACModel *model_;
   SAC *sac_;
-  std::string cloud_topic_, cylinder_topic_, marker_topic_;
+  std::string input_cloud_topic_, output_cylinder_topic_;
   ///////////////////////////////////////////////////////////////////////////////
   /**
    * \brief Contructor
@@ -77,15 +77,13 @@ class CylinderFit
   CylinderFit(ros::NodeHandle &n) :
     n_(n)
   {
-    cloud_topic_ = "/cloud_pcd";
-    cylinder_topic_ = "cylinder";
-    marker_topic_ = "";
-    cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(cylinder_topic_ ,1);
+    n_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
+    n_.param("output_cylinder_topic", output_cylinder_topic_, std::string("cylinder"));
+    std::cerr << input_cloud_topic_ << std::endl;
+    cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(output_cylinder_topic_ ,1);
     vis_pub = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     //use either next 2 or the 3rd line
-    //create_point_cloud();
-    //cloud_pub_ = n_.advertise<sensor_msgs::PointCloud>(cloud_topic_, 1);
-    clusters_sub_ = n_.subscribe (cloud_topic_, 1, &CylinderFit::cloud_cb, this);
+    clusters_sub_ = n_.subscribe (input_cloud_topic_, 1, &CylinderFit::cloud_cb, this);
     model_ = new SACModelCylinder ();
     sac_ = new RANSAC (model_, 0.001);
     nx_ = ny_ = nz_ = -1;
@@ -113,7 +111,7 @@ class CylinderFit
    */
   void cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
   {
-    ROS_INFO ("PointCloud message received on %s with %d points.", cloud_topic_.c_str (), (int)cloud->points.size ());
+    ROS_INFO ("PointCloud message received on %s with %d points.", input_cloud_topic_.c_str (), (int)cloud->points.size ());
     points_ = *cloud;
 
     //note, you also have to set axis_
@@ -257,7 +255,7 @@ class CylinderFit
         //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
         cylinder_points_.channels[0].name = "intensities";
         cylinder_pub_.publish (cylinder_points_);
-        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (cylinder_topic_).c_str (), 
+        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (output_cylinder_topic_).c_str (), 
                   cylinder_points_.points.size());
       }
     }
@@ -346,66 +344,6 @@ class CylinderFit
     return true;
   }
 
-    ////////////////////////////////////////////////////////////////////////////////
-  /**
-   * \brief creates a mini circle pointcloud
-   */
-  void create_point_cloud()
-  {
-    points_.header.frame_id = "/base_link";
-    points_.points.resize (20);
-    
-    points_.set_channels_size (3);
-    points_.channels[0].name = "nx";
-    points_.channels[1].name = "ny";
-    points_.channels[2].name = "nz";
-    points_.channels[0].values.resize (points_.points.size ());
-    points_.channels[1].values.resize (points_.points.size ());
-    points_.channels[2].values.resize (points_.points.size ());
-    
-    points_.points[0].x = -0.499902; points_.points[0].y = 2.199701; points_.points[0].z = 0.000008;
-    points_.points[1].x = -0.875397; points_.points[1].y = 2.030177; points_.points[1].z = 0.050104;
-    points_.points[2].x = -0.995875; points_.points[2].y = 1.635973; points_.points[2].z = 0.099846;
-    points_.points[3].x = -0.779523; points_.points[3].y = 1.285527; points_.points[3].z = 0.149961;
-    points_.points[4].x = -0.373285; points_.points[4].y = 1.216488; points_.points[4].z = 0.199959;
-    points_.points[5].x = -0.052893; points_.points[5].y = 1.475973; points_.points[5].z = 0.250101;
-    points_.points[6].x = -0.036558; points_.points[6].y = 1.887591; points_.points[6].z = 0.299839;
-    points_.points[7].x = -0.335048; points_.points[7].y = 2.171994; points_.points[7].z = 0.350001;
-    points_.points[8].x = -0.745456; points_.points[8].y = 2.135528; points_.points[8].z = 0.400072;
-    points_.points[9].x = -0.989282; points_.points[9].y = 1.803311; points_.points[9].z = 0.449983;
-    points_.points[10].x = -0.900651; points_.points[10].y = 1.400701; points_.points[10].z = 0.500126;
-    points_.points[11].x = -0.539658; points_.points[11].y = 1.201468; points_.points[11].z = 0.550079;
-    points_.points[12].x = -0.151875; points_.points[12].y = 1.340951; points_.points[12].z = 0.599983;
-    points_.points[13].x = -0.000724; points_.points[13].y = 1.724373; points_.points[13].z = 0.649882;
-    points_.points[14].x = -0.188573; points_.points[14].y = 2.090983; points_.points[14].z = 0.699854;
-    points_.points[15].x = -0.587925; points_.points[15].y = 2.192257; points_.points[15].z = 0.749956;
-    points_.points[16].x = -0.927724; points_.points[16].y = 1.958846; points_.points[16].z = 0.800008;
-    points_.points[17].x = -0.976888; points_.points[17].y = 1.549655; points_.points[17].z = 0.849970;
-    points_.points[18].x = -0.702003; points_.points[18].y = 1.242707; points_.points[18].z = 0.899954;
-    points_.points[19].x = -0.289916; points_.points[19].y = 1.246296; points_.points[19].z = 0.950075;
-    
-    points_.channels[0].values[0] = 0.000098;  points_.channels[1].values[0] = 1.000098;  points_.channels[2].values[0] = 0.000008;
-    points_.channels[0].values[1] = -0.750891; points_.channels[1].values[1] = 0.660413;  points_.channels[2].values[1] = 0.000104;
-    points_.channels[0].values[2] = -0.991765; points_.channels[1].values[2] = -0.127949; points_.channels[2].values[2] = -0.000154;
-    points_.channels[0].values[3] = -0.558918; points_.channels[1].values[3] = -0.829439; points_.channels[2].values[3] = -0.000039;
-    points_.channels[0].values[4] = 0.253627;  points_.channels[1].values[4] = -0.967447; points_.channels[2].values[4] = -0.000041;
-    points_.channels[0].values[5] = 0.894105;  points_.channels[1].values[5] = -0.447965; points_.channels[2].values[5] = 0.000101;
-    points_.channels[0].values[6] = 0.926852;  points_.channels[1].values[6] = 0.375543;  points_.channels[2].values[6] = -0.000161;
-    points_.channels[0].values[7] = 0.329948;  points_.channels[1].values[7] = 0.943941;  points_.channels[2].values[7] = 0.000001;
-    points_.channels[0].values[8] = -0.490966; points_.channels[1].values[8] = 0.871203;  points_.channels[2].values[8] = 0.000072;
-    points_.channels[0].values[9] = -0.978507; points_.channels[1].values[9] = 0.206425;  points_.channels[2].values[9] = -0.000017;
-    points_.channels[0].values[10] = -0.801227; points_.channels[1].values[10] = -0.598534; points_.channels[2].values[10] = 0.000126;
-    points_.channels[0].values[11] = -0.079447; points_.channels[1].values[11] = -0.996697; points_.channels[2].values[11] = 0.000079;
-    points_.channels[0].values[12] = 0.696154;  points_.channels[1].values[12] = -0.717889; points_.channels[2].values[12] = -0.000017;
-    points_.channels[0].values[13] = 0.998685;  points_.channels[1].values[13] = 0.048502;  points_.channels[2].values[13] = -0.000118;
-    points_.channels[0].values[14] = 0.622933;  points_.channels[1].values[14] = 0.782133;  points_.channels[2].values[14] = -0.000146;
-    points_.channels[0].values[15] = -0.175948; points_.channels[1].values[15] = 0.984480;  points_.channels[2].values[15] = -0.000044;
-    points_.channels[0].values[16] = -0.855476; points_.channels[1].values[16] = 0.517824;  points_.channels[2].values[16] = 0.000008;
-    points_.channels[0].values[17] = -0.953769; points_.channels[1].values[17] = -0.300571; points_.channels[2].values[17] = -0.000030;
-    points_.channels[0].values[18] = -0.404035; points_.channels[1].values[18] = -0.914700; points_.channels[2].values[18] = -0.000046;
-    points_.channels[0].values[19] = 0.420154;  points_.channels[1].values[19] = -0.907445; points_.channels[2].values[19] = 0.000075;
-  }
-
   protected:
   ros::NodeHandle n_;
   ros::Publisher cloud_pub_;
@@ -433,7 +371,7 @@ int
 main (int argc, char** argv)
 {
   ros::init(argc, argv, "cylinder_fit");
-  ros::NodeHandle n;
+  ros::NodeHandle n("~");
   CylinderFit c(n);
   c.spin();
   return 0;

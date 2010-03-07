@@ -1,7 +1,9 @@
 <launch>
-  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
-	args="$(find cloud_algos)/data/cylinder_small.pcd $(optenv time_pcd 5)" />
+<!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
+<!-- 	args="$(find cloud_algos)/data/cylinder_small.pcd $(optenv time_pcd 5)" /> -->
 
   <node pkg="cloud_algos" type="cylinder_fit_node" name="cylinder_fit_node" output="screen" respawn="true">
+    <param  name="input_cloud_topic" type="string" value="/table_object_detector_passive/cloud_annotated"/>
+    <param  name="output_cylinder_topic" type="string" value="cylinder"/>
   </node>
 </launch>
