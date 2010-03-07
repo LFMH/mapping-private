@@ -10,7 +10,7 @@ using namespace cloud_algos;
 
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
-                         int max_iterations_, boost::shared_ptr<sensor_msgs::PointCloud> cloud_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text)
+                         int max_iterations_, boost::shared_ptr<ias_table_msgs::TriangularMesh> mesh_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text, std::vector<int> final_inliers, std::vector<int> final_outliers)
 {
   int debug = 2;
   ias_sample_consensus::SACModelRotational *sac_model_ = new ias_sample_consensus::SACModelRotational (pmap);
@@ -113,7 +113,18 @@ void
   {
     std::cerr << "before" <<std::endl;
     //cloud_geometry::getPointCloud (cloud, best_inliers, *cloud_synth);
-    sac_model_->samplePointsOnRotational (best_coeffs, best_inliers, cloud_synth);
+    sac_model_->samplePointsOnRotational (best_coeffs, best_inliers, mesh_synth);
+    
+    final_inliers = best_inliers;    
+    int last_index = 0;
+    for (std::vector<int>::iterator it = best_inliers.begin(); it != best_inliers.end(); it++)
+    {
+      if ((*it) - last_index > 1) // we skipped something
+        for (int skipped = last_index + 1; skipped < (*it); skipped++)
+          final_outliers.push_back (skipped);
+      last_index = *it;
+    }
+ 
     std::stringstream ss;
     ss << best_inliers.size() << " inliers";
     vis_text->texts.push_back (ss.str());
@@ -176,14 +187,16 @@ std::vector<std::string> RotationalEstimation::provides ()
 
 std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> cloud)
 {
+  cloud_ = cloud;
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   double threshold_ = 0.004;
   double probability_ = 1-1e-10;
   int max_iterations_ = 1000;
   
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, vis_cloud_, vis_pmap_, vis_text_);
   
+  findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, mesh_, vis_pmap_, vis_text_, inliers_, outliers_);
+
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   vis_pmap_->header.frame_id = cloud->header.frame_id;
   vis_cloud_->header.frame_id = cloud->header.frame_id;
@@ -192,8 +205,28 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   return std::string("ok");
 }
 
-RotationalEstimation::OutputType RotationalEstimation::output ()
-  {return OutputType();}
+boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getOutliers ()
+{
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->header = cloud_->header;
+  for (unsigned int i = 0; i < outliers_.size (); i++)
+    ret->points.push_back (cloud_->points.at (outliers_.at (i)));
+  return ret;
+}
+
+boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getInliers ()
+{
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->header = cloud_->header;
+  for (unsigned int i = 0; i < inliers_.size (); i++)
+    ret->points.push_back (cloud_->points.at (inliers_.at (i)));
+  return ret;
+}
+
+boost::shared_ptr<RotationalEstimation::OutputType> RotationalEstimation::output ()
+{
+  return mesh_;
+}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])

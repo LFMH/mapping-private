@@ -621,7 +621,7 @@ namespace ias_sample_consensus
   }
   
   void
-    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<sensor_msgs::PointCloud> ret)
+    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<ias_table_msgs::TriangularMesh> ret)
   {
     static int count = 0;
     count++;
@@ -664,6 +664,7 @@ namespace ias_sample_consensus
     
     double res_axial = 50.0;
     double res_radial = 30.0;
+    int cp = 0;
     for (int i = 0; i < res_axial; i++)
     {
       double X = i / res_axial;
@@ -716,6 +717,22 @@ namespace ias_sample_consensus
         p.z = q_0[2];
         
         ret->points.push_back (p);
+        if (i > 0) // not first line
+        {
+          if (j > 0)
+          {
+            ias_table_msgs::Triangle tr;
+            tr.i = cp - res_radial - 1;
+            tr.j = cp - res_radial;
+            tr.k = cp;
+            ret->triangles.push_back (tr);
+            tr.i = cp - res_radial - 1;
+            tr.j = cp;
+            tr.k = cp - 1;
+            ret->triangles.push_back (tr);
+          }
+        }
+        cp ++;
       }
     }
   }
