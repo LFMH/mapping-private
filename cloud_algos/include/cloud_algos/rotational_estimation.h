@@ -12,7 +12,9 @@ namespace cloud_algos
 class RotationalEstimation : public CloudAlgo
 {
  public:
-  RotationalEstimation () {};
+  RotationalEstimation () {
+    debug_ = 0;
+  };
   typedef ias_table_msgs::TriangularMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 
@@ -38,6 +40,7 @@ class RotationalEstimation : public CloudAlgo
  private: 
   boost::shared_ptr<mapping_msgs::PolygonalMap> vis_pmap_;
   boost::shared_ptr<sensor_msgs::PointCloud> vis_cloud_;
+  boost::shared_ptr<sensor_msgs::PointCloud> vis_cloud_outliers_;
   boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text_;
   
   boost::shared_ptr<OutputType> mesh_;
@@ -47,8 +50,11 @@ class RotationalEstimation : public CloudAlgo
 
   ros::NodeHandle nh_;
   ros::Publisher vis_cloud_pub_;
+  ros::Publisher vis_cloud_outliers_pub_;
   ros::Publisher vis_pmap_pub_;
   ros::Publisher vis_text_pub_;
+
+  int debug_;
 };
 
 }

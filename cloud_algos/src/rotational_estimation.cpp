@@ -10,11 +10,12 @@ using namespace cloud_algos;
 
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
-                         int max_iterations_, boost::shared_ptr<ias_table_msgs::TriangularMesh> mesh_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text, std::vector<int> final_inliers, std::vector<int> final_outliers)
+                         int max_iterations_, boost::shared_ptr<ias_table_msgs::TriangularMesh> mesh_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<ias_visualization_msgs::PositionStringList> vis_text, std::vector<int> &final_inliers, std::vector<int> &final_outliers)
 {
-  int debug = 2;
+  int debug = 0;
   ias_sample_consensus::SACModelRotational *sac_model_ = new ias_sample_consensus::SACModelRotational (pmap);
-  std::cerr << "[findRotationalObjects] got called with PCD with " << cloud.points.size () << " points" << std::endl;
+  if (debug > 0)
+    std::cerr << "[findRotationalObjects] got called with PCD with " << cloud.points.size () << " points" << std::endl;
   sac_model_->setDataSet (&cloud);
 
   int iterations_ = 0;
@@ -93,10 +94,13 @@ void
         //inliers.clear ();
         best_model = selection;
         best_coeffs = coeffs;
-        std::cerr << "BEST COEFFS: ";
+        if (debug > 0)
+          std::cerr << "BEST COEFFS: ";
         for (unsigned int i = 0; i < best_coeffs.size(); i++)
-          std::cerr << best_coeffs[i] << " "; 
-        std::cerr << std::endl;
+          if (debug > 0)
+            std::cerr << best_coeffs[i] << " "; 
+        if (debug > 0)
+          std::cerr << std::endl;
 
         // Compute the k parameter (k=log(z)/log(1-w^n))
         double w = (double)((double)n_inliers_count / (double)sac_model_->getIndices ()->size ());
@@ -107,11 +111,13 @@ void
       }
     }
   }
-  std::cerr << "[findRotationalObjects] finished after " << iterations_ << " iteration" << std::endl;
+  if (debug > 0)
+    std::cerr << "[findRotationalObjects] finished after " << iterations_ << " iteration" << std::endl;
 
   if (best_model.size () != 0)
   {
-    std::cerr << "before" <<std::endl;
+    if (debug > 0)
+      std::cerr << "before" <<std::endl;
     //cloud_geometry::getPointCloud (cloud, best_inliers, *cloud_synth);
     sac_model_->samplePointsOnRotational (best_coeffs, best_inliers, mesh_synth);
     
@@ -134,7 +140,8 @@ void
     p.z = best_coeffs[2];
     vis_text->poses.push_back (p);
     //double score = sac_model_->computeScore (best_coeffs, sample_consensus::getMinMaxK (cloud, best_coeffs, best_inliers) , best_inliers, cloud_synth, threshold_);
-    std::cerr << "after" <<std::endl;
+    if (debug > 0)
+      std::cerr << "after" <<std::endl;
     //if (debug > 0)
     //  std::cerr << "[RANSAC::computeModel] Model found: " << n_best_inliers_count << " inliers, score is: " << score << std::endl;
     sac_model_->setBestModel (best_model);
@@ -154,6 +161,7 @@ void RotationalEstimation::init (ros::NodeHandle &nh)
 {
   nh_ = nh;
   vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
+  vis_cloud_outliers_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects_outliers", 1);
   vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
   vis_text_pub_ = nh_.advertise <ias_visualization_msgs::PositionStringList> ("vis_rotational_objects_text", 1);
 }
@@ -164,6 +172,8 @@ void RotationalEstimation::pre ()
                            (new mapping_msgs::PolygonalMap ());
   vis_cloud_ = boost::shared_ptr<sensor_msgs::PointCloud> 
                            (new sensor_msgs::PointCloud ());
+  vis_cloud_outliers_ = boost::shared_ptr<sensor_msgs::PointCloud> 
+                           (new sensor_msgs::PointCloud ());
   vis_text_ = boost::shared_ptr<ias_visualization_msgs::PositionStringList> 
                            (new ias_visualization_msgs::PositionStringList ());
 }
@@ -173,6 +183,9 @@ void RotationalEstimation::post ()
   vis_pmap_pub_.publish (vis_pmap_);
   vis_cloud_pub_.publish (vis_cloud_);
   vis_text_pub_.publish (vis_text_);
+  //publish outliers
+  vis_cloud_outliers_ = getOutliers();
+  vis_cloud_outliers_pub_.publish(vis_cloud_outliers_);
 }
 
 std::vector<std::string> RotationalEstimation::requires () 
@@ -190,20 +203,22 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   cloud_ = cloud;
   mesh_ = boost::shared_ptr <ias_table_msgs::TriangularMesh>(new ias_table_msgs::TriangularMesh ());
   mesh_->header = cloud_->header;
-  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  if (debug_ > 0)
+    std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   double threshold_ = 0.004;
   double probability_ = 1-1e-10;
   int max_iterations_ = 1000;
-  
-  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  if (debug_ > 0)
+    std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   
   findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, mesh_, vis_pmap_, vis_text_, inliers_, outliers_);
-
-  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  if (debug_ > 0)
+    std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   vis_pmap_->header.frame_id = cloud->header.frame_id;
   vis_cloud_->header.frame_id = cloud->header.frame_id;
   vis_text_->header.frame_id = cloud->header.frame_id;
-  std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
+  if (debug_ > 0)
+    std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   return std::string("ok");
 }
 
@@ -211,6 +226,8 @@ boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getOutliers ()
 {
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
   ret->header = cloud_->header;
+  if (debug_ > 0)
+    ROS_INFO("outliers_.size(): %ld inliers.size() %ld", outliers_.size(), inliers_.size());
   for (unsigned int i = 0; i < outliers_.size (); i++)
     ret->points.push_back (cloud_->points.at (outliers_.at (i)));
   return ret;
