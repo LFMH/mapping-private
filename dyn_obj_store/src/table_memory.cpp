@@ -152,6 +152,7 @@ class TableMemory
     
     // plugin loader
     pluginlib::ClassLoader<CloudAlgo> *cl;
+    CloudAlgo * alg_triangulation;
     CloudAlgo * alg_rot_est;
     CloudAlgo * alg_mls;
  
@@ -544,6 +545,24 @@ class TableMemory
       {
         ROS_INFO("Failed to load library with plugin RotationalEstimation inside. Exception: %s", ex.what());
       }
+      
+      try
+      {
+        cl->loadLibraryForClass("DepthImageTriangulation");
+        ROS_INFO("Loaded library with plugin DepthImageTriangulation inside");
+      }
+      catch(pluginlib::PluginlibException &ex)
+      {
+        ROS_INFO("Failed to load library with plugin DepthImageTriangulation inside. Exception: %s", ex.what());
+      }
+    
+      if (cl->isClassLoaded("DepthImageTriangulation"))
+      {
+        ROS_INFO("Can create DepthImageTriangulation");
+        alg_triangulation = cl->createClassInstance("DepthImageTriangulation");
+        alg_triangulation->init (nh_);
+      }
+      else ROS_INFO("DepthImageTriangulation Class not loaded");
     
       if (cl->isClassLoaded("RotationalEstimation"))
       {
@@ -627,7 +646,7 @@ class TableMemory
       //if (table_reconstruct_clusters_client_.exists ())
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
-        std::vector<std::string> pre_rot = alg_rot_est->requires ();
+        alg_rot_est->pre ();
         
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
@@ -648,19 +667,32 @@ class TableMemory
           ROS_INFO("got response: %s", process_answer_mls.c_str ());
           ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType> 
                       (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
-          pub_mls.publish (((MovingLeastSquares*)alg_mls)->output ());
+          sensor_msgs::PointCloud mls_cloud_temp = (((MovingLeastSquares*)alg_mls)->output ());
+          boost::shared_ptr <sensor_msgs::PointCloud> mls_cloud (&mls_cloud_temp);
+          pub_mls.publish (mls_cloud);
 
           // call rotational estimation
           std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " << 
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process  
-                      (cluster);
+                      (mls_cloud);
           ROS_INFO("got response: %s", process_answer_rot.c_str ());
           ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType> 
                       (((RotationalEstimation*)alg_rot_est)->default_output_topic (), 5);
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((RotationalEstimation*)alg_rot_est)->getOutliers ();
           pub_rot.publish (((RotationalEstimation*)alg_rot_est)->output ());
+          
+          // call rotational estimation
+          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " << 
+                        rot_outliers->points.size () << " points." << std::endl;
+          std::string process_answer_tri = ((RotationalEstimation*)alg_rot_est)->process  
+                      (cluster);
+          ROS_INFO("got response: %s", process_answer_tri.c_str ());
+          ros::Publisher pub_tri = nh_.advertise <RotationalEstimation::OutputType> 
+                      (((RotationalEstimation*)alg_rot_est)->default_output_topic (), 5);
+          pub_tri.publish (((RotationalEstimation*)alg_rot_est)->output ());
         }
-        std::vector<std::string> post_rot = alg_rot_est->provides ();
+        alg_rot_est->post ();
       }
     }
 
