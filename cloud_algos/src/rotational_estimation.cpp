@@ -188,6 +188,8 @@ std::vector<std::string> RotationalEstimation::provides ()
 std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> cloud)
 {
   cloud_ = cloud;
+  mesh_ = boost::shared_ptr <ias_table_msgs::TriangularMesh>(new ias_table_msgs::TriangularMesh ());
+  mesh_->header = cloud_->header;
   std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   double threshold_ = 0.004;
   double probability_ = 1-1e-10;

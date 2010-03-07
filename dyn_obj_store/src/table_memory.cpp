@@ -745,13 +745,13 @@ class TableMemory
         update_table (table_found, table);
       }
       
+      publish_mem_state (table_found);
       name_table_objects (table_found);
       reconstruct_table_objects (table_found);
       update_table_instance_objects(table_found);
       //update_jlo (table_found);
       //call_cop (table_found);
       print_mem_stats (table_found);
-      publish_mem_state (table_found);
     }
 
     void

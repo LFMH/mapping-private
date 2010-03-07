@@ -621,7 +621,8 @@ namespace ias_sample_consensus
   }
   
   void
-    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<ias_table_msgs::TriangularMesh> ret)
+    SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, 
+                                                  boost::shared_ptr<ias_table_msgs::TriangularMesh> ret)
   {
     static int count = 0;
     count++;
@@ -700,7 +701,7 @@ namespace ias_sample_consensus
         z_axis[0] = 0;
         z_axis[1] = 0;
         z_axis[2] = 1;
-        cloud_geometry::transforms::convertAxisAngleToRotationMatrix (z_axis_vec, i+M_PI*2.0*((double)j)/res_radial, rotation2);
+        cloud_geometry::transforms::convertAxisAngleToRotationMatrix (z_axis_vec, M_PI*2.0*((double)j)/res_radial, rotation2);
         Eigen::Matrix4d transformation;
         cloud_geometry::transforms::getPlaneToPlaneTransformation (z_axis, axis_point,
             p1[0],
@@ -717,11 +718,11 @@ namespace ias_sample_consensus
         p.z = q_0[2];
         
         ret->points.push_back (p);
+        ias_table_msgs::Triangle tr;
         if (i > 0) // not first line
         {
           if (j > 0)
           {
-            ias_table_msgs::Triangle tr;
             tr.i = cp - res_radial - 1;
             tr.j = cp - res_radial;
             tr.k = cp;
@@ -729,6 +730,17 @@ namespace ias_sample_consensus
             tr.i = cp - res_radial - 1;
             tr.j = cp;
             tr.k = cp - 1;
+            ret->triangles.push_back (tr);
+          }
+          else
+          {
+            tr.i = cp - 1;
+            tr.j = cp - res_radial;
+            tr.k = cp;
+            ret->triangles.push_back (tr);
+            tr.i = cp - 1;
+            tr.j = cp;
+            tr.k = cp + res_radial - 1;
             ret->triangles.push_back (tr);
           }
         }
