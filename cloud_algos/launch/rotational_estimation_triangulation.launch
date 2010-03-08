@@ -13,14 +13,23 @@
   <param name="output_cloud_outliers" type="string" value="/depth_image_triangulation_node/cloud_pcd"/>
 </node>
 
+<!-- Point Cloud Triangulation Program -->
+<!--input: /depth_image_triangulation_node/cloud_pcd -->
+<!--output: /depth_image_triangulation_node/cloud_triangulated - resultant mesh
+-->
 <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true">
 </node>
-<!--
- <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
-   <param name="input_cloud_topic" value="/mls_fit_node/cloud_mls"/>
-   <param name="dir" value="$(env HOME)/work/datasets/TMP/"/>
-   <param name="nr_saved_pcds" type="int" value="0"/>
- </node>
--->
+
+
+<node pkg="cloud_tools" type="triangular_mesh_to_vtk" name="triangular_mesh_to_vtk_node" output="screen" respawn="true">
+  <param name="input_mesh_topic" type="string" value="mesh"/>
+  <param name="output_vtk_file" type="string" value="mesh.vtk"/>
+  <param name="nr_of_mesh_publishers" type="int" value="2"/>
+</node>
+
+
+
+<node pkg="topic_tools" type="relay" name="relay_rotational_estimation" args="/rotational_estimation_node/cloud_normals /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/>
+<node pkg="topic_tools" type="relay" name="relay_depth_image_triangulation" args="/depth_image_triangulation_node/cloud_triangulated /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/>
 
 </launch>
