@@ -51,13 +51,13 @@ class DepthImageTriangulation : public CloudAlgo
   // Topic name to advertise
   static std::string default_output_topic ()
   {
-    return std::string ("/cloud_triangulated");
+    return std::string ("cloud_triangulated");
   }
   
   // Topic name to subscribe to
   static std::string default_input_topic ()
     {
-      return std::string ("/cloud_pcd");
+      return std::string ("cloud_pcd");
     }
 
   // Node name
@@ -105,7 +105,7 @@ class DepthImageTriangulation : public CloudAlgo
   {
     max_length = 0.05;
     max_index_ = max_line_ = 0;
-    write_to_vtk_ = true;
+    write_to_vtk_ = false;
     save_pcd_ = false;
     line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
