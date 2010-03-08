@@ -1,7 +1,7 @@
 <launch>
 
   <param name="/use_sim_time" value="false" />
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find inf9_robot_defs)/robots/kimp_tilting_laser.urdf.xml'"/>  
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find ias_robot_defs)/robots/kimp_tilting_laser.urdf.xml'"/>  
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" output="screen">
