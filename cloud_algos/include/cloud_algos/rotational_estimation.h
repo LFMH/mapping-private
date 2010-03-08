@@ -14,6 +14,8 @@ class RotationalEstimation : public CloudAlgo
  public:
   RotationalEstimation () {
     debug_ = 0;
+    nh_.param("/" + default_node_name() + "output_cloud_outliers", output_cloud_outliers_, 
+              std::string("vis_rotational_objects_outliers"));
   };
   typedef ias_table_msgs::TriangularMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
@@ -55,6 +57,7 @@ class RotationalEstimation : public CloudAlgo
   ros::Publisher vis_text_pub_;
 
   int debug_;
+  std::string output_cloud_outliers_;
 };
 
 }

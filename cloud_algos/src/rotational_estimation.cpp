@@ -161,7 +161,7 @@ void RotationalEstimation::init (ros::NodeHandle &nh)
 {
   nh_ = nh;
   vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
-  vis_cloud_outliers_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects_outliers", 1);
+  vis_cloud_outliers_pub_ = nh_.advertise <sensor_msgs::PointCloud> (output_cloud_outliers_, 1);
   vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
   vis_text_pub_ = nh_.advertise <ias_visualization_msgs::PositionStringList> ("vis_rotational_objects_text", 1);
 }
@@ -205,7 +205,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   mesh_->header = cloud_->header;
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  double threshold_ = 0.004;
+  double threshold_ = 0.0075;
   double probability_ = 1-1e-10;
   int max_iterations_ = 1000;
   if (debug_ > 0)
