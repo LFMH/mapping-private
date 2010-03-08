@@ -5,6 +5,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <mapping_msgs/PolygonalMap.h>
 #include <ias_sample_consensus/sac_model_rotational.h>
+#include <point_cloud_mapping/cloud_io.h>
 
 using namespace cloud_algos;
 
@@ -205,7 +206,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   mesh_->header = cloud_->header;
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  double threshold_ = 0.0075;
+  double threshold_ = 0.01;
   double probability_ = 1-1e-10;
   int max_iterations_ = 1000;
   if (debug_ > 0)
@@ -225,11 +226,21 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
 boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getOutliers ()
 {
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  sensor_msgs::PointCloud cloud_tmp = *cloud_;
   ret->header = cloud_->header;
+  int channel_index =  cloud_io::getIndex (cloud_tmp, "index");
+  int channel_line =  cloud_io::getIndex (cloud_tmp, "line");
+  ret->channels.resize(2);
+  ret->channels[0].name = cloud_->channels[channel_index].name;
+  ret->channels[1].name = cloud_->channels[channel_line].name;
   if (debug_ > 0)
     ROS_INFO("outliers_.size(): %ld inliers.size() %ld", outliers_.size(), inliers_.size());
   for (unsigned int i = 0; i < outliers_.size (); i++)
+  {
     ret->points.push_back (cloud_->points.at (outliers_.at (i)));
+    ret->channels[0].values.push_back (cloud_->channels[channel_index].values.at (outliers_.at (i)));
+    ret->channels[1].values.push_back (cloud_->channels[channel_line].values.at (outliers_.at (i)));
+  }
   return ret;
 }
 
