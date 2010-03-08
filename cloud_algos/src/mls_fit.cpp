@@ -105,7 +105,12 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   clear ();
   nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
 
+  // Defines for experiments, should work with all commented
+  //#define PARALLEL
+  //#define PARTIAL_TIMES
   //#define GLOBAL
+  //#define INVERSE
+
   #ifdef GLOBAL
   // allocating space for "global" matrices - TODO here?
   //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
@@ -250,9 +255,11 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   /// TODO #pragma omp parallel for schedule(dynamic) and boost::mutex m_lock_; .lock () / .unlock ()
   ///      which combination of parallelism/global variables is best?
   #ifndef PARALLEL
+  #ifdef INVERSE
   int zero_determinant = 0, not_inverse = 0;
-  int k_min = max_nn_, k_max = 0, not_enough_nn = 0, nr_orthogonal = 0;
   double max_bad_det = 0.0, min_good_det = 0.01;
+  #endif
+  int k_min = max_nn_, k_max = 0, not_enough_nn = 0, nr_orthogonal = 0;
   #else
   #pragma omp parallel for schedule(dynamic)
   #endif
@@ -325,6 +332,18 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       ts_tmp = ros::Time::now ();
       #endif
 
+      // update neighborhood, since point was projected
+      //kdtree_->radiusSearch (cloud_fit_->points[cp], radius_, points_indices_[cp], points_sqr_distances_[cp], max_nn_);
+      //k = points_indices_.size ();
+      /// TODO: previous has a bug... and:
+      /// @NOTE: updating only distances for the weights right now, for speed
+      for (size_t ni = 0; ni < points_indices_[cp].size (); ni++)
+      {
+        points_sqr_distances_[cp][ni] = (cloud->points[cp].x - cloud_fit_->points[cp].x) * (cloud->points[cp].x - cloud_fit_->points[cp].x)
+                                      + (cloud->points[cp].y - cloud_fit_->points[cp].y) * (cloud->points[cp].y - cloud_fit_->points[cp].y)
+                                      + (cloud->points[cp].z - cloud_fit_->points[cp].z) * (cloud->points[cp].z - cloud_fit_->points[cp].z);
+      }
+
       //#ifdef PARALELL
       #ifndef GLOBAL
       //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (k, k);
@@ -334,18 +353,20 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       Eigen::VectorXd c_vec_; //(nr_coeff_);
       Eigen::MatrixXd P_weight_; //(nr_coeff_, k);
       Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
+      #ifdef INVERSE
       Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
+      #endif
       //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, k);
       /*//weight_ = Eigen::MatrixXd::Zero (k, k);
       weight_vec_.resize (k);
       P_.resize (nr_coeff_, k);
       f_vec_.resize (k);
       P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
-      inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);*/
+      #ifdef INVERSE
+      inv_P_weight_Pt_.resize (nr_coeff_, nr_coeff_);
       #endif
-
-      // update neighborhood, since point was projected
-      /// TODO: leaving this out, as it is not as important
+      */
+      #endif
 
       // get local coordinate system (Darboux frame)
       Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
@@ -356,7 +377,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       // go through neighbors, transform them in the local coordinate system, save height and the evaluation of the polynome's terms
       Eigen::Vector3d de_meaned;
       double u_coord, v_coord, u_pow, v_pow;
-      for (size_t i = 0; i != points_indices_[cp].size (); i++)
+      for (size_t i = 0; i < points_indices_[cp].size (); i++)
       {
         // (re-)compute weights
         weight_vec_(i) = THETA(cp,i);
@@ -403,6 +424,13 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
       #endif
 
+      // Solve LEQ - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
+      #ifndef INVERSE
+      c_vec_ = P_weight_ * f_vec_;
+      P_weight_Pt_.llt().solveInPlace(c_vec_);
+      #endif
+
+      #ifdef INVERSE
       //if (cp < 10)
       //  cerr << P_weight_Pt_.determinant () << " ";
 
@@ -458,6 +486,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           #else
           c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
           #endif
+        #endif
 
           //if (cp < 10)
           //  cerr << "coefficients: " << c_vec_.transpose () << endl;
@@ -574,8 +603,11 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           #ifdef PARTIAL_TIMES
           sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
           #endif
+
+      #ifdef INVERSE
         } // inverse was ok
       } // determinant was ok
+      #endif
     } // polynomial fit
 
     // set surface normal and curvature
@@ -613,8 +645,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   {
     if (not_enough_nn != 0) ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
     #ifndef PARALELL
+    #ifdef INVERSE
     ROS_INFO ("Interval for the value of the determinant in order to be correctly invertible converged to: (%g,%g).", max_bad_det, min_good_det);
     if ((zero_determinant != 0) || (not_inverse != 0)) ROS_WARN ("Inverting squared weighted term matrix failed %d times (%g%%), and a bad determinant was detected %d times (%g%%).", not_inverse, not_inverse*100.0/cloud_fit_->points.size (), zero_determinant, zero_determinant*100.0/cloud_fit_->points.size ());
+    #endif
     if (nr_orthogonal != 0) ROS_WARN ("%d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
     #endif
   }
