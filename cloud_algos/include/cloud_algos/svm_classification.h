@@ -80,9 +80,9 @@ class SVMClassification : public CloudAlgo
       return (0);
 
     // TODO: do the first two cases help?
-    if (value == min_max_values[0][index])
+    if (value <= min_max_values[0][index])
       value = lower;
-    else if (value == min_max_values[1][index])
+    else if (value >= min_max_values[1][index])
       value = upper;
     else
       // Linear interpolation
