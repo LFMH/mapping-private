@@ -206,7 +206,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   mesh_->header = cloud_->header;
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  double threshold_ = 0.01;
+  double threshold_ = 0.004;
   double probability_ = 1-1e-10;
   int max_iterations_ = 1000;
   if (debug_ > 0)
