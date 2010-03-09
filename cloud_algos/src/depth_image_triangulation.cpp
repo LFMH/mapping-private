@@ -361,8 +361,8 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
 //  mesh_.points.resize(nr*3);
   
   //write to vtk file for display in e.g. Viewer
-  if(write_to_vtk_)
-    write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
+  //if(write_to_vtk_)
+    //write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
   ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
