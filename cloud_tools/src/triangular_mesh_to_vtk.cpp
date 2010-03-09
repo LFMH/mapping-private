@@ -56,6 +56,7 @@ protected:
   ros::Subscriber mesh_sub_;
   ros::Publisher mesh_pub_;
   std::string input_mesh_topic_, output_vtk_file_;
+  int file_name_counter_;
 public:
 
   int mesh_count_, nr_of_mesh_publishers_;
@@ -74,6 +75,8 @@ public:
     mesh_count_ = 0;
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
+    file_name_counter_ = 0;
+    std::cerr << "nr_of_mesh_publishers_: " << nr_of_mesh_publishers_ << std::endl;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +116,9 @@ public:
     
     //TODO: I assume here that messages are coming in sequentially
     //Solve this through identification of publishers
-    if (mesh_count_ == nr_of_mesh_publishers_)
+    //std::cerr << "nr_of_mesh_publishers_ "<< nr_of_mesh_publishers_ << std::endl;
+    //if (mesh_count_ == nr_of_mesh_publishers_)
+    if (mesh_count_ == 2)
     {
       mesh_pub_.publish(mesh_);
       write_vtk_file(output_vtk_file_, mesh_);
@@ -127,7 +132,15 @@ public:
   void write_vtk_file(std::string output, ias_table_msgs::TriangularMesh &mesh_)
   {
     /* writing VTK file */
+    ROS_WARN("Writting to vtk file");
     FILE *f;
+    std::string s;
+    std::stringstream out;
+    file_name_counter_++;
+    out << file_name_counter_;
+    s = out.str();
+    output = s + output;
+    
     f = fopen(output.c_str(),"w");
     fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",mesh_.points.size());
     unsigned long i;
@@ -159,6 +172,7 @@ public:
       else
         fprintf(f,"3 %d %d %d\n",mesh_.triangles[i].i, mesh_.triangles[i].k, mesh_.triangles[i].j);
     }
+    ROS_WARN("Writting to vtk file DONE");
   }
   
   ////////////////////////////////////////////////////////////////////////////////
