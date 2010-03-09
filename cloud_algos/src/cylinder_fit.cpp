@@ -57,7 +57,8 @@
 #include <tools/transform.h>
 #include <angles/angles.h>
 
-
+//for mesh output
+#include <ias_table_msgs/TriangularMesh.h>
 #include <tf/tf.h>
 using namespace sample_consensus;
 
@@ -66,10 +67,10 @@ class CylinderFit
  public:
   sensor_msgs::PointCloud points_;
   sensor_msgs::PointCloud cylinder_points_;
-  sensor_msgs::PointCloud points_rotated_;
+  sensor_msgs::PointCloud outlier_points_;
   SACModel *model_;
   SAC *sac_;
-  std::string input_cloud_topic_, output_cylinder_topic_;
+  std::string input_cloud_topic_, output_outliers_topic_;
   ///////////////////////////////////////////////////////////////////////////////
   /**
    * \brief Contructor
@@ -78,14 +79,15 @@ class CylinderFit
     n_(n)
   {
     n_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
-    n_.param("output_cylinder_topic", output_cylinder_topic_, std::string("cylinder"));
-    std::cerr << input_cloud_topic_ << std::endl;
-    cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(output_cylinder_topic_ ,1);
+    n_.param("output_outliers_topic", output_outliers_topic_, std::string("cylinder"));
+    n_.param("output_mesh_topic", output_mesh_topic_, std::string("cylinder_mesh"));
+    cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(output_outliers_topic_ ,1);
     vis_pub = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+    mesh_pub_ = n_.advertise<ias_table_msgs::TriangularMesh> (output_mesh_topic_, 1);
     //use either next 2 or the 3rd line
     clusters_sub_ = n_.subscribe (input_cloud_topic_, 1, &CylinderFit::cloud_cb, this);
     model_ = new SACModelCylinder ();
-    sac_ = new RANSAC (model_, 0.001);
+    sac_ = new RANSAC (model_, 0.01);
     nx_ = ny_ = nz_ = -1;
     channels_size_ = 0;
     k_ = 20;
@@ -114,12 +116,6 @@ class CylinderFit
     ROS_INFO ("PointCloud message received on %s with %d points.", input_cloud_topic_.c_str (), (int)cloud->points.size ());
     points_ = *cloud;
 
-    //note, you also have to set axis_
-    if (rotate_inliers_ != 0.0)
-    {
-      player_log_actarray::transform::rotatePointCloud(points_, points_rotated_, angles::from_degrees(rotate_inliers_), axis_);
-      points_ = points_rotated_;
-    }
     
     for (unsigned long i = 0; i < points_.channels.size(); i++)
     {
@@ -143,7 +139,10 @@ class CylinderFit
         points_.channels[d].values.resize (points_.points.size ());
       estimatePointNormals(points_);
     }
+
     find_model(points_, coeff);
+    triangulate_cylinder(coeff);
+    mesh_pub_.publish(mesh_);
     publish_model_rviz(coeff);
   }
 
@@ -238,25 +237,22 @@ class CylinderFit
         ROS_INFO("inliers size %ld", inliers.size());
         cloud_geometry::getPointCloud (cloud, inliers, cylinder_points_);
         
+        
         sac_->computeCoefficients (coeff);
         ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
         
         // // std::vector<double> coeff_ref;
-        //sac_->refineCoefficients (coeff);
+        sac_->refineCoefficients (coeff);
 
 
         // transform coefficients to get the limits of the cylinder
         changeAxisToMinMax(cylinder_points_.points, inliers, coeff);
         ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
 
-        //int nr_points_left = sac_->removeInliers ();
-
-        //cloud_pub_.publish (points_);
-        //ROS_INFO ("Publishing data on topic %s.", n_.resolveName (cloud_topic_).c_str ());
-        cylinder_points_.channels[0].name = "intensities";
-        cylinder_pub_.publish (cylinder_points_);
-        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (output_cylinder_topic_).c_str (), 
-                  cylinder_points_.points.size());
+        cloud_geometry::getPointCloudOutside(cloud, inliers, outlier_points_);
+        cylinder_pub_.publish (outlier_points_);
+        ROS_INFO ("Publishing data on topic %s with nr of points %ld", n_.resolveName (output_outliers_topic_).c_str (), 
+                  outlier_points_.points.size());
       }
     }
   }
@@ -291,6 +287,52 @@ class CylinderFit
     coeff[4] = p0.y() + max_t * direction.y ();
     coeff[5] = p0.z() + max_t * direction.z ();
   }
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief triangulates cylinder model
+   */  
+  void triangulate_cylinder(std::vector<double> &coeff)
+  {
+    mesh_.points.resize(0);
+    mesh_.triangles.resize(0);
+    mesh_.header = points_.header;
+    geometry_msgs::Point32 p1, p2, p3, p4;
+    ias_table_msgs::Triangle triangle1, triangle2;
+    double radius = coeff[6];
+    int angle_step = 10;
+    for (int angle = 0; angle < 360; angle = angle + angle_step)
+    {
+      p1.x = sin(angles::from_degrees(angle)) * radius + coeff[0];
+      p1.y = cos(angles::from_degrees(angle)) * radius + coeff[1];
+      // std::cerr << "p1 " << p1.x << p1.y << std::endl;
+      p1.z = coeff[2];
+      p2.x = p1.x;
+      p2.y = p1.y;
+      p2.z = p1.z + (coeff[5] - coeff[2]);
+      p3.x = sin(angles::from_degrees(angle + angle_step)) * radius + coeff[0];
+      p3.y = cos(angles::from_degrees(angle + angle_step)) * radius + coeff[1];
+      //      std::cerr << "p3 " << p3.x << p3.y << std::endl;
+      p3.z = coeff[2];
+      p4.x = p3.x;
+      p4.y = p3.y;
+      p4.z = p3.z + (coeff[5] - coeff[2]);
+      mesh_.points.push_back(p1);
+      mesh_.points.push_back(p2);
+      mesh_.points.push_back(p3);
+      mesh_.points.push_back(p4);
+      triangle1.i = mesh_.points.size() - 4;
+      triangle1.j = mesh_.points.size() - 3;
+      triangle1.k = mesh_.points.size() - 2;
+      triangle2.i = mesh_.points.size() - 2;
+      triangle2.j = mesh_.points.size() - 3;
+      triangle2.k = mesh_.points.size() - 1;
+      mesh_.triangles.push_back(triangle1);
+      mesh_.triangles.push_back(triangle2);
+    }
+  }
+
 
  ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -364,6 +406,12 @@ class CylinderFit
   //rotation is around cloud's frame_id frame
   geometry_msgs::Point32 axis_;
   float rotate_inliers_;
+  //mesh publisher
+  ros::Publisher mesh_pub_;
+  //publish mesh on topic
+  std::string output_mesh_topic_;
+  //triangular mesh
+  ias_table_msgs::TriangularMesh mesh_;
 };
 
 /* ---[ */
