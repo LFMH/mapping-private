@@ -62,6 +62,7 @@
 #include <tools/transform.h>
 #include <angles/angles.h>
 
+#include <ias_table_msgs/TriangularMesh.h>
 
 
 using namespace std;
@@ -80,8 +81,11 @@ class BoxFit
   {
     n_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
     n_.param("output_box_topic", output_box_topic_, std::string("/box"));
+    n_.param("output_mesh_topic", output_mesh_topic_, std::string("output_mesh"));
+    n_.param("output_vtk_file", output_vtk_file_, std::string(""));
     box_pub_ = n_.advertise<visualization_msgs::Marker>("box", 0 );
     clusters_sub_ = n_.subscribe(input_cloud_topic_, 1, &BoxFit::cloud_cb, this);
+    mesh_pub_ = n_.advertise<ias_table_msgs::TriangularMesh> (output_mesh_topic_, 1);
     coeff_.resize(15);
     r_ = g_ = 0.0;
     b_ = 1.0;
@@ -109,6 +113,10 @@ class BoxFit
     lock.unlock ();
 
     find_model(points_, coeff_);
+    triangulate_box(coeff_);
+    //write the mesh to vtk file
+    if (output_vtk_file_ != "")
+      write_vtk_file(output_vtk_file_, mesh_);
     //publish fitted box on marker topic
     ROS_INFO ("Publishing box on topic %s.", n_.resolveName (output_box_topic_).c_str ());
     publish_model_rviz(coeff_);
@@ -145,10 +153,10 @@ class BoxFit
     // It performs eigen-analyis of local neighborhoods and extracts
     // eigenvectors and values.  Here, we set it to look at neighborhoods
     // within a radius of 5.0 around each interest point.
-    double r = 1;
+    double r = 0.1;
     SpectralAnalysis sa(r);
     BoundingBoxSpectral bbox_spectral(r, sa);
-    
+    OrientationTangent o_tangent(1, 0, 0, sa);
     // ----------------------------------------------
     // Put all descriptors into a vector
     vector<Descriptor3D*> descriptors_3d;
@@ -156,7 +164,7 @@ class BoxFit
     //   descriptors_3d.push_back(&spin_image1);
     //   descriptors_3d.push_back(&spin_image2);
     //   descriptors_3d.push_back(&o_normal);
-    //   descriptors_3d.push_back(&o_tangent);
+    descriptors_3d.push_back(&o_tangent);
     //   descriptors_3d.push_back(&position);
     descriptors_3d.push_back(&bbox_spectral);
     
@@ -172,9 +180,15 @@ class BoxFit
       descriptors_3d[i]->compute(cloud, data_kdtree, interest_pts, all_descriptor_results[i]);
     }
     
+
+    std::vector<float>& ot = all_descriptor_results[0][0];
+    cout << "Orientation tangent size: " <<  ot.size() << endl;
+    for (size_t i = 0 ; i < ot.size() ; i++)
+      cerr << "Orientation tangent value(s): " << ot[i] << endl;
+
     //   // ----------------------------------------------
     //   // Print out the bounding box dimension features for the first point 0
-    std::vector<float>& pt0_bbox_features = all_descriptor_results[0][0];
+    std::vector<float>& pt0_bbox_features = all_descriptor_results[1][0];
     cout << "Bounding box features size: " <<  pt0_bbox_features.size() << endl;
     for (size_t i = 0 ; i < pt0_bbox_features.size() ; i++)
     {
@@ -191,7 +205,99 @@ class BoxFit
              pt0_bbox_features[9], pt0_bbox_features[10],pt0_bbox_features[11]);
   }
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief triangulates box
+   */  
+  void triangulate_box(std::vector<double> &coeff)
+  {
+    geometry_msgs::Point32 current_point;
+    ias_table_msgs::Triangle triangle;
+    mesh_.points.resize(0);
+    mesh_.triangles.resize(0);
+    mesh_.header = points_.header;
+    for (int i = -1; i <= 1; i = i+2)
+    {
+      for (int j = -1; j <= 1; j = j+2)
+      {
+        for (int k = -1; k <= 1; k = k+2)
+        {
+          current_point.x = coeff[0] + i * coeff[3]/2;
+          current_point.y = coeff[1] + j * coeff[4]/2;
+          current_point.z = coeff[2] + k * coeff[5]/2;
+          mesh_.points.push_back(current_point);
+        } 
+      }
+    }
     
+    triangle.i = 0, triangle.j = 1, triangle.k = 2;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 0, triangle.j = 1, triangle.k = 4;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 0, triangle.j = 2, triangle.k = 6;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 0, triangle.j = 6, triangle.k = 4;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 1, triangle.j = 4, triangle.k = 5;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 5, triangle.j = 4, triangle.k = 6;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 5, triangle.j = 7, triangle.k = 6;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 7, triangle.j = 6, triangle.k = 2;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 7, triangle.j = 3, triangle.k = 2;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 1, triangle.j = 2, triangle.k = 3;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 1, triangle.j = 3, triangle.k = 7;
+    mesh_.triangles.push_back(triangle);
+    triangle.i = 1, triangle.j = 5, triangle.k = 7;
+    mesh_.triangles.push_back(triangle);
+    mesh_pub_.publish(mesh_);
+  }
+  
+
+    ////////////////////////////////////////////////////////////////////////////////
+  // \brief write TriangularMesh to vtk file
+  void write_vtk_file(std::string output, ias_table_msgs::TriangularMesh &mesh_)
+  {
+    /* writing VTK file */
+    FILE *f;
+    f = fopen(output.c_str(),"w");
+    fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",mesh_.points.size());
+    unsigned long i;
+    
+    for (i=0; i<mesh_.points.size(); i++)
+    {
+      fprintf (f,"%f %f %f ", mesh_.points[i].x, mesh_.points[i].y, mesh_.points[i].z);
+      fprintf (f,"\n");
+    }
+    
+   //   fprintf(f,"VERTICES %ld %ld\n", mesh_.points.size(), 2*mesh_.points.size());
+//      for (i=0; i<mesh_.points.size(); i++)
+//        fprintf(f,"1 %ld\n", i);
+    
+//     ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
+    
+    fprintf(f,"\nPOLYGONS %ld %ld\n", mesh_.triangles.size(), 4*mesh_.triangles.size());
+    for (unsigned long i=0; i< mesh_.triangles.size(); i++)
+    {
+      if ((unsigned long)mesh_.triangles[i].i  >= mesh_.points.size() || mesh_.triangles[i].i < 0 ||  isnan(mesh_.triangles[i].i))
+        ;
+      else if  ((unsigned long)mesh_.triangles[i].j  >= mesh_.points.size() || mesh_.triangles[i].j < 0 ||  isnan(mesh_.triangles[i].j))
+        ;
+      else if  ((unsigned long)mesh_.triangles[i].k  >= mesh_.points.size() || mesh_.triangles[i].k < 0 ||  isnan(mesh_.triangles[i].k))
+        ;
+      else if ( mesh_.triangles[i].i == mesh_.triangles[i].j || mesh_.triangles[i].i == mesh_.triangles[i].k ||
+                mesh_.triangles[i].j == mesh_.triangles[i].k)
+        ;
+      else
+        fprintf(f,"3 %d %d %d\n",mesh_.triangles[i].i, mesh_.triangles[i].k, mesh_.triangles[i].j);
+    }
+  }
+
+
   ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief publishes model marker (to rviz)
@@ -199,8 +305,8 @@ class BoxFit
   void publish_model_rviz (std::vector<double> &coeff)
   {
     btMatrix3x3 box_rot (coeff[6], coeff[7], coeff[8],
-                           coeff[9], coeff[10], coeff[11],
-                           coeff[12], coeff[13], coeff[14]);
+                         coeff[9], coeff[10], coeff[11],
+                         coeff[12], coeff[13], coeff[14]);
     btMatrix3x3 box_rot_trans (box_rot.transpose());
     btQuaternion qt;
     box_rot_trans.getRotation(qt);
@@ -289,12 +395,16 @@ protected:
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;
   std::string input_cloud_topic_, output_box_topic_;
-
   //point color
   float r_, g_, b_;
   //lock point cloud
   boost::mutex lock;
-  
+  //triangular mesh
+  ias_table_msgs::TriangularMesh mesh_;
+  //mesh publisher
+  ros::Publisher mesh_pub_;
+  //publish mesh on topic
+  std::string output_mesh_topic_,  output_vtk_file_;
 };
 
 

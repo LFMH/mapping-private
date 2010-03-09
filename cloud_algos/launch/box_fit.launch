@@ -1,9 +1,11 @@
 <launch>
-<!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
-<!-- 	args="$(find cloud_algos)/data/cylinder_small.pcd $(optenv time_pcd 5)" /> -->
-
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/lancastertea-denoise.pcd) $(optenv time_pcd 5)" />
+  
   <node pkg="cloud_algos" type="box_fit_node" name="box_fit_node" output="screen" respawn="true">
-    <param  name="input_cloud_topic" type="string" value="/table_object_detector_passive/cloud_annotated"/>
+    <!--     <param  name="input_cloud_topic" type="string" value="/table_object_detector_passive/cloud_annotated"/> -->
+    <param  name="input_cloud_topic" type="string" value="/cloud_pcd"/>
     <param  name="output_box_topic" type="string" value="box"/>
+    <param  name="output_vtk_file" type="string" value="box.vtk"/>
   </node>
 </launch>
