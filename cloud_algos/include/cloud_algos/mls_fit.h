@@ -112,7 +112,7 @@ class MovingLeastSquares : public CloudAlgo
     approximating_tangent_ = PCA;
     radius_ = 0.03;
     radius_curvature_ = 0.02;
-    max_nn_ = 100;
+    max_nn_ = 300;
     order_ = 2;
     filter_points_ = false;
     polynomial_fit_ = true;
