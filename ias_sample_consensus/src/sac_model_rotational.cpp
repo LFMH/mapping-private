@@ -413,8 +413,10 @@ namespace ias_sample_consensus
         
         axis = cloud_geometry::cross (n1, n2);
         
-        temp_coefficients [3] = centroid.x + 0;//axis.x;
-        temp_coefficients [4] = centroid.y + 0;//axis.y; 
+    double trand = 0.3 / (RAND_MAX + 1.0);
+    // Get a random number between 1 and indices.size ()
+        temp_coefficients [3] = centroid.x + (rand () * trand)-.15;//axis.x;
+        temp_coefficients [4] = centroid.y + (rand () * trand)-0.15;//axis.y; 
         temp_coefficients [5] = centroid.z + 1;//axis.z; 
         // origin_point
         temp_coefficients [6] = centroid.x;
@@ -571,7 +573,7 @@ namespace ias_sample_consensus
     refit_coefficients = model_coefficients_;
     
     ROS_WARN ("[SACModelRotational::refitModel] About to refit");
-    //RefitAxis (inliers, refit_coefficients);
+    RefitAxis (inliers, refit_coefficients);
     RefitContour (inliers, refit_coefficients);
   }
 
