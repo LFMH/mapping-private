@@ -47,6 +47,7 @@
 #include <OGRE/OgreSubMesh.h>
 #include <OGRE/OgreMeshManager.h>
 #include <OGRE/OgreEntity.h>
+#include <OGRE/OgreSubEntity.h>
 #include <OGRE/OgreHardwareBufferManager.h>
 
 namespace Ogre

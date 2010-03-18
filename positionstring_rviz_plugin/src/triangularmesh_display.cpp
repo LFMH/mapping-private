@@ -174,6 +174,16 @@ void TriangularMeshDisplay::update(float wall_dt, float ros_dt)
 {
 }
 
+std::vector<geometry_msgs::Point32> computeNormals (const ias_table_msgs::TriangularMesh::ConstPtr& msg)
+{
+  std::vector <std::vector <int> > reverse_triangles;
+  for (unsigned int i = 0; i < msg->triangles.size (); i++)
+  {
+
+  }
+  return msg->normals;
+}
+
 void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh::ConstPtr& msg)
 {
   if (!msg)
@@ -189,6 +199,19 @@ void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh:
     Ogre::MeshManager::getSingleton().unload ("triangularmesh");
     Ogre::MeshManager::getSingleton().remove ("triangularmesh");
   }
+  std::vector<geometry_msgs::Point32> normals;
+  bool use_normals = false;
+
+  if (msg->normals.size() == msg->points.size())
+  {
+    normals = msg->normals;
+    use_normals = true;
+  }
+  else
+  {
+    normals = computeNormals (msg);
+  }
+
 //  std::vector<triangle> triangles;
 //  for (unsigned int i = 0; i < msg->triangles.size(); i++)
 //  {
@@ -213,6 +236,8 @@ void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh:
   // Then we can create our VertexDeclaration
   Ogre::VertexDeclaration* decl = data->vertexDeclaration;
   decl->addElement (0,0, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
+  if (use_normals)
+    decl->addElement (0,Ogre::VertexElement::getTypeSize(Ogre::VET_FLOAT3), Ogre::VET_FLOAT3, Ogre::VES_NORMAL);
   /** @todo: should add more elements, specifically normal vectors! */
   
   // create a vertex buffer
@@ -224,12 +249,21 @@ void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh:
  
   double min_x=FLT_MAX,  min_y=FLT_MAX,  min_z=FLT_MAX;
   double max_x=-FLT_MAX, max_y=-FLT_MAX, max_z=-FLT_MAX;
-  float* array = (float*) malloc (sizeof(float)*3*msg->points.size());
+  int vertex_size_in_bytes = 3;
+  if (use_normals)
+    vertex_size_in_bytes = 6;
+  float* array = (float*) malloc (sizeof(float)*vertex_size_in_bytes*msg->points.size());
   for (unsigned int i = 0; i < msg->points.size(); i++)
   {
-    array[i*3+0] = msg->points[i].x;
-    array[i*3+1] = msg->points[i].y;
-    array[i*3+2] = msg->points[i].z;
+    array[i*vertex_size_in_bytes+0] = msg->points[i].x;
+    array[i*vertex_size_in_bytes+1] = msg->points[i].y;
+    array[i*vertex_size_in_bytes+2] = msg->points[i].z;
+    if (use_normals)
+    {
+      array[i*vertex_size_in_bytes+3] = normals[i].x;
+      array[i*vertex_size_in_bytes+4] = normals[i].x;
+      array[i*vertex_size_in_bytes+5] = normals[i].x;
+    }
     if (msg->points[i].x < min_x) min_x = msg->points[i].x;
     if (msg->points[i].y < min_y) min_y = msg->points[i].y;
     if (msg->points[i].z < min_z) min_z = msg->points[i].z;
@@ -292,6 +326,8 @@ ROS_INFO ("a %i: %f, %f, %f, %f, %f, %f", __LINE__, min_x, min_y, min_z, max_x, 
   std::stringstream ss;
   ss << "tm" << count;
   entity_ = scene_manager_->createEntity(ss.str(), "triangularmesh");
+  for (unsigned int i = 0; i < entity_->getNumSubEntities (); i++)
+    entity_->getSubEntity (i)->getMaterial ()->getTechnique(0)->getPass(0)->setPolygonMode(Ogre::PM_WIREFRAME);
   scene_node_->attachObject(entity_);
 
   // finally, make sure we get everything in RVIZ's coordinate system

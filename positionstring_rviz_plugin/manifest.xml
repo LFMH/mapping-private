@@ -13,6 +13,7 @@
   <depend package="roscpp"/>
   <depend package="tf"/>
   <depend package="ias_table_msgs"/>
+  <depend package="sensor_msgs"/>
   <depend package="ias_visualization_msgs"/>
   
   <export>

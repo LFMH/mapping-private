@@ -11,6 +11,13 @@
 namespace cloud_algos
 {
 
+int getChannelIndex 
+      (const sensor_msgs::PointCloud &points, 
+       std::string value);
+int getChannelIndex 
+      (const boost::shared_ptr<const sensor_msgs::PointCloud> points, 
+       std::string value);
+
 class CloudAlgo
 {
  public:
