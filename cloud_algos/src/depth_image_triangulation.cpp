@@ -146,8 +146,9 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   std::vector<triangle> tr;
   //resize big time to prevent seg fault
   tr.resize(2*max_line_*max_index_);    
-  mesh_.points.resize(0);//2*max_line_*max_index_);
-  mesh_.triangles.resize(0);//2*max_line_*max_index_);
+  mesh_ = boost::shared_ptr<DepthImageTriangulation::OutputType>(new DepthImageTriangulation::OutputType);
+  mesh_->points.resize(0);//2*max_line_*max_index_);
+  mesh_->triangles.resize(0);//2*max_line_*max_index_);
 
   int nr = 0; //number of triangles
   int nr_tr;
@@ -324,7 +325,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   }
   nr_tr = nr;
   tr.resize(nr);
-  mesh_.header = cloud_with_line_.header;   
+  mesh_->header = cloud_with_line_.header;   
   geometry_msgs::Point32 tr_i, tr_j, tr_k;
   ias_table_msgs::Triangle tr_mesh;
 
@@ -333,7 +334,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
 #endif
   //fill up TriangularMesh msg and send it on the topic
   for (unsigned long i=0; i<cloud_with_line_.points.size(); i++)
-    mesh_.points.push_back (cloud_with_line_.points[i]);
+    mesh_->points.push_back (cloud_with_line_.points[i]);
 
   for (unsigned long i = 0; i < nr; i++)
   {
@@ -350,7 +351,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
       tr_mesh.i = tr[i].a;
       tr_mesh.j = tr[i].c;
       tr_mesh.k = tr[i].b;
-      mesh_.triangles.push_back(tr_mesh);
+      mesh_->triangles.push_back(tr_mesh);
     } 
   }
 
@@ -411,7 +412,7 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-DepthImageTriangulation::OutputType DepthImageTriangulation::output ()
+boost::shared_ptr<const DepthImageTriangulation::OutputType> DepthImageTriangulation::output ()
   {
     return mesh_;
   }

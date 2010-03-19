@@ -73,7 +73,7 @@ class DepthImageTriangulation : public CloudAlgo
   std::vector<std::string> requires ();
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
-  OutputType output ();
+  boost::shared_ptr<const OutputType> output ();
 
   /**
    * \brief  get scan and point id for hokuyo scans
@@ -138,7 +138,7 @@ private:
 
   // \brief resultant output triangulated map
   //OutputType pmap_;
-  OutputType mesh_;
+  boost::shared_ptr<OutputType> mesh_;
 };
 }
 #endif

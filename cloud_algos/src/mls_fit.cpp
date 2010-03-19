@@ -57,7 +57,7 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
 
 void MovingLeastSquares::pre ()
 {
-
+  cloud_fit_.reset ();
 }
 
 void MovingLeastSquares::post ()
@@ -160,7 +160,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   }
 
   // Check if points have been provided to be fit to the cloud
-  if (cloud_fit_ == NULL)
+  if (not cloud_fit_)  // REAL TODO: is this OK?
   {
     // decide on the method used to generate the points
     ts = ros::Time::now ();
@@ -177,7 +177,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         ROS_INFO ("Initial point positions are copied from the original cloud.");
         copied_points = true;
         filter_points_ = false; // no use of filtering them if they are the same as the measurements
-        cloud_fit_ = new sensor_msgs::PointCloud ();
+        cloud_fit_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud);
         cloud_fit_->header   = cloud->header;
         cloud_fit_->points   = cloud->points;
         cloud_fit_->channels = cloud->channels;
@@ -660,9 +660,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   return std::string("ok");
 }
 
-MovingLeastSquares::OutputType MovingLeastSquares::output ()
+boost::shared_ptr<const MovingLeastSquares::OutputType> MovingLeastSquares::output ()
   // TODO {return *(cloud_fit_.get ());}
-  {return *cloud_fit_;}
+  {return cloud_fit_;}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])

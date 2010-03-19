@@ -174,15 +174,15 @@ void TriangularMeshDisplay::update(float wall_dt, float ros_dt)
 {
 }
 
-std::vector<geometry_msgs::Point32> computeNormals (const ias_table_msgs::TriangularMesh::ConstPtr& msg)
-{
-  std::vector <std::vector <int> > reverse_triangles;
-  for (unsigned int i = 0; i < msg->triangles.size (); i++)
-  {
-
-  }
-  return msg->normals;
-}
+//std::vector<geometry_msgs::Point32> computeNormals (const ias_table_msgs::TriangularMesh::ConstPtr& msg)
+//{
+//  std::vector <std::vector <int> > reverse_triangles;
+//  for (unsigned int i = 0; i < msg->triangles.size (); i++)
+//  {
+//
+//  }
+//  return msg->normals;
+//}
 
 void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh::ConstPtr& msg)
 {
@@ -202,15 +202,15 @@ void TriangularMeshDisplay::processMessage(const ias_table_msgs::TriangularMesh:
   std::vector<geometry_msgs::Point32> normals;
   bool use_normals = false;
 
-  if (msg->normals.size() == msg->points.size())
-  {
-    normals = msg->normals;
-    use_normals = true;
-  }
-  else
-  {
-    normals = computeNormals (msg);
-  }
+//  if (msg->normals.size() == msg->points.size())
+//  {
+//    normals = msg->normals;
+//    use_normals = true;
+//  }
+//  else
+//  {
+//    normals = computeNormals (msg);
+//  }
 
 //  std::vector<triangle> triangles;
 //  for (unsigned int i = 0; i < msg->triangles.size(); i++)

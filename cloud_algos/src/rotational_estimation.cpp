@@ -225,21 +225,39 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
 
 boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getOutliers ()
 {
-  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
-  sensor_msgs::PointCloud cloud_tmp = *cloud_;
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud);
+  ROS_INFO("created PointCloud object: 0x%x", (void*) ret.get());
+  
   ret->header = cloud_->header;
-  int channel_index =  cloud_io::getIndex (cloud_tmp, "index");
-  int channel_line =  cloud_io::getIndex (cloud_tmp, "line");
-  ret->channels.resize(2);
-  ret->channels[0].name = cloud_->channels[channel_index].name;
-  ret->channels[1].name = cloud_->channels[channel_line].name;
+  int channel_index = getChannelIndex (cloud_, "index");
+  int channel_line = getChannelIndex (cloud_, "line");
+  if (channel_line != -1)
+  {
+    ret->channels.resize(2);
+    ret->channels[1].name = cloud_->channels[channel_line].name;
+    ret->channels[1].values.resize(outliers_.size());
+    ret->channels[0].name = cloud_->channels[channel_index].name;
+    ret->channels[0].values.resize(outliers_.size());
+  }
+  else if (channel_index != -1)
+  {
+    ret->channels.resize(1);
+    ret->channels[0].name = cloud_->channels[channel_index].name;
+    ret->channels[0].values.resize(outliers_.size());
+  }
+   
+  
+  ret->points.resize(outliers_.size());
+
   if (debug_ > 0)
     ROS_INFO("outliers_.size(): %ld inliers.size() %ld", outliers_.size(), inliers_.size());
   for (unsigned int i = 0; i < outliers_.size (); i++)
   {
-    ret->points.push_back (cloud_->points.at (outliers_.at (i)));
-    ret->channels[0].values.push_back (cloud_->channels[channel_index].values.at (outliers_.at (i)));
-    ret->channels[1].values.push_back (cloud_->channels[channel_line].values.at (outliers_.at (i)));
+    ret->points.at(i) = cloud_->points.at (outliers_.at (i));
+    if (channel_index != -1)
+      ret->channels[0].values.at(i) = cloud_->channels[channel_index].values.at (outliers_.at (i));
+    if (channel_line != -1)
+      ret->channels[1].values.at(i) = cloud_->channels[channel_line].values.at (outliers_.at (i));
   }
   return ret;
 }

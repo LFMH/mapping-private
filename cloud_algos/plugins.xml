@@ -29,4 +29,10 @@
       This plugin triangulates a given PointCloud cluster.
     </description>
   </class>
+
+  <class name="BoxEstimation" type="BoxEstimation" base_class_type="CloudAlgo">
+    <description>
+      This plugin fits a quboid/box to a given PointCloud cluster.
+    </description>
+  </class>
 </library>

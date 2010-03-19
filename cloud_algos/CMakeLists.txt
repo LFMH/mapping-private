@@ -15,6 +15,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/gfpfh.cpp
   src/misc.cpp
   src/registration.cpp
+  src/box_fit_algo.cpp
   src/mls_fit.cpp
   src/pfh.cpp
   src/rotational_estimation.cpp
@@ -43,6 +44,9 @@ set_target_properties (registration_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp src/misc.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
+rosbuild_add_executable (box_fit_node_2 src/box_fit_algo.cpp src/misc.cpp)
+set_target_properties (box_fit_node_2 PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
 rosbuild_add_executable (pfh_node src/pfh.cpp src/misc.cpp)
 set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
@@ -55,6 +59,7 @@ set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -
 rosbuild_add_executable (cylinder_fit_node src/cylinder_fit.cpp src/misc.cpp)
 #set_target_properties (cylinder_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
+#DEPRECATED
 rosbuild_add_executable (box_fit_node src/box_fit.cpp src/misc.cpp)
 #set_target_properties (box_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 

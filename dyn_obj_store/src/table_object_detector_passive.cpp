@@ -254,6 +254,7 @@ class TableObjectDetector
 
       geometry_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
+      int cluster_count = 0;
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
         vector<int> object_idx = object_clusters.at (i);
@@ -263,29 +264,31 @@ class TableObjectDetector
         if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
             continue;
 
-        table.objects[i].points.header.frame_id =  points.header.frame_id;
-        table.objects[i].points.points.resize (object_idx.size ());
+        table.objects[cluster_count].points.header.frame_id =  points.header.frame_id;
+        table.objects[cluster_count].points.points.resize (object_idx.size ());
 
-        table.objects[i].points.channels.resize(points.channels.size());
+        table.objects[cluster_count].points.channels.resize(points.channels.size());
         for (unsigned int c = 0; c < points.channels.size (); c++)
         {
-          table.objects[i].points.channels[c].name=points.channels[c].name;
-          table.objects[i].points.channels[c].values.resize (points.channels[c].values.size());
+          table.objects[cluster_count].points.channels[c].name=points.channels[c].name;
+          table.objects[cluster_count].points.channels[c].values.resize (points.channels[c].values.size());
         }
 //         int intensity_idx = cloud_io::getIndex (&points, "intensities");
         // Process this cluster and extract the centroid and the bounds
         for (unsigned int j = 0; j < object_idx.size (); j++)
         {
-          table.objects[i].points.points.at (j) = points.points.at (object_idx.at (j));
+          table.objects[cluster_count].points.points.at (j) = points.points.at (object_idx.at (j));
           for (unsigned int c = 0; c < points.channels.size (); c++)
-            table.objects[i].points.channels[c].values.at (j) = points.channels[c].values.at (object_idx.at (j));
+            table.objects[cluster_count].points.channels[c].values.at (j) = points.channels[c].values.at (object_idx.at (j));
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
         
-        cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
-        cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[i].center);
+        cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[cluster_count].min_bound, table.objects[cluster_count].max_bound);
+        cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[cluster_count].center);
+        cluster_count++;
       }
+      object_clusters.resize(cluster_count);
       ROS_INFO ("created %i clusters with %i points total.", (int)object_clusters.size (), nr_p);
       object_indices.resize (nr_p);
     }

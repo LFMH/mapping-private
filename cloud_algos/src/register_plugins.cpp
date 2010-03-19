@@ -4,6 +4,7 @@
 #include <cloud_algos/planar_estimation.h>
 #include <cloud_algos/rotational_estimation.h>
 #include <cloud_algos/region_growing.h>
+#include <cloud_algos/box_fit_algo.h>
 #include <cloud_algos/depth_image_triangulation.h>
 #include <cloud_algos/mls_fit.h>
 
@@ -16,5 +17,6 @@ PLUGINLIB_REGISTER_CLASS(MovingLeastSquares, MovingLeastSquares, CloudAlgo)
 PLUGINLIB_REGISTER_CLASS(RotationalEstimation, RotationalEstimation, CloudAlgo)
 PLUGINLIB_REGISTER_CLASS(RegionGrowing, RegionGrowing, CloudAlgo)
 PLUGINLIB_REGISTER_CLASS(DepthImageTriangulation, DepthImageTriangulation, CloudAlgo)
+PLUGINLIB_REGISTER_CLASS(BoxEstimation, BoxEstimation, CloudAlgo)
 //PLUGINLIB_REGISTER_CLASS(NoiseRemoval, NoiseRemoval, PCD_Algo)
 

@@ -71,13 +71,12 @@ class MovingLeastSquares : public CloudAlgo
   std::vector<std::string> requires ();
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
-  OutputType output ();
+  boost::shared_ptr<const OutputType> output ();
 
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!! (bucket size not important)
   void setKdTree (cloud_kdtree::KdTree *kdtree)
     {kdtree_ = kdtree;}
-  // TODO void setCloud2Fit (boost::shared_ptr<sensor_msgs::PointCloud> &cloud_fit)
-  void setCloud2Fit (sensor_msgs::PointCloud *cloud_fit)
+  void setCloud2Fit (boost::shared_ptr<sensor_msgs::PointCloud> cloud_fit)
     {cloud_fit_ = cloud_fit;}
 
   // Clearing previously set data
@@ -90,11 +89,11 @@ class MovingLeastSquares : public CloudAlgo
       delete kdtree_;
       kdtree_ = NULL;
     }
-    if (cloud_fit_ != NULL)
-    {
-      delete cloud_fit_;
-      cloud_fit_ = NULL;
-    }
+//    if (cloud_fit_ != NULL)
+//    {
+//      delete cloud_fit_;
+//      cloud_fit_ = NULL;
+//    }
     if (viewpoint_cloud_ != NULL)
     {
       delete viewpoint_cloud_;
@@ -106,7 +105,7 @@ class MovingLeastSquares : public CloudAlgo
   MovingLeastSquares () : CloudAlgo ()
   {
     kdtree_ = NULL;
-    cloud_fit_ = NULL;
+    //cloud_fit_ = NULL; // not needed with a smart pointer
     viewpoint_cloud_ = NULL;
 
     point_generation_ = COPY;
@@ -133,8 +132,7 @@ class MovingLeastSquares : public CloudAlgo
   ros::Publisher pub_;
 
   // ROS messages
-  // TODO boost::shared_ptr<sensor_msgs::PointCloud> cloud_fit_;
-  sensor_msgs::PointCloud *cloud_fit_;
+  boost::shared_ptr<sensor_msgs::PointCloud> cloud_fit_;
 
   /// TODO add setters for the vectors too, passed by &
 
