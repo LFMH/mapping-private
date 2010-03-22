@@ -208,7 +208,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   double threshold_ = 0.004;
   double probability_ = 1-1e-10;
-  int max_iterations_ = 1000;
+  int max_iterations_ = 100;
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   
