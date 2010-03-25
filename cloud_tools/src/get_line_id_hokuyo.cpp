@@ -117,7 +117,7 @@ public:
     ros::Time ts = ros::Time::now ();
     cloud.channels.resize(cloud.channels.size()+1);
     cloud.channels[line_index].name = "line";
-    int j = cloud_io::getIndex (&cloud, "index");
+    int j = cloud_io::getIndex (cloud, "index");
     cloud.channels[line_index].values.resize(cloud.channels[j].values.size());
     for (unsigned int k = 0; k < cloud.channels[j].values.size()-1; k++)
     {
