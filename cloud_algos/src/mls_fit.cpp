@@ -305,7 +305,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         ///      that don't re-allocate normal and take/return centroid/cov-matrix
         cloud_geometry::nearest::computePointNormal (*cloud, points_indices_[cp], plane_parameters, curvature);
         // projecting point to be fitted onto the plane - TODO make inline referenced utility function
-        double distance = plane_parameters(0)*cloud_fit_->points[cp].x + plane_parameters[1]*cloud_fit_->points[cp].y + plane_parameters[2]*cloud_fit_->points[cp].z + plane_parameters[3];
+        double distance = plane_parameters[0]*cloud_fit_->points[cp].x + plane_parameters[1]*cloud_fit_->points[cp].y + plane_parameters[2]*cloud_fit_->points[cp].z + plane_parameters[3];
         cloud_fit_->points[cp].x -= distance * plane_parameters[0];
         cloud_fit_->points[cp].y -= distance * plane_parameters[1];
         cloud_fit_->points[cp].z -= distance * plane_parameters[2];
@@ -424,7 +424,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
       #endif
 
-      // Solve LEQ - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
+      // Solve linear equation system - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
       #ifndef INVERSE
       c_vec_ = P_weight_ * f_vec_;
       P_weight_Pt_.llt().solveInPlace(c_vec_);

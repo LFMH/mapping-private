@@ -47,7 +47,7 @@ class MovingLeastSquares : public CloudAlgo
   int max_nn_;              // maximum number of nearest neighbors to consider
   int order_;               // order of the polynomial to be fit
   bool filter_points_;      // should the generated/provided points be filtered based on proximity to the underlying surface?
-  bool polynomial_fit_;     // should the surface+normal be approximated using a polynomial, or do only the tangent estimation?
+  bool polynomial_fit_;     // should the surface and normal be approximated using a polynomial, or do only the tangent estimation?
   bool compute_moments_;    // switch to compute moment invariants (j1, j2, j3)
   double sqr_gauss_param_;  // parameter for distance based weighting of neighbors (radius_*radius_ works ok)
   geometry_msgs::PointStamped *viewpoint_cloud_; // viewpoint towards which the normals have to point
