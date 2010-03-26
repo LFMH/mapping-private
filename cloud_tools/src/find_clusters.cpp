@@ -239,7 +239,7 @@ class FindClusters
       cloud_geometry::nearest::extractEuclideanClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
       geometry_msgs::Point32 minPCluster, maxPCluster;
-      table.point_clusters.resize (object_clusters.size ());
+      table.objects.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
         std::vector<int> object_idx = object_clusters.at (i);
@@ -353,9 +353,9 @@ class FindClusters
        pmap_.header.frame_id = cloud_in_->header.frame_id;
        pmap_.polygons.resize (1);
        cloud_geometry::areas::convexHull2D (cloud_down_, inliers, coeff, pmap_.polygons[0]);
-       cloud_geometry::nearest::computeCentroid (cloud_down_, inliers, table.table_center);
-       table.table_polygon.header.frame_id = pmap_.header.frame_id;
-       table.table_polygon.polygon.points = pmap_.polygons[0].points;
+       cloud_geometry::nearest::computeCentroid (cloud_down_, inliers, table.table.points[0]);
+       table.header.frame_id = pmap_.header.frame_id;
+       table.table.points = pmap_.polygons[0].points;
        table_pub_.publish (table);
 
 /// ----------------------------------------------------------------------- TRANSFORM CONVEX HULL

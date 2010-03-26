@@ -292,12 +292,12 @@ class TableMemory
         if(pos.probability >= color_probability_)
         {
           TableObject * to = getObjectFromLOId (pos.position);
-          for (unsigned int cls = 0; cls < pos.classes.size (); cls++)
+          for (unsigned int cls = 0; cls < pos.models.size (); cls++)
           {
-            ROS_INFO("Object color is %s", pos.classes[cls].c_str());
+            ROS_INFO("Object color is %s", pos.models[cls].sem_class.c_str());
             //possible returns: [red (or any other color), object type (Jug)]
             //color is a vector of strings in case object contains multiple color hypotheses
-            to->color.push_back(pos.classes[cls]);
+            to->color.push_back(pos.models[cls].sem_class);
           }
         }
       }

@@ -11,9 +11,9 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="angles" />
+  <depend package="point_cloud_mapping" />
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
-  <depend package="point_cloud_mapping" />
   <depend package="mapping_msgs" />
   <depend package="vision_msgs" />
   <depend package="vision_srvs" />
@@ -21,5 +21,4 @@
   <depend package="ias_table_srvs" />
   <depend package="perception_msgs" />
   <depend package="perception_srvs" />
-  <depend package="tabletop_msgs" />
 </package>
