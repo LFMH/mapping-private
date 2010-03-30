@@ -1,0 +1,57 @@
+--- # Passive Perception Pipeline
+NormalEstimation:
+  input_topic_name: shoulder_cloud
+  output_topic_name: shoulder_cloud_normals
+PlanarEstimationX:
+  type: PlanarEstimation
+  input_topic_name: shoulder_cloud_normals
+  output_topic_name: shoulder_cloud_walls_x
+PlanarEstimationY:
+  type: PlanarEstimation
+  input_topic_name: shoulder_cloud_normals
+  output_topic_name: shoulder_cloud_walls_y
+  restrict_axis: {x: 0.0, y: 0.0, z: 1.0}
+PlanarEstimationZ:
+  type: PlanarEstimation
+  input_topic_name: shoulder_cloud_normals
+  output_topic_name: shoulder_cloud_walls_z
+  sac_threshold: 0.02
+  restrict_axis: {x: 0.0, y: 0.0, z: 1.0}
+TableObjectDetector:
+  input_topic_name: shoulder_cloud_normals
+  output_topic_name: table_clusters
+  delta_min_z: 0.02
+DynObjStore:
+  input_topic_name: table_clusters
+  reconstruction_pipeline: reconstruction_pipeline.yaml
+
+
+# just a mental note so far, ignore this file
+#- name:       NormalEstimation
+#  input:      shoulder_cloud
+#  output:     
+#    - shoulder_cloud_normals
+#  parameters: 
+#    - k: 30
+#      someotherthing: blabla
+#
+#- name:       PlanarEstimation
+#  input:      shoulder_cloud_normals
+#  parameters:
+#    - algorithms: 
+#      - floor_ceiling:
+#        output: 
+#      - wall_detection:
+#        output: shoulder_cloud_walls 
+#      - table_detection:
+#        output: shoulder_cloud_tables
+#      - furniture_detection:
+#        output: shoulder_cloud_furniture
+# 
+#- name:       SupportedStructures
+#  input:      shoulder_cloud_furniture
+#  parameters:
+#    - fit_shapes:
+#      - lines
+#                   
+#

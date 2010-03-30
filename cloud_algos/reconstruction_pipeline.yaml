@@ -1,0 +1,34 @@
+MovingLeastSquares:
+  launch_pkg: cloud_algos           # whatever_stack/cloud_algos
+  launch_type: mls_fit_node   # ./bin/mls_fit_node
+  class_name: MovingLeastSquares  # class MovingLeastSquares : public CloudAlgo
+
+  input_topic_name: {name: table_clusters, subscribe: true}
+  output_topics:
+    cluster: {name: table_clusters_smooth
+              ,publish: false}
+
+RotationalEstimation:
+  input_topic_name: table_clusters_smooth
+  output_topics:
+    outliers: {name: &label1 topic1  
+               ,publish: false}
+    inliers: {name: &label2 topic2
+              ,publish: false}
+    mesh: {name: &label3 topic3
+           ,publish: true}
+
+DepthImageTriangulation:
+  input_topic_name: *label1
+  output_topics:
+    mesh: {name: table_clusters_outliers_mesh
+           ,publish: true}
+
+
+connections:
+  - {from: table_clusters_smooth, to: }
+publishers:
+  - table_clusters_smooth
+  - table_clusters_outliers_mesh
+subscriptions:
+  - table_clusters

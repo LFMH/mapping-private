@@ -12,40 +12,56 @@ class RegionGrowing : public CloudAlgo
  public:
   /** this struct allows for different stopping criteria (where region growing 
       should stop) */
-  struct StopAt {
-    /** stop method to decide over a given point. This method should be 
-        overriden to implement new stopping criteria */
-    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+  struct Behaviour {
+    /** grow_from_point method to decide over a seed given point. This method should be 
+        overriden to implement new region growing behaviours */
+    bool grow_from_point (const sensor_msgs::PointCloudConstPtr &cloud, int seed, cloud_kdtree::KdTree* kdtree)
     {
-      return false;
+      return true;
+    }
+    /** grow_into_point method to decide over a given point. This method should be 
+        overriden to implement new stopping criteria */
+    bool grow_into_point (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    {
+      return true;
     }
   };
   /** region growing should stop at points with dimension / channel values 
       higher than a user defined threshold */
-  struct StopAtHighDimension : StopAt {
+  struct StopAtHighDimension : Behaviour {
     /** set threshold value (maximum accepted value) */
     void setThreshold (double thresh) {max_val_ = thresh;}
     /** set threshold dimension (maximum accepted value) */
     void setChannelDimension (int d) {chIdx_ = d;}
-    /** overriden stop method to decide over a given point */
-    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    /** overriden grow_from_point method to decide over a given seed point */
+    bool grow_from_point (const sensor_msgs::PointCloudConstPtr &cloud, int seed, cloud_kdtree::KdTree* kdtree)
     {
-      return cloud->channels.at (chIdx_).values.at (i) > max_val_;
+      return true;
+    }
+    /** overriden grow_into_point method to decide over a given point */
+    bool grow_into_point (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    {
+      return cloud->channels.at (chIdx_).values.at (i) <= max_val_;
     }
     double max_val_;
     int chIdx_;
   };
   /** region growing should stop at points which differ from a given seed point in a 
       given dimension / channel value more than a user defined threshold */
-  struct StopAtDimensionDifference : StopAt {
+  struct StopAtDimensionDifference : Behaviour {
     /** set threshold value (maximum accepted value) */
     void setThreshold (double thresh) {max_val_ = thresh;}
     /** set threshold dimension (maximum accepted value) */
     void setChannelDimension (int d) {chIdx_ = d;}
-    /** overriden stop method to decide over a given point */
-    bool stop (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    /** overriden grow_from_point method to decide over a given seed point */
+    bool grow_from_point (const sensor_msgs::PointCloudConstPtr &cloud, int seed, cloud_kdtree::KdTree* kdtree)
     {
-      return fabs (cloud->channels.at (chIdx_).values.at (i) - cloud->channels.at (chIdx_).values.at (i)) > max_val_;
+      return true;
+    }
+    /** overriden grow_into_point method to decide over a given point */
+    bool grow_into_point (const sensor_msgs::PointCloudConstPtr &cloud, int i, int seed)
+    {
+      return fabs (cloud->channels.at (chIdx_).values.at (i) - cloud->channels.at (chIdx_).values.at (i)) <= max_val_;
     }
     double max_val_;
     int chIdx_;

@@ -1,0 +1,9 @@
+<launch>
+  <rosparam file="reconstruction_pipeline.yaml" />
+
+  <node pkg="cloud_algos" name="plugin_loader" type="plugin_loader">
+    <param name="pipeline_description" value="reconstruction_pipeline.yaml"/>
+  </node>
+</launch>
+
+

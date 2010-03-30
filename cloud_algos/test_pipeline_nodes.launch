@@ -1,0 +1,9 @@
+<launch>
+  <rosparam file="reconstruction_pipeline.yaml" />
+
+  <node pkg="cloud_algos" name="MovingLeastSquares" type="mls_fit_node"/>
+  <node pkg="cloud_algos" name="RotationalEstimation" type="rot_est"/>
+  <node pkg="cloud_algos" name="DepthImageTriangulation" type="depth_image_triangulation"/>
+</launch>
+
+
