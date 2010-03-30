@@ -9,9 +9,13 @@ MovingLeastSquares:
               ,publish: false}
 
 RotationalEstimation:
+  launch_pkg: cloud_algos
+  launch_type: rot_est_node
+  class_name: RotationalEstimation
+
   input_topic_name: table_clusters_smooth
   output_topics:
-    outliers: {name: &label1 topic1  
+    outliers: {name: &label1 topic1
                ,publish: false}
     inliers: {name: &label2 topic2
               ,publish: false}
@@ -19,16 +23,13 @@ RotationalEstimation:
            ,publish: true}
 
 DepthImageTriangulation:
+  launch_pkg: cloud_algos
+  launch_type: depth_image_triangulation
+  class_name: DepthImageTriangulation  # class MovingLeastSquares : public CloudAlgo
+
   input_topic_name: *label1
   output_topics:
     mesh: {name: table_clusters_outliers_mesh
            ,publish: true}
 
 
-connections:
-  - {from: table_clusters_smooth, to: }
-publishers:
-  - table_clusters_smooth
-  - table_clusters_outliers_mesh
-subscriptions:
-  - table_clusters

@@ -1,57 +1,78 @@
 --- # Passive Perception Pipeline
 NormalEstimation:
+  launch_pkg: cloud_algos
+  launch_type: normal_est_node
+  class_name: NormalEstimation
   input_topic_name: shoulder_cloud
   output_topic_name: shoulder_cloud_normals
+
 PlanarEstimationX:
-  type: PlanarEstimation
+  launch_pkg: cloud_algos
+  launch_type: planar_est_node
+  class_name: PlanarEstimation
   input_topic_name: shoulder_cloud_normals
   output_topic_name: shoulder_cloud_walls_x
+
 PlanarEstimationY:
-  type: PlanarEstimation
+  launch_pkg: cloud_algos
+  launch_type: planar_est_node
+  class_name: PlanarEstimation
   input_topic_name: shoulder_cloud_normals
   output_topic_name: shoulder_cloud_walls_y
   restrict_axis: {x: 0.0, y: 0.0, z: 1.0}
+
 PlanarEstimationZ:
-  type: PlanarEstimation
+  launch_pkg: cloud_algos
+  launch_type: planar_est_node
+  class_name: PlanarEstimation
   input_topic_name: shoulder_cloud_normals
   output_topic_name: shoulder_cloud_walls_z
   sac_threshold: 0.02
   restrict_axis: {x: 0.0, y: 0.0, z: 1.0}
+
 TableObjectDetector:
+  launch_pkg: dyn_obj_store
+  launch_type: table_object_detector_passive_node
+  class_name: None
   input_topic_name: shoulder_cloud_normals
   output_topic_name: table_clusters
   delta_min_z: 0.02
+
 DynObjStore:
+  launch_pkg: dyn_obj_store
+  launch_type: table_memory
+  class_name: None
   input_topic_name: table_clusters
   reconstruction_pipeline: reconstruction_pipeline.yaml
-
 
 # just a mental note so far, ignore this file
 #- name:       NormalEstimation
 #  input:      shoulder_cloud
-#  output:     
+#  output:
 #    - shoulder_cloud_normals
-#  parameters: 
+#  parameters:
 #    - k: 30
 #      someotherthing: blabla
 #
 #- name:       PlanarEstimation
 #  input:      shoulder_cloud_normals
 #  parameters:
-#    - algorithms: 
+#    - algorithms:
 #      - floor_ceiling:
-#        output: 
+#        output:
 #      - wall_detection:
-#        output: shoulder_cloud_walls 
+#        output: shoulder_cloud_walls
 #      - table_detection:
 #        output: shoulder_cloud_tables
 #      - furniture_detection:
 #        output: shoulder_cloud_furniture
-# 
+#
 #- name:       SupportedStructures
 #  input:      shoulder_cloud_furniture
 #  parameters:
 #    - fit_shapes:
 #      - lines
-#                   
 #
+#
+
+
