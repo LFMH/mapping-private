@@ -13,10 +13,10 @@ using namespace cloud_algos;
 //register NormalEstimation as a PCD_Algo class
 //PLUGINLIB_REGISTER_CLASS(NormalEstimation, NormalEstimation, PCD_Algo)
 //PLUGINLIB_REGISTER_CLASS(PlanarEstimation, PlanarEstimation, PCD_Algo)
-PLUGINLIB_REGISTER_CLASS(MovingLeastSquares, MovingLeastSquares, CloudAlgo)
-PLUGINLIB_REGISTER_CLASS(RotationalEstimation, RotationalEstimation, CloudAlgo)
-PLUGINLIB_REGISTER_CLASS(RegionGrowing, RegionGrowing, CloudAlgo)
-PLUGINLIB_REGISTER_CLASS(DepthImageTriangulation, DepthImageTriangulation, CloudAlgo)
-PLUGINLIB_REGISTER_CLASS(BoxEstimation, BoxEstimation, CloudAlgo)
+PLUGINLIB_DECLARE_CLASS(cloud_algos, MovingLeastSquares, MovingLeastSquares, CloudAlgo)
+PLUGINLIB_DECLARE_CLASS(cloud_algos, RotationalEstimation, RotationalEstimation, CloudAlgo)
+PLUGINLIB_DECLARE_CLASS(cloud_algos, RegionGrowing, RegionGrowing, CloudAlgo)
+PLUGINLIB_DECLARE_CLASS(cloud_algos, DepthImageTriangulation, DepthImageTriangulation, CloudAlgo)
+PLUGINLIB_DECLARE_CLASS(cloud_algos, BoxEstimation, BoxEstimation, CloudAlgo)
 //PLUGINLIB_REGISTER_CLASS(NoiseRemoval, NoiseRemoval, PCD_Algo)
 

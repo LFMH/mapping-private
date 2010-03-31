@@ -14,6 +14,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/box_fit.cpp
 #  src/gfpfh.cpp
   src/misc.cpp
+  src/plugin_loader.cpp
   src/registration.cpp
   src/box_fit_algo.cpp
   src/mls_fit.cpp
@@ -34,6 +35,9 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 
 #rosbuild_add_executable (planar_estimation_node src/planar_estimation.cpp)
 #set_target_properties (planar_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (plugin_loader_node src/plugin_loader.cpp src/misc.cpp)
+set_target_properties (plugin_loader_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (rotational_estimation_node src/rotational_estimation.cpp src/misc.cpp)
 set_target_properties (rotational_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

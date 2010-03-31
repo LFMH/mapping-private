@@ -91,7 +91,7 @@ class RegionGrowing : public CloudAlgo
   void OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr&);
   void OptimizedRegionGrowing (const sensor_msgs::PointCloudConstPtr&, std::vector<int>);
 
-  void setStopAtCriterion (StopAt);
+  void setBehaviour (Behaviour);
   void setRadius (double radius);
   void setExtraDimensionIgnore (int dimIdx, double dimVal);
   void setMaxNrNN (int max_nr_nn);
@@ -108,7 +108,7 @@ class RegionGrowing : public CloudAlgo
   int regInitial_;
   int regId_;
   ros::NodeHandle nh_;
-  StopAt stop_at_;
+  Behaviour behaviour_;
 };
 
 }

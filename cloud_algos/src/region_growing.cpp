@@ -50,7 +50,7 @@ void RegionGrowing::GrowFromPoint (const sensor_msgs::PointCloudConstPtr &cloud,
   std::vector<int> k_indices;
   std::vector<float> k_distances;
 
-  if (!behaviour->grow_from_point (cloud, idx, kdtree_))
+  if (!behaviour_.grow_from_point (cloud, idx, kdtree_))
     return;
   // ignore points that have a tag set
   if (regions_[idx] != regInitial_)
@@ -70,7 +70,7 @@ void RegionGrowing::GrowFromPoint (const sensor_msgs::PointCloudConstPtr &cloud,
         if ((regions_.at(k_indices.at(j)) == regInitial_) && 
             ((dimIdx_ == -1) || (cloud->channels.at(dimIdx_).values.at(k_indices.at(j)) == dimVal_)))
         {
-          if (!behaviour->stop_at_point (cloud, k_indices.at(j), qIdx))
+          if (behaviour_.grow_into_point (cloud, k_indices.at(j), qIdx))
           {
             cluster.points.push_back (cloud->points.at(k_indices.at(j)));
             regions_.at(k_indices.at(j)) = regId_;
