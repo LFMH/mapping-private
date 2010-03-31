@@ -50,9 +50,20 @@ inline void
 void MovingLeastSquares::init (ros::NodeHandle &nh)
 {
   // node handler and publisher
+  nh_ = nh;
   // TODO needed?
-  //nh_ = nh;
   //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
+
+  // parameters - TODO: does this work, or do we set them only here and not in constructor?
+  nh_.param("radius", radius_, radius_);
+  nh_.param("max_nn_", max_nn_, max_nn_);
+  nh_.param("order_", order_, order_);
+  nh_.param("filter_points_", filter_points_, filter_points_);
+  nh_.param("polynomial_fit_", polynomial_fit_, polynomial_fit_);
+  nh_.param("compute_moments_", compute_moments_, compute_moments_);
+  nh_.param("sqr_gauss_param_", sqr_gauss_param_, radius_*radius_);
+  // TODO: also in and out topics if needed, and the more complicated params too
+  //nh_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
 }
 
 void MovingLeastSquares::pre ()

@@ -43,7 +43,7 @@ class MovingLeastSquares : public CloudAlgo
   enum TangentMethod {PCA, WPCA, IWPCA, SAC};
   TangentMethod approximating_tangent_; // method for getting the approximate tangent plane of the underlying surface
   double radius_;           // search radius for getting the nearest neighbors
-  double radius_curvature_; // to have the curvature estimates in the same interval as normal estimation using PCA would provide it, set it to the same radius that would be used there
+  //double radius_curvature_; // to have the curvature estimates in the same interval as normal estimation using PCA would provide it, set it to the same radius that would be used there
   int max_nn_;              // maximum number of nearest neighbors to consider
   int order_;               // order of the polynomial to be fit
   bool filter_points_;      // should the generated/provided points be filtered based on proximity to the underlying surface?
