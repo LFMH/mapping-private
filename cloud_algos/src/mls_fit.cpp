@@ -53,6 +53,11 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
   nh_ = nh;
   // TODO needed?
   //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_mls_fit", 1);
+}
+
+void MovingLeastSquares::pre ()
+{
+  cloud_fit_.reset ();
 
   // parameters - TODO: does this work, or do we set them only here and not in constructor?
   nh_.param("radius", radius_, radius_);
@@ -64,11 +69,6 @@ void MovingLeastSquares::init (ros::NodeHandle &nh)
   nh_.param("sqr_gauss_param_", sqr_gauss_param_, radius_*radius_);
   // TODO: also in and out topics if needed, and the more complicated params too
   //nh_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
-}
-
-void MovingLeastSquares::pre ()
-{
-  cloud_fit_.reset ();
 }
 
 void MovingLeastSquares::post ()
@@ -115,6 +115,18 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   // TODO where to put this?
   clear ();
   nr_coeff_ = (order_ + 1) * (order_ + 2) / 2;
+
+  // Check the order, and don't fit planes (order 0 or 1)
+  bool do_polynomial_fit = polynomial_fit_;
+  if (polynomial_fit_ && order_ < 2)
+  {
+    do_polynomial_fit = false;
+    ROS_WARN("Polynomial fit was requested but order (%d) is not high enough!", order_);
+  }
+  if (do_polynomial_fit)
+    ROS_INFO ("Approximating local surface by an order %d polynomial.", order_);
+  else
+    ROS_INFO ("Approximating local surface only by the estimated tangent plane.");
 
   // Defines for experiments, should work with all commented
   //#define PARALLEL
@@ -252,9 +264,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     for (/*to avoid long/multiple lines*/; pit != cloud_fit_->points.end (); pit++, iit++, dit++)
       kdtree_->radiusSearch (*pit, radius_, *iit, *dit, max_nn_);
   }
-  ROS_INFO ("Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("Nearest neighbors in a radius of %g found in %g seconds.", radius_, (ros::Time::now () - ts).toSec ());
 
   // Go through all the points that have to be fitted
+  ROS_INFO ("Fitting surfaces of order %d to local neighborhoods and projecting original positions on it.", std::max (order_,1));
   ts = ros::Time::now ();
   #ifdef PARTIAL_TIMES
   ros::Time ts_tmp;
@@ -336,7 +349,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       #endif
     }
     else
-    if (polynomial_fit_)
+    if (do_polynomial_fit)
     {
       // initialize timer
       #ifdef PARTIAL_TIMES
@@ -652,7 +665,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   ROS_INFO ("- time spent computing polynomial: %g seconds.", sum_ts_polynomial);
   ROS_INFO ("- time spent computing extra features: %g seconds.", sum_ts_extra);
   #endif
-  if (polynomial_fit_)
+  if (do_polynomial_fit)
   {
     if (not_enough_nn != 0) ROS_WARN ("%d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
     #ifndef PARALELL

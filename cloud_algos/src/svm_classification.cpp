@@ -6,13 +6,16 @@ using namespace cloud_algos;
 void SVMClassification::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
-  nh_.param ("/" + default_node_name() + "/model_file_name", model_file_name_, std::string("svm/fpfh.model"));
-  nh_.param ("/" + default_node_name() + "/scale_file_name", scale_file_name_, std::string("svm/teapot_smooth_fpfh.scp"));
 }
 
 void SVMClassification::pre ()
 {
-
+  //nh_.param ("/" + default_node_name() + "/model_file_name", model_file_name_, std::string("svm/fpfh.model"));
+  //nh_.param ("/" + default_node_name() + "/scale_file_name", scale_file_name_, std::string("svm/teapot_smooth_fpfh.scp"));
+  nh_.param("model_file_name", model_file_name_, model_file_name_);
+  nh_.param("scale_file_name", scale_file_name_, scale_file_name_);
+  nh_.param("scale_self", scale_self_, scale_self_);
+  nh_.param("scale_file", scale_file_, scale_file_);
 }
 
 void SVMClassification::post ()

@@ -29,16 +29,16 @@ class PointFeatureHistogram : public CloudAlgo
   typedef sensor_msgs::PointCloud InputType;
 
   // Options
-  double radius_;    // search radius for getting the nearest neighbors
-  int max_nn_;       // maximum number of nearest neighbors to consider
-  int quantum_;      // number of divisions in a feature's definition interval
-  bool use_dist_;    // enable to use distance as a feature
-  bool combine_;     // enable to count co-occurrences of features
-  bool diferential_; // enable to let histogram values for a feature be relative to the previous one - if not combined
-  bool check_flip_;  // enable to make source-target selection consistent
-  bool abs_angles_;  // enable to use absolute values of angles instead of the 'directional' values
-  bool average_;     // enable to create the final histogram by a weighted average of the neighboring ones (useful if only star-like connections were used)
-  int point_label_ ; // set the value for the class label (-1 if not known / to be classified)
+  double radius_;     // search radius for getting the nearest neighbors
+  int max_nn_;        // maximum number of nearest neighbors to consider
+  int quantum_;       // number of divisions in a feature's definition interval
+  bool use_dist_;     // enable to use distance as a feature
+  bool combine_;      // enable to count co-occurrences of features
+  bool differential_; // enable to let histogram values for a feature be relative to the previous one - if not combined
+  bool check_flip_;   // enable to make source-target selection consistent
+  bool abs_angles_;   // enable to use absolute values of angles instead of the 'directional' values
+  bool average_;      // enable to create the final histogram by a weighted average of the neighboring ones (useful if only star-like connections were used)
+  int point_label_ ;  // set the value for the class label (-1 if not known / to be classified)
 
   // Topic name to subscribe to
   static std::string default_input_topic ()
@@ -84,11 +84,11 @@ class PointFeatureHistogram : public CloudAlgo
     quantum_ = 9;
     use_dist_ = 0;
     combine_ = false;
-    diferential_ = false;
+    differential_ = false;
     check_flip_ = true;
     abs_angles_ = false;
     average_ = true;
-    point_label_ = 0; // TODO initialize to -1 if classification algo is ready
+    point_label_ = -1;
   }
   ~PointFeatureHistogram ()
   {

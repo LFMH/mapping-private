@@ -14,7 +14,16 @@ void PointFeatureHistogram::init (ros::NodeHandle&)
 
 void PointFeatureHistogram::pre ()
 {
-
+  nh_.param("radius", radius_, radius_);
+  nh_.param("max_nn", max_nn_, max_nn_);
+  nh_.param("quantum", quantum_, quantum_);
+  nh_.param("use_dist", use_dist_, use_dist_);
+  nh_.param("combine", combine_, combine_);
+  nh_.param("differential", differential_, differential_);
+  nh_.param("check_flip", check_flip_, check_flip_);
+  nh_.param("abs_angles", abs_angles_, abs_angles_);
+  nh_.param("average", average_, average_);
+  nh_.param("point_label", point_label_, point_label_);
 }
 
 void PointFeatureHistogram::post ()
@@ -47,7 +56,7 @@ std::vector<std::string> PointFeatureHistogram::provides ()
   else
   {
     nr_bins_ = quantum_ * nr_features_;
-    //if (diferential_)
+    //if (differential_)
     //  nr_bins_ -= nr_features_;
   }
 
@@ -91,7 +100,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
   else
   {
     nr_bins_ = quantum_ * nr_features_;
-    //if (diferential_)
+    //if (differential_)
     //  nr_bins_ -= nr_features_;
   }
 
@@ -331,7 +340,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
 
   // TODO where to put this?
   // Subtract for each feature's histogram bins the value of the previous histogram bin (from the same feature)
-  if (!combine_ && diferential_)
+  if (!combine_ && differential_)
   {
     // TODO parallelize!
     for (size_t cp = 0; cp < cloud_pfh_->points.size (); cp++)

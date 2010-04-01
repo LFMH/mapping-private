@@ -62,9 +62,9 @@ class SVMClassification : public CloudAlgo
   // Constructor-Destructor
   SVMClassification () : CloudAlgo ()
   {
-    // model_file_name_ = std::string ("svm/fpfh.model");
+    model_file_name_ = std::string ("svm/fpfh.model");
     // scale_file_name_ = std::string ("svm/fpfh.scp");
-    //scale_file_name_ = std::string ("svm/teapot_smooth_fpfh.scp");
+    scale_file_name_ = std::string ("svm/teapot_smooth_fpfh.scp");
     scale_self_ = false;
     scale_file_ = true; // gets considered only if scale_self is false
   }
