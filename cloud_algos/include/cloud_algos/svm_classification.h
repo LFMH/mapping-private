@@ -20,9 +20,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-// TODO: check if the license is fine, and include it somewhere else, if it is not in ROS already...
-#include <cloud_algos/StringTokenizer.h>
-
 #include <libsvm/svm.h>
 
 namespace cloud_algos
@@ -139,7 +136,6 @@ class SVMClassification : public CloudAlgo
 
     // For reading from files
     std::ifstream fs;
-    std::string line;
 
     // Open file
     fs.open (fileName);
@@ -151,8 +147,9 @@ class SVMClassification : public CloudAlgo
     }
 
     // Get the type
-    getline (fs, line);
-    if (line.substr (0, 1) != "x")
+    std::string mystring;
+    fs >> mystring;
+    if (mystring.substr (0, 1) != "x")
     {
       if (verbose)
         ROS_WARN ("X scaling not found in %s or unknown!", fileName);
@@ -160,25 +157,14 @@ class SVMClassification : public CloudAlgo
     }
 
     // Get the bounds
-    getline (fs, line);
-    StringTokenizer st = StringTokenizer (line, " ");
-    lower = st.nextFloatToken ();
-    upper = st.nextFloatToken ();
+    fs >> lower >> upper;
 
     // Get the min and max values
-    int i = 0;
     while (!fs.eof ())
     {
-      i++;
-      getline (fs, line);
-      if (line == "")
-        continue;
-
-      StringTokenizer st = StringTokenizer (line, " ");
-
-      int idx = st.nextIntToken ();
-      float fmin = st.nextFloatToken ();
-      float fmax = st.nextFloatToken ();
+      int idx;
+      float fmin, fmax;
+      fs >> idx >> fmin >> fmax;
       if (idx <= nr_values)
       {
         res[0][idx-1] = fmin;

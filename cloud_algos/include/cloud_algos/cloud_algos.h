@@ -76,12 +76,14 @@ template <class algo>
     ROS_INFO("Received message.");
     a.pre();
     ROS_INFO("Algo.pre () returned.");
+    ROS_INFO("");
     a.process (input);
+    ROS_INFO("");
     ROS_INFO("Processed message.");
     a.post();
     ROS_INFO("Algo.post () returned.");
     pub_.publish (a.output());
-    ROS_INFO("Published result message.");
+    ROS_INFO("Published result message.\n");
   }
   
   ros::NodeHandle& nh_;

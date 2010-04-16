@@ -23,7 +23,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
   src/region_growing.cpp
   src/register_plugins.cpp
   src/depth_image_triangulation.cpp
-#  src/svm_classification.cpp
+  src/svm_classification.cpp
 #  src/StringTokenizer.cpp
 )
 
@@ -54,7 +54,7 @@ set_target_properties (box_fit_node_2 PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 rosbuild_add_executable (pfh_node src/pfh.cpp src/misc.cpp)
 set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-rosbuild_add_executable (svm_classification_node src/svm_classification.cpp src/StringTokenizer.cpp src/misc.cpp)
+rosbuild_add_executable (svm_classification_node src/svm_classification.cpp src/misc.cpp)
 set_target_properties (svm_classification_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (depth_image_triangulation_node src/depth_image_triangulation.cpp src/misc.cpp)
