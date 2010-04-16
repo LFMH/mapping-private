@@ -29,11 +29,11 @@ class LocalRadiusEstimation : public CloudAlgo
   typedef sensor_msgs::PointCloud InputType;
 
   // Options
-  double radius_;      // search radius for getting the nearest neighbors
-  int max_nn_;         // maximum number of nearest neighbors to consider
-  float plane_radius_; // radius value to set for planes - it is infinity when computed, but that messes up visualization :)
-  int distance_div_;   // number of divisions for distance discretization
-  int point_label_ ;   // set the value for the class label OR -1 if estimated surface type should be set
+  double radius_;       // search radius for getting the nearest neighbors
+  int max_nn_;          // maximum number of nearest neighbors to consider
+  double plane_radius_; // radius value to set for planes - it is infinity when computed, but that messes up visualization :)
+  int distance_div_;    // number of divisions for distance discretization
+  int point_label_ ;    // set the value for the class label OR -1 if estimated surface type should be set
 
   // Topic name to subscribe to
   static std::string default_input_topic ()

@@ -150,7 +150,7 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
       double dist = sqrt (points_sqr_distances_[cp][ni]);
 
       // compute bin
-      int bin_d = (int) floor (distance_div_ * dist / radius);
+      int bin_d = (int) floor (distance_div_ * dist / radius_);
 
       // update min-max values for distance bins
       if (min_max_angle_by_dist[bin_d][0] > angle) min_max_angle_by_dist[bin_d][0] = angle;
