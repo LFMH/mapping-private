@@ -3,7 +3,7 @@
 #include <cloud_algos/cloud_algos.h>
 
 // Eigen
-#include <Eigen/Array>
+//#include <Eigen/Array>
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
@@ -239,7 +239,7 @@ class PointFeatureHistogram : public CloudAlgo
 
   // ROS stuff
   ros::NodeHandle nh_;
-  ros::Publisher pub_;
+  //ros::Publisher pub_;
 
   // ROS messages
   boost::shared_ptr<sensor_msgs::PointCloud> cloud_pfh_;

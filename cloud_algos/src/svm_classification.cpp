@@ -24,10 +24,19 @@ void SVMClassification::post ()
 }
 
 std::vector<std::string> SVMClassification::requires ()
-  {return std::vector<std::string>();}
+{
+  std::vector<std::string> requires;
+  // requires at least a feature
+  requires.push_back("f1");
+  return requires;
+}
 
 std::vector<std::string> SVMClassification::provides ()
-  {return std::vector<std::string>();}
+{
+  std::vector<std::string> provides;
+  provides.push_back("point_class");
+  return provides;
+}
 
 std::string SVMClassification::process (const boost::shared_ptr<const SVMClassification::InputType>& cloud)
 {

@@ -183,7 +183,7 @@ class SVMClassification : public CloudAlgo
 
   // ROS stuff
   ros::NodeHandle nh_;
-  ros::Publisher pub_;
+  //ros::Publisher pub_;
 
   // ROS messages
   boost::shared_ptr<sensor_msgs::PointCloud> cloud_svm_;

@@ -6,10 +6,7 @@ using namespace cloud_algos;
 
 void PointFeatureHistogram::init (ros::NodeHandle&)
 {
-  // node handler and publisher
-  // TODO needed?
-  //nh_ = nh;
-  //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_pfh", 1);
+  nh_ = nh;
 }
 
 void PointFeatureHistogram::pre ()
@@ -60,7 +57,7 @@ std::vector<std::string> PointFeatureHistogram::provides ()
     //  nr_bins_ -= nr_features_;
   }
 
-  std::vector<std::string> provides(3);
+  std::vector<std::string> provides;
   // provides features (variable number)
   for (int i = 0; i < nr_bins_; i++)
   {
@@ -68,6 +65,11 @@ std::vector<std::string> PointFeatureHistogram::provides ()
     sprintf (dim_name, "f%d", i+1);
     provides.push_back (dim_name);
   }
+
+  // sets point label if required
+  if (point_label_ != -1)
+    provides.push_back ("point_label");
+
   return provides;
 }
 
@@ -130,7 +132,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
 
   // Allocate the extra needed channels
   int fIdx = cloud_pfh_->channels.size ();
-  cloud_pfh_->channels.resize (fIdx  + nr_bins_ + 1);
+  cloud_pfh_->channels.resize (fIdx  + nr_bins_ + (point_label_!=-1 ? 1 : 0));
 
   // Name the extra channels
   for (int i = 0; i < nr_bins_; i++)
@@ -360,7 +362,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
 }
 
 PointFeatureHistogram::OutputType PointFeatureHistogram::output ()
-  {return *(cloud_pfh_.get());}
+  {return *(cloud_pfh_.get());} // TODO: is this the right thing?
   //{return *cloud_pfh_;}
 
 #ifdef CREATE_NODE
