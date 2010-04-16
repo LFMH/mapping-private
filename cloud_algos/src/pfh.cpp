@@ -4,7 +4,7 @@
 using namespace std;
 using namespace cloud_algos;
 
-void PointFeatureHistogram::init (ros::NodeHandle&)
+void PointFeatureHistogram::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
 }
@@ -80,7 +80,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
 
   // Check if normals exist TODO: solve issue with getIndex(cloud, "nx");
   int nxIdx = -1;
-  for (unsigned int d = 0; d < cloud->get_channels_size (); d++)
+  for (unsigned int d = 0; d < cloud->channels.size (); d++)
     if (cloud->channels[d].name == "nx")
     {
       nxIdx = d;
