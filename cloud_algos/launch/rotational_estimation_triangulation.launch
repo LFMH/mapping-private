@@ -1,7 +1,7 @@
 <!-- Point Cloud Msg generator -->
 <launch>
   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
- 	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/teapot_handle_side-denoise.pcd) $(optenv period 5)" />
+ 	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/teapot_handle_side-denoise.pcd) $(optenv period 15)" />
 <!-- Rotational Object Estimator -->
 <node pkg="cloud_algos" type="rotational_estimation_node" name="rotational_estimation_node" output="screen" respawn="true">
   <remap from="~cloud_pcd" to="/cloud_pcd" />
