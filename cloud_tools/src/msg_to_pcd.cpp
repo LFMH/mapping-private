@@ -83,11 +83,13 @@ class MsgToPCD
     bool 
       spin ()
     {
+      ros::Rate loop_rate(1);
       while (nh_.ok())
       {
         ros::spinOnce ();
         if (counter_ >= nr_saved_pcds_)
           return true;
+	loop_rate.sleep();
         //updateParametersFromServer();
       }
       return true;

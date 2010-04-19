@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <ros/node_handle.h>
+#include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
 #include <boost/thread/mutex.hpp>
@@ -23,7 +24,7 @@ class MsgToPCD
     boost::format filename_format_;
 
   public:
-  MsgToPCD () :  nh_("~"), counter_(0), debug_(false)
+  MsgToPCD () :  nh_("~"), counter_(0), debug_(true)
     {
       nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
       nh_.param ("dir", dir_, std::string(""));       
@@ -73,12 +74,14 @@ class MsgToPCD
     bool 
       spin ()
     {
+      ros::Rate loop_rate(1);
       while (nh_.ok())
       {
         ros::spinOnce ();
         if ((counter_ == 1) && (!continous_))
           return true;
         updateParametersFromServer();
+	loop_rate.sleep();
       }
       return true;
     }
