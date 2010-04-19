@@ -76,7 +76,7 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
   cloud_radius_->points   = cloud->points;
   cloud_radius_->channels = cloud->channels;
 
-  // Allocate the extra needed channels
+  // Allocate and name the extra needed channels (don't forget to allocate space for values too!)
   int rIdx = cloud_radius_->channels.size ();
   cloud_radius_->channels.resize (rIdx + 3 + 1);
   cloud_radius_->channels[rIdx+0].name = "r_min";
@@ -85,8 +85,13 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
   int labelIdx = cloud_radius_->channels.size ();
   cloud_radius_->channels.resize (labelIdx  + 1);
   cloud_radius_->channels[labelIdx].name = "point_label";
+
+  // Allocate space for the extra needed channel values
   for (size_t d = rIdx; d < cloud_radius_->channels.size (); d++)
+  {
+    cloud_radius_->channels[d].values.resize (cloud_radius_->points.size ());
     ROS_INFO ("[LocalRadiusEstimation] Added channel: %s", cloud_radius_->channels[d].name.c_str ());
+  }
 
   // Allocate space for minimum and maximum angle values in each distance bin
   vector<vector<double> > min_max_angle_by_dist (distance_div_);
@@ -182,9 +187,9 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
     else min_radius = min (Amaxt_d/Amaxt_Amax, plane_radius_);
 
     // Save extra dimensions
-    cloud_radius_->channels[rIdx].values[cp] = min_radius;
-    cloud_radius_->channels[rIdx].values[cp] = max_radius;
-    cloud_radius_->channels[rIdx].values[cp] = max_radius - min_radius;
+    cloud_radius_->channels[rIdx+0].values[cp] = min_radius;
+    cloud_radius_->channels[rIdx+1].values[cp] = max_radius;
+    cloud_radius_->channels[rIdx+2].values[cp] = max_radius - min_radius;
 
     // add class label
     if (point_label_ != -1)
@@ -197,7 +202,7 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
   ROS_INFO ("[LocalRadiusEstimation] Radius estimation done in %g seconds.", (ros::Time::now () - ts).toSec ());
 
   // Finish
-  ROS_INFO ("[LocalRadiusEstimation] Processed point cloud in %g seconds.\n", (ros::Time::now () - global_time).toSec ());
+  ROS_INFO ("[LocalRadiusEstimation] Processed point cloud in %g seconds.", (ros::Time::now () - global_time).toSec ());
   return std::string("ok");
 }
 

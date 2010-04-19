@@ -88,7 +88,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     }
   if (nxIdx == -1)
   {
-    ROS_ERROR ("Provided point cloud does not have normals. Use the normal_estimation or mls_fit first!");
+    ROS_ERROR ("[PointFeatureHistogram] Provided point cloud does not have normals. Use the normal_estimation or mls_fit first!");
     return std::string("missing normals");
   }
   /// @NOTE: we assume that if nx exists then ny and nz are the channels following it
@@ -141,14 +141,14 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     sprintf (dim_name, "f%d", i+1);
     cloud_pfh_->channels[fIdx + i].name = dim_name;
     if (i == 0)
-      ROS_INFO ("Added channel: %s ... [cont]", dim_name);
+      ROS_INFO ("[PointFeatureHistogram] Added channel: %s ... [cont]", dim_name);
     else if (i == nr_bins_-1)
-      ROS_INFO ("Added channel: %s [done]", dim_name);
+      ROS_INFO ("[PointFeatureHistogram] Added channel: %s [done]", dim_name);
   }
   if (point_label_ != -1)
   {
     cloud_pfh_->channels[fIdx + nr_bins_].name = "point_label";
-    ROS_INFO ("Added channel: %s", cloud_pfh_->channels[fIdx + nr_bins_].name.c_str ());
+    ROS_INFO ("[PointFeatureHistogram] Added channel: %s", cloud_pfh_->channels[fIdx + nr_bins_].name.c_str ());
   }
 
   // Allocate space for histograms
@@ -168,7 +168,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     ts = ros::Time::now ();
     /// @NOTE: kd-tree for the original PCD... doesn't matter since they are the same
     kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);
-    ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
+    ROS_INFO ("[PointFeatureHistogram] Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
 
   // Allocate enough space for point indices and distances
@@ -185,8 +185,8 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     if (k > k_max) k_max = k;
     if (k < k_min) k_min = k;
   }
-  ROS_INFO ("Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
-  ROS_INFO ("Neighborhood sizes varied from %d to %d.", k_min, k_max);
+  ROS_INFO ("[PointFeatureHistogram] Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("[PointFeatureHistogram] Neighborhood sizes varied from %d to %d.", k_min, k_max);
 
   // TODO make a function that takes a neighborhood and returns the histogram (mesh or star)
 
@@ -295,7 +295,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     }
     */
   }
-  ROS_INFO ("Computed feature histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("[PointFeatureHistogram] Computed feature histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
 
   // Do an average of histograms weighted with the distance (or leave them as they are)
   if (!average_)
@@ -304,7 +304,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     ts = ros::Time::now ();
     for (int b = 0; b < nr_bins_; b++)
       cloud_pfh_->channels[fIdx+b].values = histograms[b];
-    ROS_INFO ("Copied histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
+    ROS_INFO ("[PointFeatureHistogram] Copied histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
     /// @NOTE: we loose a bit of time here, but no biggie
   }
   else
@@ -337,7 +337,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
       for (int b = 0; b < nr_bins_; b++)
         cloud_pfh_->channels[fIdx+b].values[cp] /= sum_weight;
     }
-    ROS_INFO ("Computed weighted averages of histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
+    ROS_INFO ("[PointFeatureHistogram] Computed weighted averages of histograms in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
 
   // TODO where to put this?
@@ -357,7 +357,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
   }
 
   // Finish
-  ROS_INFO ("PFH done in %g seconds.\n", (ros::Time::now () - global_time).toSec ());
+  ROS_INFO ("[PointFeatureHistogram] PFH done in %g seconds.", (ros::Time::now () - global_time).toSec ());
   return std::string("ok");
 }
 
