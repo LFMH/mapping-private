@@ -58,6 +58,9 @@ class RotationalEstimation : public CloudAlgo
 
   int debug_;
   std::string output_cloud_outliers_;
+  double threshold_;
+  double probability_;
+  int max_iterations_;
 };
 
 }
