@@ -41,7 +41,9 @@
 **/
 
 // ROS core
+#include <ros/ros.h>
 #include <ros/node_handle.h>
+#include <ros/this_node.h>
 #include <point_cloud_mapping/cloud_io.h>
 #include <ias_table_msgs/TriangularMesh.h>
 
@@ -77,6 +79,7 @@ public:
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
     std::cerr << "nr_of_mesh_publishers_: " << nr_of_mesh_publishers_ << std::endl;
+    ROS_INFO("Node name: %s", ros::this_node::getName().c_str());
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -179,9 +182,11 @@ public:
   // \brief Spin (!)
   bool spin ()
   {
+    ros::Rate loop_rate(1);
     while(nh_.ok())
     {
       ros::spinOnce();
+      loop_rate.sleep();
     }    
     return (true);
   }
