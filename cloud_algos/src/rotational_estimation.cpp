@@ -164,6 +164,8 @@ void RotationalEstimation::init (ros::NodeHandle &nh)
   nh_.param("threshold", threshold_, 0.004);
   nh_.param("probability", probability_, 0.99);
   nh_.param("max_iterations", max_iterations_, 100);
+  ROS_INFO("threshold_: %lf, probability_: %lf, max_iterations_: %d", threshold_, 
+           probability_, max_iterations_);
   vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
   vis_cloud_outliers_pub_ = nh_.advertise <sensor_msgs::PointCloud> (output_cloud_outliers_, 1);
   vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
