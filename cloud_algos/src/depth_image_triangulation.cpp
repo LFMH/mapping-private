@@ -1,5 +1,6 @@
 #include <cloud_algos/cloud_algos.h>
 #include <cloud_algos/depth_image_triangulation.h>
+#include <ros/this_node.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
@@ -326,6 +327,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   nr_tr = nr;
   tr.resize(nr);
   mesh_->header = cloud_with_line_.header;   
+  mesh_->sending_node = ros::this_node::getName();   
   geometry_msgs::Point32 tr_i, tr_j, tr_k;
   ias_table_msgs::Triangle tr_mesh;
 

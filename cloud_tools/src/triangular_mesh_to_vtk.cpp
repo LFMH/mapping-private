@@ -59,8 +59,11 @@ protected:
   ros::Publisher mesh_pub_;
   std::string input_mesh_topic_, output_vtk_file_;
   int file_name_counter_;
+  std::map <std::string, bool> subscribed_to_nodes_;
+  std::map <std::string, bool>::iterator it_;
+  
 public:
-
+  
   int mesh_count_, nr_of_mesh_publishers_;
   
   // ROS messages
@@ -72,14 +75,21 @@ public:
     nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
     nh_.param("nr_of_mesh_publishers", nr_of_mesh_publishers_, 1);
     nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
+    XmlRpc::XmlRpcValue v;
+    nh_.param("subscribed_to_nodes", v, v);
+    for(int i =0; i < v.size(); i++)
+    {
+      subscribed_to_nodes_[std::string(v[i])] = false;
+      ROS_INFO("node_names: %d", subscribed_to_nodes_[std::string(v[i])]);
+    }
+    for ( it_=subscribed_to_nodes_.begin() ; it_ != subscribed_to_nodes_.end(); it_++ )
+      cerr << (*it_).first << " => " << (*it_).second << endl;
     mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangularMeshToVTK::mesh_cb, this);
     mesh_pub_ = nh_.advertise<ias_table_msgs::TriangularMesh> ("output_mesh", 1);
-    mesh_count_ = 0;
+    //mesh_count_ = 0;
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
-    std::cerr << "nr_of_mesh_publishers_: " << nr_of_mesh_publishers_ << std::endl;
-    ROS_INFO("Node name: %s", ros::this_node::getName().c_str());
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +97,7 @@ public:
   void mesh_cb(const ias_table_msgs::TriangularMeshConstPtr& mesh)
   {
     mesh_.header = mesh->header;
+    ROS_INFO("Sending node name: %s", mesh->sending_node.c_str());
     //mesh_.points.resize(mesh_points_size_before + mesh->points.size());
     //mesh_.triangles.resize(mesh_triangles_size_before + mesh->triangles.size());
     unsigned long size_points = mesh_.points.size();
@@ -101,8 +112,11 @@ public:
       mesh_.triangles[size_triangles + j].j += size_points;
       mesh_.triangles[size_triangles + j].k += size_points;
     }
-
-    mesh_count_++;
+    
+    if (subscribed_to_nodes_.find(mesh->sending_node) != subscribed_to_nodes_.end())
+      subscribed_to_nodes_[mesh->sending_node] = true;
+      
+    //    mesh_count_++;
 //     if (mesh_count_ == nr_of_mesh_publishers_)
 //     {
 //       write_vtk_file("mesh1.vtk", mesh_);
@@ -121,15 +135,29 @@ public:
     //Solve this through identification of publishers
     //std::cerr << "nr_of_mesh_publishers_ "<< nr_of_mesh_publishers_ << std::endl;
     //if (mesh_count_ == nr_of_mesh_publishers_)
-    if (mesh_count_ == 2)
+    //if (mesh_count_ == 2)
+    if (all_meshes_received(subscribed_to_nodes_))
     {
       mesh_pub_.publish(mesh_);
       write_vtk_file(output_vtk_file_, mesh_);
       mesh_.points.resize(0);
       mesh_.triangles.resize(0);
-      mesh_count_ = 0;
+      for (it_=subscribed_to_nodes_.begin() ; it_ != subscribed_to_nodes_.end(); it_++)
+        (*it_).second = false;
     }
   }  
+  ////////////////////////////////////////////////////////////////////////////////
+  // \brief check if we received all meshes for one model
+  // \param subscribed_to_nodes node_name <=> toggle value mapping
+  bool all_meshes_received(std::map <std::string, bool> &subscribed_to_nodes)
+  {
+    for (it_=subscribed_to_nodes.begin() ; it_ != subscribed_to_nodes.end(); it_++)
+    {
+      if ((*it_).second == false)
+        return false;
+    }
+    return true;
+  }
   ////////////////////////////////////////////////////////////////////////////////
   // \brief write TriangularMesh to vtk file
   void write_vtk_file(std::string output, ias_table_msgs::TriangularMesh &mesh_)
