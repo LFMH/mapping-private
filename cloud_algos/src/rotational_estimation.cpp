@@ -209,6 +209,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
   cloud_ = cloud;
   mesh_ = boost::shared_ptr <ias_table_msgs::TriangularMesh>(new ias_table_msgs::TriangularMesh ());
   mesh_->header = cloud_->header;
+  mesh_->sending_node = ros::this_node::getName();
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   if (debug_ > 0)
