@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Dejan Pangercic <pangerci -=- cs.tum.edu>
+ * Copyright (c) 2010 Dejan Pangercic <pangercic -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -43,7 +43,6 @@
 // ROS core
 #include <ros/ros.h>
 #include <ros/node_handle.h>
-#include <ros/this_node.h>
 #include <point_cloud_mapping/cloud_io.h>
 #include <ias_table_msgs/TriangularMesh.h>
 
@@ -62,10 +61,7 @@ protected:
   std::map <std::string, bool> subscribed_to_nodes_;
   std::map <std::string, bool>::iterator it_;
   
-public:
-  
-  int mesh_count_, nr_of_mesh_publishers_;
-  
+public:  
   // ROS messages
   ias_table_msgs::TriangularMesh mesh_; 
 
@@ -73,20 +69,18 @@ public:
   TriangularMeshToVTK (ros::NodeHandle &n) : nh_(n)
   {
     nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
-    nh_.param("nr_of_mesh_publishers", nr_of_mesh_publishers_, 1);
-    nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
+        nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
     XmlRpc::XmlRpcValue v;
     nh_.param("subscribed_to_nodes", v, v);
     for(int i =0; i < v.size(); i++)
     {
       subscribed_to_nodes_[std::string(v[i])] = false;
-      ROS_INFO("node_names: %d", subscribed_to_nodes_[std::string(v[i])]);
     }
-    for ( it_=subscribed_to_nodes_.begin() ; it_ != subscribed_to_nodes_.end(); it_++ )
-      cerr << (*it_).first << " => " << (*it_).second << endl;
+    for (it_=subscribed_to_nodes_.begin() ; it_ != subscribed_to_nodes_.end(); it_++)
+      ROS_INFO("node_names: %s, toggle values: %d", (*it_).first.c_str(), (*it_).second);
+
     mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangularMeshToVTK::mesh_cb, this);
     mesh_pub_ = nh_.advertise<ias_table_msgs::TriangularMesh> ("output_mesh", 1);
-    //mesh_count_ = 0;
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
@@ -94,12 +88,11 @@ public:
 
   ////////////////////////////////////////////////////////////////////////////////
   // \brief mesh callback
+  // \param mesh mesh messages constituting our to-be-reconstructed object
   void mesh_cb(const ias_table_msgs::TriangularMeshConstPtr& mesh)
   {
     mesh_.header = mesh->header;
     ROS_INFO("Sending node name: %s", mesh->sending_node.c_str());
-    //mesh_.points.resize(mesh_points_size_before + mesh->points.size());
-    //mesh_.triangles.resize(mesh_triangles_size_before + mesh->triangles.size());
     unsigned long size_points = mesh_.points.size();
     unsigned long size_triangles = mesh_.triangles.size();
     for (unsigned long i = 0; i < mesh->points.size(); i++)
@@ -115,27 +108,8 @@ public:
     
     if (subscribed_to_nodes_.find(mesh->sending_node) != subscribed_to_nodes_.end())
       subscribed_to_nodes_[mesh->sending_node] = true;
-      
-    //    mesh_count_++;
-//     if (mesh_count_ == nr_of_mesh_publishers_)
-//     {
-//       write_vtk_file("mesh1.vtk", mesh_);
-//       mesh_count_ = 0;
-//       mesh_.points.resize(0);
-//       mesh_.triangles.resize(0);
-//     }
-//     else
-//     {
-//       write_vtk_file("mesh2.vtk", mesh_);
-//       mesh_.points.resize(0);
-//       mesh_.triangles.resize(0);
-//     }
-    
-    //TODO: I assume here that messages are coming in sequentially
-    //Solve this through identification of publishers
-    //std::cerr << "nr_of_mesh_publishers_ "<< nr_of_mesh_publishers_ << std::endl;
-    //if (mesh_count_ == nr_of_mesh_publishers_)
-    //if (mesh_count_ == 2)
+
+    //check if we received messages from all nodes subscribing to this one
     if (all_meshes_received(subscribed_to_nodes_))
     {
       mesh_pub_.publish(mesh_);
@@ -146,9 +120,11 @@ public:
         (*it_).second = false;
     }
   }  
+  
   ////////////////////////////////////////////////////////////////////////////////
   // \brief check if we received all meshes for one model
-  // \param subscribed_to_nodes node_name <=> toggle value mapping
+  // \param subscribed_to_nodes map of node_name <=> toggle value indicating
+  // whether message from that node has been received or not
   bool all_meshes_received(std::map <std::string, bool> &subscribed_to_nodes)
   {
     for (it_=subscribed_to_nodes.begin() ; it_ != subscribed_to_nodes.end(); it_++)
@@ -160,17 +136,18 @@ public:
   }
   ////////////////////////////////////////////////////////////////////////////////
   // \brief write TriangularMesh to vtk file
+  // \param output vtk output file
+  // \param mesh_ input mesh message
   void write_vtk_file(std::string output, ias_table_msgs::TriangularMesh &mesh_)
   {
     /* writing VTK file */
     ROS_WARN("Writting to vtk file");
     FILE *f;
     std::string s;
-    std::stringstream out;
     file_name_counter_++;
-    out << file_name_counter_;
-    s = out.str();
-    output = s + output;
+    char file_name_counter[100];
+    sprintf (file_name_counter, "%04d",  file_name_counter_);
+    output = std::string(file_name_counter) + "_" + output;
     
     f = fopen(output.c_str(),"w");
     fprintf (f, "# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS %ld float\n",mesh_.points.size());
@@ -181,12 +158,6 @@ public:
       fprintf (f,"%f %f %f ", mesh_.points[i].x, mesh_.points[i].y, mesh_.points[i].z);
       fprintf (f,"\n");
     }
-    
-   //   fprintf(f,"VERTICES %ld %ld\n", mesh_.points.size(), 2*mesh_.points.size());
-//      for (i=0; i<mesh_.points.size(); i++)
-//        fprintf(f,"1 %ld\n", i);
-    
-//     ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
     
     fprintf(f,"\nPOLYGONS %ld %ld\n", mesh_.triangles.size(), 4*mesh_.triangles.size());
     for (unsigned long i=0; i< mesh_.triangles.size(); i++)
@@ -203,11 +174,11 @@ public:
       else
         fprintf(f,"3 %d %d %d\n",mesh_.triangles[i].i, mesh_.triangles[i].k, mesh_.triangles[i].j);
     }
-    ROS_WARN("Writting to vtk file DONE");
+    ROS_WARN("Writting to vtk %s file DONE", output.c_str());
   }
   
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief Spin (!)
+  // \brief spin function
   bool spin ()
   {
     ros::Rate loop_rate(1);

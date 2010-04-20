@@ -13,7 +13,6 @@
   <node pkg="cloud_tools" type="triangular_mesh_to_vtk" name="triangular_mesh_to_vtk_node" output="screen" respawn="true">
     <param name="input_mesh_topic" type="string" value="mesh"/>
     <param name="output_vtk_file" type="string" value="mesh_test.vtk"/>
-    <param name="nr_of_mesh_publishers" type="int" value="1"/>
     <rosparam param="subscribed_to_nodes">["/depth_image_triangulation_node"]</rosparam>
   </node>
 </launch>
