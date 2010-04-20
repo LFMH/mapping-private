@@ -37,12 +37,8 @@ using namespace cloud_algos;
 void BoxEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
-  nh_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
   nh_.param("output_box_topic", output_box_topic_, std::string("/box"));
-  nh_.param("output_mesh_topic", output_mesh_topic_, std::string("output_mesh"));
-  nh_.param("output_vtk_file", output_vtk_file_, std::string(""));
   box_pub_ = nh_.advertise<visualization_msgs::Marker>("box", 0 );
-  mesh_pub_ = nh_.advertise<ias_table_msgs::TriangularMesh> (output_mesh_topic_, 1);
   coeff_.resize(15);
   r_ = g_ = 0.0;
   b_ = 1.0;
@@ -70,7 +66,7 @@ std::vector<std::string> BoxEstimation::provides ()
 
 std::string BoxEstimation::process (const boost::shared_ptr<const InputType> input)
 {
-  ROS_INFO ("PointCloud message received on %s with %d points", input_cloud_topic_.c_str (), (int)input->points.size ());
+  ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
   find_model (input, coeff_);
   triangulate_box (input, coeff_);
   //publish fitted box on marker topic

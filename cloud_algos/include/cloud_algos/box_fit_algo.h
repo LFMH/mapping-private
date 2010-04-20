@@ -32,8 +32,32 @@ class BoxEstimation : public CloudAlgo
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>);
   boost::shared_ptr<const OutputType> output ();
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief function for actual model fitting
+   * \param cloud de-noisified input point cloud message
+   * \param coeff box to-be-filled-in coefficients(15 elements):
+   * box center: cx, cy, cz, 
+   * box dimensions: dx, dy, dz, 
+   * box eigen axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
+   */
   void find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief makes triangular mesh out of box coefficients
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
   void triangulate_box (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief publish box as marker for rvis visualisation
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
   void publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
  
  private: 
@@ -43,26 +67,18 @@ class BoxEstimation : public CloudAlgo
 
   ros::NodeHandle nh_;
 
- protected:
- 
-  //publishes original, input cloud
-  ros::Publisher cloud_pub_;
-   //subscribes to input cloud (cluster)
-  ros::Subscriber clusters_sub_;
+ protected: 
   //model rviz publisher
   ros::Publisher box_pub_;
   //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;
-  std::string input_cloud_topic_, output_box_topic_;
+  //publish box as marker
+  std::string output_box_topic_;
   //point color
   float r_, g_, b_;
   //lock point cloud
   boost::mutex lock;
-  //mesh publisher
-  ros::Publisher mesh_pub_;
-  //publish mesh on topic
-  std::string output_mesh_topic_,  output_vtk_file_;
 };
 
 }
