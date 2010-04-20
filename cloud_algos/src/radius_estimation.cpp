@@ -16,6 +16,7 @@ void LocalRadiusEstimation::pre ()
   nh_.param("plane_radius", plane_radius_, plane_radius_);
   nh_.param("distance_div", distance_div_, distance_div_);
   nh_.param("point_label", point_label_, point_label_);
+  nh_.param("rmin2curvature", rmin2curvature_, rmin2curvature_);
 }
 
 void LocalRadiusEstimation::post ()
@@ -54,11 +55,11 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
   clear ();
 
   // Check if normals exist
-  //int nxIdx = getIndex(cloud, "nx");
-  int nxIdx = -1;
-  for (unsigned int d = 0; d < cloud->channels.size (); d++)
-    if (cloud->channels[d].name == "nx")
-      { nxIdx = d; break; }
+  int nxIdx = getChannelIndex(cloud, "nx");
+  //int nxIdx = -1;
+  //for (unsigned int d = 0; d < cloud->channels.size (); d++)
+  //  if (cloud->channels[d].name == "nx")
+  //    { nxIdx = d; break; }
   if (nxIdx == -1)
   {
     ROS_ERROR ("[LocalRadiusEstimation] Provided point cloud does not have normals. Use the normal_estimation or mls_fit first!");
@@ -78,7 +79,7 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
 
   // Allocate and name the extra needed channels (don't forget to allocate space for values too!)
   int rIdx = cloud_radius_->channels.size ();
-  cloud_radius_->channels.resize (rIdx + 3 + 1);
+  cloud_radius_->channels.resize (rIdx + 2 + 1);
   cloud_radius_->channels[rIdx+0].name = "r_min";
   cloud_radius_->channels[rIdx+1].name = "r_max";
   cloud_radius_->channels[rIdx+2].name = "r_dif";
@@ -121,8 +122,15 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
     if (k > k_max) k_max = k;
     if (k < k_min) k_min = k;
   }
-  ROS_INFO ("[LocalRadiusEstimation] Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("[LocalRadiusEstimation] Nearest neighbors in a radius of %g (maxed at %d) found in %g seconds.", radius_, max_nn_, (ros::Time::now () - ts).toSec ());
   ROS_INFO ("[LocalRadiusEstimation] Neighborhood sizes varied from %d to %d.", k_min, k_max);
+
+  int cIdx = getChannelIndex(cloud, "curvature");
+  if (rmin2curvature_)
+    if (cIdx == -1)
+      ROS_ERROR ("[LocalRadiusEstimation] Overwriting of curvature values was requested but the channel doesn't exist!");
+    else
+      ROS_WARN ("[LocalRadiusEstimation] Overwriting curvature values with the estimated minimal local radius (r_min)!");
 
   // Estimate radiuses
   ts = ros::Time::now ();
@@ -191,6 +199,10 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
     cloud_radius_->channels[rIdx+1].values[cp] = max_radius;
     cloud_radius_->channels[rIdx+2].values[cp] = max_radius - min_radius;
 
+    // Overwrite curvature values if needed
+    if (rmin2curvature_ && cIdx != -1)
+      cloud_radius_->channels[cIdx].values[cp] = min_radius;
+
     // add class label
     if (point_label_ != -1)
       cloud_radius_->channels[labelIdx].values[cp] = point_label_;
@@ -206,8 +218,8 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
   return std::string("ok");
 }
 
-LocalRadiusEstimation::OutputType LocalRadiusEstimation::output ()
-  {return *(cloud_radius_.get());} // TODO: is this the right thing?
+boost::shared_ptr<const LocalRadiusEstimation::OutputType> LocalRadiusEstimation::output ()
+  {return cloud_radius_;}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])

@@ -71,7 +71,7 @@ class MovingLeastSquares : public CloudAlgo
   std::vector<std::string> requires ();
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
-  boost::shared_ptr<const OutputType> output ();
+  boost::shared_ptr<const OutputType> output (); // TODO: return OutputType or this?
 
   // Setter functions - TODO: first test, and if useful request setter for epsion_ !!! (bucket size not important)
   void setKdTree (cloud_kdtree::KdTree *kdtree)

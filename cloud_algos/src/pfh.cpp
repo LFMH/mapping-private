@@ -185,7 +185,7 @@ std::string PointFeatureHistogram::process (const boost::shared_ptr<const PointF
     if (k > k_max) k_max = k;
     if (k < k_min) k_min = k;
   }
-  ROS_INFO ("[PointFeatureHistogram] Nearest neighbors found in %g seconds.", (ros::Time::now () - ts).toSec ());
+  ROS_INFO ("[PointFeatureHistogram] Nearest neighbors in a radius of %g (maxed at %d) found in %g seconds.", radius_, max_nn_, (ros::Time::now () - ts).toSec ());
   ROS_INFO ("[PointFeatureHistogram] Neighborhood sizes varied from %d to %d.", k_min, k_max);
 
   // TODO make a function that takes a neighborhood and returns the histogram (mesh or star)
