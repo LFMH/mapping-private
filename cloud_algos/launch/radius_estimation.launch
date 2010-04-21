@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/teapot_handle_side-denoise.pcd) $(optenv period 5)" />
+
+  <node pkg="cloud_algos" type="radius_estimation_node" name="radius_estimation_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="cloud_pcd" />
+    <rosparam>{rmin2curvature: true, radius: 0.1, max_nn: 75}</rosparam>
+  </node>
+</launch>
