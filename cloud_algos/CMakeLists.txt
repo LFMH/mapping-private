@@ -49,8 +49,8 @@ set_target_properties (registration_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp src/misc.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-rosbuild_add_executable (box_fit_node_2 src/box_fit_algo.cpp src/misc.cpp)
-set_target_properties (box_fit_node_2 PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+rosbuild_add_executable (box_fit_node src/box_fit_algo.cpp src/misc.cpp)
+set_target_properties (box_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (pfh_node src/pfh.cpp src/misc.cpp)
 set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
@@ -68,8 +68,5 @@ rosbuild_add_executable (cylinder_fit_node src/cylinder_fit.cpp src/misc.cpp)
 #set_target_properties (cylinder_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 #DEPRECATED
-rosbuild_add_executable (box_fit_node src/box_fit.cpp src/misc.cpp)
-#set_target_properties (box_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
-
 #rosbuild_add_executable (gfpfh_node src/gfpfh.cpp)
 #set_target_properties (gfpfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
