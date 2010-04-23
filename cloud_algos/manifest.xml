@@ -8,7 +8,6 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="ias_sample_consensus" />
-  <depend package="ias_visualization_msgs" />
   <depend package="pluginlib" />
   <depend package="joy" />
   <depend package="roscpp" />
@@ -20,7 +19,7 @@
   <depend package="mapping_msgs" />
   <depend package="vision_msgs" />
   <depend package="vision_srvs" />
-  <depend package="ias_table_msgs" />
+  <depend package="triangle_mesh" />
   <depend package="ias_table_srvs" />
   <depend package="perception_msgs" />
   <depend package="perception_srvs" />

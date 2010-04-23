@@ -58,7 +58,7 @@
 #include <tools/transform.h>
 #include <angles/angles.h>
 
-#include <ias_table_msgs/TriangularMesh.h>
+#include <triangle_mesh/TriangleMesh.h>
 
 
 using namespace std;
@@ -198,7 +198,7 @@ void BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
 void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
   geometry_msgs::Point32 current_point;
-  ias_table_msgs::Triangle triangle;
+  triangle_mesh::Triangle triangle;
   mesh_ = boost::shared_ptr <BoxEstimation::OutputType> (new BoxEstimation::OutputType);
   mesh_->points.resize(8);
   mesh_->triangles.resize(12);

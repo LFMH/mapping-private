@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="cloud_tools" name="msg_to_pcd" type="msg_to_pcd" respawn="true" output="screen">
+    <param name="input_cloud_topic" value="/radius_estimation_node/cloud_radius"/>
+    <param name="dir" value="$(env HOME)/work/"/>
+    <param name="nr_saved_pcds" type="int" value="1"/>
+  </node>
+</launch>

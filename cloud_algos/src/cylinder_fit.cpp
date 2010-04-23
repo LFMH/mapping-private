@@ -58,7 +58,7 @@
 #include <angles/angles.h>
 
 //for mesh output
-#include <ias_table_msgs/TriangularMesh.h>
+#include <triangle_mesh/TriangleMesh.h>
 #include <tf/tf.h>
 using namespace sample_consensus;
 
@@ -83,7 +83,7 @@ class CylinderFit
     n_.param("output_mesh_topic", output_mesh_topic_, std::string("cylinder_mesh"));
     cylinder_pub_ = n_.advertise<sensor_msgs::PointCloud>(output_outliers_topic_ ,1);
     vis_pub = n_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-    mesh_pub_ = n_.advertise<ias_table_msgs::TriangularMesh> (output_mesh_topic_, 1);
+    mesh_pub_ = n_.advertise<triangle_mesh::TriangleMesh> (output_mesh_topic_, 1);
     //use either next 2 or the 3rd line
     clusters_sub_ = n_.subscribe (input_cloud_topic_, 1, &CylinderFit::cloud_cb, this);
     model_ = new SACModelCylinder ();
@@ -299,7 +299,7 @@ class CylinderFit
     mesh_.triangles.resize(0);
     mesh_.header = points_.header;
     geometry_msgs::Point32 p1, p2, p3, p4;
-    ias_table_msgs::Triangle triangle1, triangle2;
+    triangle_mesh::Triangle triangle1, triangle2;
     double radius = coeff[6];
     int angle_step = 10;
     for (int angle = 0; angle < 360; angle = angle + angle_step)
@@ -411,7 +411,7 @@ class CylinderFit
   //publish mesh on topic
   std::string output_mesh_topic_;
   //triangular mesh
-  ias_table_msgs::TriangularMesh mesh_;
+  triangle_mesh::TriangleMesh mesh_;
 };
 
 /* ---[ */
