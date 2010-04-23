@@ -35,7 +35,7 @@
 
    \author Dejan  Pangercic
 
-   @b triangular_mesh_to_vtk concatenates n [ias_table_msgs/TriangularMesh] 
+   @b triangular_mesh_to_vtk concatenates n [triangle_mesh/TriangleMesh] 
    messages and writes them to a VTK compliant format.
 
 **/
@@ -44,13 +44,13 @@
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <point_cloud_mapping/cloud_io.h>
-#include <ias_table_msgs/TriangularMesh.h>
+#include <triangle_mesh/TriangleMesh.h>
 
 #include <math.h>
 
 using namespace std;
 
-class TriangularMeshToVTK
+class TriangleMeshToVTK
 {
 protected:
   ros::NodeHandle nh_;
@@ -63,10 +63,10 @@ protected:
   
 public:  
   // ROS messages
-  ias_table_msgs::TriangularMesh mesh_; 
+  triangle_mesh::TriangleMesh mesh_; 
 
 
-  TriangularMeshToVTK (ros::NodeHandle &n) : nh_(n)
+  TriangleMeshToVTK (ros::NodeHandle &n) : nh_(n)
   {
     nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
         nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
@@ -79,8 +79,8 @@ public:
     for (it_=subscribed_to_nodes_.begin() ; it_ != subscribed_to_nodes_.end(); it_++)
       ROS_INFO("node_names: %s, toggle values: %d", (*it_).first.c_str(), (*it_).second);
 
-    mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangularMeshToVTK::mesh_cb, this);
-    mesh_pub_ = nh_.advertise<ias_table_msgs::TriangularMesh> ("output_mesh", 1);
+    mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangleMeshToVTK::mesh_cb, this);
+    mesh_pub_ = nh_.advertise<triangle_mesh::TriangleMesh> ("output_mesh", 1);
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
@@ -89,7 +89,7 @@ public:
   ////////////////////////////////////////////////////////////////////////////////
   // \brief mesh callback
   // \param mesh mesh messages constituting our to-be-reconstructed object
-  void mesh_cb(const ias_table_msgs::TriangularMeshConstPtr& mesh)
+  void mesh_cb(const triangle_mesh::TriangleMeshConstPtr& mesh)
   {
     mesh_.header = mesh->header;
     ROS_INFO("Sending node name: %s", mesh->sending_node.c_str());
@@ -135,10 +135,10 @@ public:
     return true;
   }
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief write TriangularMesh to vtk file
+  // \brief write TriangleMesh to vtk file
   // \param output vtk output file
   // \param mesh_ input mesh message
-  void write_vtk_file(std::string output, ias_table_msgs::TriangularMesh &mesh_)
+  void write_vtk_file(std::string output, triangle_mesh::TriangleMesh &mesh_)
   {
     /* writing VTK file */
     ROS_WARN("Writting to vtk file");
@@ -196,7 +196,7 @@ int main (int argc, char** argv)
 {
   ros::init (argc, argv, "triangular_mesh_to_vtk");
   ros::NodeHandle n("~");
-  TriangularMeshToVTK c(n);
+  TriangleMeshToVTK c(n);
   c.spin ();
   
   return (0);
