@@ -13,7 +13,7 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <geometry_msgs/Polygon.h>
 
-#include <ias_visualization_msgs/PositionStringList.h>
+#include <position_string_rviz_plugin/PositionStringList.h>
 
 // cloud_algos plugin stuff
 #include <cloud_algos/rotational_estimation.h>
@@ -205,7 +205,7 @@ class TableMemory
 //       cop_sub_ = nh_.subscribe (input_cop_topic_, 1, &TableMemory::cop_cb, this);
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
-      cluster_name_pub_ = nh_.advertise<ias_visualization_msgs::PositionStringList> (output_cluster_name_topic_, 1);
+      cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       algorithm_pool.push_back (NamedAlgorithm ("MovingLeastSquares"));
       algorithm_pool.push_back (NamedAlgorithm ("RotationalEstimation"));
@@ -794,7 +794,7 @@ break;
       cloud_pub_.publish (pc);
 
       // publish cluster names 
-      ias_visualization_msgs::PositionStringList names;
+      position_string_rviz_plugin::PositionStringList names;
       names.header.frame_id = global_frame_;
       for (unsigned int i = 0; i < tables.size(); i++)
       {
