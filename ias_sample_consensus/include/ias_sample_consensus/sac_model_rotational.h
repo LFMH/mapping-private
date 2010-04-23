@@ -2,7 +2,7 @@
 #define IAS_SAMPLE_CONSENSUS_SACMODELROTATIONAL_H_
 
 #include <point_cloud_mapping/sample_consensus/sac_model.h>
-#include <ias_table_msgs/TriangularMesh.h>
+#include <triangle_mesh/TriangleMesh.h>
 #include <mapping_msgs/PolygonalMap.h>
 
 namespace ias_sample_consensus
@@ -49,7 +49,7 @@ namespace ias_sample_consensus
       /** \brief Return an unique id for this model (666 for now). */
       virtual int getModelType () { return (666); }
       
-      void samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<ias_table_msgs::TriangularMesh>);
+      void samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, boost::shared_ptr<triangle_mesh::TriangleMesh>);
       static int functionToOptimizeAxis (void *p, int m, int n, const double *x, double *fvec, int iflag);
       bool MinimizeAxisDistancesToSamples (const std::vector<int> samples, std::vector<double> &model_coefficients, double &err);
       double PointToRotationalDistance (const std::vector<double> &model_coefficients, const geometry_msgs::Point32 &p);

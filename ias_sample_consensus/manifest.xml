@@ -17,7 +17,7 @@
   <depend package="mapping_msgs" />
   <depend package="vision_msgs" />
   <depend package="vision_srvs" />
-  <depend package="ias_table_msgs" />
+  <depend package="triangle_mesh" />
   <depend package="ias_table_srvs" />
   <depend package="perception_msgs" />
   <depend package="perception_srvs" />
