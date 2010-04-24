@@ -10,13 +10,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
-#  src/cylinder_fit.cpp
-#  src/box_fit.cpp
 #  src/gfpfh.cpp
   src/misc.cpp
   src/plugin_loader.cpp
   src/registration.cpp
   src/box_fit_algo.cpp
+  src/cylinder_fit_algo.cpp
   src/mls_fit.cpp
 #  src/radius_estimation.cpp
   src/pfh.cpp
@@ -50,8 +49,11 @@ set_target_properties (registration_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 rosbuild_add_executable (mls_fit_node src/mls_fit.cpp src/misc.cpp)
 set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-rosbuild_add_executable (box_fit_node src/box_fit_algo.cpp src/misc.cpp)
-set_target_properties (box_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+rosbuild_add_executable (box_estimation_node src/box_fit_algo.cpp src/misc.cpp)
+set_target_properties (box_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (cylinder_estimation_node src/cylinder_fit_algo.cpp)
+set_target_properties (cylinder_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (pfh_node src/pfh.cpp src/misc.cpp)
 set_target_properties (pfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
@@ -67,9 +69,6 @@ set_target_properties (radius_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_
 
 rosbuild_add_executable (decision_manager_node src/decision_manager.cpp)
 set_target_properties (decision_manager_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
-
-rosbuild_add_executable (cylinder_fit_node src/cylinder_fit.cpp src/misc.cpp)
-#set_target_properties (cylinder_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 #DEPRECATED
 #rosbuild_add_executable (gfpfh_node src/gfpfh.cpp)
