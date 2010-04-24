@@ -1,1 +1,6 @@
-messages and rviz plugin to display string(s)/text(s) at certain position(s) in space
+commit ba07d9f67a7fe221ac9da83c4b8e7409d9974f30
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Apr 24 06:02:15 2010 +0200
+
+    Added forgotten rviz_plugin.yaml file
+    fixed positionstring/position_string inconsistency
