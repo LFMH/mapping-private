@@ -68,7 +68,7 @@ public:
 
   TriangleMeshToVTK (ros::NodeHandle &n) : nh_(n)
   {
-    nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
+    nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh_input"));
         nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
     XmlRpc::XmlRpcValue v;
     nh_.param("subscribed_to_nodes", v, v);
@@ -80,7 +80,7 @@ public:
       ROS_INFO("node_names: %s, toggle values: %d", (*it_).first.c_str(), (*it_).second);
 
     mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangleMeshToVTK::mesh_cb, this);
-    mesh_pub_ = nh_.advertise<triangle_mesh::TriangleMesh> ("output_mesh", 1);
+    mesh_pub_ = nh_.advertise<triangle_mesh::TriangleMesh> ("mesh_output", 1);
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
