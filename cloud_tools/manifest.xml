@@ -3,7 +3,7 @@
     A collection of point cloud related tools.
   </description>
 
-  <author>Nico Blodow</author>
+  <author>Nico Blodow, Zoltan-Csaba Marton, Dejan Pangercic</author>
   <license>BSD</license>
   <review status="experimental" notes="beta"/>
 

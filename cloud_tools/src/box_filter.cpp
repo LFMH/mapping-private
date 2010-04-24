@@ -35,7 +35,9 @@
 //later: cut polygon instead of AABB
 #include <geometry_msgs/PolygonStamped.h>
 
-/** @file
+/** 
+@file
+
 @brief  box_filter cuts out the box part of the pointcloud.
 
 @par Advertises
