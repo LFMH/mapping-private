@@ -95,7 +95,6 @@ void DepthImageTriangulation::init (ros::NodeHandle &nh)
 {
   // node handler and publisher
   nh_ = nh;
-  ROS_INFO("DepthImageTriangulation Node initialized");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
