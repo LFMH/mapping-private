@@ -65,7 +65,8 @@ template <class algo>
     sub_ = nh_.subscribe (a.default_input_topic (), 1, &CloudAlgoNode<algo>::input_cb, this);
    
     ROS_INFO("CloudAlgoNode (%s) created. SUB [%s], PUB[%s]",
-             a.default_node_name().c_str(),
+             //a.default_node_name().c_str(),
+             ros::this_node::getName().c_str(),
              a.default_input_topic().c_str(), 
 	     a.default_output_topic().c_str());
     a.init (nh_);
