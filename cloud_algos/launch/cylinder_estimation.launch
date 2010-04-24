@@ -1,0 +1,21 @@
+<launch>
+  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/cup_handle_side-denoise_back_cut.pcd) $(optenv time_pcd 10)" />
+
+  <node pkg="cloud_algos" type="cylinder_estimation_node" name="cylinder_estimation_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="cloud_pcd" />   
+    <param  name="output_outliers_topic" type="string" value="/depth_image_triangulation_node/cloud_pcd"/>
+  </node>  
+
+  <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true">
+  </node>
+
+  <node pkg="topic_tools" type="relay" name="relay_cylinder_estimation" args="/cylinder_estimation_node/mesh_cylinder /triangular_mesh_to_vtk_node/mesh_input" respawn="false" output="screen"/>
+  <node pkg="topic_tools" type="relay" name="relay_depth_image_triangulation" args="/depth_image_triangulation_node/cloud_triangulated /triangular_mesh_to_vtk_node/mesh_input" respawn="false" output="screen"/>
+
+  <node pkg="cloud_tools" type="triangular_mesh_to_vtk" name="triangular_mesh_to_vtk_node" output="screen" respawn="true">
+    <param name="input_mesh_topic" type="string" value="mesh_input"/>
+    <param name="output_vtk_file" type="string" value="cylinder.vtk"/>
+    <rosparam param="subscribed_to_nodes">["/depth_image_triangulation_node", "/cylinder_estimation_node"]</rosparam>
+  </node>
+</launch>
