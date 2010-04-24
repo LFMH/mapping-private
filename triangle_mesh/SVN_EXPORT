@@ -1,1 +1,14 @@
-triangle_mesh contains a triangle mesh message and an rviz plugin to display it.
+commit d105f70d45a381206b41965d06345f855acaf30a
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Apr 24 06:10:47 2010 +0200
+
+    Added forgotten  rviz_plugin.yaml file for triangle_mesh plugin.
+
+commit 0d0db689d9794ba34356706b933dcfcb45a57367
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Fri Apr 23 17:17:47 2010 +0200
+
+    changes in cloud_tools:
+    replace ias_table_msgs/TriangularMesh
+    through
+    triangle_mesh/TriangleMesh
