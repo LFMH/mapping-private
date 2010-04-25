@@ -1,13 +1,13 @@
 <launch>
 
   <!-- Wall Filter -->
-  <node pkg="cloud_tools" type="wall_filter" name="wall_filter" output="screen">
+  <node pkg="cloud_tools" type="wall_filter_node" name="wall_filter_node" output="screen">
     <param name="input_cloud_topic" value="/shoulder_cloud" />
     <param name="output_cloud_topic" value="/shoulder_cloud_no_walls" />
   </node>
   
   <!-- Table Object Detector (passive version) -->
-  <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen">
+  <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive_node" output="screen">
     <param name="input_cloud_topic" value="/shoulder_cloud_no_walls" />
     <param name="output_table_topic" value="/table_with_objects" />
     <param name="sac_distance_threshold" value="0.015" />
@@ -19,7 +19,7 @@
   </node>-->
   
   <!-- Table Message Splitter -->
-  <node pkg="cloud_tools" type="table_msg_split" name="table_msg_split" output="screen">
+  <node pkg="cloud_tools" type="table_msg_split_node" name="table_msg_split_node" output="screen">
     <param name="input_table_topic" value="/table_with_objects" />
     <param name="output_pcds_topic" value="/table_objects" />
     <param name="output_polygon_topic" value="/table_polygon" />
