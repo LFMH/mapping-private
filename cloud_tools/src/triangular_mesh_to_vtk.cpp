@@ -28,17 +28,19 @@
  *
  */
 
-/**
-   @mainpage
 
-   @htmlinclude manifest.html
+/** 
+@file
 
-   \author Dejan  Pangercic
+@brief triangular_mesh_to_vtk concatenates n [triangle_mesh/TriangleMesh] 
+messages and writes them to a VTK compliant format.
 
-   @b triangular_mesh_to_vtk concatenates n [triangle_mesh/TriangleMesh] 
-   messages and writes them to a VTK compliant format.
+@par Advertises
 
-**/
+@par Subscribes
+
+@par Parameters
+*/
 
 // ROS core
 #include <ros/ros.h>

@@ -28,16 +28,17 @@
  *
  */
 
-/**
-   @mainpage
+/** 
+@file
 
-   @htmlinclude manifest.html
+@brief get_line_id_hokuyo retrieves scan line IDs for Hokuyo UTM 30LX laser scanner.
 
-   \author Dejan  Pangercic
+@par Advertises
 
-   @b get_line_id_hokuyo retrieves scan line IDs for Hokuyo UTM 30LX laser scanner. 
+@par Subscribes
 
-**/
+@par Parameters
+*/
 
 // ROS core
 #include <ros/node_handle.h>
