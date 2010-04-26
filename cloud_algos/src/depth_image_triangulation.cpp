@@ -75,7 +75,10 @@ void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cl
   //nr of lines in point cloud
   max_line_ = scan_id;
   if(save_pcd_)
+  {
+    ROS_INFO("Saving PCD containing line numbers as cloud_line.pcd in ROS home.");
     cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
+  }
 #ifdef DEBUG
   ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 #endif
@@ -95,6 +98,8 @@ void DepthImageTriangulation::init (ros::NodeHandle &nh)
 {
   // node handler and publisher
   nh_ = nh;
+  //ROS_INFO("DepthImageTriangulation Node initialized");
+  nh_.param("save_pcd", save_pcd_, save_pcd_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

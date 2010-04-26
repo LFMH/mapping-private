@@ -283,7 +283,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   int zero_determinant = 0, not_inverse = 0;
   double max_bad_det = 0.0, min_good_det = 0.01;
   #endif
-  int k_min = max_nn_, k_max = 0, not_enough_nn = 0, nr_orthogonal = 0;
+  int k_min = max_nn_, k_max = 0, not_enough_nn = 0, nr_orthogonal = 0, nr_nan = 0;
   #else
   #pragma omp parallel for schedule(dynamic)
   #endif
@@ -519,7 +519,14 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           // project point onto the surface
           double du = 0.0; // value of partial derivative at the current point, see below
           double dv = 0.0; // value of partial derivative at the current point, see below
-          if (c_vec_[0] < 0.03) /// maybe make some different check here !!!
+          if (isnan (c_vec_[0]))
+          {
+            #ifndef PARALELL
+            nr_nan++;
+            #endif
+            // maybe skip normal estimation as well... but messes up code even more and happens rarely...
+          }
+          else if (c_vec_[0] < 0.03) /// maybe make some different check here !!!
           {
             //print_info(stderr, "Projection onto MLS surface along Darboux normal to the height at (0,0) of: "); print_value(stderr, "%g\n", c_vec[0]);
             cloud_fit_->points[cp].x += c_vec_[0] * plane_parameters[0];
@@ -674,6 +681,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     if ((zero_determinant != 0) || (not_inverse != 0)) ROS_WARN ("[MovingLeastSquares] Inverting squared weighted term matrix failed %d times (%g%%), and a bad determinant was detected %d times (%g%%).", not_inverse, not_inverse*100.0/cloud_fit_->points.size (), zero_determinant, zero_determinant*100.0/cloud_fit_->points.size ());
     #endif
     if (nr_orthogonal != 0) ROS_WARN ("[MovingLeastSquares] %d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
+    if (nr_nan != 0) ROS_WARN ("[MovingLeastSquares] Solver failed for %d (%g%%) points - polynomial fitting skipped for them.", nr_nan, nr_nan*100.0/cloud_fit_->points.size ());
     #endif
   }
   //cerr << endl << endl << endl;
