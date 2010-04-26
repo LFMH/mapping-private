@@ -488,6 +488,8 @@ class TableMemory
         {
           ROS_INFO("Called cop \n");
         }
+        /** TODO: consider the instead of mapping it over the lo id, which might change on a */
+        /** something =   call.response.perception_primitive; */
       }
 
       return true;
