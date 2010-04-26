@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Dejan Pangercic <pangerci -=- cs.tum.edu>
+ * Copyright (c) 2008 Dejan Pangercic <pangercic -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,20 +24,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: get_line_hokuyo.cpp 21050 2009-08-07 21:24:30Z pangerci $
  *
  */
 
 /** 
 @file
 
-@brief get_line_id_hokuyo retrieves scan line IDs for Hokuyo UTM 30LX laser scanner.
+@brief get_line_id_hokuyo takes all *.pcd files from a given directory dir_
+and retrieves scan "line" IDs for Hokuyo UTM 30LX laser scanner. It is needed
+since ROS's driver only provides an "index" that is respective beam ID in one
+laser scan.
 
 @par Advertises
 
 @par Subscribes
 
 @par Parameters
+- \b string dir_, tf_frame_
 */
 
 // ROS core
@@ -61,21 +64,25 @@ protected:
   ros::NodeHandle nh_;
 
 public:
-
   // ROS messages
   sensor_msgs::PointCloud msg_cloud_;
-  string file_name_, dir_, tf_frame_;
-  double rate_;
+  //Parameters
+  string dir_, tf_frame_;
   vector<string> file_list_;
-
-
+  
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * Constructor
+   */
   GetLineIDHokuyo () : nh_("~"),  tf_frame_ ("/base_link")
   {
     //nothing to do
   }
   
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief read pcd files
+  /**
+   * \brief read pcd files from dir_
+   */
   int start ()
   {
     get_log_files(dir_, file_list_);
@@ -83,7 +90,14 @@ public:
   }
   
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // \brief Get a list of pcd files
+  /**
+   * \brief get a list of pcd files
+   * \param directory directory with pcd files
+   * \param file_list a list of pcd files
+   * \param suffix files' suffix (pcd by default)
+   * \param recurse_into_subdirs whether we want to read out files from 
+   * subdirectories or not (false by default)
+   */
   void get_log_files ( const path & directory, vector <string> &file_list, string suffix=".pcd", bool recurse_into_subdirs = false )
   {
     if( exists( directory ) )
@@ -106,13 +120,14 @@ public:
   }
   
   ////////////////////////////////////////////////////////////////////////////////
-  /* \brief retrieve scan line IDs
+  /**
+   * \brief retrieve scan line IDs
    * \param cloud input point cloud 
    * \param line index in the point cloud channel
    **/
   void get_line_id (sensor_msgs::PointCloud &cloud, size_t line_index)
   {
-    int scan_id = 0;
+    int line_id = 0;
     int point_id = 0;
     int temp_point_id = 0;
     ros::Time ts = ros::Time::now ();
@@ -124,17 +139,20 @@ public:
     {
       point_id = cloud.channels[j].values[k];
       temp_point_id =  cloud.channels[j].values[k+1];
-      cloud.channels[line_index].values[k] = scan_id;
+      cloud.channels[line_index].values[k] = line_id;
       //new line found
       if (temp_point_id < point_id)
       {
-        scan_id++;
+        line_id++;
       }
     }
   }
   
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief Spin (!)
+  /**
+   * \brief node's spin function. It iterates over all pcd files in file_list_, 
+   * finds line IDs, adds them as a channel and saves the file under the same name.
+   */
   bool spin ()
   {
     ros::spinOnce ();
@@ -146,6 +164,11 @@ public:
       cloud_io::loadPCDFile (file_list_[pcd].c_str (), msg_cloud_);
       msg_cloud_.header.frame_id = tf_frame_;
       msg_cloud_.header.stamp = ros::Time::now ();
+      if (cloud_io::getIndex (msg_cloud_, "line") != -1)
+      {
+        ROS_WARN("file %s already contains channel named \"lines\"", file_list_[pcd].c_str());
+        continue;
+      }
       get_line_id (msg_cloud_, msg_cloud_.channels.size());
       ROS_INFO("Writting to file %s", file_list_[pcd].c_str());
       cloud_io::savePCDFile (file_list_[pcd].c_str(), msg_cloud_, false);
@@ -162,8 +185,7 @@ main (int argc, char** argv)
   {
     ROS_ERROR ("Syntax is: %s <dir>", argv[0]);
     return (-1);
-  }
-  
+  }  
   ros::init (argc, argv, "get_line_id_hokuyo");
   
   GetLineIDHokuyo c;
