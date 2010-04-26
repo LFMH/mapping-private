@@ -73,7 +73,7 @@ struct Table
   int color;
 
   std::vector<TableStateInstance*> inst;
-  
+
   TableStateInstance *getCurrentInstance ()
   {
 
@@ -148,10 +148,10 @@ class TableMemory
     std::vector<unsigned long long> update_prolog_;
     unsigned long long lo_id_tmp_;
 
-    // THE structure... :D 
+    // THE structure... :D
     std::vector<Table> tables;
     /** @todo have a cupboards structure as well */
-    
+
     // plugin loader
     pluginlib::ClassLoader<CloudAlgo> *cl;
 
@@ -162,7 +162,7 @@ class TableMemory
     } NamedAlgorithm;
 
     std::vector<NamedAlgorithm> algorithm_pool;
-    
+
     // this is a map<LO Id, vector[tableId, instId, objectId]> that maps a LO id to indices into our tables struct
     std::map <unsigned long long, std::vector<long> > lo_ids;
     TableObject *getObjectFromLOId (unsigned int id)
@@ -211,10 +211,10 @@ class TableMemory
       algorithm_pool.push_back (NamedAlgorithm ("RotationalEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("DepthImageTriangulation"));
       algorithm_pool.push_back (NamedAlgorithm ("BoxEstimation"));
-     
+
       load_plugins ();
     }
-    
+
     bool compare_table (Table& old_table, const ias_table_msgs::TableWithObjects::ConstPtr& new_table)
     {
       ros::ServiceClient polygon_clipper = nh_.serviceClient<vision_srvs::clip_polygon> ("/intersect_poly", true);
@@ -224,10 +224,10 @@ class TableMemory
         vision_srvs::clip_polygon::Request req;
         req.operation = req.INTERSECTION;
         req.poly1 = old_table.polygon;
-        req.poly2 = new_table->table; 
+        req.poly2 = new_table->table;
         vision_srvs::clip_polygon::Response resp;
         ROS_WARN ("blablabla");
-        
+
         polygon_clipper.call (req, resp);
         ROS_WARN ("blablabla");
         std::vector<double> normal_z(3);
@@ -237,13 +237,13 @@ class TableMemory
         double area_old = cloud_geometry::areas::compute2DPolygonalArea (old_table.polygon, normal_z);
         double area_new = cloud_geometry::areas::compute2DPolygonalArea (new_table->table, normal_z);
         double area_clip = cloud_geometry::areas::compute2DPolygonalArea (resp.poly_clip, normal_z);
-        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]", 
+        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
                   area_old, area_new, area_clip, area_clip/area_old, area_clip/area_new);
         if (area_clip/area_old > 0.5 || area_clip/area_new > 0.5)
           return true;
       }
 
-      // if center of new (invcomplete) table is within old 
+      // if center of new (invcomplete) table is within old
       // table bounds, it's the same
       geometry_msgs::Point32 center;
       center.x = new_table->table_min.x + (new_table->table_max.x - new_table->table_min.x) / 2.0;
@@ -251,17 +251,17 @@ class TableMemory
       center.z = new_table->table_min.z + (new_table->table_max.z - new_table->table_min.z) / 2.0;
       if (cloud_geometry::areas::isPointIn2DPolygon (center, old_table.polygon))
         return true;
-        
+
       double x = center.x;
       double y = center.y;
       double z = center.z;
 
-      std::cerr << "Table compare returns false. Center = <" << x << "," << y << "," << z << ">." << std::endl; 
+      std::cerr << "Table compare returns false. Center = <" << x << "," << y << "," << z << ">." << std::endl;
       for (unsigned int i = 0; i < old_table.polygon.points.size() ; i ++)
         std::cerr << "\t Polygon points " << i << " = <" << old_table.polygon.points[i].x
                   << "," << old_table.polygon.points[i].y
                   << "," << old_table.polygon.points[i].z
-                  << ">." << std::endl; 
+                  << ">." << std::endl;
       return false;
     }
 
@@ -286,7 +286,7 @@ class TableMemory
       }
       inst->time_instance = new_table->header.stamp;
       old_table.inst.push_back (inst);
-      
+
       ros::ServiceClient polygon_clipper = nh_.serviceClient<vision_srvs::clip_polygon> ("/intersect_poly", true);
       if (polygon_clipper.exists())
       {
@@ -294,7 +294,7 @@ class TableMemory
         vision_srvs::clip_polygon::Request req;
         req.operation = req.UNION;
         req.poly1 = old_table.polygon;
-        req.poly2 = new_table->table; 
+        req.poly2 = new_table->table;
         double z_mean = 0.0;
         for (unsigned int poly_i = 0; poly_i < req.poly1.points.size(); poly_i++)
           z_mean += req.poly1.points.at(poly_i).z;
@@ -304,7 +304,7 @@ class TableMemory
 
         vision_srvs::clip_polygon::Response resp;
         ROS_WARN ("blablabla");
-        
+
         polygon_clipper.call (req, resp);
         for (unsigned int poly_i = 0; poly_i < resp.poly_clip.points.size(); poly_i++)
           resp.poly_clip.points.at(poly_i).z = z_mean;
@@ -316,15 +316,15 @@ class TableMemory
         double area_old = cloud_geometry::areas::compute2DPolygonalArea (old_table.polygon, normal_z);
         double area_new = cloud_geometry::areas::compute2DPolygonalArea (new_table->table, normal_z);
         double area_clip = cloud_geometry::areas::compute2DPolygonalArea (resp.poly_clip, normal_z);
-        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]", 
+        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
                   area_old, area_new, area_clip, area_clip/area_old, area_clip/area_new);
         old_table.polygon = resp.poly_clip;
       }
     }
-   
-    // service call from PROLOG 
+
+    // service call from PROLOG
     bool
-      clusters_service (ias_table_srvs::ias_table_clusters_service::Request &req, 
+      clusters_service (ias_table_srvs::ias_table_clusters_service::Request &req,
                           ias_table_srvs::ias_table_clusters_service::Response &resp)
     {
       ROS_INFO("Tables to update: %ld", update_prolog_.size());
@@ -349,24 +349,27 @@ class TableMemory
         if(pos.probability >= color_probability_)
         {
           TableObject * to = getObjectFromLOId (pos.position);
-          for (unsigned int cls = 0; cls < pos.classes.size (); cls++)
+          for (unsigned int cls = 0; cls < pos.models.size (); cls++)
           {
-            ROS_INFO("Object color is %s", pos.classes[cls].c_str());
-            //possible returns: [red (or any other color), object type (Jug)]
-            //color is a vector of strings in case object contains multiple color hypotheses
-            to->color.push_back(pos.classes[cls]);
+            if(pos.models[cls].type.compare("ColorClass") == 0)
+            {
+              ROS_INFO("Object color is %s", pos.models[cls].sem_class.c_str());
+              //possible returns: [red (or any other color), object type (Jug)]
+              //color is a vector of strings in case object contains multiple color hypotheses
+              to->color.push_back(pos.models[cls].sem_class);
+            }
           }
         }
       }
       ROS_INFO ("End!\n");
     }
-  
+
 
     bool update_jlo (int table_num)
     {
       ros::ServiceClient jlo_client_ = nh_.serviceClient<vision_srvs::srvjlo> ("/located_object", true);
 
-      // TODO: 
+      // TODO:
       //if (!jlo_client_.exists ()) return false;
 
       for (unsigned int o_idx = 0; o_idx < tables[table_num].getCurrentInstance ()->objects.size (); o_idx++)
@@ -376,7 +379,7 @@ class TableMemory
         extents.x = o->center.x - o->minP.x;
         extents.y = o->center.y - o->minP.y;
         extents.z = o->center.z - o->minP.z;
-        
+
         // create service client call to jlo
         vision_srvs::srvjlo call;
         call.request.command = "update";
@@ -396,7 +399,7 @@ class TableMemory
               call.request.query.pose[r * width + c] = 0;
           }
         }
-        
+
         call.request.query.pose[3]  = o->center.x;
         call.request.query.pose[7]  = o->center.y;
         call.request.query.pose[11] = o->center.z;
@@ -427,8 +430,8 @@ class TableMemory
         {
           ROS_ERROR ("Error from jlo: %s!\n", call.response.error.c_str());
           return false;
-        } 
-        
+        }
+
         ROS_INFO ("New Id: %lld (parent %lld)\n", (long long int)call.response.answer.id, (long long int)call.response.answer.parent_id);
         width = 4;
         for(int r = 0; r < width; r++)
@@ -447,45 +450,35 @@ class TableMemory
     }
 
     bool call_cop (int table_num)
-    { 
-      ros::ServiceClient cop_client_ = nh_.serviceClient<vision_srvs::cop_call> ("/tracking/in", true);
-      std::vector <std::string> colors;
-      colors.push_back ("blue");
-      colors.push_back ("black");
-      colors.push_back ("green");
-      colors.push_back ("red");
-      colors.push_back ("white");
+    {
+      ros::ServiceClient cop_client_ = nh_.serviceClient<vision_srvs::cop_call> ("/cop/in", true);
 
-      for (unsigned int col = 0; col < colors.size(); col ++)
+
+      for (unsigned int o_idx = 0; o_idx < tables[table_num].getCurrentInstance ()->objects.size (); o_idx++)
       {
-        /** Create the cop_call msg*/
         vision_srvs::cop_call call;
         call.request.outputtopic = input_cop_topic_;
-        call.request.object_classes.push_back (colors[col]);
-        call.request.action_type = 0;
+        call.request.action_type = 768;   /** Refine*/
         call.request.number_of_objects = tables[table_num].getCurrentInstance ()->objects.size ();
-        
-        for (unsigned int o_idx = 0; o_idx < tables[table_num].getCurrentInstance ()->objects.size (); o_idx++)
-        {
-          TableObject *o = tables[table_num].getCurrentInstance ()->objects [o_idx];
-          
-          // save the indices in our vector of vector of vector so we can find a object
-          // in our storage from the positionID (lo_id)
-          std::vector<long> idxs (3);
-          idxs[0] = table_num;
-          idxs[1] = tables[table_num].inst.size()-1;
-          idxs[2] = o_idx;
-          lo_ids [o->lo_id] = idxs;
 
-          update_prolog_.push_back(o->lo_id);
 
-          vision_msgs::apriori_position pos;
-          pos.probability = 1.0;
-          pos.positionId = o->lo_id;
-          
-          call.request.list_of_poses.push_back (pos);
-        } 
-          
+        TableObject *o = tables[table_num].getCurrentInstance ()->objects [o_idx];
+
+        // save the indices in our vector of vector of vector so we can find a object
+        // in our storage from the positionID (lo_id)
+        std::vector<long> idxs (3);
+        idxs[0] = table_num;
+        idxs[1] = tables[table_num].inst.size()-1;
+        idxs[2] = o_idx;
+        lo_ids [o->lo_id] = idxs;
+
+        update_prolog_.push_back(o->lo_id);
+
+        vision_msgs::apriori_position pos;
+        pos.probability = 1.0;
+        pos.positionId = o->lo_id;
+
+        call.request.list_of_poses.push_back (pos);
         if(!cop_client_.call(call))
         {
           ROS_INFO("Error calling cop\n");
@@ -496,6 +489,7 @@ class TableMemory
           ROS_INFO("Called cop \n");
         }
       }
+
       return true;
     }
 
@@ -515,7 +509,7 @@ class TableMemory
           lo_ids [lo_id_tmp_] = idxs;
           update_prolog_.push_back(lo_id_tmp_);
           lo_id_tmp_++;
-        } 
+        }
       return true;
     }
 
@@ -536,38 +530,38 @@ class TableMemory
       {
         ROS_ERROR("Failed to load library with plugin %s inside. Exception: %s", algo_name.c_str(), ex.what());
       }
-    
+
       if (cl->isClassLoaded(algo_name))
       {
         algorithm = cl->createClassInstance(algo_name);
         algorithm->init (nh_);
         return true;
       }
-      else ROS_ERROR("Cannot create CloudAlgo Class of type %s", algo_name.c_str ()); 
+      else ROS_ERROR("Cannot create CloudAlgo Class of type %s", algo_name.c_str ());
       return false;
     }
- 
+
     /*!
      * \brief loads plugins
     */
-    void 
+    void
       load_plugins ()
     {
       cl = new pluginlib::ClassLoader <CloudAlgo> ("cloud_algos", "CloudAlgo");
 
       ROS_INFO("ClassLoader instantiated");
       std::vector<std::string> plugins = cl->getDeclaredClasses();
-        
+
       for (std::vector<std::string>::iterator it = plugins.begin(); it != plugins.end() ; ++it)
       {
         ROS_INFO("%s is in package %s and is of type %s", it->c_str(), cl->getClassPackage(*it).c_str(), cl->getClassType(*it).c_str());
         ROS_INFO("It does \"%s\"", cl->getClassDescription(*it).c_str());
       }
-      
-      for (unsigned int i = 0; i < algorithm_pool.size(); i++) 
+
+      for (unsigned int i = 0; i < algorithm_pool.size(); i++)
         load_algorithm (algorithm_pool[i].name, algorithm_pool[i].algorithm);
     }
-    
+
     /*!
      * \brief tries to match clusters to "track" them over time
     */
@@ -581,7 +575,7 @@ class TableMemory
       if (t_temp.size() < 2)
         return;
       TableStateInstance *t_last = t_temp [1];
-      
+
       for (int i = 0; i < (signed int) t_now->objects.size (); i++)
       {
         TableObject* to_now = t_now->objects.at (i);
@@ -593,7 +587,7 @@ class TableMemory
           diff.y = to_now->center.y - to_last->center.y;
           diff.z = to_now->center.z - to_last->center.z;
           double d = sqrt (diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
-          
+
           if (d < 0.1)
           {
             to_now->name = to_last->name;
@@ -603,13 +597,13 @@ class TableMemory
         if (to_now->name.length() == 0)
         {
           std::stringstream name;
-          name << "cluster_" << cluster_name_counter_++; 
+          name << "cluster_" << cluster_name_counter_++;
           to_now->name = name.str();
         }
       }
     }
-      
-    CloudAlgo* find_algorithm (std::string name) 
+
+    CloudAlgo* find_algorithm (std::string name)
     {
       for (unsigned int i = 0; i < algorithm_pool.size(); i++)
         if (algorithm_pool[i].name == name)
@@ -624,7 +618,7 @@ class TableMemory
       reconstruct_table_objects (int table_num)
     {
       //return;
-      for (unsigned int i = 0; i < algorithm_pool.size(); i++) 
+      for (unsigned int i = 0; i < algorithm_pool.size(); i++)
         if (!cl->isClassLoaded(algorithm_pool[i].name))
         {
           ROS_WARN("%s Class not loaded, will not reconstruct table objects", algorithm_pool[i].name.c_str());
@@ -635,13 +629,13 @@ class TableMemory
       CloudAlgo * alg_rot_est = find_algorithm ("RotationalEstimation");
       CloudAlgo * alg_mls = find_algorithm ("MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("BoxEstimation");
-      ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType> 
+      ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType>
                   (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
-      ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType> 
+      ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType>
                   ("mesh_rotational", 5);
-      ros::Publisher pub_tri = nh_.advertise <DepthImageTriangulation::OutputType> 
+      ros::Publisher pub_tri = nh_.advertise <DepthImageTriangulation::OutputType>
                   (((DepthImageTriangulation*)alg_triangulation)->default_output_topic (), 5);
-      ros::Publisher pub_box = nh_.advertise <BoxEstimation::OutputType> 
+      ros::Publisher pub_box = nh_.advertise <BoxEstimation::OutputType>
                   (((BoxEstimation*)alg_box)->default_output_topic (), 5);
 
       Table &t = tables[table_num];
@@ -650,23 +644,23 @@ class TableMemory
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
         //alg_rot_est->pre ();
-        
+
         for (int i = 1; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
-          TableObject* to = t.getCurrentInstance ()->objects.at (i); 
+          TableObject* to = t.getCurrentInstance ()->objects.at (i);
           if (to->point_cluster.points.size () == 0)
           {
             ROS_WARN ("[reconstruct_table_objects] Table object has 0 points.");
             continue;
           }
-          
+
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
           // call MLS
           std::vector<std::string> pre_mls = alg_mls->requires ();
           alg_mls->pre();
-          std::cerr << "[reconstruct_table_objects] Calling MLS with a PCD with " << 
+          std::cerr << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
                         to->point_cluster.points.size () << " points." << std::endl;
-          std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process  
+          std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
                       (cluster);
           ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
@@ -674,19 +668,19 @@ class TableMemory
           pub_mls.publish (mls_cloud);
 
           // call rotational estimation
-//          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " << 
+//          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
 //                        mls_cloud->points.size () << " points." << std::endl;
-//          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process  
+//          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process
 //                      (mls_cloud);
 //          ROS_INFO("got response: %s", process_answer_rot.c_str ());
 //          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((RotationalEstimation*)alg_rot_est)->getOutliers ();
 //          pub_rot.publish (((RotationalEstimation*)alg_rot_est)->output ());
-          
+
           // call box estimation
           alg_box->pre();
-          std::cerr << "[reconstruct_table_objects] Calling BoxEstimation with a cluster with " << 
+          std::cerr << "[reconstruct_table_objects] Calling BoxEstimation with a cluster with " <<
                         mls_cloud->points.size () << " points." << std::endl;
-          std::string process_answer_box = ((BoxEstimation*)alg_box)->process  
+          std::string process_answer_box = ((BoxEstimation*)alg_box)->process
                       (mls_cloud);
           ROS_INFO("got response: %s", process_answer_box.c_str ());
           pub_box.publish (((BoxEstimation*)alg_box)->output ());
@@ -694,9 +688,9 @@ class TableMemory
 
           // call triangulation on outliers
 //          alg_triangulation->pre();
-//          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " << 
+//          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
 //                        rot_outliers->points.size () << " points." << std::endl;
-//          std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process  
+//          std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process
 //                      (rot_outliers);
 //          ROS_INFO("got response: %s", process_answer_tri.c_str ());
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
@@ -716,7 +710,7 @@ break;
       for (int i = 0; i < (signed int) tables.size (); i++)
       {
         if (compare_table (tables[i], table))
-        { 
+        {
           // found same table earlier.. so we append a new table instance measurement
           ROS_INFO ("Table found.");
           update_table (i, table);
@@ -744,7 +738,7 @@ break;
         t.center.z = table->table_min.z + ((table->table_max.z - table->table_min.z) / 2.0);
         for (unsigned int i = 0; i < table->table.points.size(); i++)
           t.polygon.points.push_back (table->table.points.at(i));
-        
+
         if (table->table.points.size() < 1)
           ROS_WARN ("Got degenerate polygon.");
         t.color = ((int)(rand()/(RAND_MAX + 1.0)) << 16) +
@@ -755,7 +749,7 @@ break;
         // also append the new (first) table instance measurement.
         update_table (table_found, table);
       }
-      
+
       publish_mem_state (table_found);
       name_table_objects (table_found);
       reconstruct_table_objects (table_found);
@@ -793,7 +787,7 @@ break;
       }
       cloud_pub_.publish (pc);
 
-      // publish cluster names 
+      // publish cluster names
       position_string_rviz_plugin::PositionStringList names;
       names.header.frame_id = global_frame_;
       for (unsigned int i = 0; i < tables.size(); i++)
@@ -809,7 +803,7 @@ break;
       cluster_name_pub_.publish (names);
     }
 
-    void 
+    void
       print_mem_stats (int table_num)
     {
       std::cerr << "Tables : " << tables.size () << std::endl;
@@ -824,7 +818,7 @@ break;
       std::cerr << "\tCurrent Table : " << table_num << " (" << tables[table_num].getCurrentInstance ()->objects.size () << " objects)" << std::endl;
     }
 
-    bool 
+    bool
       spin ()
     {
       while (ros::ok())

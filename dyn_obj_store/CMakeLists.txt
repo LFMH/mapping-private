@@ -8,7 +8,7 @@ rosbuild_add_boost_directories()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(EXECUTABLE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#rosbuild_add_executable (table_memory src/table_memory.cpp)
+rosbuild_add_executable (table_memory src/table_memory.cpp)
 rosbuild_add_executable (wall_filter src/wall_filter.cpp)
 rosbuild_add_executable (table_object_detector_passive_node src/table_object_detector_passive.cpp)
 # rosbuild_add_executable (find_clusters src/find_clusters.cpp)
