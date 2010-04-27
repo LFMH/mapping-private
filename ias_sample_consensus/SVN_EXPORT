@@ -1,0 +1,81 @@
+commit a9349b0223fa53d4333a331c9e7af9284b2df51e
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 17:36:05 2010 +0200
+
+    removed unnec. dependencies
+    added license
+
+commit 750d4c72446e852ebc10c0a18d9f6eea5965cdec
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Fri Apr 23 17:30:01 2010 +0200
+
+    changes in ias_sample_consensus:
+    replace ias_table_msgs/TriangularMesh
+    through
+    triangle_mesh/TriangleMesh
+
+commit a888ee66ffe1dc5a25194f3ec4da447bd5555ee0
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Thu Mar 18 10:41:39 2010 +0100
+
+    miniscule change to rot_est
+
+commit ebf8c6e26ad03c6e85175d758a1dac6a52f2e7c8
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Sun Mar 7 20:15:13 2010 +0100
+
+    fix to rotational
+
+commit 06d171d97d7c88c9fe0d8b22c68cd19ad9c02c0f
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Sun Mar 7 18:16:58 2010 +0100
+
+    rotational estimation outputs triangularmesh
+
+commit e1ebc4dcac3417eb38eb3547d8ee043659371f8a
+Author: Zoltan-Csaba Marton <marton@cs.tum.edu>
+Date:   Wed Mar 3 16:23:10 2010 +0100
+
+    rotational estimation fixed, some improvements needed, but not now
+
+commit c62e5b49e4c77a9c4685e07b903131a7084ae563
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Tue Mar 2 11:48:36 2010 +0100
+
+    rework cloud_algos, rotational est done for now
+
+commit f5bc16b0f50ff085ec714b8fd8a123847afd8d50
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Mon Feb 22 13:57:48 2010 +0100
+
+    more changes on rotational estimation
+
+commit ee8607b0f631efd5aec81dcf075b63690877ab33
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Sun Feb 21 18:43:53 2010 +0100
+
+    rotational estimation is back! as a cloud_algo!
+
+commit 2cdd16c942a84cd0717f9b085250bbb9bae663a7
+Author: Nico Blodow <blodow@lapradig68.(none)>
+Date:   Fri Feb 19 11:52:48 2010 +0100
+
+    tiny bugfix, fixed rosdep.yaml
+
+commit ffa949634f4f8864b8609f93133ef99b54aa34fc
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Wed Feb 17 19:46:35 2010 +0100
+
+    table_memory names objects, publishes them for vis. first shot at (id)entity resolution
+
+commit d9c453ef1f87a37e6627643f217512f1a296509d
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Mon Feb 15 11:19:06 2010 +0100
+
+    fixed package renaming issue
+
+commit fe02dad22b8687bcbb7ce3c33a0f7061edbb88f2
+Author: Nico Blodow <blodow@cs.tum.edu>
+Date:   Wed Feb 10 15:09:30 2010 +0100
+
+    ias_sample_consensus and region growing
