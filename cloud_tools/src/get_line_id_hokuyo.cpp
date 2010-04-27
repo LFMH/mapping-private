@@ -123,7 +123,7 @@ public:
   /**
    * \brief retrieve scan line IDs
    * \param cloud input point cloud 
-   * \param line index in the point cloud channel
+   * \param line_index index in the point cloud channel
    **/
   void get_line_id (sensor_msgs::PointCloud &cloud, size_t line_index)
   {
