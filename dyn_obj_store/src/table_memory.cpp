@@ -20,6 +20,7 @@
 #include <cloud_algos/depth_image_triangulation.h>
 #include <cloud_algos/mls_fit.h>
 #include <cloud_algos/box_fit_algo.h>
+#include <cloud_algos/cloud_algos.h>
 #include <pluginlib/class_loader.h>
 
 // COP/JLO stuff
@@ -153,7 +154,7 @@ class TableMemory
     /** @todo have a cupboards structure as well */
 
     // plugin loader
-    pluginlib::ClassLoader<CloudAlgo> *cl;
+    pluginlib::ClassLoader<cloud_algos::CloudAlgo> *cl;
 
     typedef struct _NamedAlgorithm {
       std::string name;
@@ -207,10 +208,10 @@ class TableMemory
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
-      algorithm_pool.push_back (NamedAlgorithm ("MovingLeastSquares"));
-      algorithm_pool.push_back (NamedAlgorithm ("RotationalEstimation"));
-      algorithm_pool.push_back (NamedAlgorithm ("DepthImageTriangulation"));
-      algorithm_pool.push_back (NamedAlgorithm ("BoxEstimation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RotationalEstimation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/BoxEstimation"));
 
       load_plugins ();
     }
@@ -549,7 +550,7 @@ class TableMemory
     void
       load_plugins ()
     {
-      cl = new pluginlib::ClassLoader <CloudAlgo> ("cloud_algos", "CloudAlgo");
+      cl = new pluginlib::ClassLoader <cloud_algos::CloudAlgo> ("cloud_algos", "cloud_algos::CloudAlgo");
 
       ROS_INFO("ClassLoader instantiated");
       std::vector<std::string> plugins = cl->getDeclaredClasses();

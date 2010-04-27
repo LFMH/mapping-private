@@ -1,36 +1,36 @@
 <library path="lib/libcloud_algos">
   <!--Sensors -->
-  <class name="NormalEstimation" type="NormalEstimation" base_class_type="CloudAlgo">
+  <class name="cloud_algos/NormalEstimation" type="cloud_algos::NormalEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin estimates normal vectors.
     </description>
   </class>
 
-  <class name="MovingLeastSquares" type="MovingLeastSquares" base_class_type="CloudAlgo">
+  <class name="cloud_algos/MovingLeastSquares" type="cloud_algos::MovingLeastSquares" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin does mls to resample and update normals.
     </description>
   </class>
 
-  <class name="PlanarEstimation" type="PlanarEstimation" base_class_type="CloudAlgo">
+  <class name="cloud_algos/PlanarEstimation" type="cloud_algos::PlanarEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin estimates planar surfaces.
     </description>
   </class>
-  
-  <class name="RotationalEstimation" type="RotationalEstimation" base_class_type="CloudAlgo">
+
+  <class name="cloud_algos/RotationalEstimation" type="cloud_algos::RotationalEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin estimates rotational objects / surfaces of revolution.
     </description>
   </class>
-  
-  <class name="DepthImageTriangulation" type="DepthImageTriangulation" base_class_type="CloudAlgo">
+
+  <class name="cloud_algos/DepthImageTriangulation" type="cloud_algos::DepthImageTriangulation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin triangulates a given PointCloud cluster.
     </description>
   </class>
 
-  <class name="BoxEstimation" type="BoxEstimation" base_class_type="CloudAlgo">
+  <class name="cloud_algos/BoxEstimation" type="cloud_algos::BoxEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin fits a quboid/box to a given PointCloud cluster.
     </description>
