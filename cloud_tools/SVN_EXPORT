@@ -1,0 +1,283 @@
+commit 8cb7f228a749cdfea513219b3a3dd797e28f45f4
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 17:10:18 2010 +0200
+
+    removed unnec. dependencies
+    added description to mainpage.dox
+
+commit d04aa4ebab3ef019a0f875cd4aa7f7070c6dd565
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 17:09:06 2010 +0200
+
+    fixed comment
+
+commit 8f412c2dbd39027f320624a01c0d8d2f7a797ac7
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 16:49:46 2010 +0200
+
+    deleting whole deprecated folder (with Nico's consent)
+
+commit 31a11901a3d2ebc35192ada8fff7338ea5086032
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 16:44:19 2010 +0200
+
+    Removing table memory, keep using the one in
+    dyn_obj_store package.
+
+commit e4c406edf8f02e3d39c8bf02f5cbe7c8c45f0f4a
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 12:50:12 2010 +0200
+
+    wall_filter.cpp ready for public export
+    (documented, tested)
+    corresponding launch file added
+
+commit 9bb394ff7046ba812b53877b61cfccc225eaa646
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 11:32:50 2010 +0200
+
+    triangular_mesh_to_vtk.cpp ready for public export
+    (documented, tested)
+
+commit 2909df810664286663d263299d87ee199edbfb4f
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 11:32:04 2010 +0200
+
+    comment change
+
+commit d2aa4cdc9d91b428aef17022938a6ff502c2f9f3
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 10:49:55 2010 +0200
+
+    table_msg_split.cpp documented
+
+commit 91c68b340536b36f5bd016e9c993f41507086a87
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 27 10:04:25 2010 +0200
+
+    msg_to_pcd_joy.cpp documented
+
+commit 15848b30785226be0f834fa0df99cbcbde9a998f
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Apr 26 19:27:42 2010 +0200
+
+    msg_to_pcd.cpp ready for public export
+    (documented, tested)
+
+commit add34f8289eef6e787dbc37ae15837cc789c59c8
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Apr 26 11:06:01 2010 +0200
+
+    get_lines_id_hokuyo ready for public export
+    (documented, tested)
+
+commit 7f01676f3d9105c89968851442646c95bea05d7c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Apr 26 10:29:37 2010 +0200
+
+    deprecated find_clusters.cpp since it is almost the same as
+    table_object_detector_passive.cpp
+
+commit 663add14e06e1de1dae3636194297ff2968aeff1
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sun Apr 25 02:24:33 2010 +0200
+
+    consistent naming of executables, e.g.:
+    box_filter_[node | algo]
+
+commit 180c2ebfcbe728ada6f90a627d8a2f5d3439ca07
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sun Apr 25 02:09:40 2010 +0200
+
+    table_object_detector_passive.cpp ready for public commit
+
+commit 23cbc99b49828c57626a527395595852f966aceb
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sun Apr 25 00:43:35 2010 +0200
+
+    added mainpage.dox
+
+commit 6c2275a0d585e765f86951b39c2c83a4f2addbbc
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Apr 24 23:57:34 2010 +0200
+
+    box_filter.cpp ready for public commit
+
+commit 5f37842b09165a97a912d51a935e94ce2254bd19
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Apr 24 21:54:23 2010 +0200
+
+    moved all launch files to launch directory
+    moved all unsupported, undocumented programs to deprecated directory
+
+commit 483a4f5a85d569b0f7ab254c9fce0629707a92b5
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Apr 24 11:25:08 2010 +0200
+
+    changed default output topic name
+
+commit 0d0db689d9794ba34356706b933dcfcb45a57367
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Fri Apr 23 17:17:47 2010 +0200
+
+    changes in cloud_tools:
+    replace ias_table_msgs/TriangularMesh
+    through
+    triangle_mesh/TriangleMesh
+
+commit e6d195b3ebba9edc1635b2183d362b2e5ad767bc
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Wed Apr 21 20:21:11 2010 +0200
+
+    moved channel_dumper to a better place
+
+commit 542b8378e5d0e9767ed297fcf72e4a3317a2d075
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Wed Apr 21 00:47:26 2010 +0200
+
+    refactoring, prep for public commmit
+
+commit 25843bca7cce8873101c3e5c9c43fcf65d853329
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 20 19:21:54 2010 +0200
+
+    changed mesh concatenation program - it now looks for sending nodes'
+    names.
+    See subscribed_to_nodes rosparam parameter.
+
+commit 7d97659efd859661b8746eb38c48e1b4782b9a4c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Apr 20 00:48:23 2010 +0200
+
+    re-enabled triangular_mesh_to_vtk
+    added sending_node identifier to TriangularMesh msg
+    tested this_node::getName - all good
+
+commit 6485ad773eec53b660aeceb64b2067cb8defb9fc
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Apr 19 21:23:40 2010 +0200
+
+    added sleep into nodes' spins
+
+commit 1cc639959d495ee000465cd5ef9892981cd61efd
+Author: Ulrich Friedrich Klank <klank@in.tum.de>
+Date:   Fri Mar 26 16:40:26 2010 +0100
+
+    reenabled elements in cloud tools
+
+commit 1583820ca4971416326288d51c9cb90c5354063a
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Thu Mar 25 16:56:45 2010 +0100
+
+    getIndex signature got accepted in WG trunk
+    table memory does not compile anymore after cop changed
+    improvements for sac_model_cylinder (taking normals into account)
+
+commit d4f4d3c22fdcbabe5c226078b0889ea7ac7708b6
+Author: Thomas Ruehr <ruehr@in.tum.de>
+Date:   Tue Mar 16 16:31:40 2010 +0100
+
+    compile error fix, function unchecked
+
+commit 68c5de4e0886310e60afb7df33db1239f0cd1109
+Author: Lorenz Mösenlechner <moesenle@in.tum.de>
+Date:   Mon Mar 8 19:01:02 2010 +0100
+
+    Refactoring: renamed all occurrences of inf9 to ias.
+    
+    If something brakes, don't blame me and fix it yourself :)
+
+commit b28d01f0af5c826d51283f5a13f9bb6662f433b0
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Mar 9 18:42:33 2010 +0100
+
+    added counter
+    TODO:
+     check why it at times failes to write complet vtk file
+
+commit 1ff21c39d5c57361bb0bcc727f6500b5f2f54fd0
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Mar 8 23:21:39 2010 +0100
+
+    TriangularMesh to vtk file script
+    Launch file to carry out the rotational estimation plus
+    triangulation of remaining points.
+
+commit cdbca11f2ccbacdcd9e40b2d587ec936e5522b4c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Mar 8 16:55:56 2010 +0100
+
+    tiny program to retrieve scan line ids from Hokuyo data
+
+commit 178bd593de800eab6fe219597bc6952a4fc026dd
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Mar 6 19:22:12 2010 +0100
+
+    added name exporter and name catcher
+
+commit 42c0136955093950aaf7a46bafd1f77e6cac2bde
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Mar 6 01:32:24 2010 +0100
+
+    replaced param continous through nr_saved_pcds in msg_to_pcd.cpp
+    update all depending launch files
+
+commit 32b9fb33c2f74c5b059fb9c7b85137677ec3450c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Wed Feb 24 16:48:02 2010 +0100
+
+    paremeterized msg_to_pcd program such that it is possible to:
+    - specify number of point clouds to be dumped to file
+    - pass the part of the name
+    For your convenience you can pass the name on the command line:
+    cloud_name=pick_the_name roslaunch pointcloud_to_disk.launch
+
+commit 8c7a70df97d1a361240eb41ad11ac62e3c87c575
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Tue Jan 19 14:47:27 2010 +0100
+
+    added frame as parameter
+
+commit 9f3d9ece925a9e1abb1526f01b7169eaa93b10d6
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Jan 18 15:06:48 2010 +0100
+
+    jpg -> pcd
+
+commit 64bd4fd662ad608fa05fc4fb2acf72b373b921d7
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Jan 18 12:19:08 2010 +0100
+
+    doing it proper way
+
+commit 3808fb5fd558b7512bd7f4470108babb1c6501f9
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Jan 18 11:44:53 2010 +0100
+
+    ros's timestamp
+
+commit a48cb7d8c6d695037827a9c17ceec9e8fc2dcdf0
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Jan 16 20:25:02 2010 +0100
+
+    enabled continous saving of pcds
+    toggle with:
+    "rosparam set rosparam set /msg_to_pcd/continous true/false"
+
+commit 63b8c9889f20e64fdb08c57504e388ba2ca7497c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Jan 16 18:47:37 2010 +0100
+
+    added dst directory
+
+commit cb70c0c41d39146e1a7a613e24c938dc04953b01
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Jan 16 18:36:49 2010 +0100
+
+    parameter accessible inside node's space
+
+commit 1dd66adcd5bf502553c5623b32720526805212f5
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Sat Jan 16 18:08:48 2010 +0100
+
+    updated to new rosbuild
