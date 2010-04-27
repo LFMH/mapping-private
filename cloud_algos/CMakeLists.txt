@@ -11,21 +11,21 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/normal_estimation.cpp
 #  src/planar_estimation.cpp
 #  src/gfpfh.cpp
+#  src/StringTokenizer.cpp
+#  src/decision_manager.cpp
   src/misc.cpp
   src/plugin_loader.cpp
   src/registration.cpp
   src/box_fit_algo.cpp
   src/cylinder_fit_algo.cpp
   src/mls_fit.cpp
-#  src/radius_estimation.cpp
+  src/radius_estimation.cpp
   src/pfh.cpp
   src/rotational_estimation.cpp
   src/region_growing.cpp
   src/register_plugins.cpp
   src/depth_image_triangulation.cpp
   src/svm_classification.cpp
-  src/decision_manager.cpp
-#  src/StringTokenizer.cpp
 )
 
 #rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
@@ -69,7 +69,3 @@ set_target_properties (radius_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_
 
 rosbuild_add_executable (decision_manager_node src/decision_manager.cpp)
 set_target_properties (decision_manager_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
-
-#DEPRECATED
-#rosbuild_add_executable (gfpfh_node src/gfpfh.cpp)
-#set_target_properties (gfpfh_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
