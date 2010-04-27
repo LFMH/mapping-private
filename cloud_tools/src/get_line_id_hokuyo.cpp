@@ -30,7 +30,7 @@
 /** 
 @file
 
-@brief get_line_id_hokuyo takes all *.pcd files from a given directory dir_
+@brief get_line_id_hokuyo reads out all *.pcd files from a given directory dir_
 and retrieves scan "line" IDs for Hokuyo UTM 30LX laser scanner. It is needed
 since ROS's driver only provides an "index" that is respective beam ID in one
 laser scan.
