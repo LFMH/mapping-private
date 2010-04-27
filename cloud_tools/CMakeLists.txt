@@ -7,7 +7,6 @@ rosbuild_add_boost_directories()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rosbuild_add_executable (table_memory_node src/table_memory.cpp)
 rosbuild_add_executable (wall_filter_node src/wall_filter.cpp)
 rosbuild_add_executable (table_object_detector_passive_node src/table_object_detector_passive.cpp)
 rosbuild_add_executable (box_filter_node src/box_filter.cpp)
