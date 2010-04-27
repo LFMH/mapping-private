@@ -24,7 +24,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: triangular_mesh_to_vtk.cpp 21050 2009-08-07 21:24:30Z pangercic $
  *
  */
 
@@ -33,13 +32,19 @@
 @file
 
 @brief triangular_mesh_to_vtk concatenates n [triangle_mesh/TriangleMesh] 
-messages and writes them to a VTK compliant format.
+messages and writes them to a VTK (http://www.vtk.org/VTK/img/file-formats.pdf) compliant format.
+NOTE: You have to specify the list of nodes publishing TriangleMesh(es) that you 
+would like to concatenate and save to .vtk format. See \b subscribed_to_nodes parameter
+in triangular_mesh_to_vtk.launch file.
 
 @par Advertises
-
+- \b topic with concatenated triangle_mesh/TriangleMesh messages
 @par Subscribes
-
+- \b topic with triangle_mesh/TriangleMesh message
 @par Parameters
+-  std::string input_mesh_topic, output_vtk_file
+-  int file_name_counter_;
+-  std::map <std::string, bool> subscribed_to_nodes_;
 */
 
 // ROS core
@@ -55,9 +60,11 @@ using namespace std;
 class TriangleMeshToVTK
 {
 protected:
+  //Subscribers/Publishers
   ros::NodeHandle nh_;
   ros::Subscriber mesh_sub_;
   ros::Publisher mesh_pub_;
+  //Parameters
   std::string input_mesh_topic_, output_vtk_file_;
   int file_name_counter_;
   std::map <std::string, bool> subscribed_to_nodes_;
@@ -71,7 +78,7 @@ public:
   TriangleMeshToVTK (ros::NodeHandle &n) : nh_(n)
   {
     nh_.param("input_mesh_topic", input_mesh_topic_, std::string("mesh_input"));
-        nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
+    nh_.param("output_vtk_file", output_vtk_file_, std::string("mesh.vtk"));
     XmlRpc::XmlRpcValue v;
     nh_.param("subscribed_to_nodes", v, v);
     for(int i =0; i < v.size(); i++)
@@ -89,8 +96,10 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief mesh callback
-  // \param mesh mesh messages constituting our to-be-reconstructed object
+  /**
+   * \brief mesh callback
+   * \param mesh mesh messages constituting our to-be-reconstructed object
+   */
   void mesh_cb(const triangle_mesh::TriangleMeshConstPtr& mesh)
   {
     mesh_.header = mesh->header;
@@ -124,9 +133,11 @@ public:
   }  
   
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief check if we received all meshes for one model
-  // \param subscribed_to_nodes map of node_name <=> toggle value indicating
-  // whether message from that node has been received or not
+   /**
+    * \brief check if we received all meshes for one model
+    * \param subscribed_to_nodes map of node_name <=> toggle value indicating
+    * whether message from that node has been received or not
+    */
   bool all_meshes_received(std::map <std::string, bool> &subscribed_to_nodes)
   {
     for (it_=subscribed_to_nodes.begin() ; it_ != subscribed_to_nodes.end(); it_++)
@@ -137,9 +148,11 @@ public:
     return true;
   }
   ////////////////////////////////////////////////////////////////////////////////
-  // \brief write TriangleMesh to vtk file
-  // \param output vtk output file
-  // \param mesh_ input mesh message
+  /**
+   * \brief write TriangleMesh to vtk file
+   * \param output vtk output file
+   * \param mesh_ input mesh message
+   */
   void write_vtk_file(std::string output, triangle_mesh::TriangleMesh &mesh_)
   {
     /* writing VTK file */
