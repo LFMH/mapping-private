@@ -127,7 +127,7 @@ class PlaneClustersSR
     ServiceServer get_plane_clusters_service_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlaneClustersSR ()  
+  PlaneClustersSR (ros::NodeHandle& anode) : nh_ (anode)
     {
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
       axis_.x = 0; axis_.y = 0; axis_.z = 1;
@@ -150,7 +150,7 @@ class PlaneClustersSR
       nh_.param ("filtering_min_angle", min_angle_, 10.0);
       nh_.param ("filtering_max_angle", max_angle_, 170.0);
 
-      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/swissranger_test/cloud_sr"));
+      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/cloud_pcd"));
       plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
@@ -461,8 +461,8 @@ int
   main (int argc, char** argv)
 {
   ros::init (argc, argv, "plane_clusters_sr");
-
-  PlaneClustersSR p;
+  ros::NodeHandle ros_node("~");
+  PlaneClustersSR p(ros_node);
   ros::spin ();
 
   return (0);
