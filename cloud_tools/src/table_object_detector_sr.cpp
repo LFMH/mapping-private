@@ -160,6 +160,7 @@ class PlaneClustersSR
       cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
       pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
       get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
+      //cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,6 +226,7 @@ class PlaneClustersSR
     void
       cloud_cb (const PointCloudConstPtr& cloud)
     {
+      ROS_INFO ("PointCloud message received on %s before if", input_cloud_topic_.c_str ());
       if (!need_cloud_data_)
         return;
 
