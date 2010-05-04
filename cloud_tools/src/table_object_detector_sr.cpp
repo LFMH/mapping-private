@@ -63,6 +63,10 @@
 #include <point_cloud_mapping/geometry/transforms.h>
 #include <point_cloud_mapping/geometry/statistics.h>
 
+//tf
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+
 #include <sys/time.h>
 
 //#include <mapping_srvs/GetPlaneClusters.h>
@@ -78,8 +82,8 @@ using namespace ros;
 //using namespace std_msgs;
 using namespace sensor_msgs;
 using namespace mapping_msgs;
-//using namespace mapping_srvs;
 using namespace geometry_msgs;
+
 
 // Comparison operator for a vector of vectors
 bool
@@ -93,9 +97,11 @@ class PlaneClustersSR
   protected:
     ros::NodeHandle nh_;
   public:
-
+  //transform/broadcast
+  tf::StampedTransform transform_;
+  tf::TransformListener tf_listener_;
     // ROS messages
-    PointCloudConstPtr cloud_in_;
+    PointCloud cloud_in_;
 
     PointCloud cloud_down_;
     Point leaf_width_;
@@ -150,7 +156,7 @@ class PlaneClustersSR
       nh_.param ("filtering_min_angle", min_angle_, 10.0);
       nh_.param ("filtering_max_angle", max_angle_, 170.0);
 
-      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/output_cluster"));
+      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/cloud_pcd"));
       //plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
@@ -161,6 +167,10 @@ class PlaneClustersSR
       pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
       //get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
+
+      //transform to assure that table plane is perpendicular to cloud's y axis
+      transform_.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+      transform_.setRotation(tf::Quaternion(tf::Vector3(1, 0, 0), angles::from_degrees(-50)));
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,42 +196,6 @@ class PlaneClustersSR
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-   //  bool
-//       plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
-//     {
-//       ROS_INFO ("Service request initiated.");
-//       updateParametersFromServer ();
-
-//       // Subscribe to a point cloud topic
-//       need_cloud_data_ = true;
-//       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
-
-//       // Wait until the scan is ready, sleep for 10ms
-//       ros::Duration tictoc (0, 10000000);
-//       while (need_cloud_data_)
-//       {
-//         //tictoc.sleep ();
-//         ros::spinOnce ();
-//       }
-
-//       detectTable (*cloud_in_, resp);
-// #ifdef DEBUG
-// /*      Eigen::Matrix4f hom_matrix;
-//       string port("/hom_mat/in");
-//       get_yarp_hom_matrix(port, hom_matrix);
-//       for (int i=0; i<4; i++)
-//         {
-//           for (int j=0; j<4; j++) 
-//             {
-//               ROS_INFO("Hom. MAtrix %f",hom_matrix(i,j));
-//             }
-//             }*/
-// #endif
-//       ROS_INFO ("Service request terminated.");
-//       return (true);
-//     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // PointCloud message callback
     void
       cloud_cb (const PointCloudConstPtr& cloud)
@@ -231,12 +205,21 @@ class PlaneClustersSR
       ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
       if (cloud->points.size () != SR_ROWS * SR_COLS)
         ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->points.size ());
-      cloud_in_ = cloud;
-
+      //cloud_in_ = cloud;
       updateParametersFromServer ();
       
-      detectTable (*cloud_in_);
-      ROS_INFO ("Service request terminated.");
+      tf::StampedTransform test(transform_, cloud->header.stamp, "base_link", "interim");
+      tf_listener_.setTransform(test);
+      try
+      {
+        tf_listener_.transformPointCloud("interim", *cloud, cloud_in_);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("%s",ex.what());
+      }
+      detectTable (cloud_in_);
+      ROS_INFO ("Table detection finished.");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,6 +269,7 @@ class PlaneClustersSR
 #ifdef DEBUG
       PolygonalMap pmap;
       pmap.header = cloud.header;
+      pmap.header.frame_id = "base_link";
       pmap.polygons.resize (1);
       pmap.polygons[0] = table;
       pmap_pub_.publish (pmap);
