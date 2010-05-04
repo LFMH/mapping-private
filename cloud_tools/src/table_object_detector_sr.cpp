@@ -65,7 +65,7 @@
 
 #include <sys/time.h>
 
-#include <mapping_srvs/GetPlaneClusters.h>
+//#include <mapping_srvs/GetPlaneClusters.h>
 
 //#include <utilities/yarp_communication.h>
 
@@ -78,7 +78,7 @@ using namespace ros;
 //using namespace std_msgs;
 using namespace sensor_msgs;
 using namespace mapping_msgs;
-using namespace mapping_srvs;
+//using namespace mapping_srvs;
 using namespace geometry_msgs;
 
 // Comparison operator for a vector of vectors
@@ -130,7 +130,7 @@ class PlaneClustersSR
   PlaneClustersSR (ros::NodeHandle& anode) : nh_ (anode)
     {
       // 0.198669 0 0.980067 0 0 -1 0 0 0.980067 0 -0.198669 0 0 0 0 1
-      axis_.x = 0; axis_.y = 0; axis_.z = 1;
+      axis_.x = 0; axis_.y = 1; axis_.z = 0;
 
       nh_.param ("downsample_factor", downsample_factor_, 4); // Use every nth point
       nh_.param ("search_k_closest", k_, 2);                  // 5 k-neighbors by default
@@ -150,8 +150,8 @@ class PlaneClustersSR
       nh_.param ("filtering_min_angle", min_angle_, 10.0);
       nh_.param ("filtering_max_angle", max_angle_, 170.0);
 
-      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/cloud_pcd"));
-      plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
+      nh_.param ("input_cloud_topic", input_cloud_topic_, string ("/output_cluster"));
+      //plane_service_ = nh_.advertiseService("/plane_clusters_sr_service", &PlaneClustersSR::plane_clusters_service, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
       nh_.param ("sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
@@ -159,8 +159,8 @@ class PlaneClustersSR
       cloud_table_pub_ = nh_.advertise<PointCloud> ("cloud_table", 1);
       cloud_clusters_pub_ = nh_.advertise<PointCloud> ("cloud_clusters", 1);
       pmap_pub_ = nh_.advertise<PolygonalMap> ("pmap", 1);
-      get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
-      //cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
+      //get_plane_clusters_service_ = nh_.advertiseService("get_plane_clusters_sr", &PlaneClustersSR::plane_clusters_service, this);
+      cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,40 +186,40 @@ class PlaneClustersSR
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    bool
-      plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
-    {
-      ROS_INFO ("Service request initiated.");
-      updateParametersFromServer ();
+   //  bool
+//       plane_clusters_service (GetPlaneClusters::Request &req, GetPlaneClusters::Response &resp)
+//     {
+//       ROS_INFO ("Service request initiated.");
+//       updateParametersFromServer ();
 
-      // Subscribe to a point cloud topic
-      need_cloud_data_ = true;
-      cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
+//       // Subscribe to a point cloud topic
+//       need_cloud_data_ = true;
+//       cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &PlaneClustersSR::cloud_cb, this);
 
-      // Wait until the scan is ready, sleep for 10ms
-      ros::Duration tictoc (0, 10000000);
-      while (need_cloud_data_)
-      {
-        //tictoc.sleep ();
-        ros::spinOnce ();
-      }
+//       // Wait until the scan is ready, sleep for 10ms
+//       ros::Duration tictoc (0, 10000000);
+//       while (need_cloud_data_)
+//       {
+//         //tictoc.sleep ();
+//         ros::spinOnce ();
+//       }
 
-      detectTable (*cloud_in_, resp);
-#ifdef DEBUG
-/*      Eigen::Matrix4f hom_matrix;
-      string port("/hom_mat/in");
-      get_yarp_hom_matrix(port, hom_matrix);
-      for (int i=0; i<4; i++)
-        {
-          for (int j=0; j<4; j++) 
-            {
-              ROS_INFO("Hom. MAtrix %f",hom_matrix(i,j));
-            }
-            }*/
-#endif
-      ROS_INFO ("Service request terminated.");
-      return (true);
-    }
+//       detectTable (*cloud_in_, resp);
+// #ifdef DEBUG
+// /*      Eigen::Matrix4f hom_matrix;
+//       string port("/hom_mat/in");
+//       get_yarp_hom_matrix(port, hom_matrix);
+//       for (int i=0; i<4; i++)
+//         {
+//           for (int j=0; j<4; j++) 
+//             {
+//               ROS_INFO("Hom. MAtrix %f",hom_matrix(i,j));
+//             }
+//             }*/
+// #endif
+//       ROS_INFO ("Service request terminated.");
+//       return (true);
+//     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // PointCloud message callback
@@ -227,19 +227,21 @@ class PlaneClustersSR
       cloud_cb (const PointCloudConstPtr& cloud)
     {
       ROS_INFO ("PointCloud message received on %s before if", input_cloud_topic_.c_str ());
-      if (!need_cloud_data_)
-        return;
 
       ROS_INFO ("PointCloud message received on %s", input_cloud_topic_.c_str ());
       if (cloud->points.size () != SR_ROWS * SR_COLS)
         ROS_ERROR ("Number of points in the input point cloud: %d. This node is optimized for SwissRanger SR3k/4k (176x144) data!", (int)cloud->points.size ());
       cloud_in_ = cloud;
-      need_cloud_data_ = false;
+
+      updateParametersFromServer ();
+      
+      detectTable (*cloud_in_);
+      ROS_INFO ("Service request terminated.");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      detectTable (const PointCloud &cloud, GetPlaneClusters::Response &resp)
+      detectTable (const PointCloud &cloud)
     {
       ros::Time ts = ros::Time::now ();
 
@@ -293,7 +295,7 @@ class PlaneClustersSR
       Point32 min_p, max_p;
       cloud_geometry::statistics::getMinMax (cloud_filtered, inliers, min_p, max_p);
       vector<int> object_inliers;
-      findObjectClusters (cloud_filtered, coeff, table, axis_, min_p, max_p, object_inliers, resp);
+      findObjectClusters (cloud_filtered, coeff, table, axis_, min_p, max_p, object_inliers);
 
 #ifdef DEBUG
       // Send the table
@@ -309,8 +311,9 @@ class PlaneClustersSR
 #endif
       ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
       // Copy the plane parameters back in the response
-      resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
-      cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, resp.pcenter);
+      //resp.a = coeff[0]; resp.b = coeff[1]; resp.c = coeff[2]; resp.d = coeff[3];
+      geometry_msgs::Point32 pcenter;
+      cloud_geometry::nearest::computeCentroid (cloud_filtered, inliers, pcenter);
 
       return;
     }
@@ -318,7 +321,7 @@ class PlaneClustersSR
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       findObjectClusters (const PointCloud &cloud, const vector<double> &coeff, const Polygon &table,
-                          const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices, GetPlaneClusters::Response &resp)
+                          const Point32 &axis, const Point32 &min_p, const Point32 &max_p, vector<int> &object_indices)
     {
       int nr_p = 0;
       Point32 pt;
@@ -376,7 +379,7 @@ class PlaneClustersSR
 
       Point32 min_p_cluster, max_p_cluster;
       
-      resp.oclusters.resize (object_clusters.size ());
+      //resp.oclusters.resize (object_clusters.size ());
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
 #ifdef DEBUG
@@ -404,8 +407,9 @@ class PlaneClustersSR
 #endif
           nr_p++;
         }
-        cloud_geometry::statistics::getMinMax (cloud, object_idx, resp.oclusters[i].min_bound, resp.oclusters[i].max_bound);
-        cloud_geometry::nearest::computeCentroid (cloud, object_idx, resp.oclusters[i].center);
+        geometry_msgs::Point32 min_bound, max_bound, oclusters_center;
+        cloud_geometry::statistics::getMinMax (cloud, object_idx, min_bound, max_bound);
+        cloud_geometry::nearest::computeCentroid (cloud, object_idx, oclusters_center);
       }
       object_indices.resize (nr_p);
 #ifdef DEBUG
