@@ -8,21 +8,21 @@
 #include <float.h>
 #include <vector>
 
-#include "../common/CommonTerminalRoutines.h"
+#include "yaml-cpp/yaml.h"
+#include <fstream>
 
 #include <GL/glut.h>
 #include<X11/X.h>
 #include<X11/Xlib.h>
 #include<GL/glx.h>
 
-
-typedef struct point_3D
+struct point_3D
 {
   double x,y,z;
   int i;
 };
 
-typedef struct triangle
+struct triangle
 {
   int a,b,c;
 };
@@ -41,11 +41,19 @@ volatile bool mouse_down = false;
 point_3D position;
 point_3D focal_point;
 point_3D view_up;
+
 int displayWin = 1;
 int width = 640, height = 480;
-char *output_ppm;
+std::string output_ppm;
 
-int read_data(char input[], std::vector<point_3D> &points, int &nr_pct, std::vector<triangle> &triangles, int &nr_tr)
+void operator >> (const YAML::Node& node, point_3D &v) 
+{
+  node[0] >> v.x;
+  node[1] >> v.y;
+  node[2] >> v.z;
+}
+
+int read_data(const char input[], std::vector<point_3D> &points, int &nr_pct, std::vector<triangle> &triangles, int &nr_tr)
 {
 #define BUFSIZE 1024
   char *s = (char*) malloc (BUFSIZE * sizeof(char));
@@ -126,7 +134,7 @@ point_3D point3D_from_window_displayed(int x, int y)
   return point;
 }
 
-void image(char output[], int width, int height)
+void image(const char output[], int width, int height)
 {
   int maxval = 255;
 
@@ -219,7 +227,8 @@ void display (  void )
 
   glFlush ();
   glFinish ();
-  image(output_ppm, width, height);
+  //  image(const_cast<char *>(output_ppm.c_str()), width, height);
+  image(output_ppm.c_str(), width, height);
   if (displayWin == 0)
     exit(0);
 }
@@ -297,64 +306,40 @@ void reshape(int width,  int height)
 
 int main (  int argc, char* argv[] )
 {
-  position.x = 0.0; position.y = 0.0; position.z = 0.0;
-  focal_point.x = 0.0; focal_point.y = 0.0; focal_point.z = 0.0;
-  view_up.x = 0.0; view_up.y = 0.0; view_up.z = 0.0;
-
-  if (argc < 12)
+  if (argc < 2)
   {
-    print_error (stderr, "Syntax is: %s <input>.vtk <output>.ppm <options>\n", argv[0]);
-    fprintf (stderr, "  where options are:\n");
-    fprintf (stderr,"      -position x,y,z = specify the view point coordinates (default ");
-      print_value (stderr,"%g %g %g", position.x, position.y, position.z); fprintf (stderr,")\n");
-    fprintf (stderr,"      -focal_point x,y,z = specify the focal point (default ");
-      print_value (stderr,"%g %g %g", focal_point.x, focal_point.y, focal_point.z); fprintf (stderr,")\n");
-    fprintf (stderr,"      -view_up x,y,z = specify the view up vector (default ");
-      print_value (stderr,"%g %g %g", view_up.x, view_up.y, view_up.z); fprintf (stderr,")\n");
-    fprintf (stderr, "      -resolution height,width = specify the resolution of the image (default ");
-      print_value (stderr, "%d %d", height, width); fprintf (stderr, ")\n");
-    fprintf (stderr, "      -displayWin display = specify if the window will be displayed or not (true = 1; false = 0) (default ");
-      print_value (stderr, "%d", displayWin); fprintf (stderr, ")\n");
+    fprintf(stderr, "Syntax is %s <configuration.yaml>\n", argv[0]);
+    exit(2);
   }
 
-   // Get the .vtk files
-  std::vector<int> pVTKFileIndices = ParseFileExtensionArgument (argc, argv, ".vtk");
+  std::ifstream fin(argv[1]);
+  YAML::Parser parser(fin);
+  YAML::Node doc;
+  parser.GetNextDocument(doc);
+  std::string input_vtk;
+  doc["vtk_file"] >> input_vtk;
+  std::cerr << "input_vtk: " << input_vtk << std::endl;
+  doc["ppm_file"] >> output_ppm;
+  std::cerr << "output_ppm: " << output_ppm << std::endl;
+  doc["position"] >> position;
+  std::cerr << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
+  doc["focal_point"] >> focal_point;
+  std::cerr << "focal_point: " << focal_point.x << " " << focal_point.y << " " << focal_point.z << std::endl;
+  doc["view_up"] >> view_up;
+  std::cerr << "view_up: " << view_up.x << " " << view_up.y << " " << view_up.z << std::endl;
+  doc["height"] >> height;
+  doc["width"] >> width;
+  doc["display_win"] >> displayWin;
+  std::cerr << "height: " << height << " width: " << width << " displayWin: " << displayWin << std::endl;
 
-  if (pVTKFileIndices.size () < 1)
-  {
-    print_error (stderr, "Need an input .VTK file!\n");
-    return (-1);
-  }
-
-  char *input_vtk = argv[pVTKFileIndices.at (0)];
-
-  // Get the .ppm files
-  std::vector<int> pPPMFileIndices = ParseFileExtensionArgument (argc, argv, ".ppm");
-
-  if (pPPMFileIndices.size () < 1)
-  {
-    print_error (stderr, "Need an output .PPM file!\n");
-    return (-1);
-  }
-
-  output_ppm = argv[pPPMFileIndices.at (0)]; 
-
-  //parsing the rest of the arguments
-  Parse3xArguments (argc, argv, "-position", position.x, position.y, position.z);
-  Parse3xArguments (argc, argv, "-focal_point", focal_point.x, focal_point.y, focal_point.z);
-  Parse3xArguments (argc, argv, "-view_up", view_up.x, view_up.y, view_up.z);
-  ParseRangeArguments (argc, argv, "-resolution", height, width);
-  ParseArgument (argc, argv, "-displayWin", displayWin);
-
-  glutInit ( &argc, argv );
+  glutInit (&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
   glutInitWindowSize ( width, height );
   glutCreateWindow   ( argv[0]  );
 
   glEnable(GL_DEPTH_TEST); 
 
-  //read data ( points, triangles and intensities ) from the .vtk file
-  read_data(input_vtk, points, nr_pct, triangles, nr_tr);
+  read_data(input_vtk.c_str(), points, nr_pct, triangles, nr_tr);
 
   glutMotionFunc  ( motion );
   glutMouseFunc  ( mouse );
