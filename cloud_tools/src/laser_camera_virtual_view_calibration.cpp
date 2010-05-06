@@ -62,7 +62,10 @@ int read_data(const char input[], std::vector<point_3D> &points, int &nr_pct, st
   f = fopen(input, "r");
 
   if (f==NULL)
-      printf("error\n");
+  {
+    printf("error opening file %s\n", input);
+    exit(0);
+  }
 
   for (int i=0; i<11; i++)
     fscanf(f,"%s",s);
