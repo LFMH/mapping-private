@@ -67,38 +67,53 @@ int read_data(const char input[], std::vector<point_3D> &points, int &nr_pct, st
     exit(0);
   }
 
+  //skip header:
+  //# vtk DataFile Version 3.0
+  //vtk output
+  //ASCII
+  //DATASET POLYDATA
+  //POINTS
   for (int i=0; i<11; i++)
     fscanf(f,"%s",s);
 
-
+  //get number of points
    fscanf(f,"%d",&nr_pct);
-
+   std::cerr << "nr pct: " << nr_pct << std::endl;
    points.resize (nr_pct);
 
+   //skip "float"
    fscanf(f,"%s\n",s);
 
+   //get points
    for (int i = 0; i < nr_pct; i++)
    {
      fscanf (f,"%lf %lf %lf\n", &(points[i].x), &(points[i].y), &(points[i].z));
+     //printf ("%lf %lf %lf\n", points[i].x, points[i].y, points[i].z);
    }
+  //  //skip POLYGONS
+//    fscanf(f,"%s",s);
 
-   fscanf(f,"%s",s);
+   int a, b;
+//    //POLYGONS 112628 450512
+//    fscanf(f,"%d",&a);
+//    printf("a: %d\n", a);
+//    fscanf(f,"%d",&a);
+//    printf("a: %d\n", a);
 
-   int a;
-   fscanf(f,"%d",&a);
-   fscanf(f,"%d",&a);
+//    for (int i = 0; i < nr_pct; i++)
+//    {
+//      fscanf(f,"%d %d",&a, &b);
+//      //printf("a: %d b: %d\n", a, b);
+//    }
 
-   for (int i = 0; i < nr_pct; i++)
-   {
-     fscanf(f,"%d %d",&a, &a);
-   }
-
+   //skip POLYGONS
    fscanf(f,"%s\n",s);
-
+   //nr of triangles/polygons
    fscanf(f,"%d",&nr_tr);
+   printf("nr_tr: %d\n", nr_tr);
 
    triangles.resize (nr_tr);
-
+   //
    fscanf(f,"%d",&a);
 
    for (int i = 0; i < nr_tr; i++)
@@ -303,7 +318,7 @@ void reshape(int width,  int height)
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
 //  glOrtho( left, right, bottom, top, -5.0, 5.0 );
-  gluPerspective (35.0,aspect,0.001,20);
+  gluPerspective (45.0,aspect,0.001,20);
   glMatrixMode( GL_MODELVIEW );
 }
 
