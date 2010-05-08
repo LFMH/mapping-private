@@ -1,8 +1,8 @@
 vtk_file: /home/pangerci/work/laser_camera_virtual_view_calibration/test.vtk
 ppm_file: test.ppm
-position: [2.18616,0.602594,0.224822]
-focal_point: [0.66648,-3.03167,2.5434]
-view_up: [0.339361,0.400962,0.850919]
+position: [-2.56693,1.25371,3.49953]
+focal_point: [1.84166,0.447215,0.258622]
+view_up: [0.582762,-0.068426,0.809757]
 height: 480
 width: 640
-display_win: 1
+display_win: 0

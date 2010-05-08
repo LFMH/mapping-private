@@ -52,22 +52,7 @@ stereo calibration.
 - display_win: 1
 */
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <string.h>
-#include <float.h>
-#include <vector>
-
-#include "yaml-cpp/yaml.h"
-#include <fstream>
-
-#include <GL/glut.h>
-#include<X11/X.h>
-#include<X11/Xlib.h>
-#include<GL/glx.h>
-
+#include <cloud_tools/laser_camera_virtual_view_calibration.h>
 //data structs
 struct point_3D
 {
@@ -382,7 +367,7 @@ void reshape(int width,  int height)
   glMatrixMode( GL_MODELVIEW );
 }
 
-int main (  int argc, char* argv[] )
+int lc_main (  int argc, char* argv[] )
 {
   if (argc < 2)
   {
