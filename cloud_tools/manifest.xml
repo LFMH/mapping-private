@@ -18,4 +18,8 @@
   <depend package="triangle_mesh" />
   <depend package="ias_table_msgs" />
   <depend package="yaml_cpp" />
+  <depend package="opencv2" /> 
+  <depend package="cv_bridge" />
+  <depend package="image_transport"/>
+  <depend package="compressed_image_transport"/>
 </package>
