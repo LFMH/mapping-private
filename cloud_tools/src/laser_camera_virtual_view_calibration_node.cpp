@@ -68,154 +68,149 @@ stereo calibration.
 #include<X11/Xlib.h>
 #include<GL/glx.h>
 
-//data structs
-struct point_3D
-{
-  double x,y,z;
-  int i;
-};
+//ROS
+#include <ros/ros.h>
+#include <ros/node_handle.h>
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/PointCloud.h"
+#include "image_transport/image_transport.h"
+#include "cv_bridge/CvBridge.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <triangle_mesh/TriangleMesh.h>
+#include <cloud_tools/misc.h>
 
-struct triangle
-{
-  int a,b,c;
-};
 
+using namespace cloud_tools;
+
+class LaserCameraVirtualViewCalibration
+{
+public:
+  ros::NodeHandle nh_;
+  std::string input_mesh_topic_;
+  std::string output_image_topic_;
+  
+  ros::Subscriber mesh_sub_;
+  
+  image_transport::ImageTransport it_;
+  sensor_msgs::CvBridge bridge_;
+  image_transport::Publisher image_pub_;
+  
+  sensor_msgs::PointCloud cloud_in_;
+  triangle_mesh::TriangleMesh mesh_; 
+  
 //parameters
-volatile int mouse_x;
-volatile int mouse_y;
-volatile int mouse_init_x;
-volatile int mouse_init_y;
-volatile bool mouse_down = false;
-
-std::vector<point_3D> points;
-std::vector<triangle> triangles;
-int nr_pct;
-int nr_tr;
-
-point_3D position;
-point_3D focal_point;
-point_3D view_up;
-
-int displayWin = 1;
-int width = 640, height = 480;
-std::string output_ppm;
-
-/**
- * \brief overloaded operator 
- * \param node YAML node
- * \param v point_3D
- */
-void operator >> (const YAML::Node& node, point_3D &v) 
-{
-  node[0] >> v.x;
-  node[1] >> v.y;
-  node[2] >> v.z;
-}
-
-/**
- * \brief reads the data from a vtk file
- * \param input vtk file
- * \param points points from a 3D scene
- * \param nr_pct number of points in a 3D scene
- * \param triangles points triangulated
- * \param nr_tr number of triangles
- */
-int read_data(const char input[], std::vector<point_3D> &points, int &nr_pct, std::vector<triangle> &triangles, int &nr_tr)
-{
-#define BUFSIZE 1024
-  char *s = (char*) malloc (BUFSIZE * sizeof(char));
-  FILE *f;
-
-  f = fopen(input, "r");
-
-  if (f==NULL)
+  static volatile int mouse_x;
+  static volatile int mouse_y;
+  static volatile int mouse_init_x;
+  static volatile int mouse_init_y;
+  static volatile bool mouse_down;
+  bool mouse_down_;
+  
+  static std::vector<point_3D> points;
+  static std::vector<triangle> triangles;
+  static int nr_pct;
+  static int nr_tr;
+  
+  static point_3D position;
+  static point_3D focal_point;
+  static point_3D view_up;
+  
+  static int displayWin;
+  static int width, height;
+  static std::string output_ppm;
+  //public:
+  LaserCameraVirtualViewCalibration (ros::NodeHandle &anode) : nh_(anode), it_(nh_)
   {
-    printf("error opening file %s\n", input);
-    exit(0);
+    nh_.param ("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
+    nh_.param ("output_image_topic", output_image_topic_, std::string("scene_image"));  
+//     nh_.param ("mouse_down", mouse_down_, false);  
+//     nh_.param ("displayWin", displayWin, 1);
+//     nh_.param ("width", width, 640);  
+//     nh_.param ("height", height, 480);  
+//     mouse_down = mouse_down_;
+    mesh_sub_ = nh_.subscribe (input_mesh_topic_, 1, &LaserCameraVirtualViewCalibration::mesh_cb, this);
+    image_pub_ = it_.advertise(output_image_topic_, 1);
   }
 
-  //skip header:
-  //# vtk DataFile Version 3.0
-  //vtk output
-  //ASCII
-  //DATASET POLYDATA
-  //POINTS
-  for (int i=0; i<11; i++)
-    fscanf(f,"%s",s);
-
-  //get number of points
-   fscanf(f,"%d",&nr_pct);
-   //std::cerr << "nr pct: " << nr_pct << std::endl;
-   points.resize (nr_pct);
-
-   //skip "float"
-   fscanf(f,"%s\n",s);
-
-   //get points
-   for (int i = 0; i < nr_pct; i++)
-   {
-     fscanf (f,"%lf %lf %lf\n", &(points[i].x), &(points[i].y), &(points[i].z));
-     //printf ("%lf %lf %lf\n", points[i].x, points[i].y, points[i].z);
-   }
-
-   int a;
-
-   //skip POLYGONS
-   fscanf(f,"%s\n",s);
-   //nr of triangles/polygons
-   fscanf(f,"%d",&nr_tr);
-   //printf("nr_tr: %d\n", nr_tr);
-   triangles.resize (nr_tr);
-   //skip number after number of polygons
-   fscanf(f,"%d",&a);
-
-   //read in triangle vertices
-   for (int i = 0; i < nr_tr; i++)
-   {
-     fscanf (f,"%d %d %d %d\n", &a, &(triangles[i].a), &(triangles[i].b), &(triangles[i].c));
-   }
-   //skip:
-   //POINT_DATA 77782
-   //SCALARS scalars double
-   //LOOKUP_TABLE default
-   for (int i=0; i<7; i++)
-     fscanf(f,"%s",s);
-
-   //read in intensities
-   for (int i = 0; i < nr_pct; i++)
-   {
-     fscanf(f,"%d",&(points[i].i));
-   }
-
-   fclose(f);
-   return 0;
-}
+  /**
+   * \brief mesh callback 
+   * \param mesh input mesh message
+   */
+  void mesh_cb (const triangle_mesh::TriangleMeshConstPtr& mesh)
+  {
+    read_data(mesh, points, nr_pct, triangles, nr_tr);
+    glutMotionFunc  ( motion );
+    glutMouseFunc  ( mouse );
+    glutDisplayFunc  ( draw  );
+    glutReshapeFunc  ( reshape  );    
+    glutMainLoop ( );
+  }
 
 
-/**
- * \brief ubnproject 2D point
- * \param x x image coordinate
- * \param y y image coordinate
- */
-point_3D point3D_from_window_displayed(int x, int y)
-{
-  float depth;
-  glReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+  /**
+   * \brief reads the data from a TriangleMesh message
+   * \param mesh input mesh message
+   * \param points points from a 3D scene
+   * \param nr_pct number of points in a 3D scene
+   * \param triangles points triangulated
+   * \param nr_tr number of triangles
+   */
+  void read_data(const triangle_mesh::TriangleMeshConstPtr& mesh, std::vector<point_3D> &points, 
+                int &nr_pct, std::vector<triangle> &triangles, int &nr_tr)
+  {
+    if (mesh->points.size() != mesh->intensities.size())
+      ROS_WARN("Unusual!!! TriangleMesh's points and intensities channels differ in sizes");
+    //read in points
+    nr_pct = mesh->points.size();
+    points.resize (mesh->points.size());
+    for (unsigned int i = 0; i < mesh->points.size(); i++)
+    {
+      points[i].x = mesh->points[i].x;
+      points[i].y = mesh->points[i].y;
+      points[i].z = mesh->points[i].z;
+    }
+    
+    //read in triangles
+    nr_tr = mesh->triangles.size();
+    triangles.resize (mesh->triangles.size());
+    for (unsigned int i = 0; i < mesh->triangles.size(); i++)
+    {
+      triangles[i].a = mesh->triangles[i].i;
+      triangles[i].b = mesh->triangles[i].j;
+      triangles[i].c = mesh->triangles[i].k;
+    }
 
-  double modelview[16];
-  double projection[16];
-  int viewport[4];
-
-  glGetDoublev(GL_MODELVIEW_MATRIX , modelview);
-  glGetDoublev(GL_PROJECTION_MATRIX , projection);
-  glGetIntegerv(GL_VIEWPORT, viewport );
-
-  point_3D point;
-  gluUnProject(x, y, depth, modelview, projection, viewport, &point.x, &point.y, &point.z);
-
-  return point;
-}
-
+    //read in intensities
+    for (unsigned int i = 0; i < mesh->intensities.size(); i++)
+    {
+      points[i].i = mesh->intensities[i];
+    }
+  }
+  
+  /**
+   * \brief unproject 2D point
+   * \param x x image coordinate
+   * \param y y image coordinate
+   */
+  point_3D point3D_from_window_displayed(int x, int y)
+  {
+    float depth;
+    glReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    
+    double modelview[16];
+    double projection[16];
+    int viewport[4];
+    
+    glGetDoublev(GL_MODELVIEW_MATRIX , modelview);
+    glGetDoublev(GL_PROJECTION_MATRIX , projection);
+    glGetIntegerv(GL_VIEWPORT, viewport );
+    
+    point_3D point;
+    gluUnProject(x, y, depth, modelview, projection, viewport, &point.x, &point.y, &point.z);
+    
+    return point;
+  }
 
 /**
  * \brief generate the image
@@ -223,7 +218,7 @@ point_3D point3D_from_window_displayed(int x, int y)
  * \param width image width
  * \param height image height
  */
-void image(const char output[], int width, int height)
+  static void image(const char output[], int width, int height)
 {
   int maxval = 255;
   
@@ -258,177 +253,195 @@ void image(const char output[], int width, int height)
   fclose(f);
 }
 
-/**
- * \brief display the image
- */
-void display (  void )
-{
-  static float rot_x=0, rot_y=0;
-
-  if (mouse_down)
+  /**
+   * \brief display the image
+   */
+  static void display (  void )
   {
-    rot_x += mouse_x/10.0;
-    rot_y += mouse_y/10.0;
-  }
-  //specify the position of the camera according to the scene
-  gluLookAt (position.x, position.y, position.z, focal_point.x, focal_point.y, focal_point.z, view_up.x, view_up.y, view_up.z);
-
-  glRotatef (rot_y,0.0,1.0,0.0);
-  glRotatef (rot_x,0.0,0.0,1.0);
-
-  //rendering the triangles in the scene
-  for (int i=0; i<nr_tr; i++)
-  {
-    int col;
-    glBegin (GL_TRIANGLES);
+    static float rot_x=0, rot_y=0;
+    
+    if (mouse_down)
+    {
+      rot_x += mouse_x/10.0;
+      rot_y += mouse_y/10.0;
+    }
+    //specify the position of the camera according to the scene
+    gluLookAt (position.x, position.y, position.z, focal_point.x, focal_point.y, focal_point.z, view_up.x, view_up.y, view_up.z);
+    
+    glRotatef (rot_y,0.0,1.0,0.0);
+    glRotatef (rot_x,0.0,0.0,1.0);
+    
+    //rendering the triangles in the scene
+    for (int i=0; i<nr_tr; i++)
+    {
+      int col;
+      glBegin (GL_TRIANGLES);
       col = points[triangles[i].a].i;
       glColor3b(col, col, col);
       glVertex3d(points[triangles[i].a].x, points[triangles[i].a].y, points[triangles[i].a].z);
-
+      
       col = points[triangles[i].b].i;
       glColor3b(col, col, col);
       glVertex3d(points[triangles[i].b].x, points[triangles[i].b].y, points[triangles[i].b].z);
-
+      
       col = points[triangles[i].c].i;
       glColor3b(col, col, col);
       glVertex3d(points[triangles[i].c].x, points[triangles[i].c].y, points[triangles[i].c].z);
-    glEnd ();
-   }
+      glEnd ();
+    }
+    
+    glFlush ();
+    glFinish ();
+    image(output_ppm.c_str(), width, height);
+    if (displayWin == 0)
+      exit(0);
+  }
 
-  glFlush ();
-  glFinish ();
-  image(output_ppm.c_str(), width, height);
-  if (displayWin == 0)
-    exit(0);
-}
-
-/**
- * \brief mouse callback for enable scene drag
- */
-static void  mouse (int button, int state, int x, int y)
-{
-  if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+  /**
+   * \brief mouse callback to enable scene drag
+   */
+  static void  mouse (int button, int state, int x, int y)
   {
-    mouse_down = true;
-    mouse_init_x = x;
-    mouse_init_y = y;
-    glutPostRedisplay ();
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+      mouse_down = true;
+      mouse_init_x = x;
+      mouse_init_y = y;
+      glutPostRedisplay ();
+    }
+    
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+    {
+      mouse_down = false;
+      glutPostRedisplay ();
+    }
   }
 
-  if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+  /**
+   * \brief motion callback
+   */
+  static void motion (int x,int y)
   {
-    mouse_down = false;
-    glutPostRedisplay ();
+    if (mouse_down)
+    {
+      mouse_x = x - mouse_init_x;
+      mouse_y = y - mouse_init_y;
+      glutPostRedisplay ();
+    }
   }
-}
 
-/**
- * \brief motion callback
- */
-static void motion (int x,int y)
-{
-  if (mouse_down)
+  /**
+   * \brief display/draw callback
+   */
+  static void draw(void)
   {
-    mouse_x = x - mouse_init_x;
-    mouse_y = y - mouse_init_y;
-    glutPostRedisplay ();
-  }
-}
-
-/**
- * \brief display/draw callback
- */
-static void draw(void)
-{
-  glPushMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glClearColor(0.0, 0.0, 0.0, 0.0);
-  glClear(GL_COLOR_BUFFER_BIT);
-  glClearDepth(1.0f);
-  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-  glLoadIdentity ();
-
-  display();
-
-  glPopMatrix();
-  glutSwapBuffers();
-}
-
-/**
- * \brief reshape callback for window reshape
- */
-void reshape(int width,  int height)
-{
-  GLdouble    aspect, left, right, bottom, top;
-  glViewport   ( 0, 0, width, height );
-
-  aspect = (GLdouble) width / (GLdouble) height;
-  if ( aspect < 1.0 ) {
-    left = -2.0;
-    right = 2.0;
-    bottom = -2.0 * ( 1.0 / aspect );
-    top = 2.0 * ( 1.0 / aspect );
-  } else {
-    left = -2.0 * aspect;
-    right = 2.0 * aspect;
-    bottom = -2.0;
-    top = 2.0;
+    glPushMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearDepth(1.0f);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glLoadIdentity ();
+    
+    display();
+    
+    glPopMatrix();
+    glutSwapBuffers();
   }
 
-  glMatrixMode( GL_PROJECTION );
-  glLoadIdentity();
-//  glOrtho( left, right, bottom, top, -5.0, 5.0 );
-  gluPerspective (45.0,aspect,0.001,20);
-  glMatrixMode( GL_MODELVIEW );
-}
-
-int main (  int argc, char* argv[] )
-{
-  if (argc < 2)
+  /**
+   * \brief reshape callback for window reshape
+   */
+  static void reshape(int width,  int height)
   {
-    fprintf(stderr, "Syntax is %s <configuration.yaml>\n", argv[0]);
-    exit(2);
+    GLdouble    aspect, left, right, bottom, top;
+    glViewport   ( 0, 0, width, height );
+    
+    aspect = (GLdouble) width / (GLdouble) height;
+    if ( aspect < 1.0 ) {
+      left = -2.0;
+      right = 2.0;
+      bottom = -2.0 * ( 1.0 / aspect );
+      top = 2.0 * ( 1.0 / aspect );
+    } else {
+      left = -2.0 * aspect;
+      right = 2.0 * aspect;
+      bottom = -2.0;
+      top = 2.0;
+    }
+    
+    glMatrixMode( GL_PROJECTION );
+    glLoadIdentity();
+    //  glOrtho( left, right, bottom, top, -5.0, 5.0 );
+    //TODO: parametrize following arguments
+    gluPerspective (45.0,aspect,0.001,20);
+    glMatrixMode( GL_MODELVIEW );
   }
+};
 
-  //parse YAML file
-  std::ifstream fin(argv[1]);
-  YAML::Parser parser(fin);
-  YAML::Node doc;
-  parser.GetNextDocument(doc);
-  std::string input_vtk;
-  doc["vtk_file"] >> input_vtk;
-  std::cerr << "input_vtk: " << input_vtk << std::endl;
-  doc["ppm_file"] >> output_ppm;
-  std::cerr << "output_ppm: " << output_ppm << std::endl;
-  doc["position"] >> position;
-  std::cerr << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
-  doc["focal_point"] >> focal_point;
-  std::cerr << "focal_point: " << focal_point.x << " " << focal_point.y << " " << focal_point.z << std::endl;
-  doc["view_up"] >> view_up;
-  std::cerr << "view_up: " << view_up.x << " " << view_up.y << " " << view_up.z << std::endl;
-  doc["height"] >> height;
-  doc["width"] >> width;
-  doc["display_win"] >> displayWin;
-  std::cerr << "height: " << height << " width: " << width << " displayWin: " << displayWin << std::endl;
 
-  
+
+int main (int argc, char* argv[])
+{
   glutInit (&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-  glutInitWindowSize ( width, height );
+  glutInitWindowSize ( 640, 480 );
   glutCreateWindow   ( argv[0]  );
-
+  
   glEnable(GL_DEPTH_TEST); 
+  ros::init (argc, argv, "laser_camera_virtual_view_calibration_node");
+  ros::NodeHandle nh("~");
+  LaserCameraVirtualViewCalibration n (nh);
+  ros::spin ();
 
-  read_data(input_vtk.c_str(), points, nr_pct, triangles, nr_tr);
-
-  glutMotionFunc  ( motion );
-  glutMouseFunc  ( mouse );
-
-  glutDisplayFunc  ( draw  );
-
-  glutReshapeFunc  ( reshape  );
-
-  glutMainLoop ( );
-
-  return 0;
+  return (0);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// int main (  int argc, char* argv[] )
+// {
+//   if (argc < 2)
+//   {
+//     fprintf(stderr, "Syntax is %s <configuration.yaml>\n", argv[0]);
+//     exit(2);
+//   }
+
+//   //parse YAML file
+//   std::ifstream fin(argv[1]);
+//   YAML::Parser parser(fin);
+//   YAML::Node doc;
+//   parser.GetNextDocument(doc);
+//   std::string input_vtk;
+//   doc["vtk_file"] >> input_vtk;
+//   std::cerr << "input_vtk: " << input_vtk << std::endl;
+//   doc["ppm_file"] >> output_ppm;
+//   std::cerr << "output_ppm: " << output_ppm << std::endl;
+//   doc["position"] >> position;
+//   std::cerr << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
+//   doc["focal_point"] >> focal_point;
+//   std::cerr << "focal_point: " << focal_point.x << " " << focal_point.y << " " << focal_point.z << std::endl;
+//   doc["view_up"] >> view_up;
+//   std::cerr << "view_up: " << view_up.x << " " << view_up.y << " " << view_up.z << std::endl;
+//   doc["height"] >> height;
+//   doc["width"] >> width;
+//   doc["display_win"] >> displayWin;
+//   std::cerr << "height: " << height << " width: " << width << " displayWin: " << displayWin << std::endl;
+//   return 0;
+// }
