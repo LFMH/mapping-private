@@ -244,45 +244,28 @@ void image(const char output[], int width, int height)
   }
   
   fclose(f);
-
- //  output_ppm_ros.header.stamp = ros::Time::now();
-//   output_ppm_ros.height = height;
-//   output_ppm_ros.width = width;
-//   output_ppm_ros.encoding = "mono8";
-//   output_ppm_ros.step = width;
-//   output_ppm_ros.data.resize(output_ppm_ros.step * width);
-//   int k = 0;
-//   for (int i=height-1; i>=0; i--)
-//   {
-//     for (int j=0; j<width; j++)
-//     {
-//       int intensity = pixels[i*width+j];
-//       if (intensity > maxval)
-//         intensity = maxval;
-//       output_ppm_ros.data[k] = intensity;
-//       k++;
-//     }
-//   }
-//   IplImage *cv_image = NULL;
-//   sensor_msgs::CvBridge bridge_;
-//   try
-//   {
-//     bridge_.fromImage(output_ppm_ros, "mono8");
-//     cv_image = bridge_.toIpl();
-//   }
-//   catch (sensor_msgs::CvBridgeException error)
-//   {
-//     ROS_ERROR("error converting imgMsgToCv");
-//   }
-//   //cvSaveImage("test_opencv.ppm", cv_image);
-//   cv::imwrite("test_opencv.ppm", cv_image);
-
+  IplImage * cv_image = NULL;
+  cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+  int k = 0;
+  for (int i=height-1; i>=0; i--)
+  {
+    for (int j=0; j<width; j++)
+    {
+      int intensity = pixels[i*width+j];
+      if (intensity > maxval)
+        intensity = maxval;
+      cv_image->imageData[k] = intensity;
+      k++;
+    }
+  }
+  cv::imwrite("test_opencv.ppm", cv_image);
+  cvReleaseImage(&cv_image);
 }
 
 /**
  * \brief display the image
  */
-void display (  void )
+int display (  void )
 {
   static float rot_x=0, rot_y=0;
 
