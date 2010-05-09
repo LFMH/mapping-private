@@ -54,18 +54,6 @@ stereo calibration.
 
 #include <cloud_tools/laser_camera_virtual_view_calibration.h>
 
-//data structs
-struct point_3D
-{
-  double x,y,z;
-  int i;
-};
-
-struct triangle
-{
-  int a,b,c;
-};
-
 //parameters
 volatile int mouse_x;
 volatile int mouse_y;
@@ -86,6 +74,7 @@ int displayWin = 1;
 int width = 640, height = 480;
 std::string output_ppm;
 sensor_msgs::Image output_ppm_ros;
+
 /**
  * \brief overloaded operator 
  * \param node YAML node
@@ -209,41 +198,15 @@ point_3D point3D_from_window_displayed(int x, int y)
  * \param width image width
  * \param height image height
  */
-void image(const char output[], int width, int height)
+void image(std::string laser_image_name, int width, int height)
 {
   int maxval = 255;
-  
   unsigned char *pixels = new unsigned char [(width) * (height)];
-  
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   //  glReadBuffer(GL_FRONT);
   //  glReadBuffer(GL_RENDERBUFFER_EXT);
   glReadPixels(0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, pixels);
   
-  FILE* f;
-  
-  f=fopen(output,"w");
-  
-  fprintf(f,"P3\n");
-  fprintf(f,"%d %d\n", width, height); 
-  fprintf(f,"%d\n",maxval);
-  
-  for (int i=height-1; i>=0; i--)
-  {
-    for (int j=0; j<width; j++)
-    {
-      fprintf(f," ");
-      int intensity = pixels[i*width+j];
-      if (intensity > maxval)
-        intensity = maxval;
-      fprintf(f, "%d %d %d", intensity, intensity, intensity);
-      fprintf(f, "%d", intensity);
-      fprintf(f," ");
-    }
-    fprintf(f,"\n");
-  }
-  
-  fclose(f);
   IplImage * cv_image = NULL;
   cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
   int k = 0;
@@ -258,14 +221,14 @@ void image(const char output[], int width, int height)
       k++;
     }
   }
-  cv::imwrite("test_opencv.ppm", cv_image);
+  cv::imwrite(laser_image_name, cv_image);
   cvReleaseImage(&cv_image);
 }
 
 /**
  * \brief display the image
  */
-int display (  void )
+void display (  void )
 {
   static float rot_x=0, rot_y=0;
 
@@ -361,6 +324,7 @@ static void draw(void)
 
   glPopMatrix();
   glutSwapBuffers();
+  //glutLeaveMainLoop();
 }
 
 /**
@@ -391,44 +355,36 @@ void reshape(int width,  int height)
   glMatrixMode( GL_MODELVIEW );
 }
 
-int lc_main (  int argc, char* argv[] )
+int lc_main (int argc, char* argv[], std::string laser_image_name, 
+             point_3D p, point_3D fp, point_3D vu, double w, double h, int d,
+             std::vector<point_3D> &points_, int &nr_pct_, std::vector<triangle> &triangles_, int &nr_tr_)
 {
-  if (argc < 2)
-  {
-    fprintf(stderr, "Syntax is %s <configuration.yaml>\n", argv[0]);
-    exit(2);
-  }
-
-  //parse YAML file
-  std::ifstream fin(argv[1]);
-  YAML::Parser parser(fin);
-  YAML::Node doc;
-  parser.GetNextDocument(doc);
-  std::string input_vtk;
-  doc["vtk_file"] >> input_vtk;
-  std::cerr << "input_vtk: " << input_vtk << std::endl;
-  doc["ppm_file"] >> output_ppm;
+  output_ppm = laser_image_name;
   std::cerr << "output_ppm: " << output_ppm << std::endl;
-  doc["position"] >> position;
+  position = p;
   std::cerr << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
-  doc["focal_point"] >> focal_point;
+  focal_point = fp;
   std::cerr << "focal_point: " << focal_point.x << " " << focal_point.y << " " << focal_point.z << std::endl;
-  doc["view_up"] >> view_up;
+  view_up = vu;
   std::cerr << "view_up: " << view_up.x << " " << view_up.y << " " << view_up.z << std::endl;
-  doc["height"] >> height;
-  doc["width"] >> width;
-  doc["display_win"] >> displayWin;
+  height = h;
+  width = w;
+  displayWin = d;
   std::cerr << "height: " << height << " width: " << width << " displayWin: " << displayWin << std::endl;
-
+  nr_pct = nr_pct_;
+  nr_tr = nr_tr_;
+  points = points_;
+  triangles = triangles_;
   
   glutInit (&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
   glutInitWindowSize ( width, height );
   glutCreateWindow   ( argv[0]  );
-
+  //  glutSetOption (GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+  glutSetOption (GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
   glEnable(GL_DEPTH_TEST); 
 
-  read_data(input_vtk.c_str(), points, nr_pct, triangles, nr_tr);
+  //read_data(input_vtk.c_str(), points, nr_pct, triangles, nr_tr);
 
   glutMotionFunc  ( motion );
   glutMouseFunc  ( mouse );
