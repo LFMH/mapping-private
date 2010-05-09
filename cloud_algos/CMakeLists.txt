@@ -14,7 +14,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/StringTokenizer.cpp
 #  src/decision_manager.cpp
   src/misc.cpp
-  src/plugin_loader.cpp
+#  src/plugin_loader.cpp
   src/registration.cpp
   src/box_fit_algo.cpp
   src/cylinder_fit_algo.cpp
@@ -37,8 +37,8 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #rosbuild_add_executable (planar_estimation_node src/planar_estimation.cpp)
 #set_target_properties (planar_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-rosbuild_add_executable (plugin_loader_node src/plugin_loader.cpp src/misc.cpp)
-set_target_properties (plugin_loader_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+#rosbuild_add_executable (plugin_loader_node src/plugin_loader.cpp src/misc.cpp)
+#set_target_properties (plugin_loader_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (rotational_estimation_node src/rotational_estimation.cpp src/misc.cpp)
 set_target_properties (rotational_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
@@ -67,5 +67,5 @@ set_target_properties (depth_image_triangulation_node PROPERTIES COMPILE_FLAGS -
 rosbuild_add_executable (radius_estimation_node src/radius_estimation.cpp src/misc.cpp)
 set_target_properties (radius_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-rosbuild_add_executable (decision_manager_node src/decision_manager.cpp)
-set_target_properties (decision_manager_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+#rosbuild_add_executable (decision_manager_node src/decision_manager.cpp)
+#set_target_properties (decision_manager_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
