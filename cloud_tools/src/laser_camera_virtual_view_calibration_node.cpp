@@ -88,9 +88,11 @@ class LaserCameraVirtualViewCalibration
 public:
   ros::NodeHandle nh_;
   //node parameters
-  std::string input_mesh_topic_;
-  std::string output_image_topic_;
-  std::string laser_image_name_;
+  std::string input_mesh_topic_, input_image_topic_;
+  std::string laser_image_name_, camera_image_name_;
+  bool camera_image_saved_;
+  //prepended with ros::Time::now()
+  std::stringstream ros_stamp_;
   int width_, height_, display_win_;
   point_3D position_, focal_point_,view_up_;
   std::vector<point_3D> points_;
@@ -102,9 +104,9 @@ public:
   int file_name_counter_;
   //subscribers, publishers
   ros::Subscriber mesh_sub_;
+  image_transport::Subscriber image_sub_;
   image_transport::ImageTransport it_;
   sensor_msgs::CvBridge bridge_;
-  image_transport::Publisher image_pub_;
   
   sensor_msgs::PointCloud cloud_in_;
   triangle_mesh::TriangleMesh mesh_; 
@@ -114,8 +116,9 @@ public:
   LaserCameraVirtualViewCalibration (ros::NodeHandle &anode) : nh_(anode), it_(nh_)
   {
     nh_.param ("input_mesh_topic", input_mesh_topic_, std::string("/depth_image_triangulation_node/cloud_triangulated"));
-    nh_.param ("output_image_topic", output_image_topic_, std::string("scene_image"));  
-    nh_.param ("laser_image_name", laser_image_name_, std::string("laser_image.ppm"));  
+    nh_.param ("input_image_topic", input_image_topic_, std::string("/image_topic_2"));
+    nh_.param ("laser_image_name", laser_image_name_, std::string("laser_image"));  
+    nh_.param ("camera_image_name", camera_image_name_, std::string("camera_image"));  
     nh_.param ("width", width_, 800);  
     nh_.param ("height", height_, 600);  
     nh_.param ("display_win", display_win_, 1);  
@@ -131,8 +134,34 @@ public:
     focal_point_.x = fp[0], focal_point_.y = fp[1], focal_point_.z = fp[2]; 
     view_up_.x = vu[0], view_up_.y = vu[1], view_up_.z = vu[2]; 
     mesh_sub_ = nh_.subscribe (input_mesh_topic_, 1, &LaserCameraVirtualViewCalibration::mesh_cb, this);
-    image_pub_ = it_.advertise(output_image_topic_, 1);
+    image_sub_ = it_.subscribe(input_image_topic_, 1, &LaserCameraVirtualViewCalibration::image_cb, this);
     file_name_counter_ = 0;
+    camera_image_saved_ = false;
+  }
+
+  /**
+   * \brief image callback
+   * \param msg_ptr input image message
+   */
+  void image_cb(const sensor_msgs::ImageConstPtr& msg_ptr)
+  {
+    if (!camera_image_saved_)
+    {
+      IplImage *cv_image = NULL;
+      try
+      {
+        cv_image = bridge_.imgMsgToCv(msg_ptr, "passthrough");
+      }
+      catch (sensor_msgs::CvBridgeException error)
+      {
+        ROS_ERROR("[LCVVC: ] error in imgMsgToCv");
+      }
+      ros_stamp_ << ros::Time::now();
+      std::string final_image_name = ros_stamp_.str() + "_" + camera_image_name_ + ".png";
+      ROS_INFO("Saving image to %s", final_image_name.c_str());
+      cvSaveImage(final_image_name.c_str(), cv_image);
+      camera_image_saved_ = true;
+    }
   }
 
   /**
@@ -141,46 +170,45 @@ public:
    */
   void mesh_cb (const triangle_mesh::TriangleMeshConstPtr& mesh)
   {
-    if (mesh->points.size() != mesh->intensities.size())
-      ROS_WARN("Unusual!!! TriangleMesh's points and intensities channels differ in sizes");
-    //read in points
-    nr_pct_ = mesh->points.size();
-    points_.resize (mesh->points.size());
-    for (unsigned int i = 0; i < mesh->points.size(); i++)
+    if (camera_image_saved_)
     {
-      points_[i].x = mesh->points[i].x;
-      points_[i].y = mesh->points[i].y;
-      points_[i].z = mesh->points[i].z;
+      if (mesh->points.size() != mesh->intensities.size())
+        ROS_WARN("Unusual!!! TriangleMesh's points and intensities channels differ in sizes");
+      //read in points
+      nr_pct_ = mesh->points.size();
+      points_.resize (mesh->points.size());
+      for (unsigned int i = 0; i < mesh->points.size(); i++)
+      {
+        points_[i].x = mesh->points[i].x;
+        points_[i].y = mesh->points[i].y;
+        points_[i].z = mesh->points[i].z;
+      }
+      
+      //read in triangles
+      nr_tr_ = mesh->triangles.size();
+      triangles_.resize (mesh->triangles.size());
+      for (unsigned int i = 0; i < mesh->triangles.size(); i++)
+      {
+        triangles_[i].a = mesh->triangles[i].i;
+        triangles_[i].b = mesh->triangles[i].j;
+        triangles_[i].c = mesh->triangles[i].k;
+      }
+      
+      //read in intensities
+      for (unsigned int i = 0; i < mesh->intensities.size(); i++)
+      {
+        points_[i].i = mesh->intensities[i];
+      }
+      std::string final_laser_image_name = ros_stamp_.str() + "_" + laser_image_name_ + ".ppm";
+      
+      lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 
+               view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_);
+      
+      file_name_counter_++;
+      points_.resize(0);
+      triangles_.resize(0);
+      camera_image_saved_ = false;
     }
-    
-    //read in triangles
-    nr_tr_ = mesh->triangles.size();
-    triangles_.resize (mesh->triangles.size());
-    for (unsigned int i = 0; i < mesh->triangles.size(); i++)
-    {
-      triangles_[i].a = mesh->triangles[i].i;
-      triangles_[i].b = mesh->triangles[i].j;
-      triangles_[i].c = mesh->triangles[i].k;
-    }
-    
-    //read in intensities
-    for (unsigned int i = 0; i < mesh->intensities.size(); i++)
-    {
-      points_[i].i = mesh->intensities[i];
-    }
-    //prepend laser image name with a 4-digit number
-    //char file_name_counter[100];
-    //sprintf (file_name_counter, "%04d",  file_name_counter_);
-    std::stringstream ss;
-    ss << ros::Time::now();
-    std::string final_laser_image_name = ss.str() + "_" + laser_image_name_;
-
-    lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 
-             view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_);
-
-    file_name_counter_++;
-    points_.resize(0);
-    triangles_.resize(0);
   }
 }; //end LaserCameraVirtualViewCalibration
 
