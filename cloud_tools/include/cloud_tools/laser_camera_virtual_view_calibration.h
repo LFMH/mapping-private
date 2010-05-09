@@ -48,5 +48,20 @@
 #include "cv_bridge/CvBridge.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-int lc_main (  int argc, char* argv[] , std::string laser_image_name);
+
+//data structs
+struct point_3D
+{
+  double x,y,z;
+  int i;
+};
+
+struct triangle
+{
+  int a,b,c;
+};
+
+int lc_main (int argc, char* argv[], std::string laser_image_name, 
+             point_3D p, point_3D fp, point_3D vu, double w, double h, int d,
+             std::vector<point_3D> &points_, int &nr_pct_, std::vector<triangle> &triangles_, int &nr_tr_);
 #endif
