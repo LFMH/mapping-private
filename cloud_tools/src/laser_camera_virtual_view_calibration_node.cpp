@@ -78,11 +78,9 @@ stereo calibration.
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <triangle_mesh/TriangleMesh.h>
-#include <cloud_tools/misc.h>
 #include <cloud_tools/laser_camera_virtual_view_calibration.h>
 
-
-using namespace cloud_tools;
+#include <boost/thread.hpp>
 
 
 class LaserCameraVirtualViewCalibration
