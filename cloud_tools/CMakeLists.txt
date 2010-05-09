@@ -19,3 +19,6 @@ rosbuild_add_executable (triangular_mesh_to_vtk_node src/triangular_mesh_to_vtk.
 rosbuild_add_library(laser_camera_virtual_view_calibration src/laser_camera_virtual_view_calibration.cpp)
 rosbuild_add_executable (laser_camera_virtual_view_calibration_node src/laser_camera_virtual_view_calibration_node.cpp)
 target_link_libraries(laser_camera_virtual_view_calibration_node glut GLU GL Xmu Xext X11 m g laser_camera_virtual_view_calibration)
+
+rosbuild_add_executable (test_node src/me.cpp)
+target_link_libraries(test_node glut GLU GL Xmu Xext X11 m g)
