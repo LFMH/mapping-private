@@ -303,7 +303,12 @@ int display (  void )
   glFinish ();
   image(output_ppm.c_str(), width, height);
   if (displayWin == 0)
-    exit(0);
+  {
+    std::cerr << "returning to loop" << std::endl;
+    glutLeaveMainLoop();
+    //exit(0);
+  }
+  //return 0;
 }
 
 /**
