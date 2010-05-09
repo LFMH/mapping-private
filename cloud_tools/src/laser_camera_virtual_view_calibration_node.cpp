@@ -113,9 +113,9 @@ public:
   //public:
   LaserCameraVirtualViewCalibration (ros::NodeHandle &anode) : nh_(anode), it_(nh_)
   {
-    nh_.param ("input_mesh_topic", input_mesh_topic_, std::string("mesh"));
+    nh_.param ("input_mesh_topic", input_mesh_topic_, std::string("/depth_image_triangulation_node/cloud_triangulated"));
     nh_.param ("output_image_topic", output_image_topic_, std::string("scene_image"));  
-    nh_.param ("laser_image_name", laser_image_name_, std::string("laser_image"));  
+    nh_.param ("laser_image_name", laser_image_name_, std::string("laser_image.ppm"));  
     nh_.param ("width", width_, 640);  
     nh_.param ("height", height_, 480);  
     nh_.param ("display_win", display_win_, 0);  
@@ -168,12 +168,12 @@ public:
     {
       points_[i].i = mesh->intensities[i];
     }
-    //prepend image name with a 4-digit number
+    //prepend laser image name with a 4-digit number
     char file_name_counter[100];
     sprintf (file_name_counter, "%04d",  file_name_counter_);
-    laser_image_name_ = std::string(file_name_counter) + "_" + laser_image_name_;
+    std::string final_laser_image_name = std::string(file_name_counter) + "_" + laser_image_name_;
 
-    lc_main (argc_, argv_, laser_image_name_, position_, focal_point_, 
+    lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 
              view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_);
 
     file_name_counter_++;
