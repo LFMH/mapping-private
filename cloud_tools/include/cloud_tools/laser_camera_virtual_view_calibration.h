@@ -63,5 +63,5 @@ struct triangle
 
 int lc_main (int argc, char* argv[], std::string laser_image_name, 
              point_3D p, point_3D fp, point_3D vu, double w, double h, int d,
-             std::vector<point_3D> &points_, int &nr_pct_, std::vector<triangle> &triangles_, int &nr_tr_);
+             std::vector<point_3D> &points_, int nr_pct_, std::vector<triangle> &triangles_, int nr_tr_);
 #endif

@@ -116,9 +116,9 @@ public:
     nh_.param ("input_mesh_topic", input_mesh_topic_, std::string("/depth_image_triangulation_node/cloud_triangulated"));
     nh_.param ("output_image_topic", output_image_topic_, std::string("scene_image"));  
     nh_.param ("laser_image_name", laser_image_name_, std::string("laser_image.ppm"));  
-    nh_.param ("width", width_, 640);  
-    nh_.param ("height", height_, 480);  
-    nh_.param ("display_win", display_win_, 0);  
+    nh_.param ("width", width_, 800);  
+    nh_.param ("height", height_, 600);  
+    nh_.param ("display_win", display_win_, 1);  
     XmlRpc::XmlRpcValue p, fp, vu;
     p.setSize(3), fp.setSize(3), vu.setSize(3);
     p[0] = -2.56693,    p[2] = 1.25371,    p[2] = 3.49953;

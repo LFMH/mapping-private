@@ -73,7 +73,6 @@ point_3D view_up;
 int displayWin = 1;
 int width = 640, height = 480;
 std::string output_ppm;
-sensor_msgs::Image output_ppm_ros;
 
 /**
  * \brief overloaded operator 
@@ -168,7 +167,7 @@ int read_data(const char input[], std::vector<point_3D> &points, int &nr_pct, st
 
 
 /**
- * \brief ubnproject 2D point
+ * \brief unproject 2D point
  * \param x x image coordinate
  * \param y y image coordinate
  */
@@ -292,7 +291,7 @@ void display (  void )
   image(output_ppm.c_str(), width, height);
   if (displayWin == 0)
   {
-    std::cerr << "returning to loop" << std::endl;
+    ROS_INFO("[LCVVC:] returning to main loop");
     //glutLeaveMainLoop();
     exit(0);
   }
@@ -376,28 +375,31 @@ void reshape(int width,  int height)
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
 //  glOrtho( left, right, bottom, top, -5.0, 5.0 );
+  //TODO: parametrize this
   gluPerspective (45.0,aspect,0.001,20);
   glMatrixMode( GL_MODELVIEW );
 }
 
 int lc_main (int argc, char* argv[], std::string laser_image_name, 
              point_3D p, point_3D fp, point_3D vu, double w, double h, int d,
-             std::vector<point_3D> &points_, int &nr_pct_, std::vector<triangle> &triangles_, int &nr_tr_)
+             std::vector<point_3D> &points_, int nr_pct_, std::vector<triangle> &triangles_, int nr_tr_)
 {
   output_ppm = laser_image_name;
-  std::cerr << "output_ppm: " << output_ppm << std::endl;
+  ROS_INFO("[LCVVC: ] output_ppm: %s", output_ppm.c_str());
   position = p;
-  std::cerr << "position: " << position.x << " " << position.y << " " << position.z << std::endl;
+  ROS_INFO("[LCVVC: ] position: %lf, %lf, %lf", position.x, position.y, position.z);
   focal_point = fp;
-  std::cerr << "focal_point: " << focal_point.x << " " << focal_point.y << " " << focal_point.z << std::endl;
+  ROS_INFO("[LCVVC: ] focal_point: %lf, %lf, %lf", focal_point.x, focal_point.y, focal_point.z);
   view_up = vu;
-  std::cerr << "view_up: " << view_up.x << " " << view_up.y << " " << view_up.z << std::endl;
+  ROS_INFO("[LCVVC: ] view_up: %lf, %lf, %lf", view_up.x, view_up.y, view_up.z);
   height = h;
   width = w;
   displayWin = d;
-  std::cerr << "height: " << height << " width: " << width << " displayWin: " << displayWin << std::endl;
+  ROS_INFO("[LCVVC: ] height: %d, width: %d, display_win: %d", height, width, displayWin);
   nr_pct = nr_pct_;
   nr_tr = nr_tr_;
+  points.resize(0);
+  triangles.resize(0);
   points = points_;
   triangles = triangles_;
   
@@ -406,7 +408,7 @@ int lc_main (int argc, char* argv[], std::string laser_image_name,
   glutInitWindowSize ( width, height );
   glutCreateWindow   ( argv[0]  );
   //  glutSetOption (GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
-  glutSetOption (GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+  //glutSetOption (GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
   glEnable(GL_DEPTH_TEST); 
 
   //read_data(input_vtk.c_str(), points, nr_pct, triangles, nr_tr);
