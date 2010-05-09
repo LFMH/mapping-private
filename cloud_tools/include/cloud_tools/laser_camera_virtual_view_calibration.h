@@ -44,6 +44,9 @@
 #include<X11/X.h>
 #include<X11/Xlib.h>
 #include<GL/glx.h>
-
+#include <sensor_msgs/Image.h>
+#include "cv_bridge/CvBridge.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 int lc_main (  int argc, char* argv[] );
 #endif

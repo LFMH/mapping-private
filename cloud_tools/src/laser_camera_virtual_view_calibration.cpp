@@ -53,6 +53,7 @@ stereo calibration.
 */
 
 #include <cloud_tools/laser_camera_virtual_view_calibration.h>
+
 //data structs
 struct point_3D
 {
@@ -84,7 +85,7 @@ point_3D view_up;
 int displayWin = 1;
 int width = 640, height = 480;
 std::string output_ppm;
-
+sensor_msgs::Image output_ppm_ros;
 /**
  * \brief overloaded operator 
  * \param node YAML node
@@ -236,11 +237,46 @@ void image(const char output[], int width, int height)
       if (intensity > maxval)
         intensity = maxval;
       fprintf(f, "%d %d %d", intensity, intensity, intensity);
+      fprintf(f, "%d", intensity);
       fprintf(f," ");
     }
     fprintf(f,"\n");
   }
+  
   fclose(f);
+
+ //  output_ppm_ros.header.stamp = ros::Time::now();
+//   output_ppm_ros.height = height;
+//   output_ppm_ros.width = width;
+//   output_ppm_ros.encoding = "mono8";
+//   output_ppm_ros.step = width;
+//   output_ppm_ros.data.resize(output_ppm_ros.step * width);
+//   int k = 0;
+//   for (int i=height-1; i>=0; i--)
+//   {
+//     for (int j=0; j<width; j++)
+//     {
+//       int intensity = pixels[i*width+j];
+//       if (intensity > maxval)
+//         intensity = maxval;
+//       output_ppm_ros.data[k] = intensity;
+//       k++;
+//     }
+//   }
+//   IplImage *cv_image = NULL;
+//   sensor_msgs::CvBridge bridge_;
+//   try
+//   {
+//     bridge_.fromImage(output_ppm_ros, "mono8");
+//     cv_image = bridge_.toIpl();
+//   }
+//   catch (sensor_msgs::CvBridgeException error)
+//   {
+//     ROS_ERROR("error converting imgMsgToCv");
+//   }
+//   //cvSaveImage("test_opencv.ppm", cv_image);
+//   cv::imwrite("test_opencv.ppm", cv_image);
+
 }
 
 /**
