@@ -207,22 +207,47 @@ void image(std::string laser_image_name, int width, int height)
   //  glReadBuffer(GL_RENDERBUFFER_EXT);
   glReadPixels(0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, pixels);
   
-  IplImage * cv_image = NULL;
-  cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-  int k = 0;
+ 
+  FILE* f;
+  
+  f=fopen(laser_image_name.c_str(),"w");
+  
+  fprintf(f,"P3\n");
+  fprintf(f,"%d %d\n", width, height); 
+  fprintf(f,"%d\n",maxval);
+  
   for (int i=height-1; i>=0; i--)
   {
     for (int j=0; j<width; j++)
     {
+      fprintf(f," ");
       int intensity = pixels[i*width+j];
       if (intensity > maxval)
         intensity = maxval;
-      cv_image->imageData[k] = intensity;
-      k++;
+      fprintf(f, "%d %d %d", intensity, intensity, intensity);
+      fprintf(f," ");
     }
+    fprintf(f,"\n");
   }
-  cv::imwrite(laser_image_name, cv_image);
-  cvReleaseImage(&cv_image);
+  fclose(f);
+  
+//   IplImage * cv_image = NULL;
+//   cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+//   int k = 0;
+//   for (int i=height-1; i>=0; i--)
+//   {
+//     for (int j=0; j<width; j++)
+//     {
+//       int intensity = pixels[i*width+j];
+//       if (intensity > maxval)
+//         intensity = maxval;
+//       cv_image->imageData[k] = intensity;
+//       k++;
+//     }
+//   }
+//   cv::imwrite(laser_image_name, cv_image);
+//   cvReleaseImage(&cv_image);
+
 }
 
 /**
@@ -268,8 +293,8 @@ void display (  void )
   if (displayWin == 0)
   {
     std::cerr << "returning to loop" << std::endl;
-    glutLeaveMainLoop();
-    //exit(0);
+    //glutLeaveMainLoop();
+    exit(0);
   }
   //return 0;
 }

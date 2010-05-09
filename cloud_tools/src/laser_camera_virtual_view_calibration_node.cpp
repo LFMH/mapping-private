@@ -169,9 +169,11 @@ public:
       points_[i].i = mesh->intensities[i];
     }
     //prepend laser image name with a 4-digit number
-    char file_name_counter[100];
-    sprintf (file_name_counter, "%04d",  file_name_counter_);
-    std::string final_laser_image_name = std::string(file_name_counter) + "_" + laser_image_name_;
+    //char file_name_counter[100];
+    //sprintf (file_name_counter, "%04d",  file_name_counter_);
+    std::stringstream ss;
+    ss << ros::Time::now();
+    std::string final_laser_image_name = ss.str() + "_" + laser_image_name_;
 
     lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 
              view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_);
