@@ -184,6 +184,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   mesh_ = boost::shared_ptr<DepthImageTriangulation::OutputType>(new DepthImageTriangulation::OutputType);
   mesh_->points.resize(0);//2*max_line_*max_index_);
   mesh_->triangles.resize(0);//2*max_line_*max_index_);
+  mesh_->intensities.resize(0);
 
   int nr = 0; //number of triangles
   int nr_tr;
@@ -390,6 +391,20 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
       mesh_->triangles.push_back(tr_mesh);
     } 
   }
+
+  //fill in intensities (needed for e.g. laser-to-camera calibration
+  int iIdx = getChannelIndex(cloud_with_line_, "intensities");
+  if (iIdx == -1)
+    ROS_WARN ("[DepthImageTriangulaton] \"intensites\" channel does not exist");
+  
+  else
+  {
+    mesh_->intensities.resize(cloud_with_line_.channels[iIdx].values.size());
+    for(unsigned long i=0; i < cloud_with_line_.channels[iIdx].values.size(); i++)
+      //for (unsigned long i = 0; i < nr; i++)
+      mesh_->intensities[i] = cloud_with_line_.channels[iIdx].values[i];  
+  }
+  
 
   //set indices back to initial values
   line_nr_in_channel_ = index_nr_in_channel_ = -1;
