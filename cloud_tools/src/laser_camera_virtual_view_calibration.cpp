@@ -215,12 +215,18 @@ void image(std::string laser_image_name, int width, int height)
   fprintf(f,"%d %d\n", width, height); 
   fprintf(f,"%d\n",maxval);
   
+  int min_intensity = +INT_MAX;
+  int max_intensity = -INT_MAX;
   for (int i=height-1; i>=0; i--)
   {
     for (int j=0; j<width; j++)
     {
       fprintf(f," ");
       int intensity = pixels[i*width+j];
+      if (intensity > max_intensity)
+        max_intensity = intensity;
+      if (intensity < min_intensity)
+        min_intensity = intensity;
       if (intensity > maxval)
         intensity = maxval;
       fprintf(f, "%d %d %d", intensity, intensity, intensity);
@@ -229,7 +235,8 @@ void image(std::string laser_image_name, int width, int height)
     fprintf(f,"\n");
   }
   fclose(f);
-  
+  //TODO: use these values to scale intensities between 0-255 in case they exceed 255 value
+  ROS_INFO("[LCVVC:] min_intensity %d, max_intensity: %d", min_intensity, max_intensity);
 //   IplImage * cv_image = NULL;
 //   cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 //   int k = 0;
