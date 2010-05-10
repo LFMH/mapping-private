@@ -73,7 +73,8 @@ point_3D view_up;
 int displayWin = 1;
 int width = 640, height = 480;
 std::string output_ppm;
-
+//
+int maxval = 127;
 /**
  * \brief overloaded operator 
  * \param node YAML node
@@ -199,13 +200,12 @@ point_3D point3D_from_window_displayed(int x, int y)
  */
 void image(std::string laser_image_name, int width, int height)
 {
-  int maxval = 255;
+
   unsigned char *pixels = new unsigned char [(width) * (height)];
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   //  glReadBuffer(GL_FRONT);
   //  glReadBuffer(GL_RENDERBUFFER_EXT);
   glReadPixels(0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, pixels);
-  
  
   FILE* f;
   
@@ -215,18 +215,12 @@ void image(std::string laser_image_name, int width, int height)
   fprintf(f,"%d %d\n", width, height); 
   fprintf(f,"%d\n",maxval);
   
-  int min_intensity = +INT_MAX;
-  int max_intensity = -INT_MAX;
   for (int i=height-1; i>=0; i--)
   {
     for (int j=0; j<width; j++)
     {
       fprintf(f," ");
       int intensity = pixels[i*width+j];
-      if (intensity > max_intensity)
-        max_intensity = intensity;
-      if (intensity < min_intensity)
-        min_intensity = intensity;
       if (intensity > maxval)
         intensity = maxval;
       fprintf(f, "%d %d %d", intensity, intensity, intensity);
@@ -236,7 +230,7 @@ void image(std::string laser_image_name, int width, int height)
   }
   fclose(f);
   //TODO: use these values to scale intensities between 0-255 in case they exceed 255 value
-  ROS_INFO("[LCVVC:] min_intensity %d, max_intensity: %d", min_intensity, max_intensity);
+
 //   IplImage * cv_image = NULL;
 //   cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
 //   int k = 0;
@@ -389,7 +383,7 @@ void reshape(int width,  int height)
 
 int lc_main (int argc, char* argv[], std::string laser_image_name, 
              point_3D p, point_3D fp, point_3D vu, double w, double h, int d,
-             std::vector<point_3D> &points_, int nr_pct_, std::vector<triangle> &triangles_, int nr_tr_)
+             std::vector<point_3D> &points_, int nr_pct_, std::vector<triangle> &triangles_, int nr_tr_, int scale_intensity)
 {
   output_ppm = laser_image_name;
   ROS_INFO("[LCVVC: ] output_ppm: %s", output_ppm.c_str());
@@ -409,7 +403,7 @@ int lc_main (int argc, char* argv[], std::string laser_image_name,
   triangles.resize(0);
   points = points_;
   triangles = triangles_;
-  
+  maxval = scale_intensity;
   glutInit (&argc, argv);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
   glutInitWindowSize ( width, height );

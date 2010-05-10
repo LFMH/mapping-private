@@ -102,6 +102,8 @@ public:
   int argc_;
   char ** argv_;
   int file_name_counter_;
+  //set to 127 to scale intensities btw 0-127
+  int scale_intensities_;
   //subscribers, publishers
   ros::Subscriber mesh_sub_;
   image_transport::Subscriber image_sub_;
@@ -137,6 +139,7 @@ public:
     image_sub_ = it_.subscribe(input_image_topic_, 1, &LaserCameraVirtualViewCalibration::image_cb, this);
     file_name_counter_ = 0;
     camera_image_saved_ = false;
+    scale_intensities_ = 127;
   }
 
   /**
@@ -193,16 +196,27 @@ public:
         triangles_[i].b = mesh->triangles[i].j;
         triangles_[i].c = mesh->triangles[i].k;
       }
-      
+      int min_intensity = +INT_MAX;
+      int max_intensity = -INT_MAX;
       //read in intensities
       for (unsigned int i = 0; i < mesh->intensities.size(); i++)
       {
         points_[i].i = mesh->intensities[i];
+        if (mesh->intensities[i] < min_intensity)
+          min_intensity = mesh->intensities[i];
+        if ( mesh->intensities[i] > max_intensity)
+          max_intensity = mesh->intensities[i];
+      }
+      ROS_INFO("[LCVVC_NODE:] min_intensity %d, max_intensity: %d", min_intensity, max_intensity);
+      for (unsigned int i = 0; i < points_.size(); i++)
+      {
+        int value =  round((double)points_[i].i/(double)max_intensity * scale_intensities_);
+        points_[i].i = value;
       }
       std::string final_laser_image_name = ros_stamp_.str() + "_" + laser_image_name_ + ".ppm";
       
       lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 
-               view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_);
+               view_up_, width_, height_, display_win_, points_, nr_pct_, triangles_,  nr_tr_, scale_intensities_);
       
       file_name_counter_++;
       points_.resize(0);

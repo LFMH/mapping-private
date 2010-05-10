@@ -1,7 +1,10 @@
 <!-- Note you have to custumize the path to your .pcd file   -->
 <launch>
   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
-        args="$(optenv pcd /home/pangerci/work/laser_camera_virtual_view_calibration/checkerboard001_-180_.pcd) $(optenv period 2)" />
+        args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/all/corn_flakes_1267026243.355204.pcd) $(optenv period 2)" />
+
+<!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
+<!--         args="$(optenv pcd /home/pangerci/work/laser_camera_virtual_view_calibration/checkerboard001_-180_.pcd) $(optenv period 2)" /> -->
   
   <node pkg="topic_tools" type="relay" name="relay_cloud_pcd" args="/cloud_pcd /depth_image_triangulation_node/cloud_pcd" respawn="false" output="screen"/>
   
