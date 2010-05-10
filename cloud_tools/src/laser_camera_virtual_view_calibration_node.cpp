@@ -131,7 +131,7 @@ public:
     vu[0] = 0.582762,    vu[2] = -0.068426,    vu[2] = 0.809757;
     nh_.param("position", p, p);
     nh_.param("focal_point", fp, fp);
-    nh_.param("view_point", vu, vu);
+    nh_.param("view_up", vu, vu);
     position_.x = p[0], position_.y = p[1], position_.z = p[2]; 
     focal_point_.x = fp[0], focal_point_.y = fp[1], focal_point_.z = fp[2]; 
     view_up_.x = vu[0], view_up_.y = vu[1], view_up_.z = vu[2]; 
