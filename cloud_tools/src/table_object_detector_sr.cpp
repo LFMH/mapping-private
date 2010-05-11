@@ -307,7 +307,15 @@ public:
     //get and send clusters
     PointCloud cloud_clusters;
     cloud_geometry::getPointCloud (cloud_filtered, object_inliers, cloud_clusters);
-    cloud_clusters_pub_.publish (cloud_clusters);
+      try
+    {
+      tf_listener_.transformPointCloud(sensor_frame_, cloud_clusters, cloud_clusters);
+    }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("%s",ex.what());
+      }
+      cloud_clusters_pub_.publish (cloud_clusters);
 #endif
     ROS_INFO ("Results estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
 
