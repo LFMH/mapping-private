@@ -614,6 +614,37 @@ class TableMemory
       return NULL;
     }
 
+//    /// Function that dejan implements.. :D
+//    IMPLEMENTME
+//      cut_roi (image, std::vector<Point32> points)
+//    {
+//    }
+//
+//    /*!
+//     * \brief employs different image detection algorithms for the current set of point clusters on table specified by table_num
+//    */
+//    void
+//      camera_based_recognition (int table_num)
+//    {
+//      Table &t = tables[table_num];
+//      // roi for table boundaries
+//      Image roi_table = cut_roi (image_, t.polygon.points);
+//      // CALL ALL table ALGORITHMS
+//      for (int i = 1; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
+//      {
+//        TableObject* to = t.getCurrentInstance ()->objects.at (i);
+//        if (to->point_cluster.points.size () == 0)
+//        {
+//          ROS_WARN ("[reconstruct_table_objects] Table object has 0 points.");
+//          continue;
+//        }
+//        Image roi_cluster = cut_roi (image_, to.point_cluster.points);
+//        // CALL ALL cluster ALGORITHMS 
+//        // store object name etc in (TableObject to)
+//      }
+//      // Nico: use these results.. :D
+//    }
+
     /*!
      * \brief employs different reconstruction algorithms for the current set of point clusters on table specified by table_num
     */
@@ -756,6 +787,7 @@ break;
       publish_mem_state (table_found);
       name_table_objects (table_found);
       reconstruct_table_objects (table_found);
+//      camera_based_recognition (table_found);
       update_table_instance_objects(table_found);
       //update_jlo (table_found);
       //call_cop (table_found);
