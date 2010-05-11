@@ -1,12 +1,8 @@
 <launch>
   <param name="global_frame_id" value="/base_link" />	
-<!--publish a point cloud to "cloud_pcd" topic-->
-<!--output: cloud_pcd -->
-<node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
-      args="/home/pangerci/work/dump_scenes/work/object_memmory_one/sr/cloud_1263768841_7897.pcd $(optenv period 5)" />
-
 
 <node pkg="cloud_tools" type="table_object_detector_sr_node" name="table_object_detector_sr_node" output="screen" respawn="true">
+  <param  name="input_cloud_topic" value="/swissranger_test/cloud_sr" />;
 </node>
 
 </launch>
