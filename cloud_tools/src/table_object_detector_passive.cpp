@@ -423,7 +423,7 @@ class TableObjectDetector
       }
       for (unsigned int cluster_num = 0; cluster_num < c_good.size(); cluster_num++)
       {
-        ROS_INFO ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good[cluster_num]].size ());
+        ROS_INFO ("Number of clusters (tables) found: %d, largest cluster(table): %d.", (int)clusters.size (), (int)clusters[c_good[cluster_num]].size ());
         if (clusters[c_good[cluster_num]].size () < (unsigned int)clusters_min_pts_)
           continue;
         if (good_inliers [cluster_num].size () < 100)
@@ -542,7 +542,7 @@ class TableObjectDetector
           ROS_ERROR ("Failed to PolygonalMap from frame %s to frame %s", cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
           return;
         }
-
+        //here we publish only 1 table
         table.table = pmap_.polygons[0];
 
 
@@ -573,6 +573,7 @@ class TableObjectDetector
             cloud_annotated_.channels[d].name = cloud_in_.channels[d].name;
             cloud_annotated_.channels[d].values.resize (total_nr_pts);
           }
+          //add rgb channel
           cloud_annotated_.channels[cloud_in_.channels.size ()].name = "rgb";
           cloud_annotated_.channels[cloud_in_.channels.size ()].values.resize (total_nr_pts);
 
@@ -588,6 +589,7 @@ class TableObjectDetector
               cloud_annotated_.points[nr_p] = cloud_in_.points.at (objects[i][j]);
               for (unsigned int d = 0; d < cloud_in_.channels.size (); d++)
                 cloud_annotated_.channels[d].values[nr_p] = cloud_in_.channels[d].values.at (objects[i][j]);
+              //rgb channel
               cloud_annotated_.channels[cloud_in_.channels.size ()].values[nr_p] = rgb;
               nr_p++;
             }

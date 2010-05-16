@@ -123,6 +123,7 @@ class BoxFilter
             cloud_out.channels[j].values.push_back (cloud->channels[j].values[i]);
         }
       }
+       ROS_INFO("[BoxFilter: ] cloud clipped and published with %ld points", cloud_out.points.size());
       cloud_pub_.publish (cloud_out); 
     }
 };
