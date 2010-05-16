@@ -1,0 +1,6 @@
+<launch>
+  <!-- Table Memory -->
+  <node pkg="dyn_obj_store" type="table_memory" name="table_memory" output="screen">
+    <param name="input_table_topic" value="/table_with_objects" />
+  </node>
+</launch>
