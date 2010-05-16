@@ -34,6 +34,7 @@
 #include <sensor_msgs/PointCloud.h>
 //later: cut polygon instead of AABB
 #include <geometry_msgs/PolygonStamped.h>
+#include <tf/transform_listener.h>
 
 /** 
 @file
@@ -61,25 +62,31 @@
 class BoxFilter
 {
   protected:
-    ros::NodeHandle nh_;
-    std::string input_cloud_topic_;
-    std::string output_cloud_topic_;
-    
-    ros::Subscriber cloud_sub_;
-    ros::Publisher cloud_pub_;
-
-    double box_min_x_;
-    double box_max_x_;
-    double box_min_y_;
-    double box_max_y_;
-    double box_min_z_;
-    double box_max_z_;
+  ros::NodeHandle nh_;
+  std::string input_cloud_topic_;
+  std::string output_cloud_topic_;
+  //in which coordinate frame do you want to clip the cloud in
+  std::string clip_origin_;
+  
+  
+  ros::Subscriber cloud_sub_;
+  ros::Publisher cloud_pub_;
+  
+  double box_min_x_;
+  double box_max_x_;
+  double box_min_y_;
+  double box_max_y_;
+  double box_min_z_;
+  double box_max_z_;
+  
+  tf::TransformListener tf_listener_;
 
   public:
     BoxFilter (ros::NodeHandle &anode) : nh_(anode)
     {
       nh_.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("cloud_box_clipped"));
+      nh_.param ("clip_origin", clip_origin_, std::string("base_link"));
       
       nh_.param ("box_min_x", box_min_x_, -4.0);
       nh_.param ("box_max_x", box_max_x_,  3.0);
@@ -98,31 +105,55 @@ class BoxFilter
     void
       cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
     {
+      //transform cloud to base_link
+      std::string cloud_original_frame = cloud->header.frame_id;
+      sensor_msgs::PointCloud cloud_base_link;
+      try
+      {
+        tf_listener_.transformPointCloud(clip_origin_, *cloud, cloud_base_link);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("%s",ex.what());
+      }
+
+
       // copy header over from input cloud
       sensor_msgs::PointCloud cloud_out;
-      cloud_out.header = cloud->header;
+      cloud_out.header = cloud_base_link.header;
 
       // resize channels and copy their names
-      cloud_out.channels.resize (cloud->channels.size());
-      for (unsigned int i = 0; i < cloud->channels.size(); i++)
-        cloud_out.channels[i].name = cloud->channels[i].name;
+      cloud_out.channels.resize (cloud_base_link.channels.size());
+      for (unsigned int i = 0; i < cloud_base_link.channels.size(); i++)
+        cloud_out.channels[i].name = cloud_base_link.channels[i].name;
 
       // go through all points 
-      for (unsigned int i = 0; i < cloud->points.size(); i++)
+      for (unsigned int i = 0; i < cloud_base_link.points.size(); i++)
       {
         // select all points that are within in the specified points
-        if (cloud->points[i].x > box_min_x_ && cloud->points[i].x < box_max_x_
-           && cloud->points[i].y > box_min_y_ && cloud->points[i].y < box_max_y_
-           && cloud->points[i].z > box_min_z_ && cloud->points[i].z < box_max_z_)
+        if (cloud_base_link.points[i].x > box_min_x_ && cloud_base_link.points[i].x < box_max_x_
+           && cloud_base_link.points[i].y > box_min_y_ && cloud_base_link.points[i].y < box_max_y_
+           && cloud_base_link.points[i].z > box_min_z_ && cloud_base_link.points[i].z < box_max_z_)
         {
           // copy point over
-          cloud_out.points.push_back (cloud->points[i]);
+          cloud_out.points.push_back (cloud_base_link.points[i]);
 
           // copy channel values over
-          for (unsigned int j = 0; j < cloud->channels.size(); j++)
-            cloud_out.channels[j].values.push_back (cloud->channels[j].values[i]);
+          for (unsigned int j = 0; j < cloud_base_link.channels.size(); j++)
+            cloud_out.channels[j].values.push_back (cloud_base_link.channels[j].values[i]);
         }
       }
+      
+      //transform clipped cloud back to the original frame
+      try
+      {
+        tf_listener_.transformPointCloud(cloud_original_frame, cloud_out, cloud_out);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("%s",ex.what());
+      }
+      ROS_INFO("[BoxFilter: ] cloud clipped and published with %ld points", cloud_out.points.size());
       cloud_pub_.publish (cloud_out); 
     }
 };
