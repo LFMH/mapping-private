@@ -43,19 +43,22 @@ struct dummy_deleter
 /// holds a single object on a table, with timestamp, orig. pcd data and reconstructed representations
 struct TableObject
 {
-  TableObject (): type (-1), lo_id (0), name("") { }
+  TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
+                  object_geometric_type(""), perception_method(""){ }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
   geometry_msgs::Point32 maxP;
-  int type;
-  unsigned long long lo_id;
+  //unsigned long long lo_id;
   std::vector <double> coeffs;
   double score;
   std::vector<int> triangles;
-  std::string semantic_type;
   std::string name;
-  std::vector<std::string> color;
+  std::string sensor_type;
+  std::string object_type;
+  std::string object_color;
+  std::string object_geometric_type;
+  std::string perception_method;
 };
 
 /// holds a single snapshot of a table
@@ -67,7 +70,7 @@ struct TableStateInstance
 
 /// this contains a "timeline" of table snapshots for one table
 struct Table
-{
+ {
   unsigned new_flag;
   geometry_msgs::Point32 center;
   geometry_msgs::Polygon polygon;
@@ -147,7 +150,8 @@ class TableMemory
 
     //insert lo_ids waiting for prolog update
     std::vector<unsigned long long> update_prolog_;
-    unsigned long long lo_id_tmp_;
+    //this number never resets in the life cycle of program
+    unsigned long long object_unique_id_;
 
     // THE structure... :D
     std::vector<Table> tables;
@@ -183,7 +187,12 @@ class TableMemory
         ret.table_id = idxs[0];
         ret.table_center =  tables[idxs[0]].center;
         ret.stamp =  tables[idxs[0]].inst[idxs[1]]->time_instance;
-        ret.cluster_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
+        ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
+        ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
+        ret.object_color =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_color;
+        //object's unique number
+        ret.object_id = id;
+        ret.object_geometric_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type;
       }
       else
       {
@@ -193,7 +202,7 @@ class TableMemory
      }
 
   public:
-    TableMemory (ros::NodeHandle &anode) : nh_(anode), cluster_name_counter_(0), counter_(0), color_probability_(0.2), lo_id_tmp_(0)
+    TableMemory (ros::NodeHandle &anode) : nh_(anode), cluster_name_counter_(0), counter_(0), color_probability_(0.2), object_unique_id_(0)
     {
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
@@ -349,7 +358,7 @@ class TableMemory
         //this here asumes that color classes are returned in FIFO fashion wrt to cop query (see cop_call function)!!!
         if(pos.probability >= color_probability_)
         {
-          TableObject * to = getObjectFromLOId (pos.position);
+          //TableObject * to = getObjectFromLOId (pos.position);
           for (unsigned int cls = 0; cls < pos.models.size (); cls++)
           {
             if(pos.models[cls].type.compare("ColorClass") == 0)
@@ -357,7 +366,7 @@ class TableMemory
               ROS_INFO("Object color is %s", pos.models[cls].sem_class.c_str());
               //possible returns: [red (or any other color), object type (Jug)]
               //color is a vector of strings in case object contains multiple color hypotheses
-              to->color.push_back(pos.models[cls].sem_class);
+              //to->color.push_back(pos.models[cls].sem_class);
             }
           }
         }
@@ -445,7 +454,7 @@ class TableMemory
         }
         printf("\n");
 
-        o->lo_id = call.response.answer.id;
+        //o->lo_id = call.response.answer.id;
       }
       return true;
     }
@@ -471,13 +480,13 @@ class TableMemory
         idxs[0] = table_num;
         idxs[1] = tables[table_num].inst.size()-1;
         idxs[2] = o_idx;
-        lo_ids [o->lo_id] = idxs;
+        //lo_ids [o->lo_id] = idxs;
 
-        update_prolog_.push_back(o->lo_id);
+        //update_prolog_.push_back(o->lo_id);
 
         vision_msgs::apriori_position pos;
         pos.probability = 1.0;
-        pos.positionId = o->lo_id;
+        //pos.positionId = o->lo_id;
 
         call.request.list_of_poses.push_back (pos);
         if(!cop_client_.call(call))
@@ -504,14 +513,17 @@ class TableMemory
           // save the indices in our vector of vector of vector so we can find a object
           // in our storage from the positionID (lo_id)
           std::vector<long> idxs (3);
+          //table number
           idxs[0] = table_num;
+          //instance number
           idxs[1] = tables[table_num].inst.size()-1;
+          //object id
           idxs[2] = o_idx;
           //lo_ids [o->lo_id] = idxs;
-          ROS_INFO("Pushing --------- lo_id: %lld, table_num: %ld, inst num: %ld, o_idx: %ld", lo_id_tmp_, idxs[0], idxs[1], idxs[2]);
-          lo_ids [lo_id_tmp_] = idxs;
-          update_prolog_.push_back(lo_id_tmp_);
-          lo_id_tmp_++;
+          ROS_INFO("Pushing --------- object_unique_id_: %lld, table_num: %ld, inst num: %ld, o_idx: %ld", object_unique_id_, idxs[0], idxs[1], idxs[2]);
+          lo_ids [object_unique_id_] = idxs;
+          update_prolog_.push_back(object_unique_id_);
+          object_unique_id_++;
         }
       return true;
     }
@@ -785,8 +797,8 @@ break;
       }
 
       publish_mem_state (table_found);
-      name_table_objects (table_found);
-      reconstruct_table_objects (table_found);
+      //name_table_objects (table_found);
+      //reconstruct_table_objects (table_found);
 //      camera_based_recognition (table_found);
       update_table_instance_objects(table_found);
       //update_jlo (table_found);
