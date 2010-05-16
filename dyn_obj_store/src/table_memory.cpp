@@ -152,7 +152,8 @@ class TableMemory
     std::vector<unsigned long long> update_prolog_;
     //this number never resets in the life cycle of program
     unsigned long long object_unique_id_;
-
+    //clock when the program started
+    ros::Time first_stamp_;
     // THE structure... :D
     std::vector<Table> tables;
     /** @todo have a cupboards structure as well */
@@ -187,6 +188,7 @@ class TableMemory
         ret.table_id = idxs[0];
         ret.table_center =  tables[idxs[0]].center;
         ret.stamp =  tables[idxs[0]].inst[idxs[1]]->time_instance;
+        ret.first_stamp =  first_stamp_;
         ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
         ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
         ret.object_color =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_color;
@@ -210,7 +212,7 @@ class TableMemory
       nh_.param ("output_cluster_name_topic", output_cluster_name_topic_, std::string("cluster_names"));       // 15 degrees
       nh_.param ("output_table_state_topic", output_table_state_topic_, std::string("table_mem_state"));       // 15 degrees
       nh_.param ("/global_frame_id", global_frame_, std::string("/map"));
-
+      first_stamp_ = ros::Time::now();
       table_sub_ = nh_.subscribe (input_table_topic_, 1, &TableMemory::table_cb, this);
 //       cop_sub_ = nh_.subscribe (input_cop_topic_, 1, &TableMemory::cop_cb, this);
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
