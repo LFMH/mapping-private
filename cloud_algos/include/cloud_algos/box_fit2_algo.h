@@ -44,16 +44,17 @@ class RobustBoxEstimation : public BoxEstimation
   /**
    * \brief Inlier threshold for normals in radians
    */
-  float eps_angle_;
+  double eps_angle_;
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
-   * \brief Constructor
+   * \brief Constructor and destructor
    */
   RobustBoxEstimation ()
   {
     eps_angle_ = 0.1; // approximately 6 degrees
   };
+  //~RobustBoxEstimation () {}
 
   // Overwritten Cloud Algo stuff
   void pre  ();

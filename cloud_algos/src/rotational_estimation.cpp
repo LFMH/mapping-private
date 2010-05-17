@@ -229,7 +229,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
 boost::shared_ptr<sensor_msgs::PointCloud> RotationalEstimation::getOutliers ()
 {
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud);
-  ROS_INFO("created PointCloud object: 0x%x", (void*) ret.get());
+  //ROS_INFO("created PointCloud object: 0x%x", (void*) ret.get()); - ZOLI COMMENTED THIS TO GET RID OF WARNING, SUPPOSING WAS ONLY DEBUG :)
   
   ret->header = cloud_->header;
   int channel_index = getChannelIndex (cloud_, "index");

@@ -42,7 +42,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
 {
   // Check if features exist and how many of them
   int fIdx = -1;
-  for (unsigned int d = 0; d < cloud->get_channels_size (); d++)
+  for (unsigned int d = 0; d < cloud->channels.size (); d++)
     if (cloud->channels[d].name == "f1")
     {
       fIdx = d;
@@ -54,7 +54,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     return std::string("missing features");
   }
   int nr_values = 1;
-  for (unsigned int d = fIdx+1; d < cloud->get_channels_size (); d++)
+  for (unsigned int d = fIdx+1; d < cloud->channels.size (); d++)
   {
     char dim_name[16];
     sprintf (dim_name, "f%d", nr_values+1);
@@ -65,7 +65,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
 
   // Check if expected classification results are provided as well
   int plIdx = -1;
-  for (unsigned int d = 0; d < cloud->get_channels_size (); d++)
+  for (unsigned int d = 0; d < cloud->channels.size (); d++)
     if (cloud->channels[d].name == "point_label")
     {
       plIdx = d;

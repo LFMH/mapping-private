@@ -43,6 +43,7 @@ class BoxEstimation : public CloudAlgo
 {
  public:
   BoxEstimation () { };
+  //~BoxEstimation () { };
   typedef triangle_mesh::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 
@@ -90,7 +91,7 @@ class BoxEstimation : public CloudAlgo
    */
   void publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
  
- private: 
+ protected: 
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;
   std::vector<int> outliers_;
@@ -108,7 +109,7 @@ class BoxEstimation : public CloudAlgo
   //point color
   float r_, g_, b_;
   //lock point cloud
-  boost::mutex lock;
+  //boost::mutex lock;
 };
 
 }

@@ -9,5 +9,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 ROSBUILD_ADD_LIBRARY (ias_sample_consensus
   src/sac_model_rotational.cpp
+  src/sac_model_orientation.cpp
 )
 

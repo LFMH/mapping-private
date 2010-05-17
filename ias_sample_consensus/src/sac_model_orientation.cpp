@@ -31,7 +31,7 @@
 
 namespace ias_sample_consensus
 {
-  inline void
+  void
     SACModelOrientation::init (sensor_msgs::PointCloud *cloud)
   {
     // Locate channels with normals

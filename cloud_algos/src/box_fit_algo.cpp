@@ -287,10 +287,12 @@ void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCl
   box_pub_.publish( marker );
 }
 
+#ifndef NO_BOXFIT_NODE
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])
 {
   return standalone_node <BoxEstimation> (argc, argv);
 }
+#endif
 #endif
 

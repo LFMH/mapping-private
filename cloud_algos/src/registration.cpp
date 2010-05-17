@@ -9,7 +9,7 @@ int
   getIndex (const boost::shared_ptr<const sensor_msgs::PointCloud> points, std::string value)
 {
   // Get the index we need
-  for (unsigned int d = 0; d < points->get_channels_size (); d++)
+  for (unsigned int d = 0; d < points->channels.size (); d++)
     if (points->channels[d].name == value)
       return (d);
 
@@ -69,7 +69,7 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   const Eigen::VectorXd S = svd.singularValues();
   
   Eigen::MatrixXd S_plus(S);
-  for (unsigned int i = 0; i < S_plus.size(); i++)
+  for (int i = 0; i < S_plus.size(); i++)
     if (S_plus[i] != 0.0)
       S_plus[i] = 1.0f / S_plus[i];
       
@@ -129,7 +129,7 @@ double Registration::oneIteration (const boost::shared_ptr<const sensor_msgs::Po
     target_corr[i] = k_indices[0];
     source_corr[i] = random_idx;
   }
-  ROS_INFO ("selected %i sample points", source_corr.size());
+  ROS_INFO ("selected %u sample points", (unsigned)source_corr.size());
   double error = RigidTransformSVD (source, target_corr, source_corr, transform);
   return error;
 }

@@ -17,6 +17,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
 #  src/plugin_loader.cpp
   src/registration.cpp
   src/box_fit_algo.cpp
+  src/box_fit2_algo.cpp
   src/cylinder_fit_algo.cpp
   src/mls_fit.cpp
   src/radius_estimation.cpp
@@ -51,6 +52,9 @@ set_target_properties (mls_fit_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
 rosbuild_add_executable (box_estimation_node src/box_fit_algo.cpp src/misc.cpp)
 set_target_properties (box_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+rosbuild_add_executable (box_fit2_node src/box_fit2_algo.cpp src/box_fit_algo.cpp src/misc.cpp)
+set_target_properties (box_fit2_node PROPERTIES COMPILE_FLAGS "-DCREATE_NODE -DNO_BOXFIT_NODE")
 
 rosbuild_add_executable (cylinder_estimation_node src/cylinder_fit_algo.cpp)
 set_target_properties (cylinder_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

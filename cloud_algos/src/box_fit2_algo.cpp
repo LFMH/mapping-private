@@ -55,8 +55,9 @@ std::vector<std::string> RobustBoxEstimation::requires ()
   return requires;
 }
 
-void RobustBoxEstimation::pre () : BoxEstimation::pre ()
+void RobustBoxEstimation::pre ()
 {
+  ((BoxEstimation*)this)->pre ();
   nh_.param("eps_angle", eps_angle_, eps_angle_);
 }
 
@@ -75,7 +76,7 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   // Create model
   SACModelOrientation *model = new SACModelOrientation ();
   model->axis_ << 0, 0, 1; // Suppose fixed Z axis
-  model->setDataSet (&cloud); // TODO: this is nasty :)
+  model->setDataSet (((sensor_msgs::PointCloud*)cloud.get())); // TODO: this is nasty :)
 
   // Fit model using RANSAC
   RANSAC *sac = new RANSAC (model, eps_angle_);
@@ -83,14 +84,14 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   vector<double> refined;
   if (!sac->computeModel ())
   {
-    ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %d!", eps_angle_);
+    ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
     return;
   }
 
   // Get inliers and refine result
   inliers = sac->getInliers ();
   /// @NOTE best_model_ contains actually the samples used to find the best model!
-  vector<double> original = model_->getModelCoefficients ();
+  vector<double> original = model->getModelCoefficients ();
   cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
   sac->refineCoefficients(refined);
   cerr << "refined direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;

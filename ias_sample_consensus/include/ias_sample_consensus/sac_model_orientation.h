@@ -38,6 +38,7 @@
 
 // Eigen
 #include <Eigen/Array>
+#include <Eigen/Geometry>
 
 namespace ias_sample_consensus
 {
@@ -184,7 +185,7 @@ namespace ias_sample_consensus
        * @note We assume that if nx exists then ny and nz are the channels following it.
        * \param cloud the data set to be used
        */
-      inline void init (sensor_msgs::PointCloud *cloud);
+       void init (sensor_msgs::PointCloud *cloud);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Index of the nx channel (the x component of the normal vector). The next indices are assumed to be that of ny and nz! */
