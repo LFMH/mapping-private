@@ -93,12 +93,11 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   /// @NOTE: inliers are actually indexes in the indices_ array, but that is not set (by default it has all the points in the correct order)
   inliers = sac->getInliers ();
   /// @NOTE best_model_ contains actually the samples used to find the best model!
-  cerr << "best model = " << model->getBestModel ().at (0) << endl;
   model->computeModelCoefficients(model->getBestModel ());
   vector<double> original = model->getModelCoefficients ();
-  cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
+  cerr << "used direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
   sac->refineCoefficients(refined);
-  cerr << "refined direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
+  cerr << "testing re-fitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
   //if (refined[3] == -1)
     refined = original;
 
@@ -131,28 +130,29 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   //model->getMinAndMax (&refined, &inliers, min_max_indices, min_max_distances);
   model->getMinAndMax (&refined, model->getIndices (), min_max_indices, min_max_distances);
   //vector<int> min_max_indices = model->getMinAndMaxIndices (refined);
-  cerr << min_max_distances.at (1) << " " << min_max_distances.at (0) << endl;
-  cerr << min_max_distances.at (3) << " " << min_max_distances.at (2) << endl;
-  cerr << min_max_distances.at (5) << " " << min_max_distances.at (4) << endl;
+
+  //cerr << min_max_distances.at (1) << " " << min_max_distances.at (0) << endl;
+  //cerr << min_max_distances.at (3) << " " << min_max_distances.at (2) << endl;
+  //cerr << min_max_distances.at (5) << " " << min_max_distances.at (4) << endl;
 
   // Save dimensions
   coeff[3+0] = min_max_distances.at (1) - min_max_distances.at (0);
   coeff[3+1] = min_max_distances.at (3) - min_max_distances.at (2);
   coeff[3+2] = min_max_distances.at (5) - min_max_distances.at (4);
 
-  // Distance of box center relative to centroid along orientation axes
-  double moving[3];
-  moving[0] = min_max_distances[0] + coeff[3+0] / 2;
-  moving[1] = min_max_distances[2] + coeff[3+1] / 2;
-  moving[2] = min_max_distances[4] + coeff[3+2] / 2;
+  // Distance of box's geometric center relative to origin along orientation axes
+  double dist[3];
+  dist[0] = min_max_distances[0] + coeff[3+0] / 2;
+  dist[1] = min_max_distances[2] + coeff[3+1] / 2;
+  dist[2] = min_max_distances[4] + coeff[3+2] / 2;
 
-  // Move centroid to the box center (at equal distance from sides)
-  coeff[0] = moving[0]*coeff[6+0] + moving[1]*coeff[9+0] + moving[2]*coeff[12+0];
-  coeff[1] = moving[0]*coeff[6+1] + moving[1]*coeff[9+1] + moving[2]*coeff[12+1];
-  coeff[2] = moving[0]*coeff[6+2] + moving[1]*coeff[9+2] + moving[2]*coeff[12+2];
-  //coeff[0] = box_centroid_.x + moving[0]*coeff[6+0] + moving[1]*coeff[9+0] + moving[2]*coeff[12+0];
-  //coeff[1] = box_centroid_.y + moving[0]*coeff[6+1] + moving[1]*coeff[9+1] + moving[2]*coeff[12+1];
-  //coeff[2] = box_centroid_.z + moving[0]*coeff[6+2] + moving[1]*coeff[9+2] + moving[2]*coeff[12+2];
+  // Compute position of the box's geometric center in XYZ
+  coeff[0] = dist[0]*coeff[6+0] + dist[1]*coeff[9+0] + dist[2]*coeff[12+0];
+  coeff[1] = dist[0]*coeff[6+1] + dist[1]*coeff[9+1] + dist[2]*coeff[12+1];
+  coeff[2] = dist[0]*coeff[6+2] + dist[1]*coeff[9+2] + dist[2]*coeff[12+2];
+  //coeff[0] = box_centroid_.x + dist[0]*coeff[6+0] + dist[1]*coeff[9+0] + dist[2]*coeff[12+0];
+  //coeff[1] = box_centroid_.y + dist[0]*coeff[6+1] + dist[1]*coeff[9+1] + dist[2]*coeff[12+1];
+  //coeff[2] = box_centroid_.z + dist[0]*coeff[6+2] + dist[1]*coeff[9+2] + dist[2]*coeff[12+2];
   ROS_INFO ("[RobustBoxEstimation] Cluster center x: %g, y: %g, z: %g", coeff[0], coeff[1], coeff[2]);
 
   // Print info

@@ -52,8 +52,11 @@
 //cloud_algos
 #include <cloud_algos/box_fit_algo.h>
 
-//bullet
+//bullet TODO: maybe replace that function with one from Eigen
 #include <tf/tf.h>
+
+// Eigen
+#include <Eigen/Array>
 
 #include <tools/transform.h>
 #include <angles/angles.h>
@@ -67,7 +70,6 @@ using namespace cloud_algos;
 void BoxEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
-  nh_.param("output_box_topic", output_box_topic_, std::string("/box"));
   box_pub_ = nh_.advertise<visualization_msgs::Marker>("box", 0 );
   coeff_.resize(15);
   r_ = g_ = 0.0;
@@ -76,6 +78,8 @@ void BoxEstimation::init (ros::NodeHandle& nh)
 
 void BoxEstimation::pre  ()
 {
+  nh_.param("output_box_topic", output_box_topic_, std::string("/box"));
+  nh_.param("threshold_", threshold_, 0.01);
 }
 
 void BoxEstimation::post ()
@@ -97,7 +101,9 @@ std::vector<std::string> BoxEstimation::provides ()
 std::string BoxEstimation::process (const boost::shared_ptr<const InputType> input)
 {
   ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
+  cloud_ = input;
   find_model (input, coeff_);
+  computeInAndOutliers (input, coeff_, threshold_);
   triangulate_box (input, coeff_);
   //publish fitted box on marker topic
   ROS_INFO ("Publishing box on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
@@ -109,6 +115,81 @@ boost::shared_ptr<const BoxEstimation::OutputType> BoxEstimation::output ()
 {
   return mesh_;
 };
+
+boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getOutliers ()
+{
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud);
+  //ROS_INFO("created PointCloud object: 0x%x", (void*) ret.get()); - ZOLI COMMENTED THIS TO GET RID OF WARNING, SUPPOSING WAS ONLY DEBUG :)
+
+  ret->header = cloud_->header;
+  int channel_index = getChannelIndex (cloud_, "index");
+  int channel_line = getChannelIndex (cloud_, "line");
+  if (channel_line != -1)
+  {
+    ret->channels.resize(2);
+    ret->channels[1].name = cloud_->channels[channel_line].name;
+    ret->channels[1].values.resize(outliers_.size());
+    ret->channels[0].name = cloud_->channels[channel_index].name;
+    ret->channels[0].values.resize(outliers_.size());
+  }
+  else if (channel_index != -1)
+  {
+    ret->channels.resize(1);
+    ret->channels[0].name = cloud_->channels[channel_index].name;
+    ret->channels[0].values.resize(outliers_.size());
+  }
+
+  ret->points.resize(outliers_.size());
+  for (unsigned int i = 0; i < outliers_.size (); i++)
+  {
+    ret->points.at(i) = cloud_->points.at (outliers_.at (i));
+    if (channel_index != -1)
+      ret->channels[0].values.at(i) = cloud_->channels[channel_index].values.at (outliers_.at (i));
+    if (channel_line != -1)
+      ret->channels[1].values.at(i) = cloud_->channels[channel_line].values.at (outliers_.at (i));
+  }
+  return ret;
+}
+
+boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getInliers ()
+{
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->header = cloud_->header;
+  for (unsigned int i = 0; i < inliers_.size (); i++)
+    ret->points.push_back (cloud_->points.at (inliers_.at (i)));
+  return ret;
+}
+
+void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold)
+{
+  // get the 3 axes
+  Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
+  std::cerr << "the 3 axes:\n" << axes << std::endl;
+
+  // get inliers and outliers
+  inliers_.resize (0);
+  outliers_.resize (0);
+  for (unsigned i = 0; i < cloud->points.size (); i++)
+  {
+    // compute point-center
+    Eigen::Vector3f centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
+    // project (point-center) on axes and check if inside or outside the +/- dimensions
+    bool inlier = true;
+    for (int d=0; d<3; d++)
+    {
+      if (fabs (centered.dot (axes.row(d))) > coeff[3+d] + threshold)
+      {
+        inlier = false;
+        break;
+      }
+    }
+    if (inlier)
+      inliers_.push_back(i);
+    else
+      outliers_.push_back(i);
+  }
+  ROS_INFO("outliers_.size(): %ld inliers.size() %ld", outliers_.size(), inliers_.size());
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

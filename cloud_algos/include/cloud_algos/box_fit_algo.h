@@ -64,6 +64,11 @@ class BoxEstimation : public CloudAlgo
   std::string process (const boost::shared_ptr<const InputType>);
   boost::shared_ptr<const OutputType> output ();
 
+  // Get inlier and outlier points
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
+  virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold);
+
   ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief function for actual model fitting
@@ -95,10 +100,12 @@ class BoxEstimation : public CloudAlgo
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;
   std::vector<int> outliers_;
+  double threshold_;
+
+  boost::shared_ptr<const sensor_msgs::PointCloud> cloud_;
 
   ros::NodeHandle nh_;
 
- protected: 
   //model rviz publisher
   ros::Publisher box_pub_;
   //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  

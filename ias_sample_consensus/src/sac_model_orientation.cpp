@@ -72,7 +72,7 @@ namespace ias_sample_consensus
     min_max_distances[1] = min_max_distances[3] = min_max_distances[5] = -DBL_MAX;
 
     // The 3 coordinate axes are nm, nc and axis_
-    Eigen::Vector3f nm = Eigen::Vector3d::Map(&(*model_coefficients)[0], 3).cast<float> ();
+    Eigen::Vector3f nm = Eigen::Vector3d::Map(&(*model_coefficients)[0]).cast<float> ();
     Eigen::Vector3f nc = axis_.cross (nm);
 
     // Find minimum and maximum distances from origin along the three axes
