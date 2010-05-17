@@ -34,7 +34,7 @@
 #include <point_cloud_mapping/sample_consensus/ransac.h>
 
 // For computeCentroid
-#include <point_cloud_mapping/geometry/nearest.h>
+//#include <point_cloud_mapping/geometry/nearest.h>
 
 using namespace std;
 using namespace cloud_algos;
@@ -57,8 +57,8 @@ std::vector<std::string> RobustBoxEstimation::requires ()
 
 void RobustBoxEstimation::pre ()
 {
-  ((BoxEstimation*)this)->pre ();
-  nh_.param("eps_angle", eps_angle_, eps_angle_);
+  //((BoxEstimation*)this)->pre ();
+  //nh_.param("eps_angle", eps_angle_, eps_angle_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,16 +67,17 @@ void RobustBoxEstimation::pre ()
  */
 void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
+  ROS_INFO ("[RobustBoxEstimation] Looking for box in a cluster of %u points", (unsigned)cloud->points.size ());
+
   // Compute center point
-  cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
-  coeff[0] = box_centroid_.x;
-  coeff[1] = box_centroid_.y;
-  coeff[2] = box_centroid_.z;
+  //cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
 
   // Create model
   SACModelOrientation *model = new SACModelOrientation ();
   model->axis_ << 0, 0, 1; // Suppose fixed Z axis
-  model->setDataSet (((sensor_msgs::PointCloud*)cloud.get())); // TODO: this is nasty :)
+  model->setDataSet ((sensor_msgs::PointCloud*)(cloud.get())); // TODO: this is nasty :)
+  ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
+      model->axis_[0], model->axis_[1], model->axis_[2], eps_angle_);
 
   // Fit model using RANSAC
   RANSAC *sac = new RANSAC (model, eps_angle_);
@@ -87,26 +88,19 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
     ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
     return;
   }
-
   // Get inliers and refine result
+
+  /// @NOTE: inliers are actually indexes in the indices_ array, but that is not set (by default it has all the points in the correct order)
   inliers = sac->getInliers ();
   /// @NOTE best_model_ contains actually the samples used to find the best model!
+  cerr << "best model = " << model->getBestModel ().at (0) << endl;
+  model->computeModelCoefficients(model->getBestModel ());
   vector<double> original = model->getModelCoefficients ();
   cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
   sac->refineCoefficients(refined);
   cerr << "refined direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
-  if (refined[3] == -1)
+  //if (refined[3] == -1)
     refined = original;
-
-  // Save dimensions
-  coeff[3+0] = 0.0;
-  coeff[3+1] = 0.0;
-  coeff[3+2] = 0.0;
-
-  // Save principle axis
-  coeff[6+0] = refined[0];
-  coeff[6+1] = refined[1];
-  coeff[6+2] = refined[2];
 
   // Save fixed axis
   coeff[12+0] = model->axis_[0];
@@ -118,12 +112,53 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   coeff[9+1] = model->axis_[2]*refined[0] - model->axis_[0]*refined[2];
   coeff[9+2] = model->axis_[0]*refined[1] - model->axis_[1]*refined[0];
 
+  // Save principle axis (corrected)
+  refined[0] = - (model->axis_[1]*coeff[9+2] - model->axis_[2]*coeff[9+1]);
+  refined[1] = - (model->axis_[2]*coeff[9+0] - model->axis_[0]*coeff[9+2]);
+  refined[2] = - (model->axis_[0]*coeff[9+1] - model->axis_[1]*coeff[9+0]);
+  coeff[6+0] = refined[0];
+  coeff[6+1] = refined[1];
+  coeff[6+2] = refined[2];
+
+  /*// Save complementary axis (AGIAN, JUST TO MAKE SURE)
+  coeff[9+0] = model->axis_[1]*refined[2] - model->axis_[2]*refined[1];
+  coeff[9+1] = model->axis_[2]*refined[0] - model->axis_[0]*refined[2];
+  coeff[9+2] = model->axis_[0]*refined[1] - model->axis_[1]*refined[0];*/
+
+  // Compute minimum and maximum along each dimension for the whole cluster
+  vector<int> min_max_indices;
+  vector<float> min_max_distances;
+  //model->getMinAndMax (&refined, &inliers, min_max_indices, min_max_distances);
+  model->getMinAndMax (&refined, model->getIndices (), min_max_indices, min_max_distances);
+  //vector<int> min_max_indices = model->getMinAndMaxIndices (refined);
+  cerr << min_max_distances.at (1) << " " << min_max_distances.at (0) << endl;
+  cerr << min_max_distances.at (3) << " " << min_max_distances.at (2) << endl;
+  cerr << min_max_distances.at (5) << " " << min_max_distances.at (4) << endl;
+
+  // Save dimensions
+  coeff[3+0] = min_max_distances.at (1) - min_max_distances.at (0);
+  coeff[3+1] = min_max_distances.at (3) - min_max_distances.at (2);
+  coeff[3+2] = min_max_distances.at (5) - min_max_distances.at (4);
+
+  // Distance of box center relative to centroid along orientation axes
+  double moving[3];
+  moving[0] = min_max_distances[0] + coeff[3+0] / 2;
+  moving[1] = min_max_distances[2] + coeff[3+1] / 2;
+  moving[2] = min_max_distances[4] + coeff[3+2] / 2;
+
+  // Move centroid to the box center (at equal distance from sides)
+  coeff[0] = moving[0]*coeff[6+0] + moving[1]*coeff[9+0] + moving[2]*coeff[12+0];
+  coeff[1] = moving[0]*coeff[6+1] + moving[1]*coeff[9+1] + moving[2]*coeff[12+1];
+  coeff[2] = moving[0]*coeff[6+2] + moving[1]*coeff[9+2] + moving[2]*coeff[12+2];
+  //coeff[0] = box_centroid_.x + moving[0]*coeff[6+0] + moving[1]*coeff[9+0] + moving[2]*coeff[12+0];
+  //coeff[1] = box_centroid_.y + moving[0]*coeff[6+1] + moving[1]*coeff[9+1] + moving[2]*coeff[12+1];
+  //coeff[2] = box_centroid_.z + moving[0]*coeff[6+2] + moving[1]*coeff[9+2] + moving[2]*coeff[12+2];
+  ROS_INFO ("[RobustBoxEstimation] Cluster center x: %g, y: %g, z: %g", coeff[0], coeff[1], coeff[2]);
+
   // Print info
-  ROS_INFO ("[RobustBoxEstimation] Center x: %f, y: %f, z: %f",
-      coeff[0], coeff[1], coeff[2]);
-  ROS_INFO ("[RobustBoxEstimation] Dimensions x: %f, y: %f, z: %f",
+  ROS_INFO ("[RobustBoxEstimation] Dimensions x: %g, y: %g, z: %g",
       coeff[3+0], coeff[3+1], coeff[3+2]);
-  ROS_INFO ("[RobustBoxEstimation] Direction vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f",
+  ROS_INFO ("[RobustBoxEstimation] Direction vectors: \n\t%g %g %g \n\t%g %g %g \n\t%g %g %g",
       coeff[3+3], coeff[3+4], coeff[3+5],
       coeff[3+6], coeff[3+7], coeff[3+8],
       coeff[3+9], coeff[3+10],coeff[3+11]);

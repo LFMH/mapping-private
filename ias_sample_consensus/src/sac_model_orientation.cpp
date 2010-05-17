@@ -28,6 +28,7 @@
  */
 
 #include <ias_sample_consensus/sac_model_orientation.h>
+#include <float.h>
 
 namespace ias_sample_consensus
 {
@@ -62,15 +63,53 @@ namespace ias_sample_consensus
   }
 
   void
+    SACModelOrientation::getMinAndMax (std::vector<double> *model_coefficients, std::vector<int> *inliers, std::vector<int> &min_max_indices, std::vector<float> &min_max_distances)
+  {
+    // Initialize result vectors
+    min_max_indices.resize (6);
+    min_max_distances.resize (6);
+    min_max_distances[0] = min_max_distances[2] = min_max_distances[4] = +DBL_MAX;
+    min_max_distances[1] = min_max_distances[3] = min_max_distances[5] = -DBL_MAX;
+
+    // The 3 coordinate axes are nm, nc and axis_
+    Eigen::Vector3f nm = Eigen::Vector3d::Map(&(*model_coefficients)[0], 3).cast<float> ();
+    Eigen::Vector3f nc = axis_.cross (nm);
+
+    // Find minimum and maximum distances from origin along the three axes
+    for (std::vector<int>::iterator it = inliers->begin (); it != inliers->end (); it++)
+    //for (unsigned i = 0; i < inliers.size (); i++)
+    {
+      /// @NOTE inliers is a list of indices of the indices_ array!
+      Eigen::Vector3f point (cloud_->points[indices_[*it]].x, cloud_->points[indices_[*it]].y, cloud_->points[indices_[*it]].z);
+      //Eigen::Vector3f point (cloud_->points[indices_[*it]].x - center.x, cloud_->points[indices_[*it]].y - center.y, cloud_->points[indices_[*it]].z - center.z);
+      //Eigen::Vector3f point (cloud_->points[indices_[inliers[i]]].x, cloud_->points[indices_[inliers[i]]].y, cloud_->points[indices_[inliers[i]]].z);
+      double dists[3];
+      dists[0] = nm.dot(point);
+      dists[1] = nc.dot(point);
+      dists[2] = axis_.dot(point);
+      for (int d=0; d<3; d++)
+      {
+        if (min_max_distances[2*d+0] > dists[d]) { min_max_distances[2*d+0] = dists[d]; min_max_indices[2*d+0] = *it; }
+        if (min_max_distances[2*d+1] < dists[d]) { min_max_distances[2*d+1] = dists[d]; min_max_indices[2*d+1] = *it; }
+      }
+    }
+  }
+
+  void
     SACModelOrientation::getSamples (int &iterations, std::vector<int> &samples)
   {
+    /// @NOTE: we get an index of the indices_ vector because normals_ has only those elements!
+
     // Get a random number between 0 and indices_.size ()
     samples.resize (1);
+
     // I don't care, but: http://www.thinkage.ca/english/gcos/expl/c/lib/rand.html
-    unsigned idx;// = (int)(rand () * indices_.size () / (RAND_MAX + 1.0));
-    while (indices_.size () <= (idx = rand () / (RAND_MAX/indices_.size ())));
+    while (indices_.size () <= (unsigned)(samples[0] = rand () / (RAND_MAX/indices_.size ())));
+    //unsigned idx;// = (int)(rand () * indices_.size () / (RAND_MAX + 1.0));
+    //while (indices_.size () <= (idx = rand () / (RAND_MAX/indices_.size ())));
     // Get the index
-    samples[0] = indices_.at (idx);
+    //samples[0] = indices_.at (idx);
+
     // TODO: repeat this and test coefficients until ok? increase iterations?
   }
 
@@ -130,14 +169,13 @@ namespace ias_sample_consensus
     for (unsigned i = 0; i < inliers.size (); i++)
     //for (std::vector<int>::iterator it = inliers.begin (); it != inliers.end (); it++)
     {
+      /// @NOTE inliers is a list of indices of the indices_ array!
+      /// @NOTE normal_ contains only the elements listed in the indices_ array!
       Eigen::Vector3f ni (normals_.points[i].x, normals_.points[i].y, normals_.points[i].z);
       //Eigen::Vector3f ni2 = ni.cwise.square ();
       for (int i=0; i<4; i++)
       {
-        //double cosine = nm.dot (ni);
-        //if (cosine > 1) cosine = 1;
-        //if (cosine < -1) cosine = -1;
-        //if (acos (cosine) < eps_angle_)
+        // Find the orientation that is pointing in the same direction as the model
         if ((nm-ni).squaredNorm () < sqr_radius)
           break;
         ni = rotateAroundAxis (ni, axis_, M_PI/2);
@@ -156,6 +194,23 @@ namespace ias_sample_consensus
   void
     SACModelOrientation::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
+    //std::cerr << model_coefficients[3] << ": " << model_coefficients[0] << " " << model_coefficients[1] << " " << model_coefficients[2] << " ";
+
+    // accept only if model direction is perpendicular to axis_
+    double cosine = axis_[0]*model_coefficients[0] + axis_[1]*model_coefficients[1] + axis_[2]*model_coefficients[2];
+    if (cosine > 1) cosine = 1;
+    if (cosine < -1) cosine = -1;
+    //std::cerr << "angle difference = " << acos (cosine);
+    if (fabs (acos (cosine) - M_PI/2) > threshold)
+    {
+      // this will make sure the model is not accepted
+      inliers.resize (0);
+      //std::cerr << " DISMISSED" << std::endl;
+      return;
+    }
+    //std::cerr << " ACCEPTED" << std::endl;
+
+
     // Distance in normal space - TODO: make setter for eps_angle_ and set these there
     double radius = 2 * sin (threshold/2);
     //double sqr_radius = radius*radius;
@@ -192,6 +247,8 @@ namespace ias_sample_consensus
     inliers.insert (inliers.end (), back_indices_.begin (), back_indices_.end ());
     inliers.insert (inliers.end (), left_indices_.begin (), left_indices_.end ());
     inliers.insert (inliers.end (), right_indices_.begin (), right_indices_.end ());
+
+    /// @NOTE: inliers are actually indexes in the indices_ array!
   }
 }
 

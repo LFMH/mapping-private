@@ -106,6 +106,13 @@ namespace ias_sample_consensus
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Get the minimum and maximum distances along the axes and the corresponding index in the indices_ vector.
+        * \param model_coefficients the model coefficients that should be used for getting the axes
+        * \param inliers the data inliers found as supporting the model (each element is an index of indices_)
+        */
+      virtual void getMinAndMax (std::vector<double> *model_coefficients, std::vector<int> *inliers, std::vector<int> &min_max_indices, std::vector<float> &min_max_distances);
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Get a random point and return its index.
         * \param iterations the internal number of iterations used by SAC methods (incremented at samplings that can not produce a model) -- Not needed.
         * \param samples the resultant model samples
@@ -130,7 +137,7 @@ namespace ias_sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Recompute the model coefficients using the given inlier set and return them to the user. Pure virtual.
         * @note: These are the coefficients of the model after refinement (eg. after a least-squares optimization)
-        * \param inliers the data inliers found as supporting the model
+        * \param inliers the data inliers found as supporting the model (each element is an index of indices_)
         * \param refit_coefficients the resultant recomputed coefficients (has -1 as source index in refit_coefficients[3] at failures)
         */
       virtual void refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients);
@@ -146,7 +153,7 @@ namespace ias_sample_consensus
       /** \brief Select all the points which respect the given model coefficients as inliers.
         * \param model_coefficients the coefficients of a model that we need to compute distances to
         * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
-        * \param inliers the resultant model inliers
+        * \param inliers the resultant model inliers (each element is an index of indices_)
         * @note: To get the refined inliers of a model, use:
         *        refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
         */
@@ -154,7 +161,7 @@ namespace ias_sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Create a new point cloud with inliers projected onto the model. -- Not needed.
-        * \param inliers the data inliers that we want to project on the model
+        * \param inliers the data inliers that we want to project on the model (each element is an index of indices_)
         * \param model_coefficients the coefficients of a model
         * \param projected_points the resultant projected points
         */
@@ -162,14 +169,14 @@ namespace ias_sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Project inliers (in place) onto the given model. -- Not needed.
-        * \param inliers the data inliers that we want to project on the model
+        * \param inliers the data inliers that we want to project on the model (each element is an index of indices_)
         * \param model_coefficients the coefficients of a model
         */
       virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients) {}
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Verify whether a subset of indices verifies the internal model coefficients. -- Any point does.
-        * \param indices the data indices that need to be tested against the model
+      /** \brief Verify whether a subset of indices verifies the internal model coefficients. -- Not needed.
+        * \param indices the data indices that need to be tested against the model (each element is an index of indices_)
         * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
         */
       virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold) { return true; }

@@ -69,7 +69,7 @@ class RobustBoxEstimation : public BoxEstimation
    * box dimensions: dx, dy, dz, 
    * box robust axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z
    */
-  void find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+  virtual void find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
 };
 
 }

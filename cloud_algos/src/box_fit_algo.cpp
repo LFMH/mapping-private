@@ -213,9 +213,21 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
     {
       for (int k = -1; k <= 1; k = k+2)
       {
-        current_point.x = coeff[0] + i * coeff[3]/2;
-        current_point.y = coeff[1] + j * coeff[4]/2;
-        current_point.z = coeff[2] + k * coeff[5]/2;
+        // Movement along axes
+        double moving[3];
+        moving[0] = i * coeff[3]/2;
+        moving[1] = j * coeff[4]/2;
+        moving[2] = k * coeff[5]/2;
+
+        // Move box center
+        current_point.x = coeff[0] + moving[0]*coeff[6+0] + moving[1]*coeff[9+0] + moving[2]*coeff[12+0];
+        current_point.y = coeff[1] + moving[0]*coeff[6+1] + moving[1]*coeff[9+1] + moving[2]*coeff[12+1];
+        current_point.z = coeff[2] + moving[0]*coeff[6+2] + moving[1]*coeff[9+2] + moving[2]*coeff[12+2];
+
+        //current_point.x = coeff[0] + i * coeff[3]/2;
+        //current_point.y = coeff[1] + j * coeff[4]/2;
+        //current_point.z = coeff[2] + k * coeff[5]/2;
+
         mesh_->points[counter++] = current_point;
       } 
     }
