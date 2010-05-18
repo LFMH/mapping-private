@@ -175,9 +175,10 @@ void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::P
     Eigen::Vector3f centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
     // project (point-center) on axes and check if inside or outside the +/- dimensions
     bool inlier = true;
-    for (int d=0; d<3; d++)
+    for (int d = 0; d < 3; d++)
     {
-      if (fabs (centered.dot (axes.row(d))) > coeff[3+d] + threshold)
+//      if (fabs (centered.dot (axes.row(d))) > coeff[3+d] / 2.0 + threshold)
+      if (fabs (fabs (centered.dot (axes.row(d))) - fabs (coeff[3+d] / 2.0)) > threshold)
       {
         inlier = false;
         break;
@@ -348,6 +349,7 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
  */  
 void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
+  ROS_WARN ("got here..");
   btMatrix3x3 box_rot (coeff[6], coeff[7], coeff[8],
                        coeff[9], coeff[10], coeff[11],
                        coeff[12], coeff[13], coeff[14]);

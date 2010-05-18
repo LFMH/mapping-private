@@ -20,6 +20,7 @@
 #include <cloud_algos/rotational_estimation.h>
 #include <cloud_algos/depth_image_triangulation.h>
 #include <cloud_algos/mls_fit.h>
+#include <cloud_algos/cylinder_fit_algo.h>
 #include <cloud_algos/box_fit_algo.h>
 #include <cloud_algos/box_fit2_algo.h>
 #include <cloud_algos/cloud_algos.h>
@@ -229,7 +230,7 @@ class TableMemory
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
-      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RotationalEstimation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/CylinderEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
 
@@ -689,12 +690,12 @@ class TableMemory
         }
 
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
-      CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/RotationalEstimation");
+      CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
       ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType>
                   (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
-      ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType>
+      ros::Publisher pub_rot = nh_.advertise <CylinderEstimation::OutputType>
                   ("mesh_rotational", 5);
       ros::Publisher pub_tri = nh_.advertise <DepthImageTriangulation::OutputType>
                   (((DepthImageTriangulation*)alg_triangulation)->default_output_topic (), 5);
@@ -706,7 +707,6 @@ class TableMemory
       //if (table_reconstruct_clusters_client_.exists ())
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
-        alg_rot_est->pre ();
 
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
@@ -731,15 +731,17 @@ class TableMemory
           pub_mls.publish (mls_cloud);
 
           // call rotational estimation
+          alg_rot_est->pre ();
           std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
-          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process
+          std::string process_answer_rot = ((CylinderEstimation*)alg_rot_est)->process
                       (mls_cloud);
           ROS_INFO("got response: %s", process_answer_rot.c_str ());
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((RotationalEstimation*)alg_rot_est)->getInliers ();
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((RotationalEstimation*)alg_rot_est)->getOutliers ();
-          boost::shared_ptr<triangle_mesh::TriangleMesh> rot_mesh = ((RotationalEstimation*)alg_rot_est)->output ();
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
+          boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
           pub_rot.publish (rot_mesh);
+          alg_rot_est->post ();
 
           // call box estimation
           alg_box->pre();
@@ -777,7 +779,6 @@ class TableMemory
 //          alg_triangulation->post();
 //break;
         }
-        alg_rot_est->post ();
       }
     }
 

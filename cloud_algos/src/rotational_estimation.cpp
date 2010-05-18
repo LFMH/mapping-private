@@ -214,7 +214,7 @@ std::string RotationalEstimation::process (const boost::shared_ptr<const Rotatio
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;
-  
+  outliers_.clear(); 
   findRotationalObjects (*cloud, threshold_, probability_, max_iterations_, mesh_, vis_pmap_, vis_text_, inliers_, outliers_);
   if (debug_ > 0)
     std::cerr<<"[RotationalEstimation::process] Line" << __LINE__ << std::endl;

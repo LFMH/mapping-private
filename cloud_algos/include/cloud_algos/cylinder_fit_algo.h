@@ -139,6 +139,9 @@ public:
    */  
   void publish_model_rviz (std::vector<double> &coeff);
 
+  // Get inlier and outlier points
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
 
   boost::shared_ptr<sensor_msgs::PointCloud> points_;
   boost::shared_ptr<sensor_msgs::PointCloud> cylinder_points_;

@@ -4,6 +4,7 @@
 #include <cloud_algos/planar_estimation.h>
 #include <cloud_algos/rotational_estimation.h>
 #include <cloud_algos/region_growing.h>
+#include <cloud_algos/cylinder_fit_algo.h>
 #include <cloud_algos/box_fit_algo.h>
 #include <cloud_algos/box_fit2_algo.h>
 #include <cloud_algos/depth_image_triangulation.h>
@@ -22,6 +23,7 @@ PLUGINLIB_DECLARE_CLASS(cloud_algos, RegionGrowing, RegionGrowing, cloud_algos::
 PLUGINLIB_DECLARE_CLASS(cloud_algos, DepthImageTriangulation, cloud_algos::DepthImageTriangulation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, BoxEstimation, cloud_algos::BoxEstimation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, RobustBoxEstimation, cloud_algos::RobustBoxEstimation, cloud_algos::CloudAlgo);
+PLUGINLIB_DECLARE_CLASS(cloud_algos, CylinderEstimation, cloud_algos::CylinderEstimation, cloud_algos::CloudAlgo);
 
 //PLUGINLIB_REGISTER_CLASS(NoiseRemoval, NoiseRemoval, PCD_Algo)
 

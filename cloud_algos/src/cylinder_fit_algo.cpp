@@ -107,7 +107,7 @@ std::string CylinderEstimation::process (const boost::shared_ptr<const InputType
     points_->channels[channels_size_ + 1].name = "ny";
     points_->channels[channels_size_ + 2].name = "nz";
     
-    for (unsigned int d = channels_size_; d < (channels_size_ + 3); d++)
+    for (int d = channels_size_; d < (channels_size_ + 3); d++)
       points_->channels[d].values.resize (points_->points.size ());
     estimatePointNormals(*points_);
   }
@@ -331,8 +331,8 @@ void CylinderEstimation::publish_model_rviz (std::vector<double> &coeff)
   ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
   
   visualization_msgs::Marker marker;
-  marker.header.frame_id = "base_link";
-  marker.header.stamp = ros::Time();
+  marker.header.frame_id = points_->header.frame_id;
+  marker.header.stamp = points_->header.stamp;
   marker.ns = "my_namespace";
   marker.id = 0;
   marker.type = visualization_msgs::Marker::CYLINDER;
@@ -351,8 +351,18 @@ void CylinderEstimation::publish_model_rviz (std::vector<double> &coeff)
   marker.color.r = 0.0;
   marker.color.g = 1.0;
   marker.color.b = 0.0;
-  ROS_INFO("Publishing on /visualization_marker topic");
+  ROS_INFO("Publishing on visualization_marker topic");
   vis_pub.publish( marker );
+}
+
+boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getOutliers ()
+{
+  return outlier_points_;
+}
+
+boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getInliers ()
+{
+  return cylinder_points_;
 }
 
 #ifdef CREATE_NODE
