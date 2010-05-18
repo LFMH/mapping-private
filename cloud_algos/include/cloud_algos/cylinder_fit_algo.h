@@ -137,7 +137,31 @@ public:
    * \brief publishes model (cylinder) marker (to rviz)
    * \param cylinder coefficients as calculated in changeAxisToMinMax function
    */  
-  void publish_model_rviz (std::vector<double> &coeff);
+  void publish_model_rviz (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Sets the internal box as marker for rvis visualisation.
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  void computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Returns the internal box as marker for rvis visualisation
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  visualization_msgs::Marker getMarker () { return marker_; }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Returns the computed model coefficients
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  std::vector<double> getCoeff () { return coeff; }
 
   // Get inlier and outlier points
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
@@ -153,9 +177,10 @@ public:
 protected:
   ros::NodeHandle nh_;
   ros::Publisher cloud_pub_;
-  ros::Publisher cylinder_pub_;
+  ros::Publisher outlier_pub_;
   //model rviz publisher
-  ros::Publisher vis_pub;
+  ros::Publisher marker_pub_;
+  visualization_msgs::Marker marker_;
   //normals' indices in PointCloud.channels
   int nx_, ny_, nz_;
   //needed to append channels for normals if PointCloud.channels.size() =! 0

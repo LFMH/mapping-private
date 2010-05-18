@@ -44,8 +44,6 @@
 //ros
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/PointStamped.h>
-#include "visualization_msgs/Marker.h"
-#include "visualization_msgs/MarkerArray.h"
 #include <geometry_msgs/Point32.h>
 #include <ros/ros.h>
 
@@ -70,7 +68,7 @@ using namespace cloud_algos;
 void BoxEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
-  box_pub_ = nh_.advertise<visualization_msgs::Marker>("box", 0 );
+  marker_pub_ = nh_.advertise<visualization_msgs::Marker>(output_box_topic_, 0 );
   inliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("inliers", 0 );
   outliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("outliers", 0 );
   contained_pub_ = nh_.advertise<sensor_msgs::PointCloud>("contained", 0 );
@@ -383,6 +381,16 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
  */  
 void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
+  computeMarker (cloud, coeff);
+  marker_pub_.publish (marker_);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * \brief computes model marker (to rviz)
+ */
+void BoxEstimation::computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff)
+{
   btMatrix3x3 box_rot (coeff[6], coeff[7], coeff[8],
                        coeff[9], coeff[10], coeff[11],
                        coeff[12], coeff[13], coeff[14]);
@@ -390,29 +398,27 @@ void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCl
   btQuaternion qt;
   box_rot_trans.getRotation(qt);
 
-  visualization_msgs::Marker marker;
-  //marker.header.frame_id = "base_link";
-  //marker.header.stamp = ros::Time();
-  // marker.ns = "my_namespace";
-  marker.header = cloud->header;
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::CUBE;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = coeff[0];
-  marker.pose.position.y = coeff[1];
-  marker.pose.position.z = coeff[2];
-  marker.pose.orientation.x = qt.x();
-  marker.pose.orientation.y = qt.y();
-  marker.pose.orientation.z = qt.z();
-  marker.pose.orientation.w = qt.w();
-  marker.scale.x = coeff[3];
-  marker.scale.y = coeff[4];
-  marker.scale.z = coeff[5];
-  marker.color.a = 0.3;
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-  box_pub_.publish( marker );
+  //marker_.header.frame_id = "base_link";
+  //marker_.header.stamp = ros::Time();
+  marker_.header = cloud->header;
+  marker_.ns = "BoxEstimation";
+  marker_.id = 0;
+  marker_.type = visualization_msgs::Marker::CUBE;
+  marker_.action = visualization_msgs::Marker::ADD;
+  marker_.pose.position.x = coeff[0];
+  marker_.pose.position.y = coeff[1];
+  marker_.pose.position.z = coeff[2];
+  marker_.pose.orientation.x = qt.x();
+  marker_.pose.orientation.y = qt.y();
+  marker_.pose.orientation.z = qt.z();
+  marker_.pose.orientation.w = qt.w();
+  marker_.scale.x = coeff[3];
+  marker_.scale.y = coeff[4];
+  marker_.scale.z = coeff[5];
+  marker_.color.a = 0.3;
+  marker_.color.r = 0.0;
+  marker_.color.g = 1.0;
+  marker_.color.b = 0.0;
 }
 
 #ifndef NO_BOXFIT_NODE

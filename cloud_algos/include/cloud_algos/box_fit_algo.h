@@ -35,6 +35,8 @@
 #include <position_string_rviz_plugin/PositionStringList.h>
 #include <triangle_mesh/TriangleMesh.h>
 #include <point_cloud_mapping/geometry/point.h>
+#include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 
 namespace cloud_algos
 {
@@ -45,7 +47,7 @@ class BoxEstimation : public CloudAlgo
 
   BoxEstimation ()
   {
-    output_box_topic_ = std::string("/box");
+    output_box_topic_ = std::string("/box_marker");
     threshold_in_ = 0.025;
     threshold_out_ = 0.00001;
   };
@@ -103,6 +105,30 @@ class BoxEstimation : public CloudAlgo
    */
   void publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
  
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Sets the internal box as marker for rvis visualisation.
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  void computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Returns the internal box as marker for rvis visualisation
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  visualization_msgs::Marker getMarker () { return marker_; }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
+   * \brief Returns the computed model coefficients
+   * \param cloud input point cloud message
+   * \param coeff box coefficients (see find_model function):
+   */
+  std::vector<double> getCoeff () { return coeff_; }
+
  protected: 
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;
@@ -116,7 +142,7 @@ class BoxEstimation : public CloudAlgo
   ros::NodeHandle nh_;
 
   //model rviz publisher
-  ros::Publisher box_pub_;
+  ros::Publisher marker_pub_;
   ros::Publisher inliers_pub_;
   ros::Publisher outliers_pub_;
   ros::Publisher contained_pub_;
@@ -124,8 +150,11 @@ class BoxEstimation : public CloudAlgo
   //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;
+  visualization_msgs::Marker marker_;
+
   //publish box as marker
   std::string output_box_topic_;
+
   //point color
   float r_, g_, b_;
   //lock point cloud

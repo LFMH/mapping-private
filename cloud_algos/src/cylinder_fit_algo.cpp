@@ -38,8 +38,8 @@ void CylinderEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
   nh_.param("output_outliers_topic", output_outliers_topic_, std::string("cylinder"));
-  cylinder_pub_ = nh_.advertise<sensor_msgs::PointCloud>(output_outliers_topic_ ,1);
-  vis_pub = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+  outlier_pub_ = nh_.advertise<sensor_msgs::PointCloud>(output_outliers_topic_ ,1);
+  marker_pub_ = nh_.advertise<visualization_msgs::Marker>( "cylinder_marker", 0 );
   model_ = new SACModelCylinder ();
   sac_ = new RANSAC (model_, 0.01);
   nx_ = ny_ = nz_ = -1;
@@ -113,7 +113,7 @@ std::string CylinderEstimation::process (const boost::shared_ptr<const InputType
   }
   find_model(*points_, coeff);
   triangulate_cylinder(coeff);
-  publish_model_rviz(coeff);
+  publish_model_rviz(input, coeff);
   return std::string ("ok");
 }
 
@@ -232,7 +232,7 @@ void CylinderEstimation::find_model(sensor_msgs::PointCloud cloud, std::vector<d
       ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
       
       cloud_geometry::getPointCloudOutside(cloud, inliers, *outlier_points_);
-      cylinder_pub_.publish (outlier_points_);
+      outlier_pub_.publish (outlier_points_);
       ROS_INFO ("Publishing data on topic %s with nr of points %ld", nh_.resolveName (output_outliers_topic_).c_str (), 
                 outlier_points_->points.size());
     }
@@ -321,38 +321,47 @@ void CylinderEstimation::triangulate_cylinder(std::vector<double> &coeff)
 /**
  * \brief publishes model marker (to rviz)
  */  
-void CylinderEstimation::publish_model_rviz (std::vector<double> &coeff)
+void CylinderEstimation::publish_model_rviz (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
+{
+  ROS_INFO("Publishing on cylinder_marker topic");
+  computeMarker (cloud, coeff);
+  marker_pub_.publish (marker_);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * \brief computes model marker (to rviz)
+ */
+void CylinderEstimation::computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff)
 {
   //axis angle to quaternion conversion
   btVector3 axis(coeff[3]-coeff[0], coeff[4]-coeff[1], coeff[5]-coeff[2]);
   btVector3 marker_axis(0, 0, 1);
-  
+
   btQuaternion qt(marker_axis.cross(axis), marker_axis.angle(axis));
   ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
-  
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = points_->header.frame_id;
-  marker.header.stamp = points_->header.stamp;
-  marker.ns = "my_namespace";
-  marker.id = 0;
-  marker.type = visualization_msgs::Marker::CYLINDER;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = coeff[0]+axis.x()/2;
-  marker.pose.position.y = coeff[1]+axis.y()/2;
-  marker.pose.position.z = coeff[2]+axis.z()/2;
-  marker.pose.orientation.x = qt.x();
-  marker.pose.orientation.y = qt.y();
-  marker.pose.orientation.z = qt.z();
-  marker.pose.orientation.w = qt.w();
-  marker.scale.x = 2*coeff[6];
-  marker.scale.y = 2*coeff[6];
-  marker.scale.z = axis.length ();
-  marker.color.a = 1.0;
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-  ROS_INFO("Publishing on visualization_marker topic");
-  vis_pub.publish( marker );
+
+  //marker.header.frame_id = points_->header.frame_id;
+  //marker.header.stamp = points_->header.stamp;
+  marker_.header = cloud->header;
+  marker_.ns = "CylinderEstimation";
+  marker_.id = 0;
+  marker_.type = visualization_msgs::Marker::CYLINDER;
+  marker_.action = visualization_msgs::Marker::ADD;
+  marker_.pose.position.x = coeff[0]+axis.x()/2;
+  marker_.pose.position.y = coeff[1]+axis.y()/2;
+  marker_.pose.position.z = coeff[2]+axis.z()/2;
+  marker_.pose.orientation.x = qt.x();
+  marker_.pose.orientation.y = qt.y();
+  marker_.pose.orientation.z = qt.z();
+  marker_.pose.orientation.w = qt.w();
+  marker_.scale.x = 2*coeff[6];
+  marker_.scale.y = 2*coeff[6];
+  marker_.scale.z = axis.length ();
+  marker_.color.a = 1.0;
+  marker_.color.r = 0.0;
+  marker_.color.g = 1.0;
+  marker_.color.b = 0.0;
 }
 
 boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getOutliers ()

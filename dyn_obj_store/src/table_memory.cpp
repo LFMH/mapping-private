@@ -375,19 +375,16 @@ class TableMemory
       }
 
       // Fit a rectangle to the double contour
-      CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
-      //ros::Publisher pub_box = nh_.advertise <RobustBoxEstimation::OutputType>
-      //            (((RobustBoxEstimation*)alg_box)->default_output_topic (), 5);
+      CloudAlgo *alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
       alg_box->pre();
-      std::cerr << "[update_table] Calling RobustBoxEstimation with a contour with " <<
-                  contour->points.size () << " points." << std::endl;
-      std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
-                  (contour);
+      ROS_INFO("[update_table] Calling RobustBoxEstimation with a double contour contour of size %ld", contour->points.size ());
+      std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process (contour);
       ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
-      boost::shared_ptr<const triangle_mesh::TriangleMesh> tabletop_mesh = ((RobustBoxEstimation*)alg_box)->output ();
-      //pub_box.publish (box_mesh);
+      boost::shared_ptr<const RobustBoxEstimation::OutputType> table_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+      ROS_INFO("[update_table] Publishing result as triangle_mesh::TriangleMesh on topic: table_mesh");
+      ros::Publisher pub_table_mesh = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
+      pub_table_mesh.publish (table_mesh);
       alg_box->post();
-
     }
 
     // service call from PROLOG
