@@ -152,6 +152,8 @@ namespace ias_sample_consensus
     }
     refit_coefficients[3] = inliers.at (0);
 
+    //*
+
     // Get source and acceptable distance from it
     Eigen::Vector3f nm (normals_.points[refit_coefficients[3]].x, normals_.points[refit_coefficients[3]].y, normals_.points[refit_coefficients[3]].z);
     double eps_angle = M_PI/6; // or use a user defined threshold (eps_angle_)?
@@ -166,12 +168,13 @@ namespace ias_sample_consensus
     Eigen::Vector3f sum_rotated_normals = Eigen::VectorXf::Zero(3);
 
     // Rotate all inliers onto the first direction and sum them up
-    for (unsigned i = 0; i < inliers.size (); i++)
+    for (unsigned it = 0; it < inliers.size (); it++)
     //for (std::vector<int>::iterator it = inliers.begin (); it != inliers.end (); it++)
     {
       /// @NOTE inliers is a list of indices of the indices_ array!
       /// @NOTE normal_ contains only the elements listed in the indices_ array!
-      Eigen::Vector3f ni (normals_.points[i].x, normals_.points[i].y, normals_.points[i].z);
+      Eigen::Vector3f ni (normals_.points[inliers[it]].x, normals_.points[inliers[it]].y, normals_.points[inliers[it]].z);
+      //std::cerr << "inlier " << it << "/" << inliers[it] << ": " << ni.transpose () << std::endl;
       //Eigen::Vector3f ni2 = ni.cwise.square ();
       for (int i=0; i<4; i++)
       {
@@ -179,6 +182,7 @@ namespace ias_sample_consensus
         if ((nm-ni).squaredNorm () < sqr_radius)
           break;
         ni = rotateAroundAxis (ni, axis_, M_PI/2);
+        //std::cerr << i << ": " << ni.transpose () << std::endl;
       }
       sum_rotated_normals += ni;
     }
@@ -189,6 +193,8 @@ namespace ias_sample_consensus
     refit_coefficients[0] = sum_rotated_normals[0];
     refit_coefficients[1] = sum_rotated_normals[1];
     refit_coefficients[2] = sum_rotated_normals[2];
+
+    //*/
   }
 
   void

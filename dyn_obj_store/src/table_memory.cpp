@@ -345,6 +345,49 @@ class TableMemory
                   area_old, area_new, area_clip, area_clip/area_old, area_clip/area_new);
         old_table.polygon = resp.poly_clip;
       }
+
+      // Create a PCD with normals out of the polygon and it's projection on the ground
+      boost::shared_ptr<sensor_msgs::PointCloud> contour (new sensor_msgs::PointCloud);
+      contour->points = old_table.polygon.points;
+      contour->points.insert (contour->points.end (), old_table.polygon.points.begin (), old_table.polygon.points.end ());
+      contour->channels.resize (3);
+      contour->channels[0].name = "nx";
+      contour->channels[0].values.resize (2 * old_table.polygon.points.size());
+      contour->channels[1].name = "ny";
+      contour->channels[0].values.resize (2 * old_table.polygon.points.size());
+      contour->channels[2].name = "nz";
+      contour->channels[0].values.resize (2 * old_table.polygon.points.size());
+
+      // Compute normals
+      for (unsigned int i = 0; i < old_table.polygon.points.size(); i++)
+      {
+        // project one of the contours on the ground
+        contour->points[i].z = 0.0;
+        // compute edge vector
+        int j = (i+1) % old_table.polygon.points.size();
+        double x = old_table.polygon.points[i].x - old_table.polygon.points[j].x;
+        double y = old_table.polygon.points[i].y - old_table.polygon.points[j].y;
+        double length = x*x + y*y;
+        // cross product with Z
+        contour->channels[0].values[i] = contour->channels[0].values[2*i] = -y/length;
+        contour->channels[1].values[i] = contour->channels[1].values[2*i] =  x/length;
+        contour->channels[2].values[i] = contour->channels[2].values[2*i] =  0;
+      }
+
+      // Fit a rectangle to the double contour
+      CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
+      //ros::Publisher pub_box = nh_.advertise <RobustBoxEstimation::OutputType>
+      //            (((RobustBoxEstimation*)alg_box)->default_output_topic (), 5);
+      alg_box->pre();
+      std::cerr << "[update_table] Calling RobustBoxEstimation with a contour with " <<
+                  contour->points.size () << " points." << std::endl;
+      std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
+                  (contour);
+      ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
+      boost::shared_ptr<const triangle_mesh::TriangleMesh> tabletop_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+      //pub_box.publish (box_mesh);
+      alg_box->post();
+
     }
 
     // service call from PROLOG

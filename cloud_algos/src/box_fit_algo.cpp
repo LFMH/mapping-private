@@ -81,9 +81,9 @@ void BoxEstimation::init (ros::NodeHandle& nh)
 
 void BoxEstimation::pre  ()
 {
-  nh_.param("output_box_topic", output_box_topic_, std::string("/box"));
-  nh_.param("threshold_in", threshold_in_, 0.025);
-  nh_.param("threshold_out", threshold_out_, 0.00001);
+  nh_.param("output_box_topic", output_box_topic_, output_box_topic_);
+  nh_.param("threshold_in", threshold_in_, threshold_in_);
+  nh_.param("threshold_out", threshold_out_, threshold_out_);
 }
 
 void BoxEstimation::post ()

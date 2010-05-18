@@ -42,8 +42,14 @@ namespace cloud_algos
 class BoxEstimation : public CloudAlgo
 {
  public:
-  BoxEstimation () { };
-  //~BoxEstimation () { };
+
+  BoxEstimation ()
+  {
+    output_box_topic_ = std::string("/box");
+    threshold_in_ = 0.025;
+    threshold_out_ = 0.00001;
+  };
+
   typedef triangle_mesh::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 

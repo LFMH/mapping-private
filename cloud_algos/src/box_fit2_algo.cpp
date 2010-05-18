@@ -59,6 +59,7 @@ void RobustBoxEstimation::pre ()
 {
   BoxEstimation::pre ();
   nh_.param("eps_angle", eps_angle_, eps_angle_);
+  nh_.param("sac_prob", sac_prob_, sac_prob_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,6 +82,7 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
 
   // Fit model using RANSAC
   RANSAC *sac = new RANSAC (model, eps_angle_);
+  sac->setProbability (sac_prob_);
   vector<int> inliers;
   vector<double> refined;
   if (!sac->computeModel ())
@@ -92,13 +94,14 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
 
   /// @NOTE: inliers are actually indexes in the indices_ array, but that is not set (by default it has all the points in the correct order)
   inliers = sac->getInliers ();
+  cerr << "number of inliers: " << inliers.size () << endl;
   /// @NOTE best_model_ contains actually the samples used to find the best model!
   model->computeModelCoefficients(model->getBestModel ());
   vector<double> original = model->getModelCoefficients ();
-  cerr << "used direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
+  cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
   sac->refineCoefficients(refined);
-  cerr << "testing re-fitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
-  //if (refined[3] == -1)
+  cerr << "refitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
+  if (refined[3] == -1)
     refined = original;
 
   // Save fixed axis

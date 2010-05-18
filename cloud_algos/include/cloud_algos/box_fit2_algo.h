@@ -48,13 +48,20 @@ class RobustBoxEstimation : public BoxEstimation
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
+   * \brief Probability to be set for RANSAC (tradeoff between speed and accuracy)
+   * @note value should be in (0,1) as high as desired (for 1 it runs for the maximum number of iterations)
+   */
+  double sac_prob_;
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /**
    * \brief Constructor and destructor
    */
   RobustBoxEstimation ()
   {
     eps_angle_ = 0.1; // approximately 6 degrees
+    sac_prob_ = 0.9999; // increasing the default precision of RANSAC a bit, maybe it helps
   };
-  //~RobustBoxEstimation () {}
 
   // Overwritten Cloud Algo stuff
   void pre  ();
