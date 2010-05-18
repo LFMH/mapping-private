@@ -47,7 +47,7 @@ struct dummy_deleter
 struct TableObject
 {
   TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
-                  object_geometric_type(""), perception_method(""), cluster_type("cluster_") { }
+                  object_geometric_type("cluster"), perception_method("") { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -62,7 +62,6 @@ struct TableObject
   std::string object_color;
   std::string object_geometric_type;
   std::string perception_method;
-  std::string cluster_type;
   boost::shared_ptr<const triangle_mesh::TriangleMesh> mesh;
 };
 
@@ -629,7 +628,7 @@ class TableMemory
         if (to_now->name.length() == 0)
         {
           std::stringstream name;
-          name << to_now->cluster_type << cluster_name_counter_++;
+          name << to_now->object_geometric_type << "_" << cluster_name_counter_++;
           to_now->name = name.str();
         }
       }
@@ -760,12 +759,12 @@ class TableMemory
           if (box_inliers->points.size() > rot_inliers->points.size())
           {
             to->mesh = box_mesh;
-            to->cluster_type = "box_";
+            to->object_geometric_type = "box";
           }
 	  else
           {
             to->mesh = rot_mesh;
-            to->cluster_type = "rot_";
+            to->object_geometric_type = "cyl";
 	  }
           
           // call triangulation on outliers
