@@ -174,6 +174,11 @@ public:
   SAC *sac_;
   std::string output_outliers_topic_;
 
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 protected:
   ros::NodeHandle nh_;
   ros::Publisher cloud_pub_;

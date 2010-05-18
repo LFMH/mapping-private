@@ -69,6 +69,11 @@ class DecisionManager : public CloudAlgo
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 };
 
 }

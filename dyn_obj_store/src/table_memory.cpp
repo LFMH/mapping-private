@@ -170,6 +170,7 @@ class TableMemory
     pluginlib::ClassLoader<cloud_algos::CloudAlgo> *cl;
 
     typedef struct _NamedAlgorithm {
+      ros::Publisher pub;
       std::string name;
       CloudAlgo * algorithm;
       _NamedAlgorithm (std::string n) : name(n) {};
@@ -241,16 +242,13 @@ class TableMemory
       ros::ServiceClient polygon_clipper = nh_.serviceClient<vision_srvs::clip_polygon> ("/intersect_poly", true);
       if (polygon_clipper.exists() && old_table.polygon.points.size() > 2 &&new_table->table.points.size() > 2)
       {
-        ROS_WARN ("blablabla");
         vision_srvs::clip_polygon::Request req;
         req.operation = req.INTERSECTION;
         req.poly1 = old_table.polygon;
         req.poly2 = new_table->table;
         vision_srvs::clip_polygon::Response resp;
-        ROS_WARN ("blablabla");
 
         polygon_clipper.call (req, resp);
-        ROS_WARN ("blablabla");
         std::vector<double> normal_z(3);
         normal_z[0] = 0.0;
         normal_z[1] = 0.0;
@@ -258,11 +256,14 @@ class TableMemory
         double area_old = cloud_geometry::areas::compute2DPolygonalArea (old_table.polygon, normal_z);
         double area_new = cloud_geometry::areas::compute2DPolygonalArea (new_table->table, normal_z);
         double area_clip = cloud_geometry::areas::compute2DPolygonalArea (resp.poly_clip, normal_z);
-        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
+        ROS_INFO ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
                   area_old, area_new, area_clip, area_clip/area_old, area_clip/area_new);
         if (area_clip/area_old > 0.5 || area_clip/area_new > 0.5)
           return true;
       }
+      else
+        ROS_WARN ("fix_tables is set to false, but could not find Polygon Clipper");
+      
 
       // if center of new (invcomplete) table is within old
       // table bounds, it's the same
@@ -315,7 +316,7 @@ class TableMemory
       ros::ServiceClient polygon_clipper = nh_.serviceClient<vision_srvs::clip_polygon> ("/intersect_poly", true);
       if (polygon_clipper.exists())
       {
-        ROS_WARN ("blablabla");
+
         vision_srvs::clip_polygon::Request req;
         req.operation = req.UNION;
         req.poly1 = old_table.polygon;
@@ -328,12 +329,10 @@ class TableMemory
         z_mean /= (req.poly2.points.size () + req.poly1.points.size());
 
         vision_srvs::clip_polygon::Response resp;
-        ROS_WARN ("blablabla");
 
         polygon_clipper.call (req, resp);
         for (unsigned int poly_i = 0; poly_i < resp.poly_clip.points.size(); poly_i++)
           resp.poly_clip.points.at(poly_i).z = z_mean;
-        ROS_WARN ("blablabla");
         std::vector<double> normal_z(3);
         normal_z[0] = 0.0;
         normal_z[1] = 0.0;
@@ -341,7 +340,7 @@ class TableMemory
         double area_old = cloud_geometry::areas::compute2DPolygonalArea (old_table.polygon, normal_z);
         double area_new = cloud_geometry::areas::compute2DPolygonalArea (new_table->table, normal_z);
         double area_clip = cloud_geometry::areas::compute2DPolygonalArea (resp.poly_clip, normal_z);
-        ROS_WARN ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
+        ROS_INFO ("The 3 areas are: %f, %f, %f: [%f percent, %f percent]",
                   area_old, area_new, area_clip, area_clip/area_old, area_clip/area_new);
         old_table.polygon = resp.poly_clip;
       }
@@ -354,9 +353,9 @@ class TableMemory
       contour->channels[0].name = "nx";
       contour->channels[0].values.resize (2 * old_table.polygon.points.size());
       contour->channels[1].name = "ny";
-      contour->channels[0].values.resize (2 * old_table.polygon.points.size());
+      contour->channels[1].values.resize (2 * old_table.polygon.points.size());
       contour->channels[2].name = "nz";
-      contour->channels[0].values.resize (2 * old_table.polygon.points.size());
+      contour->channels[2].values.resize (2 * old_table.polygon.points.size());
 
       // Compute normals
       for (unsigned int i = 0; i < old_table.polygon.points.size(); i++)
@@ -589,7 +588,7 @@ class TableMemory
      * \param algo_name : name of algorithm as stated in plugins.xml file
      * \param algorithm : reference to pointer which will hold the loaded algorithm
     */
-    bool load_algorithm (std::string algo_name, CloudAlgo*& algorithm)
+    bool load_algorithm (std::string algo_name, CloudAlgo*& algorithm, ros::Publisher &pub)
     {
       try
       {
@@ -605,6 +604,7 @@ class TableMemory
       {
         algorithm = cl->createClassInstance(algo_name);
         algorithm->init (nh_);
+        pub = algorithm->createPublisher (nh_);
         ROS_INFO("Success. Could create CloudAlgo Class of type %s", algo_name.c_str ());
         return true;
       }
@@ -630,7 +630,7 @@ class TableMemory
       }
 
       for (unsigned int i = 0; i < algorithm_pool.size(); i++)
-        load_algorithm (algorithm_pool[i].name, algorithm_pool[i].algorithm);
+        load_algorithm (algorithm_pool[i].name, algorithm_pool[i].algorithm, algorithm_pool[i].pub);
     }
 
     /*!
@@ -640,7 +640,7 @@ class TableMemory
       name_table_objects (int table_num)
     {
       Table &t = tables[table_num];
-      ROS_WARN ("[name_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
+      ROS_INFO ("[name_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
       TableStateInstance *t_now = t.getCurrentInstance();
       std::vector<TableStateInstance*> t_temp = t.getLastInstances(2);
       if (t_temp.size() < 2)
@@ -682,6 +682,15 @@ class TableMemory
       ROS_ERROR ("could not find algorithm \"%s\"", name.c_str ());
       return NULL;
     }
+    
+    ros::Publisher find_publisher (std::string name)
+    {
+      for (unsigned int i = 0; i < algorithm_pool.size(); i++)
+        if (algorithm_pool[i].name == name)
+          return algorithm_pool[i].pub;
+      ROS_ERROR ("could not find publisher for algorithm \"%s\"", name.c_str ());
+      return ros::Publisher();
+    }
 
 //    /// Function that dejan implements.. :D
 //    IMPLEMENTME
@@ -704,7 +713,7 @@ class TableMemory
 //        TableObject* to = t.getCurrentInstance ()->objects.at (i);
 //        if (to->point_cluster.points.size () == 0)
 //        {
-//          ROS_WARN ("[reconstruct_table_objects] Table object has 0 points.");
+//          ROS_INFO ("[reconstruct_table_objects] Table object has 0 points.");
 //          continue;
 //        }
 //        Image roi_cluster = cut_roi (image_, to.point_cluster.points);
@@ -732,20 +741,17 @@ class TableMemory
       CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
-      ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType>
-                  (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
-      ros::Publisher pub_rot = nh_.advertise <CylinderEstimation::OutputType>
-                  ("mesh_rotational", 5);
-      ros::Publisher pub_tri = nh_.advertise <DepthImageTriangulation::OutputType>
-                  (((DepthImageTriangulation*)alg_triangulation)->default_output_topic (), 5);
-      ros::Publisher pub_box = nh_.advertise <RobustBoxEstimation::OutputType>
-                  (((RobustBoxEstimation*)alg_box)->default_output_topic (), 5);
+
+      ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
+      ros::Publisher pub_rot = find_publisher ("cloud_algos/CylinderEstimation");
+      ros::Publisher pub_tri = find_publisher ("cloud_algos/DepthImageTriangulation");
+      ros::Publisher pub_box = find_publisher ("cloud_algos/RobustBoxEstimation");
 
       Table &t = tables[table_num];
 //      table_reconstruct_clusters_client_ = nh_.serviceClient<ias_table_srvs::ias_reconstruct_object> ("ias_reconstruct_object", true);
       //if (table_reconstruct_clusters_client_.exists ())
       {
-        ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
+        ROS_INFO ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
 
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
@@ -779,7 +785,6 @@ class TableMemory
           boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
           boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
           boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
-          pub_rot.publish (rot_mesh);
           alg_rot_est->post ();
 
           // call box estimation
@@ -793,18 +798,19 @@ class TableMemory
           boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
           ROS_INFO("got response: %s", process_answer_box.c_str ());
           boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
-          pub_box.publish (box_mesh);
           alg_box->post();
 
           if (box_inliers->points.size() > rot_inliers->points.size())
           {
             to->mesh = box_mesh;
             to->object_geometric_type = "box";
+            pub_box.publish (box_mesh);
           }
 	  else
           {
             to->mesh = rot_mesh;
             to->object_geometric_type = "cyl";
+            pub_rot.publish (rot_mesh);
 	  }
           
           // call triangulation on outliers
@@ -824,7 +830,7 @@ class TableMemory
     /// this function should contain all parameters that might change during execution
     void update_parameters ()
     {
-      nh_.param ("fix_tables", fix_tables_, fix_tables_);
+      nh_.param ("fix_tables", fix_tables_, false);
     }
 
     // incoming data...

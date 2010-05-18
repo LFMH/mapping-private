@@ -129,6 +129,11 @@ class BoxEstimation : public CloudAlgo
    */
   std::vector<double> getCoeff () { return coeff_; }
 
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
  protected: 
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;

@@ -49,6 +49,11 @@ class Registration : public CloudAlgo
   int nzIdx_;
   std::vector<int> indices_sorted_;
   ros::NodeHandle nh_;
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 };
 
 }

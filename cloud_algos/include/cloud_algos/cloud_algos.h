@@ -37,6 +37,7 @@ class CloudAlgo
   virtual std::vector<std::string> provides () = 0;
 //  virtual std::string process (const boost::shared_ptr<const InputType>&) = ;
   OutputType output ();
+  virtual ros::Publisher createPublisher (ros::NodeHandle& nh) = 0;
 };
 
 template <class algo>

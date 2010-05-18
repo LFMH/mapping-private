@@ -39,6 +39,11 @@ class RotationalEstimation : public CloudAlgo
   boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
   boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
  
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
  private: 
   boost::shared_ptr<mapping_msgs::PolygonalMap> vis_pmap_;
   boost::shared_ptr<sensor_msgs::PointCloud> vis_cloud_;

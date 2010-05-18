@@ -77,6 +77,12 @@ class RobustBoxEstimation : public BoxEstimation
    * box robust axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z
    */
   virtual void find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 };
 
 }

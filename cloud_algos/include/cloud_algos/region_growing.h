@@ -109,6 +109,11 @@ class RegionGrowing : public CloudAlgo
   int regId_;
   ros::NodeHandle nh_;
   Behaviour behaviour_;
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 };
 
 }

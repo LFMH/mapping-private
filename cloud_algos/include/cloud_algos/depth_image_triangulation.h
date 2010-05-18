@@ -144,6 +144,11 @@ class DepthImageTriangulation : public CloudAlgo
     
   }
 
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
 private:
   //! \brief lock the function when restoring line id
   boost::mutex  cloud_lock_;

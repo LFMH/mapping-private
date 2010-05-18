@@ -179,6 +179,11 @@ class SVMClassification : public CloudAlgo
     return res;
   }
 
+  ros::Publisher createPublisher (ros::NodeHandle& nh)
+  {
+    ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
+    return p;
+  }
  private:
 
   // ROS stuff
