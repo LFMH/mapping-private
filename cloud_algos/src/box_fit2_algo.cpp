@@ -57,8 +57,8 @@ std::vector<std::string> RobustBoxEstimation::requires ()
 
 void RobustBoxEstimation::pre ()
 {
-  //((BoxEstimation*)this)->pre ();
-  //nh_.param("eps_angle", eps_angle_, eps_angle_);
+  BoxEstimation::pre ();
+  nh_.param("eps_angle", eps_angle_, eps_angle_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

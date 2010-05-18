@@ -67,7 +67,8 @@ class BoxEstimation : public CloudAlgo
   // Get inlier and outlier points
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
-  virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold);
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getContained ();
+  virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -100,7 +101,9 @@ class BoxEstimation : public CloudAlgo
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;
   std::vector<int> outliers_;
-  double threshold_;
+  std::vector<int> contained_;
+  double threshold_in_;
+  double threshold_out_;
 
   boost::shared_ptr<const sensor_msgs::PointCloud> cloud_;
 
@@ -108,6 +111,10 @@ class BoxEstimation : public CloudAlgo
 
   //model rviz publisher
   ros::Publisher box_pub_;
+  ros::Publisher inliers_pub_;
+  ros::Publisher outliers_pub_;
+  ros::Publisher contained_pub_;
+
   //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
   std::vector<double> coeff_;
   geometry_msgs::Point32 box_centroid_;

@@ -71,6 +71,9 @@ void BoxEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
   box_pub_ = nh_.advertise<visualization_msgs::Marker>("box", 0 );
+  inliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("inliers", 0 );
+  outliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("outliers", 0 );
+  contained_pub_ = nh_.advertise<sensor_msgs::PointCloud>("contained", 0 );
   coeff_.resize(15);
   r_ = g_ = 0.0;
   b_ = 1.0;
@@ -79,7 +82,8 @@ void BoxEstimation::init (ros::NodeHandle& nh)
 void BoxEstimation::pre  ()
 {
   nh_.param("output_box_topic", output_box_topic_, std::string("/box"));
-  nh_.param("threshold_", threshold_, 0.01);
+  nh_.param("threshold_in", threshold_in_, 0.025);
+  nh_.param("threshold_out", threshold_out_, 0.00001);
 }
 
 void BoxEstimation::post ()
@@ -101,13 +105,24 @@ std::vector<std::string> BoxEstimation::provides ()
 std::string BoxEstimation::process (const boost::shared_ptr<const InputType> input)
 {
   ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
-  cloud_ = input;
+
+  // Compute model coefficients
   find_model (input, coeff_);
-  computeInAndOutliers (input, coeff_, threshold_);
+
+  // Create mesh as output
   triangulate_box (input, coeff_);
-  //publish fitted box on marker topic
+
+  // Publish fitted box on marker topic
   ROS_INFO ("Publishing box on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
   publish_marker (input, coeff_);
+
+  // Get which points verify the model and which don't
+  cloud_ = input;
+  computeInAndOutliers (input, coeff_, threshold_in_, threshold_out_);
+  inliers_pub_.publish (getInliers ());
+  outliers_pub_.publish (getOutliers ());
+  contained_pub_.publish (getContained ());
+
   return std::string ("ok");
 }
 
@@ -160,36 +175,55 @@ boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getInliers ()
   return ret;
 }
 
-void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold)
+boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getContained ()
+{
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->header = cloud_->header;
+  for (unsigned int i = 0; i < contained_.size (); i++)
+    ret->points.push_back (cloud_->points.at (contained_.at (i)));
+  return ret;
+}
+
+void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out)
 {
   // get the 3 axes
   Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
-  std::cerr << "the 3 axes:\n" << axes << std::endl;
+  //std::cerr << "the 3 axes:\n" << axes << std::endl;
+  //std::cerr << "threshold: " << threshold << std::endl;
 
   // get inliers and outliers
   inliers_.resize (0);
   outliers_.resize (0);
+  contained_.resize (0);
   for (unsigned i = 0; i < cloud->points.size (); i++)
   {
     // compute point-center
     Eigen::Vector3f centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
     // project (point-center) on axes and check if inside or outside the +/- dimensions
-    bool inlier = true;
+    bool inlier = false;
+    bool outlier = false;
     for (int d = 0; d < 3; d++)
     {
-//      if (fabs (centered.dot (axes.row(d))) > coeff[3+d] / 2.0 + threshold)
-      if (fabs (fabs (centered.dot (axes.row(d))) - fabs (coeff[3+d] / 2.0)) > threshold)
+      double dist = fabs (centered.dot (axes.row(d)));
+      if (dist > coeff[3+d]/2 + threshold_out)
       {
-        inlier = false;
+        outlier = true;
+        break;
+      }
+      else if (fabs (dist - coeff[3+d]/2) <= threshold_in)
+      {
+        inlier = true;
         break;
       }
     }
     if (inlier)
       inliers_.push_back(i);
-    else
+    else if (outlier)
       outliers_.push_back(i);
+    else
+      contained_.push_back(i);
   }
-  ROS_INFO("outliers_.size(): %ld inliers.size() %ld", outliers_.size(), inliers_.size());
+  ROS_INFO("%ld points verify model, %ld are outside of it, and %ld are contained in it", inliers_.size(), outliers_.size(), contained_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -349,7 +383,6 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
  */  
 void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
-  ROS_WARN ("got here..");
   btMatrix3x3 box_rot (coeff[6], coeff[7], coeff[8],
                        coeff[9], coeff[10], coeff[11],
                        coeff[12], coeff[13], coeff[14]);
