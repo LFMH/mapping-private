@@ -68,6 +68,7 @@ using namespace cloud_algos;
 void BoxEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
+  nh_.param("output_box_topic", output_box_topic_, output_box_topic_);
   marker_pub_ = nh_.advertise<visualization_msgs::Marker>(output_box_topic_, 0 );
   inliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("inliers", 0 );
   outliers_pub_ = nh_.advertise<sensor_msgs::PointCloud>("outliers", 0 );
@@ -80,6 +81,7 @@ void BoxEstimation::init (ros::NodeHandle& nh)
 void BoxEstimation::pre  ()
 {
   nh_.param("output_box_topic", output_box_topic_, output_box_topic_);
+  marker_pub_ = nh_.advertise<visualization_msgs::Marker>(output_box_topic_, 0 );
   nh_.param("threshold_in", threshold_in_, threshold_in_);
   nh_.param("threshold_out", threshold_out_, threshold_out_);
 }
@@ -111,7 +113,7 @@ std::string BoxEstimation::process (const boost::shared_ptr<const InputType> inp
   triangulate_box (input, coeff_);
 
   // Publish fitted box on marker topic
-  ROS_INFO ("Publishing box on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
+  ROS_INFO ("Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
   publish_marker (input, coeff_);
 
   // Get which points verify the model and which don't
