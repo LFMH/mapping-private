@@ -374,9 +374,9 @@ class TableMemory
       }
 
       // Fit a rectangle to the double contour
+      ROS_INFO("[update_table] Calling RobustBoxEstimation with a double contour of size %ld", contour->points.size ());
       CloudAlgo *alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
       alg_box->pre();
-      ROS_INFO("[update_table] Calling RobustBoxEstimation with a double contour contour of size %ld", contour->points.size ());
       std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process (contour);
       ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
       boost::shared_ptr<const RobustBoxEstimation::OutputType> table_mesh = ((RobustBoxEstimation*)alg_box)->output ();

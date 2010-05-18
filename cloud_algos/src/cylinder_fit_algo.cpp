@@ -39,7 +39,7 @@ void CylinderEstimation::init (ros::NodeHandle& nh)
   nh_ = nh;
   nh_.param("output_outliers_topic", output_outliers_topic_, std::string("cylinder"));
   outlier_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_outliers_topic_ ,1);
-  marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("cylinder", 0 );
+  marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("cylinder_marker", 0 );
   model_ = new SACModelCylinder ();
   sac_ = new RANSAC (model_, 0.01);
   nx_ = ny_ = nz_ = -1;

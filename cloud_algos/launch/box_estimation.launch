@@ -4,6 +4,6 @@
   
   <node pkg="cloud_algos" type="box_estimation_node" name="box_estimation_node" output="screen" respawn="true">
     <remap from="~cloud_pcd" to="cloud_pcd" />
-    <param  name="output_box_topic" type="string" value="box"/>
+    <param  name="output_box_topic" type="string" value="box_marker"/>
   </node>
 </launch>
