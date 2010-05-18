@@ -30,6 +30,12 @@
     </description>
   </class>
 
+  <class name="cloud_algos/RobustBoxEstimation" type="cloud_algos::RobustBoxEstimation" base_class_type="cloud_algos::CloudAlgo">
+    <description>
+      This plugin fits a quboid/box to a given PointCloud cluster.
+    </description>
+  </class>
+  
   <class name="cloud_algos/BoxEstimation" type="cloud_algos::BoxEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin fits a quboid/box to a given PointCloud cluster.

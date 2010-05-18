@@ -143,6 +143,7 @@ class TableObjectDetector
     double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
 
     double table_min_height_, table_max_height_, delta_z_, object_min_distance_from_table_;
+    unsigned int table_cluster_counter_;
 
     ros::Subscriber cloud_sub_;
     ros::Publisher semantic_map_publisher_, cloud_publisher_, table_pub_;
@@ -153,6 +154,7 @@ class TableObjectDetector
    */
     TableObjectDetector (ros::NodeHandle& anode) : node_ (anode)
     {
+      table_cluster_counter_ = 0;
       node_.param ("/global_frame_id", global_frame_, std::string("/map"));
 
       node_.param ("min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
@@ -302,6 +304,8 @@ class TableObjectDetector
         if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
             continue;
 
+        table.objects[cluster_count].points.header.seq =  table_cluster_counter_ ++;
+
         table.objects[cluster_count].points.header.frame_id =  points.header.frame_id;
         table.objects[cluster_count].points.points.resize (object_idx.size ());
 
@@ -321,6 +325,8 @@ class TableObjectDetector
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
+        for (unsigned int c = 0; c < points.channels.size (); c++)
+          table.objects[cluster_count].points.channels[c].values.resize(nr_p);
         
         cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[cluster_count].min_bound, table.objects[cluster_count].max_bound);
         cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[cluster_count].center);

@@ -3,6 +3,7 @@
 #include <map>
 #include <ctime>
 #include <ros/node_handle.h>
+#include <triangle_mesh/TriangleMesh.h>
 #include <ias_table_msgs/TableWithObjects.h>
 #include <ias_table_msgs/PrologReturn.h>
 #include <ias_table_srvs/ias_table_clusters_service.h>
@@ -20,6 +21,7 @@
 #include <cloud_algos/depth_image_triangulation.h>
 #include <cloud_algos/mls_fit.h>
 #include <cloud_algos/box_fit_algo.h>
+#include <cloud_algos/box_fit2_algo.h>
 #include <cloud_algos/cloud_algos.h>
 #include <pluginlib/class_loader.h>
 
@@ -32,6 +34,7 @@
 
 using namespace cloud_algos;
 
+// we need this for a shared_ptr later on
 struct dummy_deleter
 {
   void operator()(void const *) const
@@ -39,12 +42,11 @@ struct dummy_deleter
   }
 };
 
-
 /// holds a single object on a table, with timestamp, orig. pcd data and reconstructed representations
 struct TableObject
 {
   TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
-                  object_geometric_type(""), perception_method(""){ }
+                  object_geometric_type(""), perception_method(""), cluster_type("cluster_") { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -59,6 +61,8 @@ struct TableObject
   std::string object_color;
   std::string object_geometric_type;
   std::string perception_method;
+  std::string cluster_type;
+  boost::shared_ptr<const triangle_mesh::TriangleMesh> mesh;
 };
 
 /// holds a single snapshot of a table
@@ -147,6 +151,10 @@ class TableMemory
     int counter_;
     float color_probability_;
     std::string global_frame_;
+    
+    /// if this is true, we consider table positions and outlines to be fixed.
+    /// they will not get updated
+    bool fix_tables_;
 
     //insert lo_ids waiting for prolog update
     std::vector<unsigned long long> update_prolog_;
@@ -206,6 +214,7 @@ class TableMemory
   public:
     TableMemory (ros::NodeHandle &anode) : nh_(anode), cluster_name_counter_(0), counter_(0), color_probability_(0.2), object_unique_id_(0)
     {
+      nh_.param ("fix_tables", fix_tables_, false);
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
@@ -222,7 +231,7 @@ class TableMemory
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RotationalEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
-      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/BoxEstimation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
 
       load_plugins ();
     }
@@ -298,6 +307,10 @@ class TableMemory
       }
       inst->time_instance = new_table->header.stamp;
       old_table.inst.push_back (inst);
+      
+      // if we fix tables, we don't update the boundaries
+      if (fix_tables_)
+        return;
 
       ros::ServiceClient polygon_clipper = nh_.serviceClient<vision_srvs::clip_polygon> ("/intersect_poly", true);
       if (polygon_clipper.exists())
@@ -474,7 +487,7 @@ class TableMemory
         call.request.number_of_objects = tables[table_num].getCurrentInstance ()->objects.size ();
 
 
-        TableObject *o = tables[table_num].getCurrentInstance ()->objects [o_idx];
+        //TableObject *o = tables[table_num].getCurrentInstance ()->objects [o_idx];
 
         // save the indices in our vector of vector of vector so we can find a object
         // in our storage from the positionID (lo_id)
@@ -552,6 +565,7 @@ class TableMemory
       {
         algorithm = cl->createClassInstance(algo_name);
         algorithm->init (nh_);
+        ROS_INFO("Success. Could create CloudAlgo Class of type %s", algo_name.c_str ());
         return true;
       }
       else ROS_ERROR("Cannot create CloudAlgo Class of type %s", algo_name.c_str ());
@@ -614,7 +628,7 @@ class TableMemory
         if (to_now->name.length() == 0)
         {
           std::stringstream name;
-          name << "cluster_" << cluster_name_counter_++;
+          name << to_now->cluster_type << cluster_name_counter_++;
           to_now->name = name.str();
         }
       }
@@ -625,6 +639,7 @@ class TableMemory
       for (unsigned int i = 0; i < algorithm_pool.size(); i++)
         if (algorithm_pool[i].name == name)
           return algorithm_pool[i].algorithm;
+      ROS_ERROR ("could not find algorithm \"%s\"", name.c_str ());
       return NULL;
     }
 
@@ -673,27 +688,27 @@ class TableMemory
           return;
         }
 
-      CloudAlgo * alg_triangulation = find_algorithm ("DepthImageTriangulation");
-      CloudAlgo * alg_rot_est = find_algorithm ("RotationalEstimation");
-      CloudAlgo * alg_mls = find_algorithm ("MovingLeastSquares");
-      CloudAlgo * alg_box = find_algorithm ("BoxEstimation");
+      CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
+      CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/RotationalEstimation");
+      CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
+      CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
       ros::Publisher pub_mls = nh_.advertise <MovingLeastSquares::OutputType>
                   (((MovingLeastSquares*)alg_mls)->default_output_topic (), 5);
       ros::Publisher pub_rot = nh_.advertise <RotationalEstimation::OutputType>
                   ("mesh_rotational", 5);
       ros::Publisher pub_tri = nh_.advertise <DepthImageTriangulation::OutputType>
                   (((DepthImageTriangulation*)alg_triangulation)->default_output_topic (), 5);
-      ros::Publisher pub_box = nh_.advertise <BoxEstimation::OutputType>
-                  (((BoxEstimation*)alg_box)->default_output_topic (), 5);
+      ros::Publisher pub_box = nh_.advertise <RobustBoxEstimation::OutputType>
+                  (((RobustBoxEstimation*)alg_box)->default_output_topic (), 5);
 
       Table &t = tables[table_num];
 //      table_reconstruct_clusters_client_ = nh_.serviceClient<ias_table_srvs::ias_reconstruct_object> ("ias_reconstruct_object", true);
       //if (table_reconstruct_clusters_client_.exists ())
       {
         ROS_WARN ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
-        //alg_rot_est->pre ();
+        alg_rot_est->pre ();
 
-        for (int i = 1; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
+        for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
           TableObject* to = t.getCurrentInstance ()->objects.at (i);
           if (to->point_cluster.points.size () == 0)
@@ -716,24 +731,41 @@ class TableMemory
           pub_mls.publish (mls_cloud);
 
           // call rotational estimation
-//          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
-//                        mls_cloud->points.size () << " points." << std::endl;
-//          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process
-//                      (mls_cloud);
-//          ROS_INFO("got response: %s", process_answer_rot.c_str ());
-//          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((RotationalEstimation*)alg_rot_est)->getOutliers ();
-//          pub_rot.publish (((RotationalEstimation*)alg_rot_est)->output ());
+          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
+                        mls_cloud->points.size () << " points." << std::endl;
+          std::string process_answer_rot = ((RotationalEstimation*)alg_rot_est)->process
+                      (mls_cloud);
+          ROS_INFO("got response: %s", process_answer_rot.c_str ());
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((RotationalEstimation*)alg_rot_est)->getInliers ();
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((RotationalEstimation*)alg_rot_est)->getOutliers ();
+          boost::shared_ptr<triangle_mesh::TriangleMesh> rot_mesh = ((RotationalEstimation*)alg_rot_est)->output ();
+          pub_rot.publish (rot_mesh);
 
           // call box estimation
           alg_box->pre();
-          std::cerr << "[reconstruct_table_objects] Calling BoxEstimation with a cluster with " <<
+          std::cerr << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
                         mls_cloud->points.size () << " points." << std::endl;
-          std::string process_answer_box = ((BoxEstimation*)alg_box)->process
+          std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
                       (mls_cloud);
+          std::vector <double> box_params;
+          //((RobustBoxEstimation*)alg_box)->get_box_parameters (box_params);
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
           ROS_INFO("got response: %s", process_answer_box.c_str ());
-          pub_box.publish (((BoxEstimation*)alg_box)->output ());
+          boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+          pub_box.publish (box_mesh);
           alg_box->post();
 
+          if (box_inliers->points.size() > rot_inliers->points.size())
+          {
+            to->mesh = box_mesh;
+            to->cluster_type = "box_";
+          }
+	  else
+          {
+            to->mesh = rot_mesh;
+            to->cluster_type = "rot_";
+	  }
+          
           // call triangulation on outliers
 //          alg_triangulation->pre();
 //          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
@@ -743,16 +775,23 @@ class TableMemory
 //          ROS_INFO("got response: %s", process_answer_tri.c_str ());
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
 //          alg_triangulation->post();
-break;
+//break;
         }
-        //alg_rot_est->post ();
+        alg_rot_est->post ();
       }
+    }
+
+    /// this function should contain all parameters that might change during execution
+    void update_parameters ()
+    {
+      nh_.param ("fix_tables", fix_tables_, fix_tables_);
     }
 
     // incoming data...
     void
       table_cb (const ias_table_msgs::TableWithObjects::ConstPtr& table)
     {
+      update_parameters ();
       int table_found = -1;
       ROS_INFO ("Looking for table in list of known tables.");
       for (int i = 0; i < (signed int) tables.size (); i++)
@@ -766,46 +805,51 @@ break;
           break;
         }
       }
-      if (table_found == -1)
+      if (fix_tables_ == false) // check if we are supposed to create new tables
       {
-        std::vector<double> normal_z(3);
-        normal_z[0] = 0.0;
-        normal_z[1] = 0.0;
-        normal_z[2] = 1.0;
-        double area = cloud_geometry::areas::compute2DPolygonalArea (table->table, normal_z);
-        if (area < 0.15)
+        if (table_found == -1)
         {
-          ROS_INFO ("Table area too small.");
-          return;
+          std::vector<double> normal_z(3);
+          normal_z[0] = 0.0;
+          normal_z[1] = 0.0;
+          normal_z[2] = 1.0;
+          double area = cloud_geometry::areas::compute2DPolygonalArea (table->table, normal_z);
+          if (area < 0.15)
+          {
+            ROS_INFO ("Table area too small.");
+            return;
+          }
+  
+          ROS_INFO ("Not found. Creating new table.");
+          Table t;
+          t.center.x = table->table_min.x + ((table->table_max.x - table->table_min.x) / 2.0);
+          t.center.y = table->table_min.y + ((table->table_max.y - table->table_min.y) / 2.0);
+          t.center.z = table->table_min.z + ((table->table_max.z - table->table_min.z) / 2.0);
+          for (unsigned int i = 0; i < table->table.points.size(); i++)
+            t.polygon.points.push_back (table->table.points.at(i));
+  
+          if (table->table.points.size() < 1)
+            ROS_WARN ("Got degenerate polygon.");
+          t.color = ((int)(rand()/(RAND_MAX + 1.0)) << 16) +
+                    ((int)(rand()/(RAND_MAX + 1.0)) << 8) +
+                    ((int)(rand()/(RAND_MAX + 1.0)));
+          tables.push_back (t);
+          table_found = tables.size () - 1;
+          // also append the new (first) table instance measurement.
+          update_table (table_found, table);
         }
-
-        ROS_INFO ("Not found. Creating new table.");
-        Table t;
-        t.center.x = table->table_min.x + ((table->table_max.x - table->table_min.x) / 2.0);
-        t.center.y = table->table_min.y + ((table->table_max.y - table->table_min.y) / 2.0);
-        t.center.z = table->table_min.z + ((table->table_max.z - table->table_min.z) / 2.0);
-        for (unsigned int i = 0; i < table->table.points.size(); i++)
-          t.polygon.points.push_back (table->table.points.at(i));
-
-        if (table->table.points.size() < 1)
-          ROS_WARN ("Got degenerate polygon.");
-        t.color = ((int)(rand()/(RAND_MAX + 1.0)) << 16) +
-                  ((int)(rand()/(RAND_MAX + 1.0)) << 8) +
-                  ((int)(rand()/(RAND_MAX + 1.0)));
-        tables.push_back (t);
-        table_found = tables.size () - 1;
-        // also append the new (first) table instance measurement.
-        update_table (table_found, table);
       }
-
-      publish_mem_state (table_found);
-      //name_table_objects (table_found);
-      //reconstruct_table_objects (table_found);
-//      camera_based_recognition (table_found);
-      update_table_instance_objects(table_found);
-      //update_jlo (table_found);
-      //call_cop (table_found);
-      print_mem_stats (table_found);
+      if (table_found != -1)
+      {
+        reconstruct_table_objects (table_found);
+        name_table_objects (table_found);
+//        camera_based_recognition (table_found);
+        publish_mem_state (table_found);
+        update_table_instance_objects(table_found);
+        //update_jlo (table_found);
+        //call_cop (table_found);
+        print_mem_stats (table_found);
+      }
     }
 
     void
