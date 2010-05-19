@@ -121,12 +121,16 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   if (polynomial_fit_ && order_ < 2)
   {
     do_polynomial_fit = false;
-    ROS_WARN("[MovingLeastSquares] Polynomial fit was requested but order (%d) is not high enough!", order_);
+    if (verbosity_level_ > -1) ROS_WARN("[MovingLeastSquares] Polynomial fit was requested but order (%d) is not high enough!", order_);
   }
   if (do_polynomial_fit)
-    ROS_INFO ("[MovingLeastSquares] Approximating local surface by an order %d polynomial.", order_);
+  {
+    if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Approximating local surface by an order %d polynomial.", order_);
+  }
   else
-    ROS_INFO ("[MovingLeastSquares] Approximating local surface only by the estimated tangent plane.");
+  {
+    if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Approximating local surface only by the estimated tangent plane.");
+  }
 
   // Defines for experiments, should work with all commented
   //#define PARALLEL
@@ -179,7 +183,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     ts = ros::Time::now ();
     complete_tree = true;
     kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);
-    ROS_INFO ("[MovingLeastSquares] Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
+    if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
 
   // Check if points have been provided to be fit to the cloud
@@ -197,7 +201,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       //case FIXED_K:     cloud_fit_ = generateDownsampled(cloud, step_); break;
       default: // COPY
       {
-        ROS_INFO ("[MovingLeastSquares] Initial point positions are copied from the original cloud.");
+        if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Initial point positions are copied from the original cloud.");
         copied_points = true;
         filter_points_ = false; // no use of filtering them if they are the same as the measurements
         cloud_fit_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud);
@@ -206,7 +210,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         cloud_fit_->channels = cloud->channels;
       }
     }
-    ROS_INFO ("[MovingLeastSquares] Initial point positions generated in %g seconds.", (ros::Time::now () - ts).toSec ());
+    if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Initial point positions generated in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
 
   // Allocate the extra needed channels
@@ -232,7 +236,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   for (size_t d = original_chan_size; d < cloud_fit_->channels.size (); d++)
   {
     cloud_fit_->channels[d].values.resize (cloud_fit_->points.size ());
-    ROS_INFO ("[MovingLeastSquares] Added channel: %s", cloud_fit_->channels[d].name.c_str ());
+    if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Added channel: %s", cloud_fit_->channels[d].name.c_str ());
   }
 
   // Allocate enough space for point indices and distances
@@ -264,10 +268,10 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     for (/*to avoid long/multiple lines*/; pit != cloud_fit_->points.end (); pit++, iit++, dit++)
       kdtree_->radiusSearch (*pit, radius_, *iit, *dit, max_nn_);
   }
-  ROS_INFO ("[MovingLeastSquares] Nearest neighbors in a radius of %g (maxed at %d) found in %g seconds.", radius_, max_nn_, (ros::Time::now () - ts).toSec ());
+  if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Nearest neighbors in a radius of %g (maxed at %d) found in %g seconds.", radius_, max_nn_, (ros::Time::now () - ts).toSec ());
 
   // Go through all the points that have to be fitted
-  ROS_INFO ("[MovingLeastSquares] Fitting surfaces of order %d to local neighborhoods and projecting original positions on it.", std::max (order_,1));
+  if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Fitting surfaces of order %d to local neighborhoods and projecting original positions on it.", std::max (order_,1));
   ts = ros::Time::now ();
   #ifdef PARTIAL_TIMES
   ros::Time ts_tmp;
@@ -664,30 +668,33 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
     #endif
   }
-  ROS_INFO ("[MovingLeastSquares] Neighborhood sizes varied from %d to %d.", k_min, k_max);
-  ROS_INFO ("[MovingLeastSquares] Fitted points in %g seconds.", (ros::Time::now () - ts).toSec ());
-  #ifdef PARTIAL_TIMES
-  ROS_INFO ("[MovingLeastSquares] - time spent filtering points: %g seconds.", sum_ts_filter);
-  ROS_INFO ("[MovingLeastSquares] - time spent approximating tangent: %g seconds.", sum_ts_tangent);
-  ROS_INFO ("[MovingLeastSquares] - time spent computing polynomial: %g seconds.", sum_ts_polynomial);
-  ROS_INFO ("[MovingLeastSquares] - time spent computing extra features: %g seconds.", sum_ts_extra);
-  #endif
+  if (verbosity_level_ > 0)
+  {
+    ROS_INFO ("[MovingLeastSquares] Neighborhood sizes varied from %d to %d.", k_min, k_max);
+    ROS_INFO ("[MovingLeastSquares] Fitted points in %g seconds.", (ros::Time::now () - ts).toSec ());
+    #ifdef PARTIAL_TIMES
+    ROS_INFO ("[MovingLeastSquares] - time spent filtering points: %g seconds.", sum_ts_filter);
+    ROS_INFO ("[MovingLeastSquares] - time spent approximating tangent: %g seconds.", sum_ts_tangent);
+    ROS_INFO ("[MovingLeastSquares] - time spent computing polynomial: %g seconds.", sum_ts_polynomial);
+    ROS_INFO ("[MovingLeastSquares] - time spent computing extra features: %g seconds.", sum_ts_extra);
+    #endif
+  }
   if (do_polynomial_fit)
   {
-    if (not_enough_nn != 0) ROS_WARN ("[MovingLeastSquares] %d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
+    if (verbosity_level_ > -1) if (not_enough_nn != 0) ROS_WARN ("[MovingLeastSquares] %d (%g%%) points had too few neighbors for polynomial fit.", not_enough_nn, not_enough_nn*100.0/cloud_fit_->points.size ());
     #ifndef PARALELL
     #ifdef INVERSE
-    ROS_INFO ("[MovingLeastSquares] Interval for the value of the determinant in order to be correctly invertible converged to: (%g,%g).", max_bad_det, min_good_det);
-    if ((zero_determinant != 0) || (not_inverse != 0)) ROS_WARN ("[MovingLeastSquares] Inverting squared weighted term matrix failed %d times (%g%%), and a bad determinant was detected %d times (%g%%).", not_inverse, not_inverse*100.0/cloud_fit_->points.size (), zero_determinant, zero_determinant*100.0/cloud_fit_->points.size ());
+    if (verbosity_level_ > -1) if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Interval for the value of the determinant in order to be correctly invertible converged to: (%g,%g).", max_bad_det, min_good_det);
+    if (verbosity_level_ > -1) if ((zero_determinant != 0) || (not_inverse != 0)) ROS_WARN ("[MovingLeastSquares] Inverting squared weighted term matrix failed %d times (%g%%), and a bad determinant was detected %d times (%g%%).", not_inverse, not_inverse*100.0/cloud_fit_->points.size (), zero_determinant, zero_determinant*100.0/cloud_fit_->points.size ());
     #endif
-    if (nr_orthogonal != 0) ROS_WARN ("[MovingLeastSquares] %d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
-    if (nr_nan != 0) ROS_WARN ("[MovingLeastSquares] Solver failed for %d (%g%%) points - polynomial fitting skipped for them.", nr_nan, nr_nan*100.0/cloud_fit_->points.size ());
+    if (verbosity_level_ > -1) if (nr_orthogonal != 0) ROS_WARN ("[MovingLeastSquares] %d (%g%%) points would have had a probably inaccurate parallel projection - approximate orthogonal projection was used instead.", nr_orthogonal, nr_orthogonal*100.0/cloud_fit_->points.size ());
+    if (verbosity_level_ > -1) if (nr_nan != 0) ROS_WARN ("[MovingLeastSquares] Solver failed for %d (%g%%) points - polynomial fitting skipped for them.", nr_nan, nr_nan*100.0/cloud_fit_->points.size ());
     #endif
   }
   //cerr << endl << endl << endl;
 
   // Finish
-  ROS_INFO ("[MovingLeastSquares] MLS fit done in %g seconds.", (ros::Time::now () - global_time).toSec ());
+  if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] MLS fit done in %g seconds.", (ros::Time::now () - global_time).toSec ());
   //pub_.publish (*cloud_fit_);
   return std::string("ok");
 }

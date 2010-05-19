@@ -45,7 +45,7 @@ class BoxEstimation : public CloudAlgo
 {
  public:
 
-  BoxEstimation ()
+  BoxEstimation () : CloudAlgo ()
   {
     output_box_topic_ = std::string("box_marker");
     threshold_in_ = 0.025;

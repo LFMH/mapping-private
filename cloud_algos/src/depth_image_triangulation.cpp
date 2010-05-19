@@ -76,11 +76,11 @@ void DepthImageTriangulation::get_scan_and_point_id (sensor_msgs::PointCloud &cl
   max_line_ = scan_id;
   if(save_pcd_)
   {
-    ROS_INFO("Saving PCD containing line numbers as cloud_line.pcd in ROS home.");
+    if (verbosity_level_ > 0) ROS_INFO("Saving PCD containing line numbers as cloud_line.pcd in ROS home.");
     cloud_io::savePCDFile ("cloud_line.pcd", cloud, false);
   }
 #ifdef DEBUG
-  ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
+  if (verbosity_level_ > 1) ROS_INFO("Nr lines: %d, Max point ID: %d Completed in %f seconds", max_line_, max_index_,  (ros::Time::now () - ts).toSec ());
 #endif
 }
 
@@ -130,8 +130,8 @@ std::vector<std::string> DepthImageTriangulation::provides ()
 std::string DepthImageTriangulation::process (const boost::shared_ptr<const DepthImageTriangulation::InputType>& cloud_in)
 {
 #ifdef DEBUG
-  ROS_INFO("\n");
-  ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
+  if (verbosity_level_ > 1) ROS_INFO("\n");
+  if (verbosity_level_ > 1) ROS_INFO("PointCloud msg with size %ld received", cloud_in->points.size());
 #endif
 
   cloud_with_line_ = *(cloud_in.get());
@@ -145,12 +145,12 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
     if (cloud_with_line_.channels[i].name == "index" || cloud_with_line_.channels[i].name == "sid")
       index_nr_in_channel_ = i;
   }
-  ROS_INFO("line index: %d, index index: %d", line_nr_in_channel_, index_nr_in_channel_);
+  if (verbosity_level_ > 0) ROS_INFO("line index: %d, index index: %d", line_nr_in_channel_, index_nr_in_channel_);
 
   //format of this pcd is not known
   if (index_nr_in_channel_ == -1)
   {
-    ROS_ERROR("Channel index is missing - this is NOT allowed");
+    if (verbosity_level_ > -2) ROS_ERROR("Channel index is missing - this is NOT allowed");
     return std::string("");
   }
   
@@ -173,7 +173,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
 
     max_index_ =  *max_element(cloud_with_line_.channels[index_nr_in_channel_].values.begin(), 
                                   cloud_with_line_.channels[index_nr_in_channel_].values.end());
-    ROS_INFO("max line: %d, max index: %d", max_line_, max_index_);
+    if (verbosity_level_ > 0) ROS_INFO("max line: %d, max index: %d", max_line_, max_index_);
     //exit(2);
   }
 
@@ -367,7 +367,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   triangle_mesh::Triangle tr_mesh;
 
 #ifdef DEBUG  
-  ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
+  if (verbosity_level_ > 1) ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);
 #endif
   //fill up TriangularMesh msg and send it on the topic
   for (unsigned long i=0; i<cloud_with_line_.points.size(); i++)
@@ -395,8 +395,9 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   //fill in intensities (needed for e.g. laser-to-camera calibration
   int iIdx = getChannelIndex(cloud_with_line_, "intensities");
   if (iIdx == -1)
-    ROS_WARN ("[DepthImageTriangulaton] \"intensites\" channel does not exist");
-  
+  {
+    if (verbosity_level_ > -1) ROS_WARN ("[DepthImageTriangulaton] \"intensites\" channel does not exist");
+  }
   else
   {
     mesh_->intensities.resize(cloud_with_line_.channels[iIdx].values.size());
@@ -415,7 +416,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   //write to vtk file for display in e.g. Viewer
   //if(write_to_vtk_)
     //write_vtk_file("triangles.vtk", tr, cloud_with_line_, nr);
-  ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
+  if (verbosity_level_ > 0) ROS_INFO("Triangulation with %ld triangles completed in %g seconds", tr.size(), (ros::Time::now () - ts).toSec());
   return std::string("");
 }
 
@@ -444,7 +445,7 @@ void DepthImageTriangulation::write_vtk_file(std::string output, std::vector<tri
   for (i=0; i<cloud_with_line_.points.size(); i++)
     fprintf(f,"1 %ld\n", i);
     
-  ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
+  if (verbosity_level_ > 0) ROS_INFO("vector: %ld, nr: %d  ", triangles.size(), nr_tr);
   
   fprintf(f,"\nPOLYGONS %d %d\n", nr_tr, 4*nr_tr);
   for (int i=0; i<nr_tr; i++)

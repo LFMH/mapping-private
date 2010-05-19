@@ -68,7 +68,7 @@ void RobustBoxEstimation::pre ()
  */
 void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
-  ROS_INFO ("[RobustBoxEstimation] Looking for box in a cluster of %u points", (unsigned)cloud->points.size ());
+  if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Looking for box in a cluster of %u points", (unsigned)cloud->points.size ());
 
   // Compute center point
   //cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
@@ -77,7 +77,7 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   SACModelOrientation *model = new SACModelOrientation ();
   model->axis_ << 0, 0, 1; // Suppose fixed Z axis
   model->setDataSet ((sensor_msgs::PointCloud*)(cloud.get())); // TODO: this is nasty :)
-  ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
+  if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
       model->axis_[0], model->axis_[1], model->axis_[2], eps_angle_);
 
   // Fit model using RANSAC
@@ -87,20 +87,20 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   vector<double> refined;
   if (!sac->computeModel ())
   {
-    ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
+    if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
     return;
   }
   // Get inliers and refine result
 
   /// @NOTE: inliers are actually indexes in the indices_ array, but that is not set (by default it has all the points in the correct order)
   inliers = sac->getInliers ();
-  cerr << "number of inliers: " << inliers.size () << endl;
+  if (verbosity_level_ > 1) cerr << "number of inliers: " << inliers.size () << endl;
   /// @NOTE best_model_ contains actually the samples used to find the best model!
   model->computeModelCoefficients(model->getBestModel ());
   vector<double> original = model->getModelCoefficients ();
-  cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
+  if (verbosity_level_ > 1) cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
   sac->refineCoefficients(refined);
-  cerr << "refitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
+  if (verbosity_level_ > 1) cerr << "refitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
   if (refined[3] == -1)
     refined = original;
 
@@ -156,12 +156,12 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   //coeff[0] = box_centroid_.x + dist[0]*coeff[6+0] + dist[1]*coeff[9+0] + dist[2]*coeff[12+0];
   //coeff[1] = box_centroid_.y + dist[0]*coeff[6+1] + dist[1]*coeff[9+1] + dist[2]*coeff[12+1];
   //coeff[2] = box_centroid_.z + dist[0]*coeff[6+2] + dist[1]*coeff[9+2] + dist[2]*coeff[12+2];
-  ROS_INFO ("[RobustBoxEstimation] Cluster center x: %g, y: %g, z: %g", coeff[0], coeff[1], coeff[2]);
+  if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Cluster center x: %g, y: %g, z: %g", coeff[0], coeff[1], coeff[2]);
 
   // Print info
-  ROS_INFO ("[RobustBoxEstimation] Dimensions x: %g, y: %g, z: %g",
+  if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Dimensions x: %g, y: %g, z: %g",
       coeff[3+0], coeff[3+1], coeff[3+2]);
-  ROS_INFO ("[RobustBoxEstimation] Direction vectors: \n\t%g %g %g \n\t%g %g %g \n\t%g %g %g",
+  if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Direction vectors: \n\t%g %g %g \n\t%g %g %g \n\t%g %g %g",
       coeff[3+3], coeff[3+4], coeff[3+5],
       coeff[3+6], coeff[3+7], coeff[3+8],
       coeff[3+9], coeff[3+10],coeff[3+11]);

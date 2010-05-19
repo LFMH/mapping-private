@@ -21,7 +21,9 @@ int getChannelIndex
 class CloudAlgo
 {
  public:
-  CloudAlgo () {};
+  int verbosity_level_;
+
+  CloudAlgo () { verbosity_level_ = INT_MAX; };
   
   typedef void OutputType;
   typedef sensor_msgs::PointCloud InputType;

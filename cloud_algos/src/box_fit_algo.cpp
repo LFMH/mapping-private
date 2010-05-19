@@ -104,7 +104,7 @@ std::vector<std::string> BoxEstimation::provides ()
 
 std::string BoxEstimation::process (const boost::shared_ptr<const InputType> input)
 {
-  ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
+  if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
 
   // Compute model coefficients
   find_model (input, coeff_);
@@ -113,7 +113,7 @@ std::string BoxEstimation::process (const boost::shared_ptr<const InputType> inp
   triangulate_box (input, coeff_);
 
   // Publish fitted box on marker topic
-  ROS_INFO ("Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
+  if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
   publish_marker (input, coeff_);
 
   // Get which points verify the model and which don't
@@ -223,7 +223,7 @@ void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::P
     else
       contained_.push_back(i);
   }
-  ROS_INFO("%ld points verify model, %ld are outside of it, and %ld are contained in it", inliers_.size(), outliers_.size(), contained_.size());
+  if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] %ld points verify model, %ld are outside of it, and %ld are contained in it", inliers_.size(), outliers_.size(), contained_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -284,14 +284,14 @@ void BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   }
 
   std::vector<float>& ot = all_descriptor_results[0][0];
-  cout << "Orientation tangent size: " <<  ot.size() << endl;
+  if (verbosity_level_ > 1) cout << "Orientation tangent size: " <<  ot.size() << endl;
   for (size_t i = 0 ; i < ot.size() ; i++)
-    cerr << "Orientation tangent value(s): " << ot[i] << endl;
+    if (verbosity_level_ > 1) cerr << "Orientation tangent value(s): " << ot[i] << endl;
 
   //   // ----------------------------------------------
   //   // Print out the bounding box dimension features for the first point 0
   std::vector<float>& pt0_bbox_features = all_descriptor_results[1][0];
-  cout << "Bounding box features size: " <<  pt0_bbox_features.size() << endl;
+  if (verbosity_level_ > 1) cout << "Bounding box features size: " <<  pt0_bbox_features.size() << endl;
   for (size_t i = 0 ; i < pt0_bbox_features.size() ; i++)
   {
     if (i < 12)
@@ -299,10 +299,10 @@ void BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
       coeff[i+3] = pt0_bbox_features[i];
     }
     else
-      ROS_WARN("Box dimensions bigger than 3 - unusual");
+      if (verbosity_level_ > -1) ROS_WARN("[BoxEstimation] Box dimensions bigger than 3 - unusual");
   }
-  ROS_INFO("Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
-  ROS_INFO("Eigen vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f", pt0_bbox_features[3], pt0_bbox_features[4], 
+  if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
+  if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] Eigen vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f", pt0_bbox_features[3], pt0_bbox_features[4],
            pt0_bbox_features[5], pt0_bbox_features[6], pt0_bbox_features[7], pt0_bbox_features[8], 
            pt0_bbox_features[9], pt0_bbox_features[10],pt0_bbox_features[11]);
 }

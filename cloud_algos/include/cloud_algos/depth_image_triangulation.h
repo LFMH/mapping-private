@@ -139,10 +139,7 @@ class DepthImageTriangulation : public CloudAlgo
     save_pcd_ = false;
     line_nr_in_channel_ = index_nr_in_channel_ = -1;
   }
-  ~DepthImageTriangulation ()
-  {
-    
-  }
+  //~DepthImageTriangulation () { }
 
   ros::Publisher createPublisher (ros::NodeHandle& nh)
   {

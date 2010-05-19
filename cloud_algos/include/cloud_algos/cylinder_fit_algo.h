@@ -72,7 +72,7 @@ namespace cloud_algos
 class CylinderEstimation : public CloudAlgo
 {
 public:
-  CylinderEstimation () { };
+  CylinderEstimation () : CloudAlgo () { };
   typedef triangle_mesh::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 

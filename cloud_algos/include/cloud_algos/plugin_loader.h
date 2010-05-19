@@ -9,7 +9,7 @@ namespace cloud_algos
 class PipelineLoader : public CloudAlgo
 {
  public:
-  PipelineLoader () { };
+  PipelineLoader () : CloudAlgo () { };
   typedef std_msgs::Empty OutputType;
   typedef sensor_msgs::PointCloud InputType;
 

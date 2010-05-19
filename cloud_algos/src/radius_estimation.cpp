@@ -127,10 +127,12 @@ std::string LocalRadiusEstimation::process (const boost::shared_ptr<const LocalR
 
   int cIdx = getChannelIndex(cloud, "curvature");
   if (rmin2curvature_)
+  {
     if (cIdx == -1)
       ROS_ERROR ("[LocalRadiusEstimation] Overwriting of curvature values was requested but the channel doesn't exist!");
     else
       ROS_WARN ("[LocalRadiusEstimation] Overwriting curvature values with the estimated minimal local radius (r_min)!");
+  }
 
   // Estimate radiuses
   ts = ros::Time::now ();

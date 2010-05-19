@@ -84,7 +84,7 @@ std::vector<std::string> CylinderEstimation::provides ()
 
 std::string CylinderEstimation::process (const boost::shared_ptr<const InputType> input)
 {
-  ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
+  if (verbosity_level_ > 0) ROS_INFO ("PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
   points_->header   = input->header;
   points_->points   = input->points;
   points_->channels = input->channels;
@@ -136,22 +136,22 @@ void CylinderEstimation::estimatePointNormals (sensor_msgs::PointCloud cloud)
   //cloud->points   = cloud_->points;
   //cloud->channels = cloud_->channels;
   ros::Time ts = ros::Time::now ();
-  ROS_INFO ("+ estimatePointNormals, %ld", cloud.points.size ());
+  if (verbosity_level_ > 0) ROS_INFO ("+ estimatePointNormals, %ld", cloud.points.size ());
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
   std::vector<std::vector<int> > points_k_indices;
-  ROS_INFO ("1 estimatePointNormals");
+  if (verbosity_level_ > 0) ROS_INFO ("1 estimatePointNormals");
   // Allocate enough space for point indices
   points_k_indices.resize (cloud.points.size ());
-  ROS_INFO ("2 estimatePointNormals %i", k_);
+  if (verbosity_level_ > 0) ROS_INFO ("2 estimatePointNormals %i", k_);
   for (int i = 0; i < (int)cloud.points.size (); i++)
     points_k_indices[i].resize (k_);
   // Get the nerest neighbors for all the point indices in the bounds
-  ROS_INFO ("3 estimatePointNormals");
+  if (verbosity_level_ > 0) ROS_INFO ("3 estimatePointNormals");
   std::vector<float> distances;
   for (int i = 0; i < (int)cloud.points.size (); i++)
     kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
   
-  ROS_INFO ("4 estimatePointNormals");
+  if (verbosity_level_ > 0) ROS_INFO ("4 estimatePointNormals");
   // Figure out the viewpoint value in the point cloud frame
   geometry_msgs::PointStamped viewpoint_laser, viewpoint_cloud;
   
@@ -161,7 +161,7 @@ void CylinderEstimation::estimatePointNormals (sensor_msgs::PointCloud cloud)
   //viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
   
   // Set the viewpoint in the laser coordinate system to 0,0,0
-  ROS_INFO ("5 estimatePointNormals");
+  if (verbosity_level_ > 0) ROS_INFO ("5 estimatePointNormals");
   viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
   
   ////////////////////////////////////////////////////////////////////////////
@@ -177,7 +177,7 @@ void CylinderEstimation::estimatePointNormals (sensor_msgs::PointCloud cloud)
   //     }
   
   
-  ROS_INFO ("5 estimatePointNormals");
+  if (verbosity_level_ > 0) ROS_INFO ("5 estimatePointNormals");
   //#pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)cloud.points.size (); i++)
   {
@@ -194,7 +194,7 @@ void CylinderEstimation::estimatePointNormals (sensor_msgs::PointCloud cloud)
   }
   // Delete the kd-tree
   delete kdtree;
-  ROS_INFO("estimatePointNormals completed in %f seconds",(ros::Time::now () - ts).toSec ());
+  if (verbosity_level_ > 0) ROS_INFO("estimatePointNormals completed in %f seconds",(ros::Time::now () - ts).toSec ());
 }
 
 
@@ -216,12 +216,12 @@ void CylinderEstimation::find_model(sensor_msgs::PointCloud cloud, std::vector<d
     if(result)
     {
       std::vector<int> inliers = sac_->getInliers ();
-      ROS_INFO("inliers size %ld", inliers.size());
+      if (verbosity_level_ > 0) ROS_INFO("inliers size %ld", inliers.size());
       cloud_geometry::getPointCloud (cloud, inliers, *cylinder_points_);
       
       
       sac_->computeCoefficients (coeff);
-      ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+      if (verbosity_level_ > 0) ROS_INFO("Cylinder coefficients: %f %f %f %f %f %f %f", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
       
       // // std::vector<double> coeff_ref;
       sac_->refineCoefficients (coeff);
@@ -229,11 +229,11 @@ void CylinderEstimation::find_model(sensor_msgs::PointCloud cloud, std::vector<d
       
       // transform coefficients to get the limits of the cylinder
       changeAxisToMinMax(cylinder_points_->points, inliers, coeff);
-      ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
+      if (verbosity_level_ > 0) ROS_INFO("Cylinder coefficients in min-max mode: %g %g %g %g %g %g %g", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
       
       cloud_geometry::getPointCloudOutside(cloud, inliers, *outlier_points_);
       outlier_pub_.publish (outlier_points_);
-      ROS_INFO ("Publishing data on topic %s with nr of points %ld", nh_.resolveName (output_outliers_topic_).c_str (), 
+      if (verbosity_level_ > 0) ROS_INFO ("Publishing data on topic %s with nr of points %ld", nh_.resolveName (output_outliers_topic_).c_str (),
                 outlier_points_->points.size());
     }
   } 
@@ -261,7 +261,7 @@ void CylinderEstimation::changeAxisToMinMax (const std::vector<geometry_msgs::Po
     if (t < min_t) min_t = t;
     if (t > max_t) max_t = t;
   }
-  ROS_INFO("min, max t %lf - %lf = %f ", min_t, max_t, max_t - min_t);
+  if (verbosity_level_ > 0) ROS_INFO("min, max t %lf - %lf = %f ", min_t, max_t, max_t - min_t);
   // update coefficients with the two extreme points on the axis line
   coeff[0] = p0.x() + min_t * direction.x ();
   coeff[1] = p0.y() + min_t * direction.y ();
@@ -323,7 +323,7 @@ void CylinderEstimation::triangulate_cylinder(std::vector<double> &coeff)
  */  
 void CylinderEstimation::publish_model_rviz (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
-  ROS_INFO("Publishing on cylinder_marker topic");
+  if (verbosity_level_ > 0) ROS_INFO("Publishing on cylinder_marker topic");
   computeMarker (cloud, coeff);
   marker_pub_.publish (marker_);
 }
@@ -339,7 +339,7 @@ void CylinderEstimation::computeMarker (boost::shared_ptr<const sensor_msgs::Poi
   btVector3 marker_axis(0, 0, 1);
 
   btQuaternion qt(marker_axis.cross(axis), marker_axis.angle(axis));
-  ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
+  if (verbosity_level_ > 0) ROS_INFO("qt x, y, z, w:  %f, %f, %f, %f", qt.x(), qt.y(), qt.z(), qt.w());
 
   //marker.header.frame_id = points_->header.frame_id;
   //marker.header.stamp = points_->header.stamp;
