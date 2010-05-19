@@ -12,7 +12,6 @@
     <param name="input_cloud_topic" value="/shoulder_cloud" />
     <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
     <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
-    <param name="clip_origin_" value="base_link" />
     <param name="box_min_y" value="-3.0" />
     <param name="box_max_y" value="3.0" />
     <param name="box_min_x" value="-3.0" />
