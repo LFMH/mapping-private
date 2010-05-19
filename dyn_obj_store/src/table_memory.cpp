@@ -142,6 +142,7 @@ class TableMemory
     ros::Publisher cloud_pub_;
     ros::Subscriber table_sub_;
     ros::Subscriber cop_sub_;
+    ros::Publisher table_mesh_pub_;
 
     // service call related stuff
     ros::ServiceServer table_memory_clusters_service_;
@@ -230,6 +231,7 @@ class TableMemory
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
+      table_mesh_pub_ = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/CylinderEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
@@ -367,7 +369,7 @@ class TableMemory
         int j = (i+1) % old_table.polygon.points.size();
         double x = old_table.polygon.points[i].x - old_table.polygon.points[j].x;
         double y = old_table.polygon.points[i].y - old_table.polygon.points[j].y;
-        double length = x*x + y*y;
+        double length = sqrt(x*x + y*y);
         // cross product with Z
         contour->channels[0].values[i] = contour->channels[0].values[2*i] = -y/length;
         contour->channels[1].values[i] = contour->channels[1].values[2*i] =  x/length;
@@ -383,8 +385,7 @@ class TableMemory
       boost::shared_ptr<const RobustBoxEstimation::OutputType> table_mesh = ((RobustBoxEstimation*)alg_box)->output ();
       old_table.coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
       ROS_INFO("[update_table] Publishing result as triangle_mesh::TriangleMesh on topic: table_mesh");
-      ros::Publisher pub_table_mesh = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
-      pub_table_mesh.publish (table_mesh);
+      table_mesh_pub_.publish (table_mesh);
       alg_box->post();
     }
 
