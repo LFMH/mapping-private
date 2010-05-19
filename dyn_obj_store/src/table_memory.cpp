@@ -79,7 +79,7 @@ struct Table
   geometry_msgs::Point32 center;
   geometry_msgs::Polygon polygon;
   int color;
-
+  std::vector<double> coeff; 
   std::vector<TableStateInstance*> inst;
 
   TableStateInstance *getCurrentInstance ()
@@ -196,6 +196,7 @@ class TableMemory
         std::vector<long>idxs=lo_ids_it->second;
         ret.table_id = idxs[0];
         ret.table_center =  tables[idxs[0]].center;
+        ret.coeff =  tables[idxs[0]].coeff;
         ret.stamp =  tables[idxs[0]].inst[idxs[1]]->time_instance;
         ret.first_stamp =  first_stamp_;
         ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
@@ -380,6 +381,7 @@ class TableMemory
       std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process (contour);
       ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
       boost::shared_ptr<const RobustBoxEstimation::OutputType> table_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+      old_table.coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
       ROS_INFO("[update_table] Publishing result as triangle_mesh::TriangleMesh on topic: table_mesh");
       ros::Publisher pub_table_mesh = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
       pub_table_mesh.publish (table_mesh);
