@@ -350,6 +350,7 @@ class TableMemory
 
       // Create a PCD with normals out of the polygon and it's projection on the ground
       boost::shared_ptr<sensor_msgs::PointCloud> contour (new sensor_msgs::PointCloud);
+      contour->header = new_table->header;
       contour->points = old_table.polygon.points;
       contour->points.insert (contour->points.end (), old_table.polygon.points.begin (), old_table.polygon.points.end ());
       contour->channels.resize (3);
@@ -370,21 +371,20 @@ class TableMemory
         double x = old_table.polygon.points[i].x - old_table.polygon.points[j].x;
         double y = old_table.polygon.points[i].y - old_table.polygon.points[j].y;
         double length = sqrt(x*x + y*y);
-        std::cerr << i << "-" << j << ": " << length << "(" << x << "," << y << ")" << std::endl;
-        // fail-safe for the case the polygon has duplicate or weird lines
+        // fail-safe for the case the polygon has duplicate or weird points
         if (length == 0)
         {
           // this will not be considered by box fitting
-          contour->channels[0].values[i] = contour->channels[0].values[2*i] = 0;
-          contour->channels[1].values[i] = contour->channels[1].values[2*i] = 0;
-          contour->channels[2].values[i] = contour->channels[2].values[2*i] = 1;
+          contour->channels[0].values[i] = contour->channels[0].values[i+old_table.polygon.points.size()] = 0;
+          contour->channels[1].values[i] = contour->channels[1].values[i+old_table.polygon.points.size()] = 0;
+          contour->channels[2].values[i] = contour->channels[2].values[i+old_table.polygon.points.size()] = 1;
         }
         else
         {
           // cross product with Z
-          contour->channels[0].values[i] = contour->channels[0].values[2*i] = -y/length;
-          contour->channels[1].values[i] = contour->channels[1].values[2*i] =  x/length;
-          contour->channels[2].values[i] = contour->channels[2].values[2*i] =  0;
+          contour->channels[0].values[i] = contour->channels[0].values[i+old_table.polygon.points.size()] = -y/length;
+          contour->channels[1].values[i] = contour->channels[1].values[i+old_table.polygon.points.size()] =  x/length;
+          contour->channels[2].values[i] = contour->channels[2].values[i+old_table.polygon.points.size()] =  0;
         }
       }
 
