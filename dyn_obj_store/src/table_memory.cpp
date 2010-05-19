@@ -47,7 +47,7 @@ struct dummy_deleter
 struct TableObject
 {
   TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
-                  object_geometric_type("cluster"), perception_method("") { }
+                  object_geometric_type("cluster"), perception_method(""), lo_id (0) { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -63,6 +63,9 @@ struct TableObject
   std::string object_geometric_type;
   std::string perception_method;
   boost::shared_ptr<const triangle_mesh::TriangleMesh> mesh;
+  unsigned long long lo_id;
+  // this number is _NOT_ unique per cluster! it is meant in a tracking sense!
+  unsigned long long object_id;
 };
 
 /// holds a single snapshot of a table
@@ -134,12 +137,14 @@ class TableMemory
     std::string input_cop_topic_;
     std::string output_cloud_topic_;
     std::string output_table_state_topic_;
+    std::string cop_beliefstate_topic_;
     std::string output_cluster_name_topic_;
 
     // publishers and subscribers
+    ros::Publisher cop_beliefstate_pub_;
+    ros::Publisher cloud_pub_;
     ros::Publisher mem_state_pub_;
     ros::Publisher cluster_name_pub_;
-    ros::Publisher cloud_pub_;
     ros::Subscriber table_sub_;
     ros::Subscriber cop_sub_;
     ros::Publisher table_mesh_pub_;
@@ -161,6 +166,7 @@ class TableMemory
     std::vector<unsigned long long> update_prolog_;
     //this number never resets in the life cycle of program
     unsigned long long object_unique_id_;
+    unsigned long long object_id_counter_;
     //clock when the program started
     ros::Time first_stamp_;
     // THE structure... :D
@@ -215,7 +221,9 @@ class TableMemory
      }
 
   public:
-    TableMemory (ros::NodeHandle &anode) : nh_(anode), cluster_name_counter_(0), counter_(0), color_probability_(0.2), object_unique_id_(0)
+    TableMemory (ros::NodeHandle &anode) 
+    : nh_(anode), cluster_name_counter_(0), counter_(0)
+    , color_probability_(0.2), object_unique_id_(0), object_id_counter_(700000)
     {
       nh_.param ("fix_tables", fix_tables_, false);
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
@@ -223,10 +231,12 @@ class TableMemory
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
       nh_.param ("output_cluster_name_topic", output_cluster_name_topic_, std::string("cluster_names"));       // 15 degrees
       nh_.param ("output_table_state_topic", output_table_state_topic_, std::string("table_mem_state"));       // 15 degrees
+      nh_.param ("cop_beliefstate_topic", cop_beliefstate_topic_, std::string("table_mem_belief"));       // 15 degrees
       nh_.param ("/global_frame_id", global_frame_, std::string("/map"));
       first_stamp_ = ros::Time::now();
       table_sub_ = nh_.subscribe (input_table_topic_, 1, &TableMemory::table_cb, this);
 //       cop_sub_ = nh_.subscribe (input_cop_topic_, 1, &TableMemory::cop_cb, this);
+      cop_beliefstate_pub_ = nh_.advertise<ias_table_msgs::TableObject> (cop_beliefstate_topic_, 1);
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
@@ -464,7 +474,7 @@ class TableMemory
         call.request.command = "update";
         //world frame
         call.request.query.parent_id = 1;
-        call.request.query.id = 0;
+        call.request.query.id = o->lo_id;
 
         //fill in pose
         int width = 4;
@@ -526,6 +536,27 @@ class TableMemory
         //o->lo_id = call.response.answer.id;
       }
       return true;
+    }
+
+    void update_beliefstate_to_cop (int table_num)
+    {
+      for (unsigned int o_idx = 0; o_idx < tables[table_num].getCurrentInstance ()->objects.size (); o_idx++)
+      {
+        TableObject *o = tables[table_num].getCurrentInstance ()->objects [o_idx];
+        ias_table_msgs::TableObject to;
+        to.center = o->center;
+        to.min_bound = o->minP;
+        to.max_bound = o->maxP;
+        to.object_unique_id = o->object_id;
+        to.lo_id = o->lo_id;
+        to.perception_method = o->perception_method;
+        to.sensor_type = o->sensor_type;
+        to.object_type = o->object_type;
+        to.object_color = o->object_color;
+        to.object_geometric_type = o->object_geometric_type;
+
+        cop_beliefstate_pub_.publish (to);
+      }
     }
 
     bool call_cop (int table_num)
@@ -677,6 +708,8 @@ class TableMemory
           if (d < 0.1)
           {
             to_now->name = to_last->name;
+            to_now->lo_id = to_last->lo_id;
+            to_now->object_id = to_last->object_id;
             break;
           }
         }
@@ -685,6 +718,7 @@ class TableMemory
           std::stringstream name;
           name << to_now->object_geometric_type << "_" << cluster_name_counter_++;
           to_now->name = name.str();
+          to_now->object_id = object_id_counter_++;
         }
       }
     }
@@ -829,14 +863,14 @@ class TableMemory
 	  }
           
           // call triangulation on outliers
-//          alg_triangulation->pre();
+          alg_triangulation->pre();
 //          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
 //                        rot_outliers->points.size () << " points." << std::endl;
 //          std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process
 //                      (rot_outliers);
 //          ROS_INFO("got response: %s", process_answer_tri.c_str ());
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
-//          alg_triangulation->post();
+          alg_triangulation->post();
 //break;
         }
       }
@@ -907,7 +941,8 @@ class TableMemory
 //        camera_based_recognition (table_found);
         publish_mem_state (table_found);
         update_table_instance_objects(table_found);
-        //update_jlo (table_found);
+        update_jlo (table_found);
+        update_beliefstate_to_cop (table_found);
         //call_cop (table_found);
         print_mem_stats (table_found);
       }
