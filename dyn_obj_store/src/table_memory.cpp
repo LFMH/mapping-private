@@ -533,7 +533,7 @@ class TableMemory
         }
         printf("\n");
 
-        //o->lo_id = call.response.answer.id;
+        o->lo_id = call.response.answer.id;
       }
       return true;
     }
