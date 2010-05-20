@@ -33,12 +33,12 @@
 #include <vector>
 #include <iostream>
 
-#include <point_cloud_mapping/kdtree/kdtree_ann.h>
-
 // include all descriptors for you
 #include <ias_descriptors_3d/all_descriptors.h>
 
-//computeCentroid
+// kd-tree, getPointCloud and computeCentroid
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
+#include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
 //ros
@@ -169,25 +169,63 @@ boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getOutliers ()
 boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getInliers ()
 {
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
-  ret->header = cloud_->header;
-  for (unsigned int i = 0; i < inliers_.size (); i++)
-    ret->points.push_back (cloud_->points.at (inliers_.at (i)));
+  cloud_geometry::getPointCloud (*cloud_, inliers_, *ret);
+  //ret->points.reserve (inliers_.size ());
+  //ret->header = cloud_->header;
+  //for (unsigned int i = 0; i < inliers_.size (); i++)
+  //  ret->points.push_back (cloud_->points.at (inliers_.at (i)));
   return ret;
 }
 
 boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getContained ()
 {
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
-  ret->header = cloud_->header;
-  for (unsigned int i = 0; i < contained_.size (); i++)
-    ret->points.push_back (cloud_->points.at (contained_.at (i)));
+  cloud_geometry::getPointCloud (*cloud_, contained_, *ret);
+  //ret->points.reserve (contained_.size ());
+  //ret->header = cloud_->header;
+  //for (unsigned int i = 0; i < contained_.size (); i++)
+  //  ret->points.push_back (cloud_->points.at (contained_.at (i)));
   return ret;
+}
+
+boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getThresholdedInliers (double eps_angle)
+{
+  int nxIdx = getChannelIndex(cloud_, "nx");
+  if (nxIdx == -1)
+    return getInliers ();
+  else
+  {
+    Eigen::Matrix3d axes = Eigen::Matrix3d::Map(&coeff_[6]).transpose ();
+    //Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff_[6]).cast<float> ().transpose ();
+    boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+    ret->points.reserve (inliers_.size ());
+    ret->header = cloud_->header;
+    for (unsigned int i = 0; i < inliers_.size (); i++)
+    {
+      Eigen::Vector3d normal (cloud_->channels.at (nxIdx+0).values.at (inliers_.at (i)),
+                              cloud_->channels.at (nxIdx+1).values.at (inliers_.at (i)),
+                              cloud_->channels.at (nxIdx+2).values.at (inliers_.at (i)));
+      // TODO: include top inliers to cylinders! until that we discard the Z inliers here
+      for (int d = 0; d < 2; d++)
+      {
+        double cosine = fabs (normal.dot (axes.row(d)));
+        if (cosine > 1) cosine = 1;
+        if (cosine < -1) cosine = -1;
+        if (acos (cosine) < eps_angle)
+        {
+          ret->points.push_back (cloud_->points.at (inliers_.at (i)));
+          break;
+        }
+      }
+    }
+    return ret;
+  }
 }
 
 void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out)
 {
-  // get the 3 axes
-  Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
+  //Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
+  Eigen::Matrix3d axes = Eigen::Matrix3d::Map(&coeff[6]).transpose ();
   //std::cerr << "the 3 axes:\n" << axes << std::endl;
   //std::cerr << "threshold: " << threshold << std::endl;
 
@@ -198,7 +236,7 @@ void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::P
   for (unsigned i = 0; i < cloud->points.size (); i++)
   {
     // compute point-center
-    Eigen::Vector3f centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
+    Eigen::Vector3d centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
     // project (point-center) on axes and check if inside or outside the +/- dimensions
     bool inlier = false;
     bool outlier = false;

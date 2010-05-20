@@ -34,6 +34,8 @@
 using namespace std;
 using namespace cloud_algos;
 
+#define TMP_FIX 0.02 // another threshold fixed for now :)
+
 void CylinderEstimation::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
@@ -42,6 +44,7 @@ void CylinderEstimation::init (ros::NodeHandle& nh)
   marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("cylinder_marker", 0 );
   model_ = new SACModelCylinder ();
   sac_ = new RANSAC (model_, 0.01);
+  sac_->setProbability (0.99999); // TODO cylinder model is not robust enough...
   nx_ = ny_ = nz_ = -1;
   channels_size_ = 0;
   k_ = 20;
@@ -111,9 +114,9 @@ std::string CylinderEstimation::process (const boost::shared_ptr<const InputType
       points_->channels[d].values.resize (points_->points.size ());
     estimatePointNormals(*points_);
   }
-  find_model(*points_, coeff);
-  triangulate_cylinder(coeff);
-  publish_model_rviz(input, coeff);
+  find_model(*points_, coeff_);
+  triangulate_cylinder(coeff_);
+  publish_model_rviz(input, coeff_);
   return std::string ("ok");
 }
 
@@ -371,8 +374,37 @@ boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getOutliers ()
 
 boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getInliers ()
 {
-  return cylinder_points_;
+  //return cylinder_points_;
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->points.reserve (cylinder_points_->points.size ());
+  ret->header = points_->header;
+  for (unsigned int i = 0; i < points_->points.size (); i++)
+    if (fabs (cloud_geometry::distances::pointToLineDistance (points_->points[i], coeff_) - coeff_[6]) < TMP_FIX)
+      ret->points.push_back (points_->points[i]);
+  return ret;
 }
+
+boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getThresholdedInliers (double eps_angle)
+{
+  //return cylinder_points_;
+  boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  Eigen::Vector3d axis (coeff_[3]-coeff_[0], coeff_[4]-coeff_[1], coeff_[5]-coeff_[2]);
+  for (unsigned int i = 0; i < points_->points.size (); i++)
+  {
+    if (fabs (cloud_geometry::distances::pointToLineDistance (points_->points[i], coeff_) - coeff_[6]) < TMP_FIX)
+    {
+      Eigen::Vector3d relative (coeff_[3]-points_->points[i].x, coeff_[4]-points_->points[i].y, coeff_[5]-points_->points[i].z);
+      Eigen::Vector3d normal (points_->channels[nx_+0].values[i], points_->channels[nx_+1].values[i], points_->channels[nx_+2].values[i]);
+      double cosine = fabs (axis.cross (relative).cross (axis).normalized ().dot (normal));
+      if (cosine > 1) cosine = 1;
+      //if (cosine < -1) cosine = -1;
+      if (fabs (acos (cosine)) < eps_angle)
+        ret->points.push_back (points_->points[i]);
+    }
+  }
+  return ret;
+}
+
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])

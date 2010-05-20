@@ -76,6 +76,7 @@ class BoxEstimation : public CloudAlgo
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getContained ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getThresholdedInliers (double eps_angle);
   virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out);
 
   ////////////////////////////////////////////////////////////////////////////////

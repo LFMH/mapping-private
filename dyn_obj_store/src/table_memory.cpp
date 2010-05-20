@@ -56,6 +56,7 @@ struct TableObject
   std::vector <double> coeffs;
   double score;
   std::vector<int> triangles;
+  int number;
   std::string name;
   std::string sensor_type;
   std::string object_type;
@@ -145,6 +146,7 @@ class TableMemory
     ros::Publisher cloud_pub_;
     ros::Publisher mem_state_pub_;
     ros::Publisher cluster_name_pub_;
+    ros::Publisher marker_pub_;
     ros::Subscriber table_sub_;
     ros::Subscriber cop_sub_;
     ros::Publisher table_mesh_pub_;
@@ -240,6 +242,7 @@ class TableMemory
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("object_marker", 5);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       table_mesh_pub_ = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
@@ -401,6 +404,7 @@ class TableMemory
       // Fit a rectangle to the double contour
       ROS_INFO("[update_table] Calling RobustBoxEstimation with a double contour of size %ld", contour->points.size ());
       CloudAlgo *alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
+      alg_box->verbosity_level_ = 0;
       alg_box->pre();
       std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process (contour);
       ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
@@ -705,18 +709,29 @@ class TableMemory
           diff.z = to_now->center.z - to_last->center.z;
           double d = sqrt (diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
 
-          if (d < 0.1)
+          //if (d < 0.1)
+          if (d < 0.1 && to_now->object_geometric_type == to_last->object_geometric_type)
           {
             to_now->name = to_last->name;
             to_now->lo_id = to_last->lo_id;
             to_now->object_id = to_last->object_id;
+            to_now->number = to_last->number;
+            //if (to_now->object_geometric_type == to_last->object_geometric_type)
+            //  to_now->name = to_last->name;
+            //else
+            //{
+            //  std::stringstream name;
+            //  name << to_now->object_geometric_type << "_" << to_now->number;
+            //  to_now->name = name.str();
+            //}
             break;
           }
         }
         if (to_now->name.length() == 0)
         {
+          to_now->number = cluster_name_counter_++;
           std::stringstream name;
-          name << to_now->object_geometric_type << "_" << cluster_name_counter_++;
+          name << to_now->object_geometric_type << "_" << to_now->number;
           to_now->name = name.str();
           to_now->object_id = object_id_counter_++;
         }
@@ -790,6 +805,10 @@ class TableMemory
       CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
+      alg_triangulation->verbosity_level_ = 0;
+      alg_rot_est->verbosity_level_ = 0;
+      alg_mls->verbosity_level_ = 0;
+      alg_box->verbosity_level_ = 0;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
       ros::Publisher pub_rot = find_publisher ("cloud_algos/CylinderEstimation");
@@ -815,7 +834,7 @@ class TableMemory
           // call MLS
           std::vector<std::string> pre_mls = alg_mls->requires ();
           alg_mls->pre();
-          std::cerr << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
+          std::cout << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
                       (cluster);
@@ -826,41 +845,86 @@ class TableMemory
 
           // call rotational estimation
           alg_rot_est->pre ();
-          std::cerr << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
+          std::cout << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
           std::string process_answer_rot = ((CylinderEstimation*)alg_rot_est)->process
                       (mls_cloud);
+          std::vector<double> cylinder_coeff = ((CylinderEstimation*)alg_rot_est)->getCoeff ();
+          Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
           ROS_INFO("got response: %s", process_answer_rot.c_str ());
           boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
           boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
           boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
+          visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_rot_est)->getMarker ();
           alg_rot_est->post ();
 
           // call box estimation
           alg_box->pre();
-          std::cerr << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
+          std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
                         mls_cloud->points.size () << " points." << std::endl;
           std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
                       (mls_cloud);
-          std::vector <double> box_params;
-          //((RobustBoxEstimation*)alg_box)->get_box_parameters (box_params);
-          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+          std::vector<double> box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
+          ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, box_coeff, 0.01, 0.00001);
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.15);
           ROS_INFO("got response: %s", process_answer_box.c_str ());
           boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+          visualization_msgs::Marker box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
           alg_box->post();
 
-          if (box_inliers->points.size() > rot_inliers->points.size())
+          // publish both markers for each object (same ID but different NS)?
+          box_marker.id = cylinder_marker.id = i;
+          //box_marker.lifetime = cylinder_marker.lifetime = ros::Duration (10);
+          marker_pub_.publish (box_marker);
+          marker_pub_.publish (cylinder_marker);
+
+          // get number of inliers
+          int nrb = box_inliers->points.size();
+          int nrc = rot_inliers->points.size();
+          //int nrc = rot_inliers2->points.size();
+
+          //* TODO thresholded inliers for cylinders work now, but would need to be tuned.. for now stick with this fix
+          bool is_box = false;
+          // TODO visibility, radius histogram and MSAC score would make better checks...
+          if (nrb > nrc)
           {
+            // check if inlier counts are close
+            if ((nrb-nrc)/(double)nrb > 0.02)
+              is_box = true;
+            else
+            {
+              // take the one with smaller volume
+              if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_coeff[6], 2.0))
+                is_box = true;
+            }
+          }
+          //std::stringstream tmp_type;
+          //std::cerr << nrb << " " << nrc << "/" << rot_inliers2->points.size() << " " << is_box << " " <<  cylinder_coeff[6] << " " << axis.normalized()(2) << std::endl;
+          //*/
+
+          // decide on best model
+          if (is_box || cylinder_coeff[6] > 0.1 || (fabs (axis.normalized()(2)) < 0.994 && nrc < 5*nrb)) // maybe 0.985 (80 degrees) is fine, without the check
+          //if (nrb > nrc || cylinder_coeff[6] > 0.15 || fabs (axis.normalized()(2)) < 0.985)
+          {
+            //marker_pub_.publish (box_marker);
             to->mesh = box_mesh;
-            to->object_geometric_type = "box";
+            //tmp_type << mls_cloud->points.size ()/100 << "_B_" << box_inliers->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            //to->object_geometric_type = tmp_type.str ();
+            to->object_geometric_type = "BOX";
             pub_box.publish (box_mesh);
           }
-	  else
+          else
           {
+            //marker_pub_.publish (cylinder_marker);
             to->mesh = rot_mesh;
-            to->object_geometric_type = "cyl";
+            //tmp_type << mls_cloud->points.size ()/100 << "_C_" << box_inliers->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            //to->object_geometric_type = tmp_type.str ();
+            to->object_geometric_type = "CYL";
             pub_rot.publish (rot_mesh);
-	  }
+          }
+          //std::cerr << tmp_type.str () << std::endl;
+          //std::cout << tmp_type.str () << std::endl;
           
           // call triangulation on outliers
           alg_triangulation->pre();

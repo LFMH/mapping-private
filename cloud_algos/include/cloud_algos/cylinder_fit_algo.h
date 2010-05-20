@@ -54,6 +54,7 @@
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/geometry/angles.h>
+#include <point_cloud_mapping/geometry/distances.h>
 //#include <tools/transform.h>
 #include <angles/angles.h>
 
@@ -61,6 +62,9 @@
 #include <triangle_mesh/TriangleMesh.h>
 #include <tf/tf.h>
 
+// Eigen
+#include <Eigen/Array>
+#include <Eigen/Geometry>
 
 #include <cloud_algos/cloud_algos.h>
 
@@ -161,11 +165,12 @@ public:
    * \param cloud input point cloud message
    * \param coeff box coefficients (see find_model function):
    */
-  std::vector<double> getCoeff () { return coeff; }
+  std::vector<double> getCoeff () { return coeff_; }
 
   // Get inlier and outlier points
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
   virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud> getThresholdedInliers (double eps_angle);
 
   boost::shared_ptr<sensor_msgs::PointCloud> points_;
   boost::shared_ptr<sensor_msgs::PointCloud> cylinder_points_;
@@ -193,7 +198,7 @@ protected:
   //KD Tree parameter
   int k_;
   //model's coefficients, i.e. geometrical description
-  std::vector<double> coeff;
+  std::vector<double> coeff_;
     geometry_msgs::Point32 axis_;
   float rotate_inliers_;
   //triangular mesh
