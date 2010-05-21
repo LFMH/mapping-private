@@ -47,7 +47,7 @@ struct dummy_deleter
 struct TableObject
 {
   TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
-                  object_geometric_type("cluster"), perception_method(""), lo_id (0), object_id(700000) { }
+                  object_geometric_type("cluster"), perception_method(""), lo_id (0), object_cop_id(700000) { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -66,7 +66,7 @@ struct TableObject
   boost::shared_ptr<const triangle_mesh::TriangleMesh> mesh;
   unsigned long long lo_id;
   // this number is _NOT_ unique per cluster! it is meant in a tracking sense!
-  unsigned long long object_id;
+  unsigned long long object_cop_id;
 };
 
 /// holds a single snapshot of a table
@@ -169,7 +169,8 @@ class TableMemory
     std::vector<unsigned long long> update_prolog_;
     //this number never resets in the life cycle of program
     unsigned long long object_unique_id_;
-    unsigned long long object_id_counter_;
+    //this sets object_cop_id
+    unsigned long long object_cop_id_counter_;
     //clock when the program started
     ros::Time first_stamp_;
     // THE structure... :D
@@ -209,7 +210,6 @@ class TableMemory
         ret.table_center =  tables[idxs[0]].center;
         ret.coeff =  tables[idxs[0]].coeff;
         ret.stamp =  tables[idxs[0]].inst[idxs[1]]->time_instance;
-        ret.first_stamp =  first_stamp_;
         ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
         if (DEBUG)
         {
@@ -238,7 +238,7 @@ class TableMemory
         //object's unique number
         ret.object_id = id;
         ret.object_geometric_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type;
-        ret.object_tracking_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_id;
+        ret.object_cop_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_cop_id;
         ret.lo_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->lo_id;
       }
       else
@@ -251,7 +251,7 @@ class TableMemory
   public:
     TableMemory (ros::NodeHandle &anode) 
     : nh_(anode), cluster_name_counter_(0), counter_(0)
-    , color_probability_(0.2), object_unique_id_(0), object_id_counter_(700000)
+    , color_probability_(0.2), object_unique_id_(0), object_cop_id_counter_(700000)
     {
       nh_.param ("fix_tables", fix_tables_, false);
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
@@ -580,7 +580,7 @@ class TableMemory
         to.center = o->center;
         to.min_bound = o->minP;
         to.max_bound = o->maxP;
-        to.object_unique_id = o->object_id;
+        to.object_cop_id = o->object_cop_id;
         to.lo_id = o->lo_id;
         to.perception_method = o->perception_method;
         to.sensor_type = o->sensor_type;
@@ -744,7 +744,7 @@ class TableMemory
           {
             to_now->name = to_last->name;
             to_now->lo_id = to_last->lo_id;
-            to_now->object_id = to_last->object_id;
+            to_now->object_cop_id = to_last->object_cop_id;
             to_now->number = to_last->number;
             if (to_now->object_geometric_type == to_last->object_geometric_type)
               to_now->name = to_last->name;
@@ -763,7 +763,7 @@ class TableMemory
           std::stringstream name;
           name << to_now->object_geometric_type << "_" << to_now->number;
           to_now->name = name.str();
-          to_now->object_id = object_id_counter_++;
+          to_now->object_cop_id = object_cop_id_counter_++;
         }
       }
     }
