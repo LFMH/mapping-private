@@ -13,7 +13,7 @@
     <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
     <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
     <param name="box_min_y" value="-3.0" />
-    <param name="box_max_y" value="3.0" />
+    <param name="box_max_y" value="2.0" />
     <param name="box_min_x" value="-3.0" />
     <param name="box_max_x" value="3.0" />
     <param name="box_min_z" value="0.0" />
@@ -37,6 +37,9 @@
     <param name="normal_eps_angle" value="5" />
     <param name="table_delta_z" value="0.01" />
   </node>
+
+
+  <node pkg="tf" type="static_transform_publisher" name="RightEye" args="0.03 0 0 0 0 0 /RightEyeCalc /RightEyeCalcOff 100"/>
 
   <!--Needed because of the imperfect calibration-->
 <!--   <node pkg="tf" type="static_transform_publisher" name="RightEye" args="0.03 0 0 0 0 0 /RightEyeCalc /RightEyeCalcOff 100"/> -->

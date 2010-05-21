@@ -47,7 +47,7 @@ struct dummy_deleter
 struct TableObject
 {
   TableObject (): name(""),  sensor_type(""), object_type(""), object_color(""), 
-                  object_geometric_type("cluster"), perception_method(""), lo_id (0) { }
+                  object_geometric_type("cluster"), perception_method(""), lo_id (0), object_id(700000) { }
   geometry_msgs::Point32 center;
   sensor_msgs::PointCloud point_cluster;
   geometry_msgs::Point32 minP;
@@ -154,6 +154,7 @@ class TableMemory
     // service call related stuff
     ros::ServiceServer table_memory_clusters_service_;
     ros::ServiceClient table_reconstruct_clusters_client_;
+    ros::ServiceClient jlo_client_;
 
     int cluster_name_counter_;
     int counter_;
@@ -174,7 +175,8 @@ class TableMemory
     // THE structure... :D
     std::vector<Table> tables;
     /** @todo have a cupboards structure as well */
-
+  
+    bool DEBUG;
     // plugin loader
     pluginlib::ClassLoader<cloud_algos::CloudAlgo> *cl;
 
@@ -209,11 +211,35 @@ class TableMemory
         ret.stamp =  tables[idxs[0]].inst[idxs[1]]->time_instance;
         ret.first_stamp =  first_stamp_;
         ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
+        if (DEBUG)
+        {
+          if ( ret.object_center.x < -3.0 || ret.object_center.x > 3.0)
+          {
+            ROS_WARN("[TableMemory:] object x pos not possible, logging to table_memory.log");
+            record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.x);
+            ret.object_center.x =  ret.table_center.x;
+          }
+          if ( ret.object_center.y < -3.0 || ret.object_center.y > 3.0)
+          {
+            ROS_WARN("[TableMemory:] object y pos not possible, logging to table_memory.log");
+            record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.y);
+            ret.object_center.y =  ret.table_center.y;
+          }
+          if ( ret.object_center.z < 0.0 || ret.object_center.z > 2.0)
+          {
+            ROS_WARN("[TableMemory:] object z pos not possible, logging to table_memory.log");
+            record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.z);
+            ret.object_center.z =  2 * ret.table_center.z;
+          }
+        }
         ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
         ret.object_color =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_color;
+        ret.object_type = "BreakfastCereal";
         //object's unique number
         ret.object_id = id;
         ret.object_geometric_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type;
+        ret.object_tracking_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_id;
+        ret.lo_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->lo_id;
       }
       else
       {
@@ -244,13 +270,15 @@ class TableMemory
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
       marker_pub_ = nh_.advertise<visualization_msgs::Marker>("object_marker", 5);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
+      jlo_client_ = nh_.serviceClient<vision_srvs::srvjlo> ("/located_object", true);
       table_mesh_pub_ = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/CylinderEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
-
+      
       load_plugins ();
+      DEBUG = false;
     }
 
     bool compare_table (Table& old_table, const ias_table_msgs::TableWithObjects::ConstPtr& new_table)
@@ -319,7 +347,9 @@ class TableMemory
         to->center.x = to->minP.x + (to->maxP.x - to->minP.x) * 0.5;
         to->center.y = to->minP.y + (to->maxP.y - to->minP.y) * 0.5;
         to->center.z = to->minP.z + (to->maxP.z - to->minP.z) * 0.5;
-
+        //TODO check center
+        //if (to->center.z < 0.7)
+        //exit(0);
         inst->objects.push_back (to);
       }
       inst->time_instance = new_table->header.stamp;
@@ -460,8 +490,6 @@ class TableMemory
 
     bool update_jlo (int table_num)
     {
-      ros::ServiceClient jlo_client_ = nh_.serviceClient<vision_srvs::srvjlo> ("/located_object", true);
-
       // TODO:
       //if (!jlo_client_.exists ()) return false;
 
@@ -479,6 +507,7 @@ class TableMemory
         //world frame
         call.request.query.parent_id = 1;
         call.request.query.id = o->lo_id;
+        //call.request.query.id = 0;
 
         //fill in pose
         int width = 4;
@@ -516,7 +545,7 @@ class TableMemory
 
         if (!jlo_client_.call(call))
         {
-          ROS_ERROR ("Error in ROSjloComm: Update of pose information not psossible!\n");
+          ROS_ERROR ("Error in ROSjloComm: Update of pose information not possible!\n");
           return false;
         }
         else if (call.response.error.length() > 0)
@@ -531,11 +560,11 @@ class TableMemory
         {
           for(int c = 0; c < width; c++)
           {
-             printf("%f", call.response.answer.pose[r * width + c]);
+            //printf("%f", call.response.answer.pose[r * width + c]);
           }
-          printf("\n");
+          //printf("\n");
         }
-        printf("\n");
+        //printf("\n");
 
         o->lo_id = call.response.answer.id;
       }
@@ -710,20 +739,21 @@ class TableMemory
           double d = sqrt (diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
 
           //if (d < 0.1)
-          if (d < 0.1 && to_now->object_geometric_type == to_last->object_geometric_type)
+          //if (d < 0.1 && to_now->object_geometric_type == to_last->object_geometric_type)
+          if (d < 0.1)
           {
             to_now->name = to_last->name;
             to_now->lo_id = to_last->lo_id;
             to_now->object_id = to_last->object_id;
             to_now->number = to_last->number;
-            //if (to_now->object_geometric_type == to_last->object_geometric_type)
-            //  to_now->name = to_last->name;
-            //else
-            //{
-            //  std::stringstream name;
-            //  name << to_now->object_geometric_type << "_" << to_now->number;
-            //  to_now->name = name.str();
-            //}
+            if (to_now->object_geometric_type == to_last->object_geometric_type)
+              to_now->name = to_last->name;
+            else
+            {
+              std::stringstream name;
+              name << to_now->object_geometric_type << "_" << to_now->number;
+              to_now->name = name.str();
+            }
             break;
           }
         }
@@ -1108,6 +1138,22 @@ class TableMemory
       }
       std::cerr << "\tCurrent Table : " << table_num << " (" << tables[table_num].getCurrentInstance ()->objects.size () << " objects)" << std::endl;
     }
+
+  int record_to_file(std::string file, double time, double pos)
+  {
+    std::ofstream outdata; // outdata is like cin
+    outdata.open(file.c_str(), std::ios::app); // opens the file
+    if( !outdata )
+    {
+      // file couldn't be opened
+      ROS_ERROR("Error: file could not be opened");
+      exit(1);
+    }
+    outdata << time << " " << pos << std::endl;
+    outdata.close();
+    return 0;
+  }
+
 
     bool
       spin ()
