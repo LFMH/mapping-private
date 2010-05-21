@@ -867,21 +867,59 @@ class TableMemory
                       (mls_cloud);
           std::vector<double> box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
           ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, box_coeff, 0.01, 0.00001);
-          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.15);
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
           ROS_INFO("got response: %s", process_answer_box.c_str ());
           boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
           visualization_msgs::Marker box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
           alg_box->post();
 
-          // publish both markers for each object (same ID but different NS)?
+          /*
+          // create the namespace for the table
+          std::stringstream marker_namespace ("objects_on_table_");
+          marker_namespace << table_num;
+
+          // delete old markers from table
+          // TODO: maybe use action = visualization_msgs::Marker::DELETE
+          for (int j=0; j<20; j++)
+          {
+            visualization_msgs::Marker empty;
+            empty.ns = marker_namespace.str ();
+            empty.id = j;
+            empty.header = mls_cloud->header;
+            empty.type = visualization_msgs::Marker::CUBE;
+            empty.action = visualization_msgs::Marker::ADD;
+            empty.pose.position.x = 0;
+            empty.pose.position.y = 0;
+            empty.pose.position.z = 0;
+            empty.pose.orientation.x = 0;
+            empty.pose.orientation.y = 0;
+            empty.pose.orientation.z = 0;
+            empty.pose.orientation.w = 0;
+            empty.scale.x = 0;
+            empty.scale.y = 0;
+            empty.scale.z = 0;
+            empty.color.a = 0;
+            empty.color.r = 0;
+            empty.color.g = 0;
+            empty.color.b = 0;
+          }
+
+          // set up both markers with same NS/ID, but only one will get published anyways
           box_marker.id = cylinder_marker.id = i;
+          //box_marker.id = cylinder_marker.id = to->number;
+          box_marker.ns = cylinder_marker.ns = marker_namespace.str ();
+          */
+
+          // publish both markers for each object?
           //box_marker.lifetime = cylinder_marker.lifetime = ros::Duration (10);
+          box_marker.id = cylinder_marker.id = i;
           marker_pub_.publish (box_marker);
           marker_pub_.publish (cylinder_marker);
 
           // get number of inliers
-          int nrb = box_inliers->points.size();
-          int nrc = rot_inliers->points.size();
+          int nrb = box_inliers2->points.size();
+          int nrc = rot_inliers2->points.size();
           //int nrc = rot_inliers2->points.size();
 
           //* TODO thresholded inliers for cylinders work now, but would need to be tuned.. for now stick with this fix
@@ -890,7 +928,7 @@ class TableMemory
           if (nrb > nrc)
           {
             // check if inlier counts are close
-            if ((nrb-nrc)/(double)nrb > 0.02)
+            if ((nrb-nrc)/(double)nrb > 0.1) // somewhere between 0.2 and 0.02 :)
               is_box = true;
             else
             {
@@ -899,32 +937,32 @@ class TableMemory
                 is_box = true;
             }
           }
-          //std::stringstream tmp_type;
-          //std::cerr << nrb << " " << nrc << "/" << rot_inliers2->points.size() << " " << is_box << " " <<  cylinder_coeff[6] << " " << axis.normalized()(2) << std::endl;
+          std::stringstream tmp_type;
+          std::cerr << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " <<  cylinder_coeff[6] << " " << axis.normalized()(2) << std::endl;
           //*/
 
           // decide on best model
-          if (is_box || cylinder_coeff[6] > 0.1 || (fabs (axis.normalized()(2)) < 0.994 && nrc < 5*nrb)) // maybe 0.985 (80 degrees) is fine, without the check
+          if (is_box || cylinder_coeff[6] > 0.1 || ((fabs (axis.normalized()(2)) < 0.994) && (nrc < 2*nrb))) // maybe 0.985 (80 degrees) is fine, without the check
           //if (nrb > nrc || cylinder_coeff[6] > 0.15 || fabs (axis.normalized()(2)) < 0.985)
           {
-            //marker_pub_.publish (box_marker);
+            marker_pub_.publish (box_marker);
             to->mesh = box_mesh;
-            //tmp_type << mls_cloud->points.size ()/100 << "_B_" << box_inliers->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            to->object_geometric_type = "Box";
+            tmp_type << mls_cloud->points.size ()/100 << "_B_" << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
             //to->object_geometric_type = tmp_type.str ();
-            to->object_geometric_type = "BOX";
             pub_box.publish (box_mesh);
           }
           else
           {
-            //marker_pub_.publish (cylinder_marker);
+            marker_pub_.publish (cylinder_marker);
             to->mesh = rot_mesh;
-            //tmp_type << mls_cloud->points.size ()/100 << "_C_" << box_inliers->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            to->object_geometric_type = "Cyl";
+            tmp_type << mls_cloud->points.size ()/100 << "_C_" << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
             //to->object_geometric_type = tmp_type.str ();
-            to->object_geometric_type = "CYL";
             pub_rot.publish (rot_mesh);
           }
-          //std::cerr << tmp_type.str () << std::endl;
-          //std::cout << tmp_type.str () << std::endl;
+          std::cerr << tmp_type.str () << std::endl;
+          std::cout << tmp_type.str () << std::endl;
           
           // call triangulation on outliers
           alg_triangulation->pre();

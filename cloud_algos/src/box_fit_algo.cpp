@@ -205,8 +205,8 @@ boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getThresholdedInliers 
       Eigen::Vector3d normal (cloud_->channels.at (nxIdx+0).values.at (inliers_.at (i)),
                               cloud_->channels.at (nxIdx+1).values.at (inliers_.at (i)),
                               cloud_->channels.at (nxIdx+2).values.at (inliers_.at (i)));
-      // TODO: include top inliers to cylinders! until that we discard the Z inliers here
-      for (int d = 0; d < 2; d++)
+      // TODO: include top inliers to cylinders!
+      for (int d = 0; d < 3; d++)
       {
         double cosine = fabs (normal.dot (axes.row(d)));
         if (cosine > 1) cosine = 1;
