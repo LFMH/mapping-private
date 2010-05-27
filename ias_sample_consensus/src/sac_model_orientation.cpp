@@ -213,6 +213,7 @@ namespace ias_sample_consensus
       inliers.resize (0);
       //std::cerr << " DISMISSED" << std::endl;
       return;
+      // TODO: this will increase the iteration count, thus reduces robustness if many points are on the top! do it in getSamples ()!
     }
     //std::cerr << " ACCEPTED" << std::endl;
 

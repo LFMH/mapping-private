@@ -59,7 +59,7 @@ void RobustBoxEstimation::pre ()
 {
   BoxEstimation::pre ();
   nh_.param("eps_angle", eps_angle_, eps_angle_);
-  nh_.param("sac_prob", sac_prob_, sac_prob_);
+  nh_.param("success_probability", success_probability_, success_probability_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,29 +80,71 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
   if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
       model->axis_[0], model->axis_[1], model->axis_[2], eps_angle_);
 
-  // Fit model using RANSAC
-  RANSAC *sac = new RANSAC (model, eps_angle_);
-  sac->setProbability (sac_prob_);
-  vector<int> inliers;
+  // Check probability of success and decide on method
   vector<double> refined;
-  if (!sac->computeModel ())
-  {
-    if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
-    return;
-  }
-  // Get inliers and refine result
-
+  vector<int> inliers;
   /// @NOTE: inliers are actually indexes in the indices_ array, but that is not set (by default it has all the points in the correct order)
-  inliers = sac->getInliers ();
-  if (verbosity_level_ > 1) cerr << "number of inliers: " << inliers.size () << endl;
-  /// @NOTE best_model_ contains actually the samples used to find the best model!
-  model->computeModelCoefficients(model->getBestModel ());
-  vector<double> original = model->getModelCoefficients ();
-  if (verbosity_level_ > 1) cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
-  sac->refineCoefficients(refined);
-  if (verbosity_level_ > 1) cerr << "refitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
-  if (refined[3] == -1)
-    refined = original;
+  if (success_probability_ > 0 && success_probability_ < 1)
+  {
+    if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Using RANSAC with stop probability of %g and model refinement", success_probability_);
+
+    // Fit model using RANSAC
+    RANSAC *sac = new RANSAC (model, eps_angle_);
+    sac->setProbability (success_probability_);
+    if (!sac->computeModel ())
+    {
+      if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
+      return;
+    }
+
+    // Get inliers and refine result
+    inliers = sac->getInliers ();
+    if (verbosity_level_ > 1) cerr << "number of inliers: " << inliers.size () << endl;
+    /// @NOTE best_model_ contains actually the samples used to find the best model!
+    model->computeModelCoefficients(model->getBestModel ());
+    vector<double> original = model->getModelCoefficients ();
+    if (verbosity_level_ > 1) cerr << "original direction: " << original.at (0) << " " << original.at (1) << " " << original.at (2) << ", found at point nr " << original.at (3) << endl;
+    sac->refineCoefficients(refined);
+    if (verbosity_level_ > 1) cerr << "refitted direction: " << refined.at (0) << " " << refined.at (1) << " " << refined.at (2) << ", initiated from point nr " << refined.at (3) << endl;
+    if (refined[3] == -1)
+      refined = original;
+  }
+  else
+  {
+    if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Using exhaustive search in %ld points", cloud->points.size ());
+
+    // Exhaustive search for best model
+    std::vector<int> best_sample;
+    std::vector<int> best_inliers;
+    for (unsigned i = 0; i < cloud->points.size (); i++)
+    {
+      std::vector<int> selection (1);
+      selection[0] = i;
+      model->computeModelCoefficients (selection);
+      model->selectWithinDistance (model->getModelCoefficients (), eps_angle_, inliers);
+      if (best_inliers.size () < inliers.size ())
+      {
+        best_inliers = inliers;
+        best_sample = selection;
+      }
+    }
+
+    // Check if successful and save results
+    if (best_inliers.size () > 0)
+    {
+      model->computeModelCoefficients (best_sample);
+      refined = model->getModelCoefficients ();
+      /// @NOTE: making things transparent for the outside... not really needed
+      inliers = best_inliers;
+      model->setBestModel (best_sample);
+      model->setBestInliers (best_inliers);
+    }
+    else
+    {
+      if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
+      return;
+    }
+  }
 
   // Save fixed axis
   coeff[12+0] = model->axis_[0];

@@ -900,6 +900,11 @@ class TableMemory
           // call MLS
           std::vector<std::string> pre_mls = alg_mls->requires ();
           alg_mls->pre();
+          // TODO: data is too noisy... either this or more aggressive smoothing (see below)
+          ((MovingLeastSquares*)alg_mls)->polynomial_fit_ = false;
+          // TODO: alternative to above: default value is not smoothing enough
+          //double gauss_param = 3*0.03; // 0.03 is the radius, and the bigger this is, the more weight will distant points have
+          //((MovingLeastSquares*)alg_mls)->sqr_gauss_param_ = gauss_param*gauss_param;
           std::cout << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
@@ -910,8 +915,8 @@ class TableMemory
           pub_mls.publish (mls_cloud);
 
           // repeat fits of cylinders and boxes, to stabilize decision
-          int nr_rep_box = 20;
-          int nr_rep_cyl = 3; // fitting cylinders is slow...
+          int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
+          int nr_rep_cyl = 3; // TODO: fitting cylinders is slow... but 4-5 would be better probably
           int sum_nrb = 0;
           int sum_nrc = 0;
 
@@ -960,6 +965,7 @@ class TableMemory
           {
             alg_box->pre();
             ((RobustBoxEstimation*)alg_box)->publish_marker_ = false;
+            ((RobustBoxEstimation*)alg_box)->success_probability_ = 1; // do exhaustive search for best model
             std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
                         (mls_cloud);
             ROS_INFO("got response: %s", process_answer_box.c_str ());
@@ -1008,7 +1014,6 @@ class TableMemory
           if (nrc == 0)
             { is_box = true; decision = 0; }
           else
-          //*
           {
             Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
             axis_z = axis.normalized()(2);
@@ -1025,50 +1030,21 @@ class TableMemory
             else
               decision = 4;
           }
-          //*/
-          /*
-          {
-            Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
-            axis_z = axis.normalized()(2);
-            cylinder_radius = cylinder_coeff[6];
-            if (nrb > nrc)
-            {
-              // check if models are dissimilar enough
-              if ((nrb-nrc)/nrb > 0.4) // if no other check: somewhere between 0.2 and 0.02 :)
-                { is_box = true; decision = 1; }
-              // same for best inliers
-              else if (nrb2 > nrc2)
-              {
-                // check if best inlier counts are close
-                double proportion = (nrb2-nrc2)/nrb2;
-                if (proportion > 0.4)
-                  { is_box = true; decision = 2; }
-                // take the one with smaller volume (and cylinder if they are close?)
-                else if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0))
-                  { is_box = true; decision = 3; }
-                else
-                  decision = 4;
-                //else if (proportion > 0.1)
-                //  is_box = true;
-                //else if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0))
-                //  is_box = true;
-              }
-            }
-          }
-          //*/
-          //std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
+
+          // maybe make this a parameter :)
+          int debug = 2;
+          if (debug > 1)
+            std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
           // save the best model
           std::stringstream tmp_type;
           // extra checks of radius size and orientation to limit cylinders
-          //if (is_box || cylinder_radius > 0.1 || ((fabs (axis_z) < 0.994) && (nrc/nrb < 2))) // maybe 0.985 (80 degrees) is fine, without the check
-          if (is_box || cylinder_radius > 0.1 || fabs (axis_z) < 0.977) // ideal: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
+          if (is_box || cylinder_radius > 0.08 || fabs (axis_z) < 0.966) // this is 75 degrees; ideal looking: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
           {
             marker_pub_.publish (box_marker);
             to->mesh = box_mesh;
             to->object_geometric_type = "Box";
             tmp_type << mls_cloud->points.size ()/10 << "_B_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
-            //to->object_geometric_type = tmp_type.str ();
             pub_box.publish (box_mesh);
           }
           else
@@ -1077,11 +1053,15 @@ class TableMemory
             to->mesh = rot_mesh;
             to->object_geometric_type = "Cyl";
             tmp_type << mls_cloud->points.size ()/10 << "_C_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
-            //to->object_geometric_type = tmp_type.str ();
             pub_rot.publish (rot_mesh);
           }
-          //std::cerr << tmp_type.str () << std::endl;
-          //std::cout << tmp_type.str () << std::endl;
+          if (debug > 0)
+          {
+            to->object_geometric_type = tmp_type.str ();
+            std::cout << tmp_type.str () << std::endl;
+          }
+          if (debug > 1)
+            std::cerr << tmp_type.str () << std::endl;
           
           // call triangulation on outliers
           alg_triangulation->pre();
