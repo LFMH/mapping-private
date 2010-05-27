@@ -76,7 +76,14 @@ namespace cloud_algos
 class CylinderEstimation : public CloudAlgo
 {
 public:
-  CylinderEstimation () : CloudAlgo () { };
+  // should the result marker be published or only rotated
+  bool publish_marker_; // TODO: get it from parameter server...
+
+  CylinderEstimation () : CloudAlgo ()
+  {
+    publish_marker_ = true;
+  }
+
   typedef triangle_mesh::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 

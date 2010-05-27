@@ -44,7 +44,7 @@ void CylinderEstimation::init (ros::NodeHandle& nh)
   marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("cylinder_marker", 0 );
   model_ = new SACModelCylinder ();
   sac_ = new RANSAC (model_, 0.01);
-  sac_->setProbability (0.99999); // TODO cylinder model is not robust enough...
+  //sac_->setProbability (0.99999); // TODO cylinder model is not robust enough... but it is also slow...
   nx_ = ny_ = nz_ = -1;
   channels_size_ = 0;
   k_ = 20;
@@ -116,7 +116,10 @@ std::string CylinderEstimation::process (const boost::shared_ptr<const InputType
   }
   find_model(*points_, coeff_);
   triangulate_cylinder(coeff_);
-  publish_model_rviz(input, coeff_);
+  if (publish_marker_)
+    publish_model_rviz(input, coeff_);
+  else
+    computeMarker (input, coeff_);
   return std::string ("ok");
 }
 
@@ -388,6 +391,8 @@ boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getThresholdedInl
 {
   //return cylinder_points_;
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
+  ret->points.reserve (cylinder_points_->points.size ());
+  ret->header = points_->header;
   Eigen::Vector3d axis (coeff_[3]-coeff_[0], coeff_[4]-coeff_[1], coeff_[5]-coeff_[2]);
   for (unsigned int i = 0; i < points_->points.size (); i++)
   {

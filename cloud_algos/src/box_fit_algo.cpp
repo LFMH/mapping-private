@@ -84,6 +84,7 @@ void BoxEstimation::pre  ()
   marker_pub_ = nh_.advertise<visualization_msgs::Marker>(output_box_topic_, 0 );
   nh_.param("threshold_in", threshold_in_, threshold_in_);
   nh_.param("threshold_out", threshold_out_, threshold_out_);
+  nh_.param("publish_marker", publish_marker_, publish_marker_);
 }
 
 void BoxEstimation::post ()
@@ -114,7 +115,10 @@ std::string BoxEstimation::process (const boost::shared_ptr<const InputType> inp
 
   // Publish fitted box on marker topic
   if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
-  publish_marker (input, coeff_);
+  if (publish_marker_)
+    publish_marker (input, coeff_);
+  else
+    computeMarker (input, coeff_);
 
   // Get which points verify the model and which don't
   cloud_ = input;

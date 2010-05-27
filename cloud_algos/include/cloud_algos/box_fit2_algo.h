@@ -60,7 +60,8 @@ class RobustBoxEstimation : public BoxEstimation
   RobustBoxEstimation ()
   {
     eps_angle_ = 0.1; // approximately 6 degrees
-    sac_prob_ = 0.9999; // increasing the default precision of RANSAC a bit, maybe it helps
+    sac_prob_ = 0.99; // default value from SAC
+    //sac_prob_ = 0.9999; // increasing the default precision of RANSAC a bit, maybe it helps
   };
 
   // Overwritten Cloud Algo stuff

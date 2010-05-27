@@ -851,6 +851,42 @@ class TableMemory
       {
         ROS_INFO ("[reconstruct_table_objects] Table has %i objects.", (int)t.getCurrentInstance ()->objects.size());
 
+        // create the marker name-space for the table
+        std::stringstream marker_namespace;
+        marker_namespace << "objects_on_table_" << table_num;
+
+        // TODO: keep track of markers and use action = visualization_msgs::Marker::DELETE
+        /*
+        if (t.getCurrentInstance ()->objects.size () > 0)
+        {
+          // delete old markers from table
+          for (int j=0; j<20; j++)
+          {
+            visualization_msgs::Marker empty;
+            empty.ns = marker_namespace.str ();
+            empty.id = j;
+            empty.header = t.getCurrentInstance ()->objects.at (0)->point_cluster.header;
+            empty.type = visualization_msgs::Marker::CUBE;
+            empty.action = visualization_msgs::Marker::ADD;
+            empty.pose.position.x = 0;
+            empty.pose.position.y = 0;
+            empty.pose.position.z = 0;
+            empty.pose.orientation.x = 0;
+            empty.pose.orientation.y = 0;
+            empty.pose.orientation.z = 1;
+            empty.pose.orientation.w = 1;
+            empty.scale.x = 0;
+            empty.scale.y = 0;
+            empty.scale.z = 0;
+            empty.color.a = 0;
+            empty.color.r = 0;
+            empty.color.g = 0;
+            empty.color.b = 0;
+            marker_pub_.publish (empty);
+          }
+        }
+        //*/
+
         for (int i = 0; i < (signed int) t.getCurrentInstance ()->objects.size (); i++)
         {
           TableObject* to = t.getCurrentInstance ()->objects.at (i);
@@ -868,117 +904,170 @@ class TableMemory
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
                       (cluster);
-          ROS_INFO("got response: %s", process_answer_mls.c_str ());
+          //ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
           pub_mls.publish (mls_cloud);
 
+          // repeat fits of cylinders and boxes, to stabilize decision
+          int nr_rep_box = 20;
+          int nr_rep_cyl = 3; // fitting cylinders is slow...
+          int sum_nrb = 0;
+          int sum_nrc = 0;
+
           // call rotational estimation
-          alg_rot_est->pre ();
           std::cout << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
-          std::string process_answer_rot = ((CylinderEstimation*)alg_rot_est)->process
-                      (mls_cloud);
-          std::vector<double> cylinder_coeff = ((CylinderEstimation*)alg_rot_est)->getCoeff ();
-          Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
-          ROS_INFO("got response: %s", process_answer_rot.c_str ());
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
-          boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
+          std::vector<double> cylinder_coeff;
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers2 (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh;
           visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_rot_est)->getMarker ();
-          alg_rot_est->post ();
+          for (int j = 0; j < nr_rep_cyl; j++)
+          {
+            alg_rot_est->pre ();
+            ((CylinderEstimation*)alg_rot_est)->publish_marker_ = false;
+            std::string process_answer_rot = ((CylinderEstimation*)alg_rot_est)->process
+                        (mls_cloud);
+            ROS_INFO("got response: %s", process_answer_rot.c_str ());
+            //boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
+            boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
+            alg_rot_est->post ();
+            ROS_INFO("found cylinder with %ld inliers", tmp_rot_inliers2->points.size ());
+            // summing up inliers and saving the best results
+            sum_nrc += tmp_rot_inliers2->points.size ();
+            if (tmp_rot_inliers2->points.size () > rot_inliers2->points.size ())
+            {
+              rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
+              rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
+              rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
+              rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
+              cylinder_marker = ((CylinderEstimation*)alg_rot_est)->getMarker ();
+              cylinder_coeff = ((CylinderEstimation*)alg_rot_est)->getCoeff ();
+            }
+          }
 
           // call box estimation
-          alg_box->pre();
           std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
                         mls_cloud->points.size () << " points." << std::endl;
-          std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
-                      (mls_cloud);
-          std::vector<double> box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
-          ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, box_coeff, 0.01, 0.00001);
-          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
-          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
-          ROS_INFO("got response: %s", process_answer_box.c_str ());
-          boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
-          visualization_msgs::Marker box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
-          alg_box->post();
-
-          /*
-          // create the namespace for the table
-          std::stringstream marker_namespace ("objects_on_table_");
-          marker_namespace << table_num;
-
-          // delete old markers from table
-          // TODO: maybe use action = visualization_msgs::Marker::DELETE
-          for (int j=0; j<20; j++)
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 (new sensor_msgs::PointCloud ());
+          std::vector<double> box_coeff;
+          boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh;
+          visualization_msgs::Marker box_marker;
+          for (int j = 0; j < nr_rep_box; j++)
           {
-            visualization_msgs::Marker empty;
-            empty.ns = marker_namespace.str ();
-            empty.id = j;
-            empty.header = mls_cloud->header;
-            empty.type = visualization_msgs::Marker::CUBE;
-            empty.action = visualization_msgs::Marker::ADD;
-            empty.pose.position.x = 0;
-            empty.pose.position.y = 0;
-            empty.pose.position.z = 0;
-            empty.pose.orientation.x = 0;
-            empty.pose.orientation.y = 0;
-            empty.pose.orientation.z = 0;
-            empty.pose.orientation.w = 0;
-            empty.scale.x = 0;
-            empty.scale.y = 0;
-            empty.scale.z = 0;
-            empty.color.a = 0;
-            empty.color.r = 0;
-            empty.color.g = 0;
-            empty.color.b = 0;
+            alg_box->pre();
+            ((RobustBoxEstimation*)alg_box)->publish_marker_ = false;
+            std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
+                        (mls_cloud);
+            ROS_INFO("got response: %s", process_answer_box.c_str ());
+            std::vector<double> tmp_box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
+            ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, tmp_box_coeff, 0.01, 0.00001);
+            //boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+            boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
+            alg_box->post();
+            ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
+            // summing up inliers and saving the best results
+            sum_nrb += tmp_box_inliers2->points.size ();
+            if (tmp_box_inliers2->points.size () > box_inliers2->points.size ())
+            {
+              box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+              box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
+              box_coeff = tmp_box_coeff;
+              box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+              box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
+            }
           }
 
           // set up both markers with same NS/ID, but only one will get published anyways
           box_marker.id = cylinder_marker.id = i;
           //box_marker.id = cylinder_marker.id = to->number;
           box_marker.ns = cylinder_marker.ns = marker_namespace.str ();
-          */
 
           // publish both markers for each object?
           //box_marker.lifetime = cylinder_marker.lifetime = ros::Duration (10);
-          box_marker.id = cylinder_marker.id = i;
-          marker_pub_.publish (box_marker);
-          marker_pub_.publish (cylinder_marker);
+          //box_marker.id = cylinder_marker.id = i;
+          //marker_pub_.publish (box_marker);
+          //marker_pub_.publish (cylinder_marker);
 
           // get number of inliers
-          int nrb = box_inliers2->points.size();
-          int nrc = rot_inliers2->points.size();
-          //int nrc = rot_inliers2->points.size();
+          double nrb = sum_nrb/(double)nr_rep_box;
+          double nrc = sum_nrc/(double)nr_rep_cyl;
+          // using doubles to avoid ugly casting :)
+          double nrb2 = box_inliers2->points.size();
+          double nrc2 = rot_inliers2->points.size();
 
-          //* TODO thresholded inliers for cylinders work now, but would need to be tuned.. for now stick with this fix
+          // decide on box versus cylinder
           bool is_box = false;
+          double axis_z = 0;
+          double cylinder_radius = 0;
+          int decision = -1;
           // TODO visibility, radius histogram and MSAC score would make better checks...
-          if (nrb > nrc)
+          if (nrc == 0)
+            { is_box = true; decision = 0; }
+          else
+          //*
           {
-            // check if inlier counts are close
-            if ((nrb-nrc)/(double)nrb > 0.1) // somewhere between 0.2 and 0.02 :)
-              is_box = true;
+            Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+            axis_z = axis.normalized()(2);
+            cylinder_radius = cylinder_coeff[6];
+            // check if models are dissimilar enough
+            if (nrc/nrb < 0.6)
+              { is_box = true; decision = 1; }
+            // same for best inliers
+            else if (nrc2/nrb2 < 0.6)
+              { is_box = true; decision = 2; }
+            // since box has inliers on top as well, (unless cylinder has more support) take the one with smaller volume
+            else if ((nrb > nrc) && (nrb2 > nrc2) && (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0)))
+              { is_box = true; decision = 3; }
             else
+              decision = 4;
+          }
+          //*/
+          /*
+          {
+            Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+            axis_z = axis.normalized()(2);
+            cylinder_radius = cylinder_coeff[6];
+            if (nrb > nrc)
             {
-              // take the one with smaller volume
-              if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_coeff[6], 2.0))
-                is_box = true;
+              // check if models are dissimilar enough
+              if ((nrb-nrc)/nrb > 0.4) // if no other check: somewhere between 0.2 and 0.02 :)
+                { is_box = true; decision = 1; }
+              // same for best inliers
+              else if (nrb2 > nrc2)
+              {
+                // check if best inlier counts are close
+                double proportion = (nrb2-nrc2)/nrb2;
+                if (proportion > 0.4)
+                  { is_box = true; decision = 2; }
+                // take the one with smaller volume (and cylinder if they are close?)
+                else if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0))
+                  { is_box = true; decision = 3; }
+                else
+                  decision = 4;
+                //else if (proportion > 0.1)
+                //  is_box = true;
+                //else if (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0))
+                //  is_box = true;
+              }
             }
           }
-          std::stringstream tmp_type;
-          std::cerr << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " <<  cylinder_coeff[6] << " " << axis.normalized()(2) << std::endl;
           //*/
+          //std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
-          // decide on best model
-          if (is_box || cylinder_coeff[6] > 0.1 || ((fabs (axis.normalized()(2)) < 0.994) && (nrc < 2*nrb))) // maybe 0.985 (80 degrees) is fine, without the check
-          //if (nrb > nrc || cylinder_coeff[6] > 0.15 || fabs (axis.normalized()(2)) < 0.985)
+          // save the best model
+          std::stringstream tmp_type;
+          // extra checks of radius size and orientation to limit cylinders
+          //if (is_box || cylinder_radius > 0.1 || ((fabs (axis_z) < 0.994) && (nrc/nrb < 2))) // maybe 0.985 (80 degrees) is fine, without the check
+          if (is_box || cylinder_radius > 0.1 || fabs (axis_z) < 0.977) // ideal: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
           {
             marker_pub_.publish (box_marker);
             to->mesh = box_mesh;
             to->object_geometric_type = "Box";
-            tmp_type << mls_cloud->points.size ()/100 << "_B_" << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            tmp_type << mls_cloud->points.size ()/10 << "_B_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
             //to->object_geometric_type = tmp_type.str ();
             pub_box.publish (box_mesh);
           }
@@ -987,12 +1076,12 @@ class TableMemory
             marker_pub_.publish (cylinder_marker);
             to->mesh = rot_mesh;
             to->object_geometric_type = "Cyl";
-            tmp_type << mls_cloud->points.size ()/100 << "_C_" << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size();
+            tmp_type << mls_cloud->points.size ()/10 << "_C_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
             //to->object_geometric_type = tmp_type.str ();
             pub_rot.publish (rot_mesh);
           }
-          std::cerr << tmp_type.str () << std::endl;
-          std::cout << tmp_type.str () << std::endl;
+          //std::cerr << tmp_type.str () << std::endl;
+          //std::cout << tmp_type.str () << std::endl;
           
           // call triangulation on outliers
           alg_triangulation->pre();

@@ -44,12 +44,15 @@ namespace cloud_algos
 class BoxEstimation : public CloudAlgo
 {
  public:
+  // should the result marker be published or only rotated
+  bool publish_marker_; // TODO: add setter and getter and make it protected (also in cylinder fit)
 
   BoxEstimation () : CloudAlgo ()
   {
     output_box_topic_ = std::string("box_marker");
     threshold_in_ = 0.025;
     threshold_out_ = 0.00001;
+    publish_marker_ = true;
   };
 
   typedef triangle_mesh::TriangleMesh OutputType;
