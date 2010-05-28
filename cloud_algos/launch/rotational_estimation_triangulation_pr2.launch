@@ -1,0 +1,78 @@
+<!-- Point Cloud Msg generator -->
+<launch>
+<!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
+<!--  	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/teapot_handle_side-denoise.pcd) $(optenv period 15)" /> -->
+<!-- Rotational Object Estimator -->
+
+<!-- <node pkg="nodelet" type="nodelet" name="pcl_manager_X" args="manager" output="screen" /> -->
+
+
+<!-- Estimate point normals -->
+<!-- <node pkg="nodelet" type="nodelet" name="normal_estimation_X" args="load pcl/NormalEstimation pcl_manager_X" output="screen"> -->
+<!--   <remap from="/normal_estimation_X/input"   to="/cloud_annotated_pc_two" /> -->
+<!--   <remap from="/normal_estimation_X/output" to="/cloud_annotated_normals_pc_two" /> -->
+<!--   <rosparam> -->
+<!--     # -[ Mandatory parameters -->
+<!--     # Set either 'k_search' or 'radius_search' -->
+<!--     k_search: 0 -->
+<!--     radius_search: 0.1 -->
+<!--     # Set the spatial locator. Possible values are: 0 (ANN), 1 (FLANN), 2 (organized) -->
+<!--     spatial_locator: 0 -->
+<!--     # -[ Optional parameters -->
+<!--     use_indices: false    # false by default -->
+<!--     use_surface: false    # false by default -->
+<!--   </rosparam> -->
+<!-- </node> -->
+
+
+ <!-- MUX the data onto one topic -->
+<!--   <node pkg="nodelet" type="nodelet" name="data_mux_1" args="load pcl/NodeletMUX pcl_manager_X" output="screen"> -->
+<!--     <rosparam> -->
+<!--       input_topics: [/cloud_annotated_pc_two, /cloud_annotated_normals_pc_two] -->
+<!--     </rosparam> -->
+<!--   </node> -->
+
+  <!-- Concatenate fields -->
+<!--   <node pkg="nodelet" type="nodelet" name="concatenate_data" args="load pcl/PointCloudConcatenateFieldsSynchronizer pcl_manager_X" output="screen"> -->
+<!--     <remap from="concatenate_data/input" to="/data_mux_1/output" /> -->
+<!--     <rosparam> -->
+<!--       # Number of messages to expect on the input topic -->
+<!--       input_messages: 2 -->
+<!--     </rosparam> -->
+<!--   </node> -->
+
+
+
+<!-- <node pkg="point_cloud_converter" type="point_cloud_converter" name="pc2_converter" output="screen"> -->
+<!--   <remap from="points_in" to="/table_object_detector_passive/cloud_annotated"/> -->
+<!--   <remap from="points2_out" to="/cloud_annotated_pc_two"/> -->
+<!--   <remap from="points2_in" to="/concatenate_data/output"/> -->
+<!--   <remap from="points_out" to="/cloud_annotated_normals_pc_one"/> -->
+<!-- </node> -->
+
+<node pkg="cloud_algos" type="mls_fit_node" name="mls_fit_node" output="screen" respawn="true">
+  <remap from="~cloud_pcd" to="/table_object_detector_passive/cloud_annotated" />
+</node>
+
+
+<node pkg="cloud_algos" type="rotational_estimation_node" name="rotational_estimation_node" output="screen" respawn="true">
+  <remap from="~cloud_pcd" to="/mls_fit_node/cloud_mls" />
+  <param name="output_cloud_outliers" type="string" value="/depth_image_triangulation_node/cloud_pcd"/>
+  <param name="threshold" type="double" value="0.004"/>
+  <param name="probability" type="double" value="0.9999"/>
+  <param name="max_iterations" type="int" value="500"/>
+</node>
+<!-- Point Cloud Triangulation Program -->
+<!-- <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true"> -->
+<!-- </node> -->
+<!-- Topic Concatenator -->
+<!-- <node pkg="topic_tools" type="relay" name="relay_rotational_estimation" args="/rotational_estimation_node/cloud_normals /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/> -->
+<!-- <node pkg="topic_tools" type="relay" name="relay_depth_image_triangulation" args="/depth_image_triangulation_node/cloud_triangulated /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/> -->
+<!-- TriangularMesh to VTK Writer -->
+<!-- <node pkg="cloud_tools" type="triangular_mesh_to_vtk" name="triangular_mesh_to_vtk_node" output="screen" respawn="true"> -->
+<!--   <param name="input_mesh_topic" type="string" value="mesh"/> -->
+<!--   <param name="output_vtk_file" type="string" value="teapot.vtk"/> -->
+<!--   <rosparam param="subscribed_to_nodes">["/depth_image_triangulation_node", "/rotational_estimation_node"]</rosparam> -->
+<!-- </node> -->
+</launch>
+

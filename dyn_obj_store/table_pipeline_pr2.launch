@@ -1,15 +1,15 @@
 <launch>
   <!-- NormalEstimation -->
-<!--   <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation_node" output="screen"> -->
-<!--     <param name="search_k_closest" value="30" /> -->
-<!--     <param name="downsample" value="0" /> -->
-<!--     <remap from="tilt_laser_cloud" to="/shoulder_cloud"/> -->
-<!--     <remap from="cloud_normals" to="/cloud_pcd_normals"/> -->
-<!--   </node> -->
+  <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation_node" output="screen">
+    <param name="search_k_closest" value="30" />
+    <param name="downsample" value="0" />
+    <remap from="/normal_estimation_node/tilt_laser_cloud" to="/shoulder_cloud"/>
+    <remap from="/normal_estimation_node/cloud_normals" to="/cloud_pcd_normals"/>
+  </node>
   
   <!-- Box Filter -->
   <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node" output="screen" respawn="true">
-    <param name="input_cloud_topic" value="/shoulder_cloud" />
+    <param name="input_cloud_topic" value="/cloud_pcd_normals" />
     <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
     <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
     <param name="box_min_y" value="-1.0" />
@@ -31,11 +31,10 @@
   <!-- Table Object Detector (passive version) -->
   <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen"  respawn="true">
     <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
-    <param name="table_delta_z" value="0.02" />
     <param name="output_table_topic" value="/table_with_objects" />
     <param name="sac_distance_threshold" value="0.015" />
     <param name="normal_eps_angle" value="5" />
-    <param name="table_delta_z" value="0.01" />
+    <param name="table_delta_z" value="0.03" />
   </node>
 
 

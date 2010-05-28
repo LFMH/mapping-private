@@ -268,10 +268,10 @@ class TableMemory
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
       cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
-      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("object_marker", 5);
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("object_marker", 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       jlo_client_ = nh_.serviceClient<vision_srvs::srvjlo> ("/located_object", true);
-      table_mesh_pub_ = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 5);
+      table_mesh_pub_ = nh_.advertise <RobustBoxEstimation::OutputType>("table_mesh", 1);
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/MovingLeastSquares"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/CylinderEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));

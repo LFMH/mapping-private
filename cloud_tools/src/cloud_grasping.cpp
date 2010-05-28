@@ -49,76 +49,77 @@ int main(int argc, char** argv)
   //initialize node handle
   ros::init(argc, argv, "cloud_grasp_node");
   ros::NodeHandle nh;
+  std::string input_cloud_topic_;
+  nh.param ("input_cloud_topic", input_cloud_topic_, std::string("cloud_pcd"));
+  cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, cloud_cb, this);
+//   //wait for and initialize services
+//   ros::ServiceClient detection_client = nh.serviceClient<tabletop_object_detector::TabletopDetection>(DETECTION_SERVICE_NAME);
+//   while ( !detection_client.waitForExistence(ros::Duration(3.0)) && nh.ok() )
+//   {
+//     ROS_INFO("Waiting for detection service: %s", DETECTION_SERVICE_NAME.c_str());
+//   }  
+//   while ( !ros::service::waitForService(GRASPING_CLOUD_SERVICE_NAME, ros::Duration(2.0)) && nh.ok() ) 
+//   {
+//     ROS_INFO("Waiting for grasping model service to come up");
+//   }
+//   ros::ServiceClient grasping_cloud_srv = nh.serviceClient<grasping_app_executive::GraspingAppGraspCloud>
+//     (GRASPING_CLOUD_SERVICE_NAME, true);  
+//   while ( !ros::service::waitForService(PLACING_SERVICE_NAME, ros::Duration(2.0)) && nh.ok() ) 
+//   {
+//     ROS_INFO("Waiting for placing service to come up");
+//   }
+//   ros::ServiceClient placing_srv = nh.serviceClient<grasping_app_executive::GraspingAppPlace>(PLACING_SERVICE_NAME, true);
 
-  //wait for and initialize services
-  ros::ServiceClient detection_client = nh.serviceClient<tabletop_object_detector::TabletopDetection>(DETECTION_SERVICE_NAME);
-  while ( !detection_client.waitForExistence(ros::Duration(3.0)) && nh.ok() )
+//   //call tabletop detection to get clusters
+//   tabletop_object_detector::TabletopDetection detect;
+//   detect.request.return_clusters = true;
+//   detect.request.return_models = false;
+//   if (!detection_client.call(detect))
+//   {
+//     ROS_ERROR("Failed to call tabletop detection");
+//     exit(0);
+//   }
+
+  void cloud_cb (const sensor_msgs::PointCloudConstPtr& cloud)
   {
-    ROS_INFO("Waiting for detection service: %s", DETECTION_SERVICE_NAME.c_str());
-  }  
-  while ( !ros::service::waitForService(GRASPING_CLOUD_SERVICE_NAME, ros::Duration(2.0)) && nh.ok() ) 
-  {
-    ROS_INFO("Waiting for grasping model service to come up");
+    ROS_INFO("Cloud received in frame: %s", detect.response.detection.clusters[0].header.frame_id.c_str());
+    
+    grasping_app_executive::ArmSelection arm;
+    arm.which_arm = grasping_app_executive::ArmSelection::RIGHT_ARM;
+    
+    //call grasping service on first cluster
+    grasping_app_executive::GraspingAppGraspCloud grasp;
+    //grasp.request.cloud = detect.response.detection.clusters[0];
+    grasp.request.cloud = cloud;
+    grasp.request.which_arm = arm;
+    if (!grasping_cloud_srv.call(grasp))
+    {
+      ROS_ERROR("Grasping cloud service call failed altogether");
+      exit(0);
+    }
+
+    //process result
+    if (grasp.response.grasp_result.value != grasping_app_executive::ResultCode::SUCCESS)
+    {
+      ROS_ERROR("Grasp failed with error code %d", grasp.response.grasp_result.value);
+      exit(0);
+    }
+    ROS_INFO("Grasp successfully executed");
+
+    grasp_execution::WhichArm which_arm = grasp_execution::RIGHT_ARM;
+
+    //open-loop, place object and get out of there
+    object_grasping::CollisionMapInterface collision_map_interface(NULL);
+    collision_map_interface.detachAllObjectsFromGripper(which_arm);   
+    grasp_execution::MechanismInterface mech_interface;
+    motion_planning_msgs::OrderedCollisionOperations ord;
+    std::vector<motion_planning_msgs::LinkPadding> link_padding;
+    unsigned int actual_steps;
+    mech_interface.translateGripper(which_arm, btVector3(0.0, 0.0, -0.1), 
+                                    true, ord, link_padding, 10, 0, actual_steps);
+    mech_interface.moveGripper(which_arm, grasp_execution::MechanismInterface::GRIPPER_OPEN);
+    mech_interface.translateGripper(which_arm, btVector3(0.0, 0.0, 0.1), 
+                                    true, ord, link_padding, 10, 0, actual_steps);
+    mech_interface.moveArmToSide(which_arm);
   }
-  ros::ServiceClient grasping_cloud_srv = nh.serviceClient<grasping_app_executive::GraspingAppGraspCloud>
-    (GRASPING_CLOUD_SERVICE_NAME, true);  
-  while ( !ros::service::waitForService(PLACING_SERVICE_NAME, ros::Duration(2.0)) && nh.ok() ) 
-  {
-    ROS_INFO("Waiting for placing service to come up");
-  }
-  ros::ServiceClient placing_srv = nh.serviceClient<grasping_app_executive::GraspingAppPlace>(PLACING_SERVICE_NAME, true);
-
-  //call tabletop detection to get clusters
-  tabletop_object_detector::TabletopDetection detect;
-  detect.request.return_clusters = true;
-  detect.request.return_models = false;
-  if (!detection_client.call(detect))
-  {
-    ROS_ERROR("Failed to call tabletop detection");
-    exit(0);
-  }
-  if (detect.response.detection.clusters.empty())
-  {
-    ROS_ERROR("No clusters detected");
-    exit(0);
-  }
-
-  ROS_INFO("Cloud received in frame: %s", detect.response.detection.clusters[0].header.frame_id.c_str());
-  
-  grasping_app_executive::ArmSelection arm;
-  arm.which_arm = grasping_app_executive::ArmSelection::RIGHT_ARM;
-
-  //call grasping service on first cluster
-  grasping_app_executive::GraspingAppGraspCloud grasp;
-  grasp.request.cloud = detect.response.detection.clusters[0];
-  grasp.request.which_arm = arm;
-  if (!grasping_cloud_srv.call(grasp))
-  {
-    ROS_ERROR("Grasping cloud service call failed altogether");
-    exit(0);
-  }
-
-  //process result
-  if (grasp.response.grasp_result.value != grasping_app_executive::ResultCode::SUCCESS)
-  {
-    ROS_ERROR("Grasp failed with error code %d", grasp.response.grasp_result.value);
-    exit(0);
-  }
-  ROS_INFO("Grasp successfully executed");
-
-  grasp_execution::WhichArm which_arm = grasp_execution::RIGHT_ARM;
-
-  //open-loop, place object and get out of there
-  object_grasping::CollisionMapInterface collision_map_interface(NULL);
-  collision_map_interface.detachAllObjectsFromGripper(which_arm);   
-  grasp_execution::MechanismInterface mech_interface;
-  motion_planning_msgs::OrderedCollisionOperations ord;
-  std::vector<motion_planning_msgs::LinkPadding> link_padding;
-  unsigned int actual_steps;
-  mech_interface.translateGripper(which_arm, btVector3(0.0, 0.0, -0.1), 
-				  true, ord, link_padding, 10, 0, actual_steps);
-  mech_interface.moveGripper(which_arm, grasp_execution::MechanismInterface::GRIPPER_OPEN);
-  mech_interface.translateGripper(which_arm, btVector3(0.0, 0.0, 0.1), 
-				  true, ord, link_padding, 10, 0, actual_steps);
-  mech_interface.moveArmToSide(which_arm);
 }
