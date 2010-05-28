@@ -62,6 +62,16 @@
   <param name="probability" type="double" value="0.9999"/>
   <param name="max_iterations" type="int" value="500"/>
 </node>
+
+<node pkg="cloud_tools" type="mesh_to_pointcloud" name="mesh_to_pointcloud" output="screen" respawn="true">
+  <param name="input_mesh_topic" type="string" value="/rotational_estimation_node/cloud_normals"/>
+</node>
+
+<node pkg="cloud_grasping" type="cloud_grasping_node" name="cloud_grasping_node" output="screen" respawn="true">
+  <param name="input_cloud_topic" type="string" value="/mesh_to_pointcloud/mesh_cloud"/>
+</node>
+
+
 <!-- Point Cloud Triangulation Program -->
 <!-- <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true"> -->
 <!-- </node> -->

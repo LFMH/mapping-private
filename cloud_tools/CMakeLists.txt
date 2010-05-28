@@ -23,5 +23,3 @@ target_link_libraries(laser_camera_virtual_view_calibration_node glut GLU GL Xmu
 
 rosbuild_add_executable (test_node src/me.cpp)
 target_link_libraries(test_node glut GLU GL Xmu Xext X11 m g)
-
-#rosbuild_add_executable (cloud_grasping_node src/cloud_grasping.cpp)
