@@ -226,7 +226,7 @@ class TableMemory
             ret.object_center.y =  ret.table_center.y;
           }
           if ( ret.object_center.z < 0.0 || ret.object_center.z > 2.0)
-          {
+          { 
             ROS_WARN("[TableMemory:] object z pos not possible, logging to table_memory.log");
             record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.z);
             ret.object_center.z =  2 * ret.table_center.z;
@@ -234,12 +234,40 @@ class TableMemory
         }
         ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
         ret.object_color =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_color;
-        ret.object_type = "BreakfastCereal";
         //object's unique number
         ret.object_id = id;
         ret.object_geometric_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type;
         ret.object_cop_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_cop_id;
         ret.lo_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->lo_id;
+        if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+            > 0.28 && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          ret.object_type = "Tea-Iced";
+        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 > 0.22 &&
+                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 < 0.28 &&
+                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          ret.object_type = "BreakfastCereal";
+        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 > 0.18 &&
+                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 < 0.22 &&
+                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          ret.object_type = "CowsMilk-Product";
+        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 > 0.07 &&
+                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 < 0.15 &&
+                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+          ret.object_type = "Cup";
+        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 > 0.0 &&
+                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
+                 < 0.07 &&
+                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+          ret.object_type = "Bowl-Eating";
+        else 
+          ret.object_type = "Bowl-Eating";
       }
       else
       {
