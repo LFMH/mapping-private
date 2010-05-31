@@ -232,42 +232,14 @@ class TableMemory
             ret.object_center.z =  2 * ret.table_center.z;
           }
         }
-        ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
+        //ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
         ret.object_color =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_color;
         //object's unique number
         ret.object_id = id;
         ret.object_geometric_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type;
+        ret.object_type =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_type;
         ret.object_cop_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_cop_id;
         ret.lo_id = tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->lo_id;
-        if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-            > 0.28 && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
-          ret.object_type = "Tea-Iced";
-        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 > 0.22 &&
-                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 < 0.28 &&
-                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
-          ret.object_type = "BreakfastCereal";
-        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 > 0.18 &&
-                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 < 0.22 &&
-                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
-          ret.object_type = "CowsMilk-Product";
-        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 > 0.07 &&
-                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 < 0.15 &&
-                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
-          ret.object_type = "Cup";
-        else if ((tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 > 0.0 &&
-                 (tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->maxP.z - tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->minP.z)
-                 < 0.07 &&
-                 tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
-          ret.object_type = "Bowl-Eating";
-        else 
-          ret.object_type = "Bowl-Eating";
       }
       else
       {
@@ -1060,7 +1032,7 @@ class TableMemory
           }
 
           // maybe make this a parameter :)
-          int debug = 2;
+          int debug = 0;
           if (debug > 1)
             std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
@@ -1101,6 +1073,49 @@ class TableMemory
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
           alg_triangulation->post();
 //break;
+          //assign object types based on geom properties and surface types
+          if ((to->maxP.z - to->minP.z) > 0.22
+              && 
+              (to->maxP.x - to->minP.x) < 0.15) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          {
+            ROS_INFO("Found Tea-Iced");
+            to->object_type = "Tea-Iced";
+          }
+          else if ((to->maxP.z - to->minP.z) > 0.22 
+                   &&
+                   (to->maxP.x - to->minP.x) > 0.15)
+                   //(to->maxP.z - to->minP.z)
+                   //< 0.24) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          {
+            ROS_INFO("Found BreakfastCereal");
+            to->object_type = "BreakfastCereal";
+          }
+          else if ((to->maxP.z - to->minP.z) > 0.18 
+                   &&
+                   (to->maxP.z - to->minP.z) < 0.22) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+          {
+            ROS_INFO("Found CowsMilk-Product");
+            to->object_type = "CowsMilk-Product";
+          }
+          else if ((to->maxP.z - to->minP.z) > 0.07 
+                   &&
+                   (to->maxP.z - to->minP.z) < 0.15) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+          {
+            ROS_INFO("Found Cup");
+            to->object_type = "Cup";
+          }
+          else if ((to->maxP.z - to->minP.z)> 0.0 
+                   &&
+                   (to->maxP.z - to->minP.z) < 0.07)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+          {
+            ROS_INFO("Found Bowl-Eating");
+            to->object_type = "Bowl-Eating";
+          }
+          else 
+          {
+            ROS_INFO("nn");
+            to->object_type = "nn";
+          } 
         }
       }
     }
