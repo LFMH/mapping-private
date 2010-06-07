@@ -1076,14 +1076,14 @@ class TableMemory
           //assign object types based on geom properties and surface types
           if ((to->maxP.z - to->minP.z) > 0.22
               && 
-              (to->maxP.x - to->minP.x) < 0.15) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
+              (to->maxP.y - to->minP.y) < 0.15) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
           {
             ROS_INFO("Found Tea-Iced");
             to->object_type = "Tea-Iced";
           }
           else if ((to->maxP.z - to->minP.z) > 0.22 
                    &&
-                   (to->maxP.x - to->minP.x) > 0.15)
+                   (to->maxP.y - to->minP.y) > 0.15)
                    //(to->maxP.z - to->minP.z)
                    //< 0.24) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
           {
