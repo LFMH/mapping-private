@@ -6,6 +6,13 @@
 <!--     <remap from="tilt_laser_cloud" to="/shoulder_cloud"/> -->
 <!--     <remap from="cloud_normals" to="/cloud_pcd_normals"/> -->
 <!--   </node> -->
+<!--   <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation_node" output="screen"> -->
+<!--     <param name="search_k_closest" value="30" /> -->
+<!--     <param name="downsample" value="0" /> -->
+<!--     <remap from="/normal_estimation_node/tilt_laser_cloud" to="/shoulder_cloud"/> -->
+<!--     <remap from="/normal_estimation_node/cloud_normals" to="/cloud_pcd_normals"/> -->
+<!--   </node> -->
+
   
   <!-- Box Filter -->
   <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node" output="screen" respawn="true">
