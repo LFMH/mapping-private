@@ -11,6 +11,7 @@
   <depend package="position_string_rviz_plugin" />
   <depend package="pluginlib" />
   <depend package="cloud_algos" />
+  <depend package="cloud_tools" />
   <depend package="joy" />
   <depend package="roscpp" />
   <depend package="std_msgs" />
