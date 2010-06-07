@@ -1045,7 +1045,7 @@ class TableMemory
             to->mesh = box_mesh;
             to->object_geometric_type = "Box";
             tmp_type << mls_cloud->points.size ()/10 << "_B_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
-            pub_box.publish (box_mesh);
+            //pub_box.publish (box_mesh);
           }
           else
           {
@@ -1053,7 +1053,7 @@ class TableMemory
             to->mesh = rot_mesh;
             to->object_geometric_type = "Cyl";
             tmp_type << mls_cloud->points.size ()/10 << "_C_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
-            pub_rot.publish (rot_mesh);
+            //pub_rot.publish (rot_mesh);
           }
           if (debug > 0)
           {
