@@ -65,12 +65,15 @@ class TableMsgSplit
     ros::Publisher polygon_pub_;
     ros::Publisher clusters_pub_;
 
+    //stretch publishing such that client can process it
+    bool sleep_;
   public:
     TableMsgSplit (ros::NodeHandle &anode) : nh_(anode)
     {
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));
       nh_.param ("output_pcds_topic", output_pcds_topic_, std::string("table_pcds"));
       nh_.param ("output_polygon_topic", output_polygon_topic_, std::string("table_polygon"));
+      nh_.param ("sleep", sleep_, false);
       
       table_sub_ = nh_.subscribe (input_table_topic_, 1, &TableMsgSplit::table_cb, this);
       polygon_pub_ = nh_.advertise<geometry_msgs::PolygonStamped> (output_polygon_topic_, 1);
@@ -90,6 +93,9 @@ class TableMsgSplit
         sensor_msgs::PointCloud pc;
         pc.header = table->header;
 	      pc.points = table->objects[i].points.points;
+        std::cerr << "publishing pcd" << std::endl;
+        if (sleep_)
+          sleep(1);
         clusters_pub_.publish (pc);
       }
     }
