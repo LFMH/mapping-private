@@ -84,7 +84,7 @@ public:
     nh_.param ("get_name_from_param_server", get_name_from_param_server_, std::string(""));
     if(debug_)
       ROS_INFO("input_cloud_topic_: %s", input_cloud_topic_.c_str());
-    cloud_sub_ = nh_.subscribe (input_cloud_topic_, 1, &MsgToPCD::cloud_cb, this);  
+    cloud_sub_ = nh_.subscribe (input_cloud_topic_, 10, &MsgToPCD::cloud_cb, this);  
   }
   
   /**
