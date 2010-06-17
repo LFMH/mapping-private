@@ -41,5 +41,6 @@
   <param name="table_min_height" value="-2.0" />
   <param name="table_max_height" value="0.0" />
   <param name="table_delta_z" value="0.002" />
+  <param name="object_cluster_dist_tolerance" value="0.02" />
 </node>
 </launch>
