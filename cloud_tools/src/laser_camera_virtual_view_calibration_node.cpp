@@ -153,7 +153,7 @@ public:
       IplImage *cv_image = NULL;
       try
       {
-        cv_image = bridge_.imgMsgToCv(msg_ptr, "passthrough");
+        cv_image = bridge_.imgMsgToCv(msg_ptr, "bgr8");
       }
       catch (sensor_msgs::CvBridgeException error)
       {
@@ -213,6 +213,7 @@ public:
         int value =  round((double)points_[i].i/(double)max_intensity * scale_intensities_);
         points_[i].i = value;
       }
+      //      ros_stamp_ << ros::Time::now();
       std::string final_laser_image_name = ros_stamp_.str() + "_" + laser_image_name_ + ".ppm";
       
       lc_main (argc_, argv_, final_laser_image_name, position_, focal_point_, 

@@ -1,12 +1,12 @@
 <!-- Note you have to custumize the path to your .pcd file   -->
 <launch>
-  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
-        args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/all/corn_flakes_1267026243.355204.pcd) $(optenv period 2)" />
+<!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
+<!--         args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/all/corn_flakes_1267026243.355204.pcd) $(optenv period 2)" /> -->
 
 <!--   <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true" -->
 <!--         args="$(optenv pcd /home/pangerci/work/laser_camera_virtual_view_calibration/checkerboard001_-180_.pcd) $(optenv period 2)" /> -->
   
-  <node pkg="topic_tools" type="relay" name="relay_cloud_pcd" args="/cloud_pcd /depth_image_triangulation_node/cloud_pcd" respawn="false" output="screen"/>
+  <node pkg="topic_tools" type="relay" name="relay_cloud_pcd" args="/shoulder_cloud /depth_image_triangulation_node/cloud_pcd" respawn="false" output="screen"/>
   
   <node pkg="cloud_algos" type="depth_image_triangulation_node" name="depth_image_triangulation_node" output="screen" respawn="true">
   </node>
@@ -14,9 +14,10 @@
   <node pkg="cloud_tools" type="laser_camera_virtual_view_calibration_node" name="laser_camera_virtual_view_calibration_node" output="screen" respawn="true">
     <param name="laser_image_name" value="laser_image"/>
     <param name="camera_image_name" value="camera_image"/>
-    <rosparam param="position">[-2.5, 1.0, 3.0]</rosparam>
-    <rosparam param="focal_point">[1.8, 0.44, 0.25]</rosparam>
-    <rosparam param="view_point">[0.5, 0.0, 0.8]</rosparam>
+    <param name="input_image_topic" value="/cop/right/camera"/>
+    <rosparam param="position">[-1.98547, 0.0, 3.16038]</rosparam>
+    <rosparam param="focal_point">[0.633678, -0.41443, 1.6401]</rosparam>
+    <rosparam param="view_point">[0.30026, -0.264792, 0.916367]</rosparam>
     <param name="width" value="640"/>
     <param name="height" value="480"/>
     <param name="display_win" value="1"/>
