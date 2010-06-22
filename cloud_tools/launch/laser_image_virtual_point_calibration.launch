@@ -15,9 +15,9 @@
     <param name="laser_image_name" value="laser_image"/>
     <param name="camera_image_name" value="camera_image"/>
     <param name="input_image_topic" value="/cop/right/camera"/>
-    <rosparam param="position">[-1.98547, 0.0, 3.16038]</rosparam>
-    <rosparam param="focal_point">[0.633678, -0.41443, 1.6401]</rosparam>
-    <rosparam param="view_point">[0.30026, -0.264792, 0.916367]</rosparam>
+    <rosparam param="position">[0.0, 0.0, 0.0]</rosparam>
+    <rosparam param="focal_point">[1.0, 0.0, -0.2]</rosparam>
+    <rosparam param="view_point">[0.0, 0.0, 1.0]</rosparam>
     <param name="width" value="640"/>
     <param name="height" value="480"/>
     <param name="display_win" value="1"/>
