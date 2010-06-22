@@ -377,7 +377,7 @@ void reshape(int width,  int height)
   glLoadIdentity();
 //  glOrtho( left, right, bottom, top, -5.0, 5.0 );
   //TODO: parametrize this
-  gluPerspective (45.0,aspect,0.001,20);
+  gluPerspective (70.0,aspect,0.001,20);
   glMatrixMode( GL_MODELVIEW );
 }
 

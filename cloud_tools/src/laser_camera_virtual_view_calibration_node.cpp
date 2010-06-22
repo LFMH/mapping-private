@@ -210,8 +210,23 @@ public:
       ROS_INFO("[LCVVC_NODE:] min_intensity %d, max_intensity: %d", min_intensity, max_intensity);
       for (unsigned int i = 0; i < points_.size(); i++)
       {
-        int value =  round((double)points_[i].i/(double)max_intensity * scale_intensities_);
-        points_[i].i = value;
+        //        int value =  round((double)points_[i].i/(double)max_intensity * scale_intensities_);
+        
+        if (points_[i].i > 2800)
+        {
+          points_[i].i = 127;
+          //        std::cerr << "points_[i].i " << points_[i].i << std::endl;
+        }
+        else if (points_[i].i < 1500)
+        {
+          points_[i].i = 0;
+          //        std::cerr << "points_[i].i " << points_[i].i << std::endl;
+        }
+        else
+        {
+          points_[i].i = ((points_[i].i-1500) * 127)/(2800-1500);
+          //        std::cerr << "points_[i].i " << points_[i].i << std::endl;
+        }
       }
       //      ros_stamp_ << ros::Time::now();
       std::string final_laser_image_name = ros_stamp_.str() + "_" + laser_image_name_ + ".ppm";
