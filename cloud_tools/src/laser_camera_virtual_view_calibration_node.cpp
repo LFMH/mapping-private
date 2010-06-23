@@ -139,7 +139,7 @@ public:
     image_sub_ = it_.subscribe(input_image_topic_, 1, &LaserCameraVirtualViewCalibration::image_cb, this);
     file_name_counter_ = 0;
     camera_image_saved_ = false;
-    scale_intensities_ = 127;
+    scale_intensities_ = 255;
   }
 
   /**

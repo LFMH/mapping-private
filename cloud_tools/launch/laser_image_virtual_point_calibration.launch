@@ -18,8 +18,8 @@
     <rosparam param="position">[0.0, 0.0, 0.0]</rosparam>
     <rosparam param="focal_point">[1.0, 0.0, -0.2]</rosparam>
     <rosparam param="view_point">[0.0, 0.0, 1.0]</rosparam>
-    <param name="width" value="640"/>
-    <param name="height" value="480"/>
+    <param name="width" value="1608"/>
+    <param name="height" value="1236"/>
     <param name="display_win" value="1"/>
   </node>
 </launch>

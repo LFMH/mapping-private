@@ -74,7 +74,7 @@ int displayWin = 1;
 int width = 640, height = 480;
 std::string output_ppm;
 //
-int maxval = 127;
+int maxval = 255;
 /**
  * \brief overloaded operator 
  * \param node YAML node
@@ -221,32 +221,43 @@ void image(std::string laser_image_name, int width, int height)
     {
       fprintf(f," ");
       int intensity = pixels[i*width+j];
-      if (intensity > maxval)
-        intensity = maxval;
+//       if (intensity > 200)
+//       {
+//         intensity = 127;
+//         //        std::cerr << "intensity: " << intensity << std::endl;
+//       }
+
+//       if (intensity < 50)
+//       {
+//         intensity = 0;
+//         //        std::cerr << "intensity: " << intensity << std::endl;
+//       }
+
       fprintf(f, "%d %d %d", intensity, intensity, intensity);
       fprintf(f," ");
     }
     fprintf(f,"\n");
   }
   fclose(f);
-  //TODO: use these values to scale intensities between 0-255 in case they exceed 255 value
+ 
+ //  TODO: use these values to scale intensities between 0-255 in case they exceed 255 value
 
-//   IplImage * cv_image = NULL;
-//   cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-//   int k = 0;
-//   for (int i=height-1; i>=0; i--)
-//   {
-//     for (int j=0; j<width; j++)
-//     {
-//       int intensity = pixels[i*width+j];
-//       if (intensity > maxval)
-//         intensity = maxval;
-//       cv_image->imageData[k] = intensity;
-//       k++;
-//     }
-//   }
-//   cv::imwrite(laser_image_name, cv_image);
-//   cvReleaseImage(&cv_image);
+  IplImage * cv_image = NULL;
+  cv_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+  int k = 0;
+  for (int i=height-1; i>=0; i--)
+  {
+    for (int j=0; j<width; j++)
+    {
+      int intensity = pixels[i*width+j];
+      if (intensity > maxval)
+        intensity = maxval;
+      cv_image->imageData[k] = intensity;
+      k++;
+    }
+  }
+  cv::imwrite("laser_image.png", cv_image);
+  cvReleaseImage(&cv_image);
 
 }
 
