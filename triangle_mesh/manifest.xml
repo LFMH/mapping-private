@@ -1,6 +1,6 @@
 <package>
-  <description brief="triangle_mesh">
-     Messages and RVIZ plugin to support Triangle Meshes
+  <description brief="triangle_mesh_msgs">
+     Messages for Triangle Meshes
   </description>
   <author name="Nico Blodow"/>
   <license>BSD</license>
@@ -8,13 +8,6 @@
   <depend package="std_msgs" />
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
-  <depend package="rviz"/>
-  <depend package="roscpp"/>
-  <depend package="tf"/>
 
-  <export>
-    <cpp cflags="-I${prefix}/msg/cpp"/>
-    <rviz plugin="${prefix}/lib/rviz_plugin.yaml"/>
-  </export>
 </package>
 
