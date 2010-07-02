@@ -56,7 +56,6 @@
 // Eigen
 #include <Eigen/Array>
 
-#include <tools/transform.h>
 #include <angles/angles.h>
 
 #include <triangle_mesh/TriangleMesh.h>

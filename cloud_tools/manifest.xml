@@ -11,7 +11,7 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="angles" />
-  <depend package="point_cloud_mapping" />
+  <depend package="fixed_point_cloud_mapping" />
   <depend package="geometry_msgs" />
   <depend package="sensor_msgs" />
   <depend package="mapping_msgs" />
