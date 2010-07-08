@@ -2,6 +2,10 @@
 
 <launch>
 
+  <!--
+  <node pkg="ros" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(optenv bag /home/marton/work/datasets/GRSD/test/2010-07-02-17-27-00.bag) -r $(optenv rate 1)" />
+  -->
+
   <group ns="object_classification_training">
 
     <!--From here on we will work in /map coordinate frame -->
@@ -18,11 +22,34 @@
     </node>
   
     <!-- Table Message Splitter -->
-     <node pkg="cloud_tools" type="table_msg_split_node" name="table_msg_split_node" output="screen">
-       <param name="input_table_topic" value="/object_classification_training/one_table_with_objects" />
-       <param name="output_pcds_topic" value="/object_classification_training/table_objects" />
-       <param name="output_polygon_topic" value="/object_classification_training/table_polygon" />
-     </node>
+    <node pkg="cloud_tools" type="table_msg_split_node" name="table_msg_split_node" output="screen">
+      <param name="input_table_topic" value="/object_classification_training/one_table_with_objects" />
+      <param name="output_pcds_topic" value="/object_classification_training/table_objects" />
+      <param name="output_polygon_topic" value="/object_classification_training/table_polygon" />
+    </node>
+
+    <!-- Statistical Noise Removal -->
+    <node pkg="cloud_algos" type="statistical_noise_removal_node" name="statistical_noise_removal_node" output="screen" respawn="true">
+      <remap from="~cloud_pcd" to="/object_classification_training/table_objects" />
+      <rosparam>{alpha: 2, neighborhood_size: 30}</rosparam>
+      <param name="min_nr_pts" value="$(optenv min_nr_pts 0)"/>
+    </node>
+
+    <!-- Smoothing -->
+    <node pkg="cloud_algos" type="mls_fit_node" name="mls_fit_node" output="screen" respawn="true">
+      <remap from="~cloud_pcd" to="/object_classification_training/statistical_noise_removal_node/cloud_denoise" />
+      <rosparam>{radius: 0.025, max_nn: 300, polynomial_fit: false}</rosparam>
+    </node>
+
+    <!-- Save messages as PCD files -->
+    <node pkg="cloud_tools" type="msg_to_pcd_node" name="msg_to_pcd_node" output="screen" respawn="true" >
+      <param name="input_cloud_topic" value="/object_classification_training/mls_fit_node/cloud_mls"/>
+      <param name="name" value="$(optenv name cloud)"/>
+      <param name="dir" value="$(find cloud_tools)/data/"/>
+      <param name="nr_saved_pcds" value="1"/>
+      <param name="get_name_from_param_server" value=""/>
+    </node>
+    <!-- <param name="dir" value="$(env HOME)/work/" /> -->
 
   </group>
 

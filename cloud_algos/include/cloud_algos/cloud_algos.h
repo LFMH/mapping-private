@@ -22,8 +22,9 @@ class CloudAlgo
 {
  public:
   int verbosity_level_;
+  bool output_valid_;
 
-  CloudAlgo () { verbosity_level_ = INT_MAX; };
+  CloudAlgo () { verbosity_level_ = INT_MAX; output_valid_ = true; };
   
   typedef void OutputType;
   typedef sensor_msgs::PointCloud InputType;
@@ -81,13 +82,18 @@ template <class algo>
     a.pre();
     ROS_INFO("Algo.pre () returned.");
     ROS_INFO(" ");
-    a.process (input);
+    std::string result = a.process (input);
     ROS_INFO(" ");
-    ROS_INFO("Processed message.");
+    ROS_INFO("Result got after processed message: %s", result.c_str ());
+    if (a.output_valid_)
+    {
+      pub_.publish (a.output());
+      ROS_INFO("Published result message.");
+    }
+    else
+      ROS_ERROR("Not publishing result as it is invalid!");
     a.post();
-    ROS_INFO("Algo.post () returned.");
-    pub_.publish (a.output());
-    ROS_INFO("Published result message.\n");
+    ROS_INFO("Algo.post () returned.\n");
   }
   
   ros::NodeHandle& nh_;

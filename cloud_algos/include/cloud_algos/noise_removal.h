@@ -31,6 +31,7 @@ class StatisticalNoiseRemoval : public CloudAlgo
   // Options
   double alpha_;          // discard points with average nearest neighbors distance further than alpha_*STD
   int neighborhood_size_; // number of nearest neighbors (including self) to consider
+  int min_nr_pts_;        // minimum number of points in the cloud that is still acceptable
 
   // Topic name to subscribe to
   static std::string default_input_topic ()
@@ -73,6 +74,7 @@ class StatisticalNoiseRemoval : public CloudAlgo
     // set default values for parameters to produce FPFHs
     alpha_ = 3;
     neighborhood_size_ = 10;
+    min_nr_pts_ = 0;
   }
   ~StatisticalNoiseRemoval ()
   {

@@ -13,6 +13,7 @@ void StatisticalNoiseRemoval::pre ()
 {
   nh_.param("alpha", alpha_, alpha_);
   nh_.param("neighborhood_size", neighborhood_size_, neighborhood_size_);
+  nh_.param("min_nr_pts", min_nr_pts_, min_nr_pts_);
 }
 
 void StatisticalNoiseRemoval::post ()
@@ -138,7 +139,20 @@ std::string StatisticalNoiseRemoval::process (const boost::shared_ptr<const Stat
 
   // Finish
   if (verbosity_level_ > 0) ROS_INFO ("[StatisticalNoiseRemoval] Cleared cloud in %g seconds.", (ros::Time::now () - global_time).toSec ());
-  return std::string("ok");
+
+  // Check if the size limit is satisfied
+  if (point_count < min_nr_pts_)
+  {
+    //cloud_denoise_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud());
+    if (verbosity_level_ > -1) ROS_WARN ("[StatisticalNoiseRemoval] Number of points smaller than the threshold of %d. Invalid output!", min_nr_pts_);
+    output_valid_ = false;
+    return std::string("output size check failed (see min_nr_pts parameter)");
+  }
+  else
+  {
+    output_valid_ = true;
+    return std::string("ok");
+  }
 }
 
 boost::shared_ptr<const StatisticalNoiseRemoval::OutputType> StatisticalNoiseRemoval::output ()

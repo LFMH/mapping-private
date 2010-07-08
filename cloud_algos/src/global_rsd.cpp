@@ -150,7 +150,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
     // Get its contents
     vector<int> indices_i = node_i->get3DPointInliers ();
-    if (indices_i.size () == 0)
+    if (indices_i.size () < min_voxel_pts_)
       continue;
 
     // Iterating through neighbors
@@ -220,7 +220,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
     // Get its contents
     vector<int> indices_i = node_i->get3DPointInliers ();
-    if (indices_i.size () == 0)
+    if (indices_i.size () < min_voxel_pts_)
       continue;
 
     // Connect current cell to all the remaining ones
@@ -239,7 +239,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
       // Get its contents
       vector<int> indices_j = node_j->get3DPointInliers ();
-      if (indices_j.size () == 0)
+      if (indices_j.size () < min_voxel_pts_)
         continue;
 
       // Create a paired histogram vector which holds: a) the actual centroid value of the intersected voxel, b) the distance from start_voxel to voxel_i
@@ -265,7 +265,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
         histogram_pair.second.nr_points = indices_ray.size ();
 
         // Get its contents, if empty set to EMPTY_VALUE
-        if (histogram_pair.second.nr_points == 0)
+        if (histogram_pair.second.nr_points < min_voxel_pts_)
         {
           histogram_pair.first = -1;
         }
@@ -327,6 +327,8 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       cloud_grsd_->channels[nrf++].values[0] = transitions[i][j];
   cloud_grsd_->channels[nr_bins_].values[0] = label_;
   //*/
+  
+  // Publush partial results for vizualization
 
   // Finish
   if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] Computed features in %g seconds.", (ros::Time::now () - global_time).toSec ());

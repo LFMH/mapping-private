@@ -94,7 +94,7 @@ class GlobalRSD : public CloudAlgo
     label_ = -1;
     width_ = 0.015;
     step_ = 1;
-    min_voxel_pts_ = 30;
+    min_voxel_pts_ = 1;
     nr_bins_ = NR_CLASS*(NR_CLASS+1)/2;
   }
   ~GlobalRSD ()
