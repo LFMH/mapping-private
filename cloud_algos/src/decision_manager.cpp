@@ -35,11 +35,14 @@ using namespace cloud_algos;
 
 void DecisionManager::init (ros::NodeHandle&)
 {
+  // node handler and publisher
+  nh_ = nh;
+  //pub_ = nh_.advertise <sensor_msgs::PointCloud> ("visualize", 1);
 }
 
 void DecisionManager::pre ()
 {
-
+  //nh_.param("radius", radius_, radius_);
 }
 
 void DecisionManager::post ()
@@ -48,16 +51,30 @@ void DecisionManager::post ()
 }
 
 std::vector<std::string> DecisionManager::requires ()
-  {return std::vector<std::string>();}
+{
+  std::vector<std::string> requires;
+  // requires 3D coordinates
+  requires.push_back("x");
+  requires.push_back("y");
+  requires.push_back("z");
+  // requires radius
+  requires.push_back ("r_min");
+  return requires;
+}
 
 std::vector<std::string> DecisionManager::provides ()
   {return std::vector<std::string>();}
 
 std::string DecisionManager::process (const boost::shared_ptr<const DecisionManager::InputType>&)
-  {return std::string("");}
+{
+
+  return std::string("hybrid");
+}
 
 DecisionManager::OutputType DecisionManager::output ()
-  {return OutputType();}
+{
+  return type_;
+}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])

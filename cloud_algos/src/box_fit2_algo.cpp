@@ -138,6 +138,8 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
       inliers = best_inliers;
       model->setBestModel (best_sample);
       model->setBestInliers (best_inliers);
+      // refine results: needs inliers to be set!
+      // sac->refineCoefficients(refined);
     }
     else
     {

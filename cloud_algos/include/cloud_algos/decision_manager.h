@@ -50,8 +50,12 @@ namespace cloud_algos
 class DecisionManager : public CloudAlgo
 {
  public:
-  typedef sensor_msgs::PointCloud OutputType;
+  //typedef sensor_msgs::PointCloud OutputType;
+  typedef int OutputType;
   typedef geometry_msgs::Point32 InputType;
+
+  // options
+  int type_; // the estimated type of the last received PCD
 
   static std::string default_input_topic ()
     {return std::string ("cloud_pcd");}
@@ -73,6 +77,11 @@ class DecisionManager : public CloudAlgo
   {
     ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
     return p;
+  }
+
+  DecisionManager ()
+  {
+    type_ = -1;
   }
 };
 

@@ -182,6 +182,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   {
     ts = ros::Time::now ();
     complete_tree = true;
+    // TODO THIS IS BAD... AND IT GOT COPY-PASTED ALL OVER THE PLACE :(
     kdtree_ = new cloud_kdtree::KdTreeANN (*cloud);
     if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
   }
