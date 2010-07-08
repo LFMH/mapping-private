@@ -8,6 +8,7 @@ rosbuild_add_boost_directories()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rosbuild_add_executable (wall_filter_node src/wall_filter.cpp)
+rosbuild_add_executable (table_object_detector_passive_node_one_table src/table_object_detector_passive_one_table.cpp)
 rosbuild_add_executable (table_object_detector_passive_node src/table_object_detector_passive.cpp)
 rosbuild_add_executable (table_object_detector_sr_node src/table_object_detector_sr.cpp)
 rosbuild_add_executable (mesh_to_pointcloud src/mesh_to_pointcloud.cpp)
