@@ -28,6 +28,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
   src/depth_image_triangulation.cpp
   src/svm_classification.cpp
   src/noise_removal.cpp
+#  src/global_rsd.cpp
 )
 
 #rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
@@ -77,3 +78,7 @@ set_target_properties (radius_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_
 
 rosbuild_add_executable (statistical_noise_removal_node src/noise_removal.cpp)
 set_target_properties (statistical_noise_removal_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+
+#rosbuild_add_executable (global_rsd_node src/global_rsd.cpp)
+#target_link_libraries (global_rsd_node octree_pcl)
+#set_target_properties (global_rsd_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

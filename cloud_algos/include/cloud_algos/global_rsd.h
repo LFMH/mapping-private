@@ -1,9 +1,21 @@
 #ifndef CLOUD_ALGOS_GRSD_H
 #define CLOUD_ALGOS_GRSD_H
-#include <cloud_algos/cloud_algos.h>
 
 // Eigen
+#include <Eigen/StdVector>
 //#include <Eigen/Array>
+
+// For the OcTree
+#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <octomap/octomap.h>
+#include <pcl_to_octree/octree/OcTreeNodePCL.h>
+#include <pcl_to_octree/octree/OcTreePCL.h>
+#include <pcl_to_octree/octree/OcTreeServerPCL.h>
+//#include <octomap_server/octomap_server.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -14,30 +26,30 @@
 #include <point_cloud_mapping/geometry/transforms.h>
 #include <point_cloud_mapping/geometry/statistics.h>
 
-// For the OcTree
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include "octomap/octomap.h"
-#include "pcl_to_octree/octree/OcTreeNodePCL.h"
-#include "pcl_to_octree/octree/OcTreePCL.h"
-#include "pcl_to_octree/octree/OcTreeServerPCL.h"
-//#include "octomap_server/octomap_server.h"
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+// Cloud algos
+#include <cloud_algos/cloud_algos.h>
 
 #define NR_CLASS 5
 // TODO: use a map to have surface labels and free space map to indices in the transitions matrix
 
+#define _sqr(c) ((c)*(c))
+#define _sqr_dist(a,b) ( _sqr((a.x())-(b.x())) + _sqr((a.y())-(b.y())) + _sqr((a.z())-(b.z())) )
+
 namespace cloud_algos
 {
 
-struct LeafStruc
+struct IntersectedLeaf
 {
-  double distance;
-  int x, y, z;
-  int nr_points;
+  double sqr_distance; // square distance from source node
+  octomap::point3d centroid; // leaf center coordinates
+  int nr_points; // number of points in cell
 };
+
+inline bool
+  histogramElementCompare (const pair<int, IntersectedLeaf> &p1, const pair<int, IntersectedLeaf> &p2)
+{
+  return (p1.second.sqr_distance < p2.second.sqr_distance);
+}
 
 class GlobalRSD : public CloudAlgo
 {
@@ -236,7 +248,7 @@ class GlobalRSD : public CloudAlgo
       octomap_pointcloud.push_back(octomap_3d_point);
     }
 
-    /* Converting from octomap point cloud to octomap graph */
+    // Converting from octomap point cloud to octomap graph
     octomap::pose6d offset_trans(0,0,-laser_offset,0,0,0);
     octomap::pose6d laser_pose(0,0,laser_offset,0,0,0);
     octomap_pointcloud.transform(offset_trans);
@@ -247,7 +259,7 @@ class GlobalRSD : public CloudAlgo
 
     ROS_INFO("Number of points in graph: %d", octomap_graph->getNumPoints());
 
-    /*Converting from octomap graph to octomap tree (octree) */
+    // Converting from octomap graph to octomap tree (octree)
     octree_ = new octomap::OcTreePCL(octree_res);
     for (octomap::ScanGraph::iterator scan_it = octomap_graph->begin(); scan_it != octomap_graph->end(); scan_it++)
     {
