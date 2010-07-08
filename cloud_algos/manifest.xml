@@ -29,9 +29,9 @@
   <depend package="libsvm"/>
   <depend package="eigen"/>
   <depend package="pcl"/>
-  <depend package="pcl_to_octree"/>
   <depend package="octomap"/>
   <depend package="octomap_server"/>
+  <depend package="pcl_to_octree"/>
 
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_algos"/>

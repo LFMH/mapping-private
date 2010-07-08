@@ -79,6 +79,16 @@ set_target_properties (radius_estimation_node PROPERTIES COMPILE_FLAGS -DCREATE_
 rosbuild_add_executable (statistical_noise_removal_node src/noise_removal.cpp)
 set_target_properties (statistical_noise_removal_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
 
-#rosbuild_add_executable (global_rsd_node src/global_rsd.cpp)
-#target_link_libraries (global_rsd_node octree_pcl)
-#set_target_properties (global_rsd_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)
+##include_directories(bla ../pcl_to_octree/include/)
+#rosbuild_add_executable(bla src/bla.cpp
+##                            ../pcl_to_octree/src/pcl_to_octree/octree/OcTreePCL.cpp
+##                            ../pcl_to_octree/src/pcl_to_octree/octree/OcTreeNodePCL.cpp
+#)
+#get_target_property(prev_props bla COMPILE_FLAGS)
+#set_target_properties (bla PROPERTIES COMPILE_FLAGS "${prev_props} -DCREATE_NODE")
+##add_definitions(-DCREATE_NODE)
+#target_link_libraries(bla octree_pcl)
+
+rosbuild_add_executable(global_rsd_node src/global_rsd.cpp)
+get_target_property(prev_props global_rsd_node COMPILE_FLAGS)
+set_target_properties (global_rsd_node PROPERTIES COMPILE_FLAGS "${prev_props} -DCREATE_NODE")

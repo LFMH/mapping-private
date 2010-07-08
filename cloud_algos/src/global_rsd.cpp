@@ -6,6 +6,8 @@ using namespace cloud_algos;
 void GlobalRSD::init (ros::NodeHandle& nh)
 {
   nh_ = nh;
+  pub_cloud_vrsd_ = nh_.advertise <sensor_msgs::PointCloud> ("cloud_vrsd", 1);
+  pub_cloud_centroids_ = nh_.advertise <sensor_msgs::PointCloud> ("cloud_centroids", 1);
 }
 
 void GlobalRSD::pre ()
@@ -83,7 +85,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
   cloud_vrsd_->channels[regIdx].name = "point_label";
 
   // Allocate space for the extra needed channel values
-  for (size_t d = rIdx; d < cloud_radius_->channels.size (); d++)
+  for (size_t d = rIdx; d < cloud_vrsd_->channels.size (); d++)
   {
     cloud_vrsd_->channels[d].values.resize (cloud_vrsd_->points.size ());
     if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] (cloud_vrsd) Added channel: %s", cloud_vrsd_->channels[d].name.c_str ());
@@ -111,14 +113,19 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     cloud_grsd_->channels[i].name = dim_name;
     cloud_grsd_->channels[i].values.resize (1);
     if (i == 0)
+    {
       if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] (cloud_grsd) Added channel: %s ... [cont]", dim_name);
+    }
     else if (i == nr_bins_-1)
+    {
       if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] (cloud_grsd) Added channel: %s [done]", dim_name);
+    }
   }
   cloud_grsd_->channels[nr_bins_].name = "point_label";
   cloud_grsd_->channels[nr_bins_].values.resize (1);
   if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] (cloud_grsd) Added channel: %s", cloud_grsd_->channels[nr_bins_].name.c_str ());
 
+  //*
   // Create a fixed-size octree decomposition
   setOctree (cloud_vrsd_, width_, -1);
 
@@ -142,17 +149,17 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     octomap::OcTreeNodePCL *node_i = octree_->search(centroid_i);
 
     // Get its contents
-    vector<int> indices = node_i->get3DPointInliers ();
-    if (indices.size () == 0)
+    vector<int> indices_i = node_i->get3DPointInliers ();
+    if (indices_i.size () == 0)
       continue;
 
     // Iterating through neighbors
-    vector<int> neighbors = indices;
-    for (int i = step; i <= step; i++)
+    vector<int> neighbors = indices_i;
+    for (int i = step_; i <= step_; i++)
     {
-      for (int j = -step; j <= step; j++)
+      for (int j = -step_; j <= step_; j++)
       {
-        for (int k = -step; k <= step; k++)
+        for (int k = -step_; k <= step_; k++)
         {
           // skip current point
           if (i==0 && j==0 && k==0)
@@ -173,7 +180,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     } // k
 
     // Mark all points with result
-    int type = setSurfaceType (cloud_vrsd_, &indices, &neighbors, nxIdx, (2*step_+1)*width_*sqrt(3), regIdx, rIdx);
+    int type = setSurfaceType (cloud_vrsd_, &indices_i, &neighbors, nxIdx, (2*step_+1)*width_*sqrt(3), regIdx, rIdx);
 
     // Set up PCD with centroids
     cloud_centroids_->points[cnt_centroids].x = centroid_i(0);
@@ -181,7 +188,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     cloud_centroids_->points[cnt_centroids].z = centroid_i(2);
     for (size_t d = 0; d < cloud->channels.size (); d++)
       cloud_centroids_->channels[d].values[cnt_centroids] = 0.0;
-    for (size_t i = 0; i < transitions.size (); i++)
+    for (size_t i = 0; i < cloud->channels.size (); i++)
     {
       for (size_t d = 0; d < cloud->channels.size (); d++)
         cloud_centroids_->channels[d].values[cnt_centroids] = 0.0;
@@ -212,8 +219,8 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     octomap::OcTreeNodePCL *node_i = octree_->search(centroid_i);
 
     // Get its contents
-    vector<int> indices = node_i->get3DPointInliers ();
-    if (indices.size () == 0)
+    vector<int> indices_i = node_i->get3DPointInliers ();
+    if (indices_i.size () == 0)
       continue;
 
     // Connect current cell to all the remaining ones
@@ -239,22 +246,23 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       vector<pair<int, IntersectedLeaf> > histogram_values;
 
       // Get the leaves along the ray
-      vector<point3d> ray;
+      vector<octomap::point3d> ray;
       octree_->computeRay(centroid_i, centroid_j, ray);
 
       // Iterate over leaves
-      for (vector<point3d>::iterator centroid_ij = ray.begin (); centroid_ij != ray.end (); centroid_ij++)
+      for (vector<octomap::point3d>::iterator centroid_ray = ray.begin (); centroid_ray != ray.end (); centroid_ray++)
       {
         // Get a cell
-        octomap::OcTreeNodePCL *node_neighbor = octree_->search(*centroid_ij)
+        octomap::OcTreeNodePCL *node_ray = octree_->search(*centroid_ray);
+
         // Get its contents
-        vector<int> indices_ij = ->get3DPointInliers ();
+        vector<int> indices_ray = node_ray->get3DPointInliers ();
 
         // Compute the distance to the start leaf
         pair<int, IntersectedLeaf> histogram_pair;
-        histogram_pair.second.centroid = *centroid_ij;
-        histogram_pair.second.sqr_distance = _sqr_dist (*centroid_ij, centroid_i);
-        histogram_pair.second.nr_points = ;
+        histogram_pair.second.centroid = *centroid_ray;
+        histogram_pair.second.sqr_distance = _sqr_dist (*centroid_ray, centroid_i);
+        histogram_pair.second.nr_points = indices_ray.size ();
 
         // Get its contents, if empty set to EMPTY_VALUE
         if (histogram_pair.second.nr_points == 0)
@@ -264,7 +272,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
         else
         {
           //histogram_pair.first = getSurfaceType (points, &((*tree) (x, y, z)), nxIdx, width*sqrt(3));
-          histogram_pair.first = (int)(new_points[(*tree) (x, y, z).at (0)][regIdx]);
+          histogram_pair.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_ray.at (0)]);
         }
 
         histogram_values.push_back (histogram_pair);
@@ -274,16 +282,16 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       pair<int, IntersectedLeaf> histogram_pair1;
       histogram_pair1.second.sqr_distance = _sqr_dist (centroid_i, centroid_i); // 0.0
       histogram_pair1.second.centroid = centroid_i;
-      histogram_pair1.second.nr_points = ((*tree) (X_i[0], X_i[1], X_i[2])).size ();
-      histogram_pair1.first = (int)(new_points[(*tree) (X_i[0], X_i[1], X_i[2]).at (0)][regIdx]);
+      histogram_pair1.second.nr_points = indices_i.size ();
+      histogram_pair1.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_i.at (0)]);
       histogram_values.push_back (histogram_pair1);
 
       // Add the last voxel
       pair<int, IntersectedLeaf> histogram_pair2;
       histogram_pair2.second.sqr_distance = _sqr_dist (centroid_j, centroid_i); // line length
       histogram_pair2.second.centroid = centroid_j;
-      histogram_pair2.second.nr_points = ((*tree) (X_j[0], X_j[1], X_j[2])).size ();
-      histogram_pair2.first = (int)(new_points[(*tree) (X_j[0], X_j[1], X_j[2]).at (0)][regIdx]);
+      histogram_pair2.second.nr_points = indices_j.size ();
+      histogram_pair2.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_j.at (0)]);
       histogram_values.push_back (histogram_pair2);
 
       // Sort the histogram according to the distance of the leaves to the start leaf
@@ -317,7 +325,8 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
   for (int i=0; i<NR_CLASS+1; i++)
     for (int j=i; j<NR_CLASS+1; j++)
       cloud_grsd_->channels[nrf++].values[0] = transitions[i][j];
-  cloud_grsd_->channels[nr_bins_].values = label_;
+  cloud_grsd_->channels[nr_bins_].values[0] = label_;
+  //*/
 
   // Finish
   if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] Computed features in %g seconds.", (ros::Time::now () - global_time).toSec ());

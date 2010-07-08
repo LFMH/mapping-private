@@ -80,9 +80,9 @@ template <class algo>
     ROS_INFO("Received message.");
     a.pre();
     ROS_INFO("Algo.pre () returned.");
-    ROS_INFO("");
+    ROS_INFO(" ");
     a.process (input);
-    ROS_INFO("");
+    ROS_INFO(" ");
     ROS_INFO("Processed message.");
     a.post();
     ROS_INFO("Algo.post () returned.");

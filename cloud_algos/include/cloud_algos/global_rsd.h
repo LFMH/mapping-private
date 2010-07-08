@@ -2,20 +2,21 @@
 #define CLOUD_ALGOS_GRSD_H
 
 // Eigen
-#include <Eigen/StdVector>
+//#include <Eigen/StdVector>
 //#include <Eigen/Array>
 
-// For the OcTree
+//#include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
-#include <octomap/octomap.h>
-#include <pcl_to_octree/octree/OcTreeNodePCL.h>
-#include <pcl_to_octree/octree/OcTreePCL.h>
-#include <pcl_to_octree/octree/OcTreeServerPCL.h>
-//#include <octomap_server/octomap_server.h>
-#include <pcl/point_types.h>
+#include "octomap/octomap.h"
+#include "pcl_to_octree/octree/OcTreePCL.h"
+#include "pcl_to_octree/octree/OcTreeNodePCL.h"
+#include "pcl_to_octree/octree/OcTreeServerPCL.h"
+//#include "octomap_server/octomap_server.h"
 #include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -33,7 +34,7 @@
 // TODO: use a map to have surface labels and free space map to indices in the transitions matrix
 
 #define _sqr(c) ((c)*(c))
-#define _sqr_dist(a,b) ( _sqr((a.x())-(b.x())) + _sqr((a.y())-(b.y())) + _sqr((a.z())-(b.z())) )
+#define _sqr_dist(a,b) ( _sqr(((a).x())-((b).x())) + _sqr(((a).y())-((b).y())) + _sqr(((a).z())-((b).z())) )
 
 namespace cloud_algos
 {
@@ -46,7 +47,7 @@ struct IntersectedLeaf
 };
 
 inline bool
-  histogramElementCompare (const pair<int, IntersectedLeaf> &p1, const pair<int, IntersectedLeaf> &p2)
+  histogramElementCompare (const std::pair<int, IntersectedLeaf> &p1, const std::pair<int, IntersectedLeaf> &p2)
 {
   return (p1.second.sqr_distance < p2.second.sqr_distance);
 }
@@ -118,14 +119,14 @@ class GlobalRSD : public CloudAlgo
   //    3 - circle (corner?)
   //    4 - edge
   inline int
-    setSurfaceType (boost::shared_ptr<sensor_msgs::PointCloud> cloud, vector<int> *indices, vector<int> *neighbors, int nxIdx, double max_dist, int regIdx, int rIdx)
+    setSurfaceType (boost::shared_ptr<sensor_msgs::PointCloud> cloud, std::vector<int> *indices, std::vector<int> *neighbors, int nxIdx, double max_dist, int regIdx, int rIdx)
   {
     // Fixing binning to 5 and plane radius to 0.2
     int div_d = 5;
     double plane_radius = 0.2;
 
     // Initialize minimum and maximum angle values in each distance bin
-    vector<vector<double> > min_max_angle_by_dist (div_d);
+    std::vector<std::vector<double> > min_max_angle_by_dist (div_d);
     for (int di=0; di<div_d; di++)
     {
       min_max_angle_by_dist[di].resize (2);
@@ -184,10 +185,10 @@ class GlobalRSD : public CloudAlgo
     //cerr << Amint_Amin << " " << Amint_d << " " << Amaxt_Amax << " " << Amaxt_d << endl;
     double max_radius;
     if (Amint_Amin == 0) max_radius = plane_radius;
-    else max_radius = min (Amint_d/Amint_Amin, plane_radius);
+    else max_radius = std::min (Amint_d/Amint_Amin, plane_radius);
     double min_radius;
     if (Amaxt_Amax == 0) min_radius = plane_radius;
-    else min_radius = min (Amaxt_d/Amaxt_Amax, plane_radius);
+    else min_radius = std::min (Amaxt_d/Amaxt_Amax, plane_radius);
     //print_info (stderr, "Estimated minimum and maximum radius is: "); print_value (stderr, "%g - %g\n", min_radius, max_radius);
 
     // Simple categorization
@@ -207,22 +208,23 @@ class GlobalRSD : public CloudAlgo
 
     // For safety...
     if (type >= NR_CLASS)
-      type = EMPTY_VALUE;
+      type = -1;
 
     // Set values for all points
     for (unsigned int i = 0; i < indices->size (); i++)
     {
-      points[indices->at(i)][regIdx] = type;
-      points[indices->at(i)][rIdx+0] = min_radius;
-      points[indices->at(i)][rIdx+1] = max_radius;
-      points[indices->at(i)][rIdx+2] = max_radius - min_radius;
+      cloud->channels[regIdx].values[indices->at(i)] = type;
+      cloud->channels[rIdx+0].values[indices->at(i)] = min_radius;
+      cloud->channels[rIdx+1].values[indices->at(i)] = max_radius;
+      cloud->channels[rIdx+2].values[indices->at(i)] = max_radius - min_radius;
     }
 
     // Return type
     return type;
   }
 
-  // Sets up the OcTree
+  //*
+  // Sets up the OcTree -- copied from Dejan for now
   void
     setOctree (boost::shared_ptr<sensor_msgs::PointCloud> pointcloud_msg, double octree_res, int initial_label, double laser_offset = 0, double octree_maxrange = -1)
   {
@@ -272,12 +274,10 @@ class GlobalRSD : public CloudAlgo
     std::list<octomap::OcTreeVolume> voxels, leaves;
     //octree->getLeafNodes(leaves, level_);
     octree_->getLeafNodes(leaves);
-    std::list<octomap::OcTreeVolume>::iterator it1, it2;
+    std::list<octomap::OcTreeVolume>::iterator it1;
     int cnt = 0;
 
-
-    //find Leaf Nodes' centroids, assign controid coordinates to Leaf Node and
-    //push into octree_node_list
+    //find Leaf Nodes' centroids, assign controid coordinates to Leaf Node
     for( it1 = leaves.begin(); it1 != leaves.end(); ++it1)
     {
       ROS_DEBUG("Leaf Node %d : x = %f y = %f z = %f side length = %f ", cnt++, it1->first.x(), it1->first.y(), it1->first.z(), it1->second);
@@ -286,27 +286,26 @@ class GlobalRSD : public CloudAlgo
       octomap::OcTreeNodePCL *octree_node = octree_->search(centroid);
       octree_node->setCentroid(centroid);
       octree_node->setLabel(initial_label);
+    }
 
-      //assign points to Leaf Nodes
-      for(unsigned int i = 0; i < pointcloud2_pcl.points.size(); i++)
-      {
-        octomap_3d_point(0) = pointcloud2_pcl.points[i].x;
-        octomap_3d_point(1) = pointcloud2_pcl.points[i].y;
-        octomap_3d_point(2) = pointcloud2_pcl.points[i].z;
-        octomap::OcTreeNodePCL * octree_node1 = octree_->search(octomap_3d_point);
-        if (octree_node1 == octree_node)
-        {
-          octree_node->set3DPointInliers(i);
-        }
-      }
+    //assign points to Leaf Nodes
+    for(unsigned int i = 0; i < pointcloud2_pcl.points.size(); i++)
+    {
+      octomap_3d_point(0) = pointcloud2_pcl.points[i].x;
+      octomap_3d_point(1) = pointcloud2_pcl.points[i].y;
+      octomap_3d_point(2) = pointcloud2_pcl.points[i].z;
+      octomap::OcTreeNodePCL * octree_node1 = octree_->search(octomap_3d_point);
+      octree_node1->set3DPointInliers(i);
     }
   }
+  //*/
 
  private:
 
   // ROS stuff
   ros::NodeHandle nh_;
-  //ros::Publisher pub_;
+  ros::Publisher pub_cloud_vrsd_;
+  ros::Publisher pub_cloud_centroids_;
 
   // hard-coding these for now
   int nr_bins_;
