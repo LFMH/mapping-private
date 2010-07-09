@@ -23,6 +23,9 @@
 #include <cloud_algos/cylinder_fit_algo.h>
 #include <cloud_algos/box_fit_algo.h>
 #include <cloud_algos/box_fit2_algo.h>
+#include <cloud_algos/svm_classification.h>
+#include <cloud_algos/noise_removal.h>
+#include <cloud_algos/global_rsd.h>
 #include <cloud_algos/cloud_algos.h>
 #include <pluginlib/class_loader.h>
 
@@ -276,6 +279,9 @@ class TableMemory
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/CylinderEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/DepthImageTriangulation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/SVMClassification"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/StatisticalNoiseRemoval"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/GlobalRSD"));
       
       load_plugins ();
       DEBUG = false;
@@ -835,18 +841,27 @@ class TableMemory
         }
 
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
-      CloudAlgo * alg_rot_est = find_algorithm ("cloud_algos/CylinderEstimation");
+      CloudAlgo * alg_cyl_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
+      //CloudAlgo * alg_grsd = find_algorithm ("cloud_algos/GlobalRSD");
+      CloudAlgo * alg_svm = find_algorithm ("cloud_algos/SVMClassification");
+      CloudAlgo * alg_denoise = find_algorithm ("cloud_algos/StatisticalNoiseRemoval");
       alg_triangulation->verbosity_level_ = 0;
-      alg_rot_est->verbosity_level_ = 0;
+      alg_cyl_est->verbosity_level_ = 0;
       alg_mls->verbosity_level_ = 0;
       alg_box->verbosity_level_ = 0;
+      //alg_grsd->verbosity_level_ = 0;
+      alg_svm->verbosity_level_ = 0;
+      alg_denoise->verbosity_level_ = 0;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
-      ros::Publisher pub_rot = find_publisher ("cloud_algos/CylinderEstimation");
+      ros::Publisher pub_cyl = find_publisher ("cloud_algos/CylinderEstimation");
       ros::Publisher pub_tri = find_publisher ("cloud_algos/DepthImageTriangulation");
       ros::Publisher pub_box = find_publisher ("cloud_algos/RobustBoxEstimation");
+      //ros::Publisher pub_grsd = find_publisher ("cloud_algos/GlobalRSD");
+      ros::Publisher pub_svm = find_publisher ("cloud_algos/SVMClassification");
+      ros::Publisher pub_denoise = find_publisher ("cloud_algos/StatisticalNoiseRemoval");
 
       Table &t = tables[table_num];
 //      table_reconstruct_clusters_client_ = nh_.serviceClient<ias_table_srvs::ias_reconstruct_object> ("ias_reconstruct_object", true);
@@ -900,22 +915,92 @@ class TableMemory
           }
 
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
+
+          // TODO: ideally all parameters should be set in the launch file
+
+          // call noise removal
+          alg_denoise->pre();
+          ((StatisticalNoiseRemoval*)alg_denoise)->alpha_ = 2;
+          ((StatisticalNoiseRemoval*)alg_denoise)->neighborhood_size_ = 30;
+          ((StatisticalNoiseRemoval*)alg_denoise)->min_nr_pts_ = 0; // thus output will be always valid
+          std::cout << "[reconstruct_table_objects] Calling noise removal with a PCD with " <<
+                        to->point_cluster.points.size () << " points." << std::endl;
+          std::string process_answer_denoise = ((StatisticalNoiseRemoval*)alg_denoise)->process
+                      (cluster);
+          //ROS_INFO("got response: %s", process_answer_denoise.c_str ());
+          boost::shared_ptr <const sensor_msgs::PointCloud> denoise_cloud = (((StatisticalNoiseRemoval*)alg_denoise)->output ());
+          alg_denoise->post();
+          //pub_denoise.publish (denoise_cloud);
+
           // call MLS
-          std::vector<std::string> pre_mls = alg_mls->requires ();
+          //std::vector<std::string> pre_mls = alg_mls->requires ();
           alg_mls->pre();
+          ((MovingLeastSquares*)alg_mls)->max_nn_ = 300; // this is the default value
           // TODO: data is too noisy... either this or more aggressive smoothing (see below)
           ((MovingLeastSquares*)alg_mls)->polynomial_fit_ = false;
+          ((MovingLeastSquares*)alg_mls)->radius_ = 0.025;
           // TODO: alternative to above: default value is not smoothing enough
-          //double gauss_param = 3*0.03; // 0.03 is the radius, and the bigger this is, the more weight will distant points have
+          //double gauss_param = 3*((MovingLeastSquares*)alg_mls)->radius_; // the bigger this is, the more weight will distant points have
           //((MovingLeastSquares*)alg_mls)->sqr_gauss_param_ = gauss_param*gauss_param;
           std::cout << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
-                        to->point_cluster.points.size () << " points." << std::endl;
+                        denoise_cloud->points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
-                      (cluster);
-          //ROS_INFO("got response: %s", process_answer_mls.c_str ());
+                      (denoise_cloud);
+          ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
-          pub_mls.publish (mls_cloud);
+          //pub_mls.publish (mls_cloud);
+/*
+          // call GRSD
+          alg_grsd->pre();
+          ((GlobalRSD*)alg_grsd)->min_voxel_pts_ = 0; // the step value will assure that we get enough points for feature estimation (if 0 then a search around the centroid is performed)
+          ((GlobalRSD*)alg_grsd)->step_ = 0;
+          ((GlobalRSD*)alg_grsd)->width_ = 0.03;
+          // publishing partial results if anyone cares :)
+          ((GlobalRSD*)alg_grsd)->publish_cloud_centroids_ = true;
+          ((GlobalRSD*)alg_grsd)->publish_cloud_vrsd_ = true;
+          //((GlobalRSD*)alg_grsd)->label_ = -1; not setting this one as it is the default value and maybe we'll want to set it in pre() through the parameter server
+          std::cout << "[reconstruct_table_objects] Calling GlobalRSD with a PCD with " <<
+                        mls_cloud->points.size () << " points." << std::endl;
+          std::string process_answer_grsd = ((GlobalRSD*)alg_grsd)->process
+                      (cluster);
+          //ROS_INFO("got response: %s", process_answer_grsd.c_str ());
+          boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
+          alg_grsd->post();
+          //pub_grsd.publish (grsd_cloud);
+*/
+          // call SVM classification
+          alg_svm->pre();
+          //default parameters are fine, and required file names have to be specified in the launch file
+          std::cout << "[reconstruct_table_objects] Calling SVM classification with a PCD with " <<
+                        mls_cloud->points.size () << " points." << std::endl;
+//                        grsd_cloud->points.size () << " points." << std::endl;
+          std::string process_answer_svm = ((SVMClassification*)alg_svm)->process
+                      (mls_cloud);
+//                      (grsd_cloud);
+          //ROS_INFO("got response: %s", process_answer_svm.c_str ());
+          boost::shared_ptr <const sensor_msgs::PointCloud> svm_cloud = (((SVMClassification*)alg_svm)->output ());
+          alg_svm->post();
+          pub_svm.publish (svm_cloud);
+          int pcIdx = getChannelIndex(svm_cloud, "point_class");
+          int object_class = svm_cloud->channels.at (pcIdx).values.at (0);
+          ROS_INFO("CLASSIFICATION RESULT: %d", object_class);
+
+          /*
+          // Setting object class: TODO load this mapping from a configuration file generated during training
+          switch (object_class)
+          {
+            case 0:
+            {
+              ...
+              break;
+            }
+            default:
+              object class not added
+          }
+          */
+
+          //*
 
           // repeat fits of cylinders and boxes, to stabilize decision
           int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
@@ -927,32 +1012,32 @@ class TableMemory
           std::cout << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
           std::vector<double> cylinder_coeff;
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers (new sensor_msgs::PointCloud ());
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_inliers2 (new sensor_msgs::PointCloud ());
-          boost::shared_ptr<sensor_msgs::PointCloud> rot_outliers (new sensor_msgs::PointCloud ());
-          boost::shared_ptr<const triangle_mesh::TriangleMesh> rot_mesh;
-          visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_rot_est)->getMarker ();
+          boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers2 (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<sensor_msgs::PointCloud> cyl_outliers (new sensor_msgs::PointCloud ());
+          boost::shared_ptr<const triangle_mesh::TriangleMesh> cyl_mesh;
+          visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_cyl_est)->getMarker ();
           for (int j = 0; j < nr_rep_cyl; j++)
           {
-            alg_rot_est->pre ();
-            ((CylinderEstimation*)alg_rot_est)->publish_marker_ = false;
-            std::string process_answer_rot = ((CylinderEstimation*)alg_rot_est)->process
+            alg_cyl_est->pre ();
+            ((CylinderEstimation*)alg_cyl_est)->publish_marker_ = false;
+            std::string process_answer_rot = ((CylinderEstimation*)alg_cyl_est)->process
                         (mls_cloud);
             ROS_INFO("got response: %s", process_answer_rot.c_str ());
             //boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
-            boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
-            alg_rot_est->post ();
-            ROS_INFO("found cylinder with %ld inliers", tmp_rot_inliers2->points.size ());
+            boost::shared_ptr<sensor_msgs::PointCloud> tmp_cyl_inliers2 = ((CylinderEstimation*)alg_cyl_est)->getThresholdedInliers (0.2);
+            alg_cyl_est->post ();
+            ROS_INFO("found cylinder with %ld inliers", tmp_cyl_inliers2->points.size ());
             // summing up inliers and saving the best results
-            sum_nrc += tmp_rot_inliers2->points.size ();
-            if (tmp_rot_inliers2->points.size () > rot_inliers2->points.size ())
+            sum_nrc += tmp_cyl_inliers2->points.size ();
+            if (tmp_cyl_inliers2->points.size () > cyl_inliers2->points.size ())
             {
-              rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
-              rot_inliers2 = ((CylinderEstimation*)alg_rot_est)->getThresholdedInliers (0.2);
-              rot_outliers = ((CylinderEstimation*)alg_rot_est)->getOutliers ();
-              rot_mesh = ((CylinderEstimation*)alg_rot_est)->output ();
-              cylinder_marker = ((CylinderEstimation*)alg_rot_est)->getMarker ();
-              cylinder_coeff = ((CylinderEstimation*)alg_rot_est)->getCoeff ();
+              cyl_inliers = ((CylinderEstimation*)alg_cyl_est)->getInliers ();
+              cyl_inliers2 = ((CylinderEstimation*)alg_cyl_est)->getThresholdedInliers (0.2);
+              cyl_outliers = ((CylinderEstimation*)alg_cyl_est)->getOutliers ();
+              cyl_mesh = ((CylinderEstimation*)alg_cyl_est)->output ();
+              cylinder_marker = ((CylinderEstimation*)alg_cyl_est)->getMarker ();
+              cylinder_coeff = ((CylinderEstimation*)alg_cyl_est)->getCoeff ();
             }
           }
 
@@ -1006,7 +1091,7 @@ class TableMemory
           double nrc = sum_nrc/(double)nr_rep_cyl;
           // using doubles to avoid ugly casting :)
           double nrb2 = box_inliers2->points.size();
-          double nrc2 = rot_inliers2->points.size();
+          double nrc2 = cyl_inliers2->points.size();
 
           // decide on box versus cylinder
           bool is_box = false;
@@ -1037,7 +1122,7 @@ class TableMemory
           // maybe make this a parameter :)
           int debug = 0;
           if (debug > 1)
-            std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << rot_inliers->points.size() << "-" << rot_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
+            std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
           // save the best model
           std::stringstream tmp_type;
@@ -1053,7 +1138,7 @@ class TableMemory
           else
           {
             marker_pub_.publish (cylinder_marker);
-            to->mesh = rot_mesh;
+            to->mesh = cyl_mesh;
             to->object_geometric_type = "Cyl";
             tmp_type << mls_cloud->points.size ()/10 << "_C_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
             //pub_rot.publish (rot_mesh);
@@ -1065,17 +1150,19 @@ class TableMemory
           }
           if (debug > 1)
             std::cerr << tmp_type.str () << std::endl;
+          //*/
           
           // call triangulation on outliers
-          alg_triangulation->pre();
+//          alg_triangulation->pre();
 //          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
 //                        rot_outliers->points.size () << " points." << std::endl;
 //          std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process
 //                      (rot_outliers);
 //          ROS_INFO("got response: %s", process_answer_tri.c_str ());
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
-          alg_triangulation->post();
-//break;
+//          alg_triangulation->post();
+
+          //*
           //assign object types based on geom properties and surface types
           if ((to->maxP.z - to->minP.z) > 0.22
               && 
@@ -1118,7 +1205,8 @@ class TableMemory
           {
             ROS_INFO("nn");
             to->object_type = "nn";
-          } 
+          }
+          //*/
         }
       }
     }
