@@ -138,6 +138,10 @@ class TableObjectDetector
     int object_cluster_min_pts_;
     double object_cluster_tolerance_;
 
+    double wanted_table_center_x_;
+    double wanted_table_center_y_;
+    double max_sqr_dist_to_wanted_table_;
+
     bool publish_debug_;
 
     double sac_distance_threshold_, eps_angle_, region_angle_threshold_;
@@ -192,6 +196,14 @@ class TableObjectDetector
       node_.param ("table_delta_z", delta_z_, 0.03);                         // consider objects starting at 3cm from the table
       node_.param ("object_min_distance_from_table", object_min_distance_from_table_, 0.10); // objects which have their support more 10cm from the table will not be considered
       ROS_DEBUG ("Using the following thresholds for table detection [min / max height]: %f / %f.", table_min_height_, table_max_height_);
+
+      // Specifying which table to select
+      wanted_table_center_x_ = 2.5;
+      wanted_table_center_y_ = -1.0;
+      max_sqr_dist_to_wanted_table_ = 1.0 * 1.0;
+      node_.param ("wanted_table_center_x", wanted_table_center_x_, wanted_table_center_x_);
+      node_.param ("wanted_table_center_y", wanted_table_center_y_, wanted_table_center_y_);
+      node_.param ("max_sqr_dist_to_wanted_table", max_sqr_dist_to_wanted_table_, max_sqr_dist_to_wanted_table_);
 
       // Used to publish the results as additional messages. 
       {
@@ -416,23 +428,20 @@ class TableObjectDetector
         fitSACPlane (&cloud_down_, &clusters[i], inliers, coeff);
         double angle = angles::to_degrees (cloud_geometry::angles::getAngleBetweenPlanes (coeff, z_coeff));
         geometry_msgs::Point32 table_center;
-        double wanted_table_center_x = 2.5;
-        double wanted_table_center_y = -1.0;
-        double max_dist_to_wanted_table = 1.0 * 1.0;
 
         cloud_geometry::nearest::computeCentroid (cloud_down_, clusters[i], table_center);
-        double dist_to_wanted_table = (table_center.x - wanted_table_center_x) * (table_center.x - wanted_table_center_x) +
-                                      (table_center.y - wanted_table_center_y) * (table_center.y - wanted_table_center_y);
-        if ( (fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg) && (dist_to_wanted_table < max_dist_to_wanted_table) )
+        double sqr_dist_to_wanted_table = (table_center.x - wanted_table_center_x_) * (table_center.x - wanted_table_center_x_) +
+                                      (table_center.y - wanted_table_center_y_) * (table_center.y - wanted_table_center_y_);
+        if ( (fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg) && (sqr_dist_to_wanted_table < max_sqr_dist_to_wanted_table_) )
         {
           good_coeffs.push_back (coeff);
           good_inliers.push_back (inliers);
           c_good.push_back (i);
-          ROS_WARN ("YES, this is our table. dist = %f", dist_to_wanted_table);
+          ROS_WARN ("YES, this is our table. dist = %f", sqrt(sqr_dist_to_wanted_table));
 //           break;
         }
         else
-          ROS_WARN ("NO, this is not our table. dist = %f", dist_to_wanted_table);
+          ROS_WARN ("NO, this is not our table. dist = %f", sqrt(sqr_dist_to_wanted_table));
  
       }
 
