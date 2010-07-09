@@ -293,7 +293,7 @@ class TableObjectDetector
       cloud_geometry::nearest::extractEuclideanClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
       geometry_msgs::Point32 minPCluster, maxPCluster;
-      table.objects.resize (object_clusters.size ());
+      table.objects.resize (1);
       int cluster_count = 0;
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
@@ -303,8 +303,9 @@ class TableObjectDetector
         cloud_geometry::statistics::getMinMax (points, object_idx, minPCluster, maxPCluster);
         if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
             continue;
-
-        table.objects[cluster_count].points.header.seq =  table_cluster_counter_ ++;
+        if (object_idx.size () < table.objects[cluster_count].points.size ())
+            continue;
+        table.objects[cluster_count].points.header.seq = table_cluster_counter_ ++;
 
         table.objects[cluster_count].points.header.frame_id =  points.header.frame_id;
         table.objects[cluster_count].points.points.resize (object_idx.size ());
@@ -330,9 +331,7 @@ class TableObjectDetector
         
         cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[cluster_count].min_bound, table.objects[cluster_count].max_bound);
         cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[cluster_count].center);
-        cluster_count++;
       }
-      object_clusters.resize(cluster_count);
       ROS_INFO ("created %i clusters with %i points total.", (int)object_clusters.size (), nr_p);
       object_indices.resize (nr_p);
     }
