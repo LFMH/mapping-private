@@ -332,6 +332,9 @@ class TableObjectDetector
         cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[cluster_count].min_bound, table.objects[cluster_count].max_bound);
         cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[cluster_count].center);
       }
+      if (table.objects[cluster_count].points.size () == 0)
+        table.objects.resize (0);
+       
       ROS_INFO ("created %i clusters with %i points total.", (int)object_clusters.size (), nr_p);
       object_indices.resize (nr_p);
     }
