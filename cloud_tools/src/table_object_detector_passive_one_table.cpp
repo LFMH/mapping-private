@@ -303,7 +303,7 @@ class TableObjectDetector
         cloud_geometry::statistics::getMinMax (points, object_idx, minPCluster, maxPCluster);
         if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
             continue;
-        if (object_idx.size () < table.objects[cluster_count].points.size ())
+        if (object_idx.size () < table.objects[cluster_count].points.points.size ())
             continue;
         table.objects[cluster_count].points.header.seq = table_cluster_counter_ ++;
 
@@ -332,7 +332,7 @@ class TableObjectDetector
         cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[cluster_count].min_bound, table.objects[cluster_count].max_bound);
         cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[cluster_count].center);
       }
-      if (table.objects[cluster_count].points.size () == 0)
+      if (table.objects[cluster_count].points.points.size () == 0)
         table.objects.resize (0);
        
       ROS_INFO ("created %i clusters with %i points total.", (int)object_clusters.size (), nr_p);
@@ -423,8 +423,7 @@ class TableObjectDetector
         cloud_geometry::nearest::computeCentroid (cloud_down_, clusters[i], table_center);
         double dist_to_wanted_table = (table_center.x - wanted_table_center_x) * (table_center.x - wanted_table_center_x) +
                                       (table_center.y - wanted_table_center_y) * (table_center.y - wanted_table_center_y);
-        if ( fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg )
-        if ( dist_to_wanted_table < max_dist_to_wanted_table )
+        if ( (fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg) && (dist_to_wanted_table < max_dist_to_wanted_table) )
         {
           good_coeffs.push_back (coeff);
           good_inliers.push_back (inliers);
@@ -442,7 +441,7 @@ class TableObjectDetector
         ROS_WARN ("No table found");
         return;
       }
-      ROS_INFO ("Number of good tables found : %i", c_good.size ());
+      ROS_INFO ("Number of good tables found : %i", (int)c_good.size ());
       for (unsigned int cluster_num = 0; cluster_num < c_good.size(); cluster_num++)
       {
         ROS_INFO ("Number of clusters (tables) found: %d, largest cluster(table): %d.", (int)clusters.size (), (int)clusters[c_good[cluster_num]].size ());
@@ -453,7 +452,7 @@ class TableObjectDetector
         }
         if (good_inliers [cluster_num].size () < 50)
         {
-          ROS_INFO ("case 2, %i inliers", good_inliers [cluster_num].size ());
+          ROS_INFO ("case 2, %i inliers", (int)good_inliers [cluster_num].size ());
           continue;
         }
         ROS_INFO ("no case");
