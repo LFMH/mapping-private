@@ -71,7 +71,7 @@ class StatisticalNoiseRemoval : public CloudAlgo
   {
     kdtree_ = NULL;
 
-    // set default values for parameters to produce FPFHs
+    // set default values for parameters
     alpha_ = 3;
     neighborhood_size_ = 10;
     min_nr_pts_ = 0;

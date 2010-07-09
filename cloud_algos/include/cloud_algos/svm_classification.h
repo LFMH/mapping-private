@@ -35,9 +35,9 @@ class SVMClassification : public CloudAlgo
 
   // Options
   std::string model_file_name_; // filename where the model should be loaded from
-  std::string scale_file_name_; // filename where the model should be loaded from
-  bool scale_self_;             // should data be scaled first or not (see: scale_file)
-  bool scale_file_;             // if scale_self_ disabled, get scale parameters from scale_file_name_
+  std::string scale_file_name_; // filename where the scale parameters should be loaded from
+  bool scale_self_;             // should features be scaled with their maximum to 1 and minimum to -1 or not (also see: scale_file_)
+  bool scale_file_;             // if scale_self_ disabled, sets if scale parameters from scale_file_name_ should be used or not
 
   // Default names
   static std::string default_input_topic ()
@@ -54,7 +54,7 @@ class SVMClassification : public CloudAlgo
   std::vector<std::string> requires  ();
   std::vector<std::string> provides ();
   std::string process (const boost::shared_ptr<const InputType>&);
-  OutputType output ();
+  boost::shared_ptr<const OutputType> output ();
 
   // Constructor-Destructor
   SVMClassification () : CloudAlgo ()

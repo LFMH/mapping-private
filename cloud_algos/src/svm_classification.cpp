@@ -50,7 +50,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     }
   if (fIdx == -1)
   {
-    ROS_ERROR ("[SVMClassification] Provided point cloud does not have features computed. Use PFH or similar first!");
+    if (verbosity_level_ > -2) ROS_ERROR ("[SVMClassification] Provided point cloud does not have features computed. Use PFH or similar first!");
     return std::string("missing features");
   }
   int nr_values = 1;
@@ -61,7 +61,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     if (cloud->channels[d].name == dim_name)
       nr_values++;
   }
-  ROS_INFO ("[SVMClassification] Found %d feature values in input PCD.", nr_values);
+  if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Found %d feature values in input PCD.", nr_values);
 
   // Check if expected classification results are provided as well
   int plIdx = -1;
@@ -72,14 +72,14 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
       break;
     }
   if (plIdx == -1)
-    ROS_WARN ("[SVMClassification] Points are not labeled with the expected classification results. If you want to evaluate the results please add point_label channel.");
+    if (verbosity_level_ > -1) ROS_WARN ("[SVMClassification] Points are not labeled with the expected classification results. If you want to evaluate the results please add point_label channel.");
 
   /// Load the SVM model
   struct svm_node* node;
   struct svm_model* model;
   if ((model = svm_load_model (model_file_name_.c_str ())) == 0)
   {
-    ROS_ERROR ("[SVMClassification] Couldn't load SVM model from %s", model_file_name_.c_str ());
+    if (verbosity_level_ > -2) ROS_ERROR ("[SVMClassification] Couldn't load SVM model from %s", model_file_name_.c_str ());
     return std::string("incorrect model file");
   }
   node = (struct svm_node*) malloc ((nr_values+1) * sizeof (struct svm_node));
@@ -93,15 +93,19 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     lower = -1;
     upper = +1;
     value_ranges = computeScaleParameters (cloud, fIdx, nr_values);
-    ROS_INFO ("[SVMClassification] Scaling data to the interval (%g,%g) enabled.", lower, upper);
+    if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Scaling data to the interval (%g,%g) enabled.", lower, upper);
   }
   else if (scale_file_)
   {
     value_ranges = parseScaleParameterFile (scale_file_name_.c_str (), lower, upper, nr_values);
     if (value_ranges == NULL)
-      ROS_WARN ("[SVMClassification] Scaling requested from file %s but it is not possible!", scale_file_name_.c_str ());
+    {
+      if (verbosity_level_ > -1) ROS_WARN ("[SVMClassification] Scaling requested from file %s but it is not possible!", scale_file_name_.c_str ());
+    }
     else
-      ROS_INFO ("[SVMClassification] Scaling according to the limits from %s to the interval (%g,%g) enabled.", scale_file_name_.c_str (), lower, upper);
+    {
+      if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Scaling according to the limits from %s to the interval (%g,%g) enabled.", scale_file_name_.c_str (), lower, upper);
+    }
   }
 
   // Timers
@@ -115,12 +119,12 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
   cloud_svm_->channels = cloud->channels;
 
   // Allocate the extra needed channels
-  ROS_INFO ("[SVMClassification] Saving classification results to point_class channel.");
+  if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Saving classification results to point_class channel.");
   int pcIdx = cloud_svm_->channels.size ();
   cloud_svm_->channels.resize (pcIdx + 1);
   cloud_svm_->channels[pcIdx].name = "point_class";
   cloud_svm_->channels[pcIdx].values.resize (cloud_svm_->points.size (), 0.0);
-  ROS_INFO ("[SVMClassification] Added channel: %s", cloud_svm_->channels[pcIdx].name.c_str ());
+  if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Added channel: %s", cloud_svm_->channels[pcIdx].name.c_str ());
 
   // Go through all the points and classify them
   int success = 0;
@@ -146,19 +150,20 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     if (plIdx != -1 && cloud_svm_->channels[pcIdx].values[cp] == cloud_svm_->channels[plIdx].values[cp])
       success++;
   }
-  if (plIdx != -1) ROS_INFO ("[SVMClassification] Accuracy: %d/%d (%g%%).", success, (int)(cloud_svm_->points.size ()), success * 100.0 / cloud_svm_->points.size ());
+  if (plIdx != -1)
+    if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] Accuracy: %d/%d (%g%%).", success, (int)(cloud_svm_->points.size ()), success * 100.0 / cloud_svm_->points.size ());
 
   // Deallocate
   svm_destroy_model (model);
   free (node);
 
   // Finish
-  ROS_INFO ("[SVMClassification] SVM classification done in %g seconds.", (ros::Time::now () - global_time).toSec ());
+  if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] SVM classification done in %g seconds.", (ros::Time::now () - global_time).toSec ());
   return std::string("ok");
 }
 
-SVMClassification::OutputType SVMClassification::output ()
-  {return *(cloud_svm_.get());}
+boost::shared_ptr<const SVMClassification::OutputType> SVMClassification::output ()
+  {return cloud_svm_;}
 
 #ifdef CREATE_NODE
 int main (int argc, char* argv[])
