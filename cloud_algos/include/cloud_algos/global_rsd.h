@@ -27,6 +27,9 @@
 #include <point_cloud_mapping/geometry/transforms.h>
 #include <point_cloud_mapping/geometry/statistics.h>
 
+// Kd Tree
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
+
 // Cloud algos
 #include <cloud_algos/cloud_algos.h>
 
@@ -61,11 +64,18 @@ class GlobalRSD : public CloudAlgo
   typedef sensor_msgs::PointCloud InputType;
 
   // Options
-  int label_; // label of the object if known, and -1 otherwise
+  int point_label_; // label of the object if known, and -1 otherwise
   double width_; // the width of the OcTree cells
   int step_; // specifies how many extra cells in each direction should contribute to local feature
   //int rsd_bins_; // number of divisions to create the RSD histogram
   int min_voxel_pts_; // minimum number of points in a cell to be processed
+  bool publish_cloud_centroids_; // should we publish cloud_centroids_?
+  bool publish_cloud_vrsd_; // should we publish cloud_vrsd_?
+  //bool surface2curvature_; // should we write the results of the local surface classification as the curvature value in the partial results for visualization?
+
+  // Intermediary results for convenient access
+  boost::shared_ptr<sensor_msgs::PointCloud> cloud_centroids_;
+  boost::shared_ptr<sensor_msgs::PointCloud> cloud_vrsd_;
 
   // Topic name to subscribe to
   static std::string default_input_topic ()
@@ -91,9 +101,9 @@ class GlobalRSD : public CloudAlgo
   // Constructor-Destructor
   GlobalRSD () : CloudAlgo ()
   {
-    label_ = -1;
-    width_ = 0.015;
-    step_ = 1;
+    point_label_ = -1;
+    width_ = 0.03;
+    step_ = 0;
     min_voxel_pts_ = 1;
     nr_bins_ = NR_CLASS*(NR_CLASS+1)/2;
   }
@@ -115,7 +125,7 @@ class GlobalRSD : public CloudAlgo
   // Surface type value:
   //    0 - noise/corner
   //    1 - planar
-  //    2 - cylinder (egde?)
+  //    2 - cylinder (rim)
   //    3 - circle (corner?)
   //    4 - edge
   inline int
@@ -204,7 +214,7 @@ class GlobalRSD : public CloudAlgo
     else if (min_radius < 0.030) /// considering small cylinders to be edges
       type = 4; // edge
     else
-      type = 2; // cylinder
+      type = 2; // cylinder (rim)
 
     // For safety...
     if (type >= NR_CLASS)
@@ -312,8 +322,6 @@ class GlobalRSD : public CloudAlgo
 
   // ROS messages
   boost::shared_ptr<sensor_msgs::PointCloud> cloud_grsd_;
-  boost::shared_ptr<sensor_msgs::PointCloud> cloud_centroids_;
-  boost::shared_ptr<sensor_msgs::PointCloud> cloud_vrsd_;
 
   // OcTree stuff
   octomap::OcTreePCL* octree_;
