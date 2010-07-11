@@ -281,7 +281,7 @@ class TableMemory
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/SVMClassification"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/StatisticalNoiseRemoval"));
-      //      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/GlobalRSD"));
+      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/GlobalRSD"));
       
       load_plugins ();
       DEBUG = false;
@@ -840,7 +840,7 @@ class TableMemory
           return;
         }
 
-      cerr << "loading plugins" << endl;
+      std::cerr << "loading plugins" << std::endl;
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
       CloudAlgo * alg_cyl_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
@@ -855,7 +855,7 @@ class TableMemory
       alg_grsd->verbosity_level_ = 0;
       alg_svm->verbosity_level_ = 0;
       alg_denoise->verbosity_level_ = 0;
-      cerr << "successfully loaded plugins" << endl;
+      std::cerr << "successfully loaded plugins" << std::endl;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
       ros::Publisher pub_cyl = find_publisher ("cloud_algos/CylinderEstimation");
