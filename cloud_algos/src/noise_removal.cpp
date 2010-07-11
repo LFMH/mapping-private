@@ -47,16 +47,17 @@ std::string StatisticalNoiseRemoval::process (const boost::shared_ptr<const Stat
   clear ();
 
   // Checks
+  output_valid_ = true;
   if (neighborhood_size_ < 2 || alpha_ < 0)
   {
     if (verbosity_level_ > -2) ROS_ERROR ("[StatisticalNoiseRemoval] A STD limit of %g and/or a neighborhood of size %d makes no sense!", alpha_, neighborhood_size_);
+    output_valid_ = false;
     return std::string("ERROR: Not enough neighbors requested!");
   }
-
-  // Checks
   if (neighborhood_size_ > (int)cloud->points.size ())
   {
     if (verbosity_level_ > -2) ROS_ERROR ("[StatisticalNoiseRemoval] %d nearest neighbors (including self) requested, but only %d points in total!", neighborhood_size_, (int)cloud->points.size ());
+    output_valid_ = false;
     return std::string("ERROR: Not enough points in the cloud (or too many neighbors requested)!");
   }
 

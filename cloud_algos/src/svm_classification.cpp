@@ -41,6 +41,7 @@ std::vector<std::string> SVMClassification::provides ()
 std::string SVMClassification::process (const boost::shared_ptr<const SVMClassification::InputType>& cloud)
 {
   // Check if features exist and how many of them
+  output_valid_ = true;
   int fIdx = -1;
   for (unsigned int d = 0; d < cloud->channels.size (); d++)
     if (cloud->channels[d].name == "f1")
@@ -51,6 +52,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
   if (fIdx == -1)
   {
     if (verbosity_level_ > -2) ROS_ERROR ("[SVMClassification] Provided point cloud does not have features computed. Use PFH or similar first!");
+    output_valid_ = false;
     return std::string("missing features");
   }
   int nr_values = 1;

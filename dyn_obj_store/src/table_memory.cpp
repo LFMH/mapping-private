@@ -927,7 +927,7 @@ class TableMemory
                         to->point_cluster.points.size () << " points." << std::endl;
           std::string process_answer_denoise = ((StatisticalNoiseRemoval*)alg_denoise)->process
                       (cluster);
-          //ROS_INFO("got response: %s", process_answer_denoise.c_str ());
+          ROS_INFO("got response: %s", process_answer_denoise.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> denoise_cloud = (((StatisticalNoiseRemoval*)alg_denoise)->output ());
           alg_denoise->post();
           //pub_denoise.publish (denoise_cloud);
@@ -978,13 +978,16 @@ class TableMemory
           std::string process_answer_svm = ((SVMClassification*)alg_svm)->process
                       (mls_cloud);
 //                      (grsd_cloud);
-          //ROS_INFO("got response: %s", process_answer_svm.c_str ());
+          ROS_INFO("got response: %s", process_answer_svm.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> svm_cloud = (((SVMClassification*)alg_svm)->output ());
           alg_svm->post();
-          pub_svm.publish (svm_cloud);
-          int pcIdx = getChannelIndex(svm_cloud, "point_class");
-          int object_class = svm_cloud->channels.at (pcIdx).values.at (0);
-          ROS_INFO("CLASSIFICATION RESULT: %d", object_class);
+          if (alg_svm->output_valid_)
+          {
+            pub_svm.publish (svm_cloud);
+            int pcIdx = getChannelIndex(svm_cloud, "point_class");
+            int object_class = svm_cloud->channels.at (pcIdx).values.at (0);
+            ROS_INFO("CLASSIFICATION RESULT: %d", object_class);
+          }
 
           /*
           // Setting object class: TODO load this mapping from a configuration file generated during training
