@@ -281,7 +281,7 @@ class TableMemory
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/RobustBoxEstimation"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/SVMClassification"));
       algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/StatisticalNoiseRemoval"));
-      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/GlobalRSD"));
+      //      algorithm_pool.push_back (NamedAlgorithm ("cloud_algos/GlobalRSD"));
       
       load_plugins ();
       DEBUG = false;
