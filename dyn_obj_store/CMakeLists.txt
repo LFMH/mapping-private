@@ -9,4 +9,5 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(EXECUTABLE_LIBRARY_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable (table_memory src/table_memory.cpp)
+rosbuild_add_executable (table_memory_grsd src/table_memory_grsd.cpp)
 
