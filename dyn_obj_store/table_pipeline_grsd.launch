@@ -1,0 +1,89 @@
+<launch>
+  <!-- NormalEstimation -->
+<!--   <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation_node" output="screen"> -->
+<!--     <param name="search_k_closest" value="30" /> -->
+<!--     <param name="downsample" value="0" /> -->
+<!--     <remap from="tilt_laser_cloud" to="/shoulder_cloud"/> -->
+<!--     <remap from="cloud_normals" to="/cloud_pcd_normals"/> -->
+<!--   </node> -->
+<!--   <node pkg="point_cloud_mapping" type="normal_estimation_node" name="normal_estimation_node" output="screen"> -->
+<!--     <param name="search_k_closest" value="30" /> -->
+<!--     <param name="downsample" value="0" /> -->
+<!--     <remap from="/normal_estimation_node/tilt_laser_cloud" to="/shoulder_cloud"/> -->
+<!--     <remap from="/normal_estimation_node/cloud_normals" to="/cloud_pcd_normals"/> -->
+<!--   </node> -->
+
+  
+  <!-- Box Filter -->
+  <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node" output="screen" respawn="true">
+    <param name="input_cloud_topic" value="/shoulder_cloud" />
+    <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
+    <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
+    <param name="box_min_y" value="-3.0" />
+    <param name="box_max_y" value="2.0" />
+    <param name="box_min_x" value="-3.0" />
+    <param name="box_max_x" value="3.0" />
+    <param name="box_min_z" value="0.0" />
+    <param name="box_max_z" value="2.0" />
+  </node>
+  
+<!--   Wall Filter  -->
+<!--   <node pkg="cloud_tools" type="wall_filter_node" name="wall_filter_node" output="screen"> -->
+<!--     <param name="input_cloud_topic" value="/shoulder_cloud_clipped" /> -->
+<!--     <param name="output_cloud_topic" value="/shoulder_cloud_no_walls" /> -->
+<!--   </node>  -->
+
+  <!--From here on we will work in /map coordinate frame -->
+  <param name="global_frame_id" value="/map" />	
+  <!-- Table Object Detector (passive version) -->
+  <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen"  respawn="true">
+    <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
+    <param name="table_delta_z" value="0.02" />
+    <param name="output_table_topic" value="/table_with_objects" />
+    <param name="sac_distance_threshold" value="0.015" />
+    <param name="normal_eps_angle" value="5" />
+    <param name="table_delta_z" value="0.01" />
+  </node>
+
+  <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true" launch-prefix="xterm -e gdb -args">
+    <param name="input_table_topic" value="/table_with_objects" />
+  </node>
+
+
+<!--   <node pkg="tf" type="static_transform_publisher" name="RightEye" args="0.03 0 0 0 0 0 /RightEyeCalc /RightEyeCalcOff 100"/> -->
+
+  <!--Needed because of the imperfect calibration-->
+<!--   <node pkg="tf" type="static_transform_publisher" name="RightEye" args="0.03 0 0 0 0 0 /RightEyeCalc /RightEyeCalcOff 100"/> -->
+<!--   <node name="pointcloud_to_image_projector_node" pkg="image_algos" type="pointcloud_to_image_projector_node" output="screen"  respawn="true"> -->
+<!--     <param name="origin" value="/RightEyeCalcOff" /> -->
+<!--     <param name="child" value="/map" /> -->
+<!--     <param name="input_image_topic" value="/cop/right/camera" /> -->
+<!--     <param name="input_cloud_topic" value="/table_object_detector_passive/cloud_annotated" /> -->
+<!--     <param name="focal_length" value="0.00641331974023884" /> -->
+<!--     <param name="proj_center_x" value="833.248646581603" /> -->
+<!--     <param name="proj_center_y" value="661.107370424523" /> -->
+<!--     <param name="pix_size_x" value="7.43100103980579e-06" /> -->
+<!--     <param name="pix_size_x" value="7.4e-06" /> -->
+<!--   </node> -->
+  
+
+
+<!--   <node pkg="image_algos" type="find_color_hsv_node" name="find_color_hsv_node" output="screen" respawn="true"> -->
+<!--     <remap from="~image" to="/pointcloud_to_image_projector_node/image_with_projected_cluster"/> -->
+<!--     <param name="colors_yaml_file" value="$(find image_algos)/data/colors.yaml" /> -->
+<!--   </node> -->
+    
+  <!-- Table Memory -->
+<!--   <node pkg="dyn_obj_store" type="table_memory" name="table_memory" output="screen"> -->
+<!--     <param name="input_table_topic" value="/table_with_objects" /> -->
+<!--   </node> -->
+  
+  <!-- Table Message Splitter -->
+<!--   <node pkg="cloud_tools" type="table_msg_split_node" name="table_msg_split_node" output="screen"> -->
+<!--     <param name="input_table_topic" value="/table_with_objects" /> -->
+<!--     <param name="output_pcds_topic" value="/table_objects" /> -->
+<!--     <param name="output_polygon_topic" value="/table_polygon" /> -->
+<!--   </node> -->
+
+</launch>
+
