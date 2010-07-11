@@ -29,6 +29,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
   src/svm_classification.cpp
   src/noise_removal.cpp
 #  src/global_rsd.cpp
+  src/radius_estimation.cpp
 )
 
 #rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)

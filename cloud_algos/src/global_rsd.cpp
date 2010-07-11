@@ -223,6 +223,9 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
     // Mark all points with result
     int type = setSurfaceType (cloud_vrsd_, &indices_i, &neighbors, nxIdx, max_dist, regIdx, rIdx);
 
+    // Mark the node label as well
+    node_i->label = type;
+
     // Set up PCD with centroids
     cloud_centroids_->points[cnt_centroids].x = centroid_i(0);
     cloud_centroids_->points[cnt_centroids].y = centroid_i(1);
@@ -307,15 +310,15 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
         // Get its contents, if empty set to EMPTY_VALUE
         if (histogram_pair.second.nr_points < min_voxel_pts_)
-        {
           histogram_pair.first = -1;
-        }
         else
-        {
-          //histogram_pair.first = getSurfaceType (points, &((*tree) (x, y, z)), nxIdx, width*sqrt(3));
           histogram_pair.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_ray.at (0)]);
-        }
 
+        // TEST
+        if (histogram_pair.first != node_ray->label)
+          ROS_ERROR("LABEL MISMATCH: %d != %d", histogram_pair.first, node_ray->label);
+
+        // Save data about cell
         histogram_values.push_back (histogram_pair);
       }
 

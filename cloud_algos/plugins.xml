@@ -32,7 +32,7 @@
 
   <class name="cloud_algos/RobustBoxEstimation" type="cloud_algos::RobustBoxEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
-      This plugin fits a quboid/box to a given PointCloud cluster.
+      This plugin fits a cuboid/box to a given PointCloud cluster.
     </description>
   </class>
   
@@ -44,25 +44,32 @@
 
   <class name="cloud_algos/BoxEstimation" type="cloud_algos::BoxEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
-      This plugin fits a quboid/box to a given PointCloud cluster.
+      This plugin fits a cuboid/box to a given PointCloud cluster.
     </description>
   </class>
 
   <class name="cloud_algos/SVMClassification" type="cloud_algos::SVMClassification" base_class_type="cloud_algos::CloudAlgo">
     <description>
-      This plugin fits performs SVM Classification.
+      This plugin does SVM classification using a given model and scaling parameters on the feature channels of a given PointCloud cluster.
     </description>
   </class>
 
   <class name="cloud_algos/GlobalRSD" type="cloud_algos::GlobalRSD" base_class_type="cloud_algos::CloudAlgo">
     <description>
-      This plugin is for object recognition using Global Radius-based Surface Descriptor.
+      This plugin computes the Global Radius-based Surface Descriptor of a given PointCloud cluster.
     </description>
   </class>
 
   <class name="cloud_algos/StatisticalNoiseRemoval" type="cloud_algos::StatisticalNoiseRemoval" base_class_type="cloud_algos::CloudAlgo">
     <description>
-      This plugin removes noise from 3D PointClouds using statistical methods.
+      This plugin removes spurious points from a given PointCloud cluster.
     </description>
   </class>
+
+  <class name="cloud_algos/LocalRadiusEstimation" type="cloud_algos::LocalRadiusEstimation" base_class_type="cloud_algos::CloudAlgo">
+    <description>
+      This plugin computes the Radius-based Surface Descriptor for the points of a given PointCloud cluster.
+    </description>
+  </class>
+
 </library>
