@@ -840,26 +840,28 @@ class TableMemory
           return;
         }
 
+      cerr << "loading plugins" << endl;
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
       CloudAlgo * alg_cyl_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
       CloudAlgo * alg_box = find_algorithm ("cloud_algos/RobustBoxEstimation");
-      //CloudAlgo * alg_grsd = find_algorithm ("cloud_algos/GlobalRSD");
+      CloudAlgo * alg_grsd = find_algorithm ("cloud_algos/GlobalRSD");
       CloudAlgo * alg_svm = find_algorithm ("cloud_algos/SVMClassification");
       CloudAlgo * alg_denoise = find_algorithm ("cloud_algos/StatisticalNoiseRemoval");
       alg_triangulation->verbosity_level_ = 0;
       alg_cyl_est->verbosity_level_ = 0;
       alg_mls->verbosity_level_ = 0;
       alg_box->verbosity_level_ = 0;
-      //alg_grsd->verbosity_level_ = 0;
+      alg_grsd->verbosity_level_ = 0;
       alg_svm->verbosity_level_ = 0;
       alg_denoise->verbosity_level_ = 0;
+      cerr << "successfully loaded plugins" << endl;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
       ros::Publisher pub_cyl = find_publisher ("cloud_algos/CylinderEstimation");
       ros::Publisher pub_tri = find_publisher ("cloud_algos/DepthImageTriangulation");
       ros::Publisher pub_box = find_publisher ("cloud_algos/RobustBoxEstimation");
-      //ros::Publisher pub_grsd = find_publisher ("cloud_algos/GlobalRSD");
+      ros::Publisher pub_grsd = find_publisher ("cloud_algos/GlobalRSD");
       ros::Publisher pub_svm = find_publisher ("cloud_algos/SVMClassification");
       ros::Publisher pub_denoise = find_publisher ("cloud_algos/StatisticalNoiseRemoval");
 
@@ -950,7 +952,7 @@ class TableMemory
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
           //pub_mls.publish (mls_cloud);
-/*
+
           // call GRSD
           alg_grsd->pre();
           ((GlobalRSD*)alg_grsd)->min_voxel_pts_ = 0; // the step value will assure that we get enough points for feature estimation (if 0 then a search around the centroid is performed)
@@ -967,41 +969,76 @@ class TableMemory
           //ROS_INFO("got response: %s", process_answer_grsd.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
           alg_grsd->post();
-          //pub_grsd.publish (grsd_cloud);
-*/
+          pub_grsd.publish (grsd_cloud);
+
           // call SVM classification
           alg_svm->pre();
           //default parameters are fine, and required file names have to be specified in the launch file
           std::cout << "[reconstruct_table_objects] Calling SVM classification with a PCD with " <<
-                        mls_cloud->points.size () << " points." << std::endl;
-//                        grsd_cloud->points.size () << " points." << std::endl;
+//                        mls_cloud->points.size () << " points." << std::endl;
+                        grsd_cloud->points.size () << " points." << std::endl;
           std::string process_answer_svm = ((SVMClassification*)alg_svm)->process
-                      (mls_cloud);
-//                      (grsd_cloud);
+//                      (mls_cloud);
+                      (grsd_cloud);
           ROS_INFO("got response: %s", process_answer_svm.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> svm_cloud = (((SVMClassification*)alg_svm)->output ());
           alg_svm->post();
+          int object_class = 0;
           if (alg_svm->output_valid_)
           {
             pub_svm.publish (svm_cloud);
             int pcIdx = getChannelIndex(svm_cloud, "point_class");
-            int object_class = svm_cloud->channels.at (pcIdx).values.at (0);
+            int object_pose_class = svm_cloud->channels.at (pcIdx).values.at (0);
             ROS_INFO("CLASSIFICATION RESULT: %d", object_class);
+            object_class = object_pose_class / 10;
           }
 
-          /*
           // Setting object class: TODO load this mapping from a configuration file generated during training
           switch (object_class)
           {
-            case 0:
+            case 1: // cereal
             {
-              ...
+              ROS_INFO("Found BreakfastCereal");
+              to->object_type = "BreakfastCereal";
               break;
             }
+            case 2: // chips
+            {
+              ROS_INFO("Found Potato-Chips");
+              to->object_type = "Potato-Chips";
+              break;
+            }
+            case 3: // icetea
+            {
+              ROS_INFO("Found Tea-Iced");
+              to->object_type = "Tea-Iced";
+              break;
+            }
+            case 4: // milk
+            {
+              ROS_INFO("Found CowsMilk-Product");
+              to->object_type = "CowsMilk-Product";
+              break;
+            }
+            case 5: // mug
+            {
+              ROS_INFO("Found Cup");
+              to->object_type = "Cup";
+              break;
+            }
+            case 6: // small bowl
+            {
+              ROS_INFO("Found Bowl-Eating");
+              to->object_type = "Bowl-Eating";
+              break;
+            }
+            case 0: // output was invalid
             default:
-              object class not added
+            {
+              ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+              to->object_type = "nn";
+            }
           }
-          */
 
           //*
 
@@ -1165,7 +1202,7 @@ class TableMemory
 //          pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
 //          alg_triangulation->post();
 
-          //*
+          /*
           //assign object types based on geom properties and surface types
           if ((to->maxP.z - to->minP.z) > 0.22
               && 

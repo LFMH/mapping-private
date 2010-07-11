@@ -92,3 +92,4 @@ set_target_properties (statistical_noise_removal_node PROPERTIES COMPILE_FLAGS -
 rosbuild_add_executable(global_rsd_node src/global_rsd.cpp)
 get_target_property(prev_props global_rsd_node COMPILE_FLAGS)
 set_target_properties (global_rsd_node PROPERTIES COMPILE_FLAGS "${prev_props} -DCREATE_NODE")
+#set_target_properties (global_rsd_node PROPERTIES COMPILE_FLAGS -DCREATE_NODE)

@@ -201,13 +201,13 @@ class GlobalRSD : public CloudAlgo
     else min_radius = std::min (Amaxt_d/Amaxt_Amax, plane_radius);
     //print_info (stderr, "Estimated minimum and maximum radius is: "); print_value (stderr, "%g - %g\n", min_radius, max_radius);
 
-    // Simple categorization
+    // Simple categorization to reduce feature vector size, but should use co-occurance of min-max radius bins
     int type;// = EMPTY_VALUE;
-    if (min_radius > 0.066) // 0.075
+    if (min_radius > 0.045) // 0.066
       type = 1; // plane
     else if ((min_radius < 0.030) && (max_radius < 0.050))
       type = 0; // noise/corner
-    else if (max_radius - min_radius < 0.0075) // 0.010
+    else if (max_radius - min_radius < 0.01) // 0.0075
       type = 3; // circle (corner?)
     //else if ((min_radius < 0.020) && (max_radius > 0.175)) // 0.150
     //  type = 4; // edge

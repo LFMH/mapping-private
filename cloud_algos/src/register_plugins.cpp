@@ -29,7 +29,7 @@ PLUGINLIB_DECLARE_CLASS(cloud_algos, BoxEstimation, cloud_algos::BoxEstimation, 
 PLUGINLIB_DECLARE_CLASS(cloud_algos, RobustBoxEstimation, cloud_algos::RobustBoxEstimation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, CylinderEstimation, cloud_algos::CylinderEstimation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, SVMClassification, cloud_algos::SVMClassification, cloud_algos::CloudAlgo);
-//PLUGINLIB_DECLARE_CLASS(cloud_algos, GlobalRSD, cloud_algos::GlobalRSD, cloud_algos::CloudAlgo);
+PLUGINLIB_DECLARE_CLASS(cloud_algos, GlobalRSD, cloud_algos::GlobalRSD, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, StatisticalNoiseRemoval, cloud_algos::StatisticalNoiseRemoval, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, LocalRadiusEstimation, cloud_algos::LocalRadiusEstimation, cloud_algos::CloudAlgo);
 

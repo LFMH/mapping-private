@@ -1,3 +1,4 @@
+#include <cloud_algos/cloud_algos.h>
 #include <cloud_algos/global_rsd.h>
 
 using namespace std;
