@@ -7,8 +7,8 @@
 
 //#include <ros/ros.h>
 #include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
+//#include <sensor_msgs/PointCloud2.h>
+//#include <sensor_msgs/point_cloud_conversion.h>
 #include "octomap/octomap.h"
 #include "pcl_to_octree/octree/OcTreePCL.h"
 #include "pcl_to_octree/octree/OcTreeNodePCL.h"
@@ -238,25 +238,25 @@ class GlobalRSD : public CloudAlgo
   void
     setOctree (boost::shared_ptr<sensor_msgs::PointCloud> pointcloud_msg, double octree_res, int initial_label, double laser_offset = 0, double octree_maxrange = -1)
   {
-    sensor_msgs::PointCloud2 pointcloud2_msg;
+    //sensor_msgs::PointCloud2 pointcloud2_msg;
     octomap_server::OctomapBinary octree_msg;
 
     // Converting from PointCloud msg format to PointCloud2 msg format
-    sensor_msgs::convertPointCloudToPointCloud2(*pointcloud_msg, pointcloud2_msg);
-    pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl;
+    //sensor_msgs::convertPointCloudToPointCloud2(*pointcloud_msg, pointcloud2_msg);
+    //pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl;
 
     octomap::point3d octomap_3d_point;
     octomap::Pointcloud octomap_pointcloud;
 
     //Converting PointCloud2 msg format to pcl pointcloud format in order to read the 3d data
-    point_cloud::fromMsg(pointcloud2_msg, pointcloud2_pcl);
+    //point_cloud::fromMsg(pointcloud2_msg, pointcloud2_pcl);
 
     //Reading from pcl point cloud and saving it into octomap point cloud
-    for(unsigned int i =0; i < pointcloud2_pcl.points.size(); i++)
+    for(unsigned int i =0; i < pointcloud_msg->points.size(); i++)
     {
-      octomap_3d_point(0) = pointcloud2_pcl.points[i].x;
-      octomap_3d_point(1) = pointcloud2_pcl.points[i].y;
-      octomap_3d_point(2) = pointcloud2_pcl.points[i].z;
+      octomap_3d_point(0) = pointcloud_msg->points[i].x;
+      octomap_3d_point(1) = pointcloud_msg->points[i].y;
+      octomap_3d_point(2) = pointcloud_msg->points[i].z;
       octomap_pointcloud.push_back(octomap_3d_point);
     }
 
@@ -299,11 +299,11 @@ class GlobalRSD : public CloudAlgo
     }
 
     //assign points to Leaf Nodes
-    for(unsigned int i = 0; i < pointcloud2_pcl.points.size(); i++)
+    for(unsigned int i = 0; i < pointcloud_msg->points.size(); i++)
     {
-      octomap_3d_point(0) = pointcloud2_pcl.points[i].x;
-      octomap_3d_point(1) = pointcloud2_pcl.points[i].y;
-      octomap_3d_point(2) = pointcloud2_pcl.points[i].z;
+      octomap_3d_point(0) = pointcloud_msg->points[i].x;
+      octomap_3d_point(1) = pointcloud_msg->points[i].y;
+      octomap_3d_point(2) = pointcloud_msg->points[i].z;
       octomap::OcTreeNodePCL * octree_node1 = octree_->search(octomap_3d_point);
       octree_node1->set3DPointInliers(i);
     }
