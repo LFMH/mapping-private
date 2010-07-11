@@ -28,8 +28,7 @@ ROSBUILD_ADD_LIBRARY (cloud_algos
   src/depth_image_triangulation.cpp
   src/svm_classification.cpp
   src/noise_removal.cpp
-#  src/global_rsd.cpp
-  src/radius_estimation.cpp
+  src/global_rsd.cpp
 )
 
 #rosbuild_add_executable (cloud_algos_test src/cloud_algos_test.cpp)
