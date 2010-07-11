@@ -965,8 +965,8 @@ class TableMemory
           std::cout << "[reconstruct_table_objects] Calling GlobalRSD with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
           std::string process_answer_grsd = ((GlobalRSD*)alg_grsd)->process
-                      (cluster);
-          //ROS_INFO("got response: %s", process_answer_grsd.c_str ());
+                      (mls_cloud);
+          ROS_INFO("got response: %s", process_answer_grsd.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
           alg_grsd->post();
           pub_grsd.publish (grsd_cloud);
