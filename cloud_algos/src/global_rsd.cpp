@@ -299,9 +299,13 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       {
         // Get a cell
         octomap::OcTreeNodePCL *node_ray = octree_->search(*centroid_ray);
+	if (node_ray == NULL)
+	  continue;
 
         // Get its contents
         vector<int> indices_ray = node_ray->get3DPointInliers ();
+	if (indices_ray.size() == 0)
+	  continue;
 
         // Compute the distance to the start leaf
         pair<int, IntersectedLeaf> histogram_pair;
@@ -313,8 +317,11 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
         if (histogram_pair.second.nr_points < min_voxel_pts_)
           histogram_pair.first = -1;
         else
-          histogram_pair.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_ray.at (0)]);
-
+	  {
+	    std::cerr << "regIdx: " << regIdx << "indices_ray size: " << indices_ray.size() << std::endl;
+	    std::cerr << "ch. size: " << cloud_vrsd_->channels.size() << "val size: " << cloud_vrsd_->channels[regIdx].values.size() << std:: endl;
+	    histogram_pair.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_ray.at (0)]);
+	  }
         // TEST
         if (histogram_pair.first != node_ray->label)
           ROS_ERROR("LABEL MISMATCH: %d != %d", histogram_pair.first, node_ray->label);
