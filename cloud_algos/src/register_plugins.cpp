@@ -9,6 +9,9 @@
 #include <cloud_algos/box_fit2_algo.h>
 #include <cloud_algos/depth_image_triangulation.h>
 #include <cloud_algos/mls_fit.h>
+#include <cloud_algos/noise_removal.h>
+#include <cloud_algos/svm_classification.h>
+#include <cloud_algos/global_rsd.h>
 
 using namespace cloud_algos;
 
@@ -24,6 +27,9 @@ PLUGINLIB_DECLARE_CLASS(cloud_algos, DepthImageTriangulation, cloud_algos::Depth
 PLUGINLIB_DECLARE_CLASS(cloud_algos, BoxEstimation, cloud_algos::BoxEstimation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, RobustBoxEstimation, cloud_algos::RobustBoxEstimation, cloud_algos::CloudAlgo);
 PLUGINLIB_DECLARE_CLASS(cloud_algos, CylinderEstimation, cloud_algos::CylinderEstimation, cloud_algos::CloudAlgo);
+PLUGINLIB_DECLARE_CLASS(cloud_algos, SVMClassification, cloud_algos::SVMClassification, cloud_algos::CloudAlgo);
+//PLUGINLIB_DECLARE_CLASS(cloud_algos, GlobalRSD, cloud_algos::GlobalRSD, cloud_algos::CloudAlgo);
+PLUGINLIB_DECLARE_CLASS(cloud_algos, StatisticalNoiseRemoval, cloud_algos::StatisticalNoiseRemoval, cloud_algos::CloudAlgo);
 
 //PLUGINLIB_REGISTER_CLASS(NoiseRemoval, NoiseRemoval, PCD_Algo)
 

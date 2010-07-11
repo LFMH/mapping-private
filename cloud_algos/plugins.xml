@@ -47,4 +47,22 @@
       This plugin fits a quboid/box to a given PointCloud cluster.
     </description>
   </class>
+
+  <class name="cloud_algos/SVMClassification" type="cloud_algos::SVMClassification" base_class_type="cloud_algos::CloudAlgo">
+    <description>
+      This plugin fits performs SVM Classification.
+    </description>
+  </class>
+
+  <class name="cloud_algos/GlobalRSD" type="cloud_algos::GlobalRSD" base_class_type="cloud_algos::CloudAlgo">
+    <description>
+      This plugin is for object recognition using Global Radius-based Surface Descriptor.
+    </description>
+  </class>
+
+  <class name="cloud_algos/StatisticalNoiseRemoval" type="cloud_algos::StatisticalNoiseRemoval" base_class_type="cloud_algos::CloudAlgo">
+    <description>
+      This plugin removes noise from 3D PointClouds using statistical methods.
+    </description>
+  </class>
 </library>
