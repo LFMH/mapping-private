@@ -213,13 +213,13 @@ class TableMemory
         ret.object_center =  tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->center;
         if (DEBUG)
         {
-          if ( ret.object_center.x < -3.0 || ret.object_center.x > 3.0)
+          if ( ret.object_center.x < -5.0 || ret.object_center.x > 5.0)
           {
             ROS_WARN("[TableMemory:] object x pos not possible, logging to table_memory.log");
             record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.x);
             ret.object_center.x =  ret.table_center.x;
           }
-          if ( ret.object_center.y < -3.0 || ret.object_center.y > 3.0)
+          if ( ret.object_center.y < -5.0 || ret.object_center.y > 5.0)
           {
             ROS_WARN("[TableMemory:] object y pos not possible, logging to table_memory.log");
             record_to_file("table_memory.log", ret.stamp.toSec(), ret.object_center.y);
@@ -454,10 +454,13 @@ class TableMemory
       for (unsigned int up = 0; up < update_prolog_.size(); up++)
         {
           ias_table_msgs::PrologReturn pr =  getPrologReturn (update_prolog_[up]);
-          if (pr.object_type != "nn"  || pr.object_type != "")
-            resp.prolog_return.push_back(pr);
-          else
+          if (pr.object_type == "nn")
             ROS_WARN ("object_type %s with center: %f, %f, %f", pr.object_type.c_str(), pr.object_center.x, pr.object_center.y, pr.object_center.z);
+          else if (pr.object_type == "")
+            ROS_WARN ("object_type %s with center: %f, %f, %f", pr.object_type.c_str(), pr.object_center.x, pr.object_center.y, pr.object_center.z);
+          else
+            resp.prolog_return.push_back(pr);
+
         }
       //TODO lock
       update_prolog_.clear();
