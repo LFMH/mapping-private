@@ -1154,6 +1154,13 @@ class TableMemory
               {
                 ROS_WARN("Found Bowl-Eating");
                 to->object_type = "Bowl-Eating";
+                if ((to->maxP.z - to->minP.z) > 0.06 
+                    &&
+                    (to->maxP.z - to->minP.z) < 0.15)
+                {
+                  ROS_WARN("Re-casted to Cup");
+                  to->object_type = "Cup";
+                }
               }
               else
               {
@@ -1214,6 +1221,13 @@ class TableMemory
               {
                 ROS_WARN("Found Cup");
                 to->object_type = "Cup";
+                if ((to->maxP.z - to->minP.z)> 0.0 
+                    &&
+                    (to->maxP.z - to->minP.z) < 0.06)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+                {
+                  ROS_WARN("Re-casted to Bowl-Eating");
+                  to->object_type = "Bowl-Eating";
+                }
               }
               else
               {
