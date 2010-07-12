@@ -77,7 +77,7 @@ stereo calibration.
 #include "cv_bridge/CvBridge.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 #include <cloud_tools/laser_camera_virtual_view_calibration.h>
 
 #include <boost/thread.hpp>
@@ -111,7 +111,7 @@ public:
   sensor_msgs::CvBridge bridge_;
   
   sensor_msgs::PointCloud cloud_in_;
-  triangle_mesh::TriangleMesh mesh_; 
+  triangle_mesh_msgs::TriangleMesh mesh_; 
  
   boost::thread spin_thread_;
   //public:
@@ -171,7 +171,7 @@ public:
    * \brief mesh callback 
    * \param mesh input mesh message
    */
-  void mesh_cb (const triangle_mesh::TriangleMeshConstPtr& mesh)
+  void mesh_cb (const triangle_mesh_msgs::TriangleMeshConstPtr& mesh)
   {
     if (camera_image_saved_)
     {

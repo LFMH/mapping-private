@@ -59,7 +59,7 @@
 #include <angles/angles.h>
 
 //for mesh output
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 #include <tf/tf.h>
 
 // Eigen
@@ -84,7 +84,7 @@ public:
     publish_marker_ = true;
   }
 
-  typedef triangle_mesh::TriangleMesh OutputType;
+  typedef triangle_mesh_msgs::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 
   static std::string default_input_topic ()
@@ -209,7 +209,7 @@ protected:
     geometry_msgs::Point32 axis_;
   float rotate_inliers_;
   //triangular mesh
-  boost::shared_ptr<triangle_mesh::TriangleMesh> mesh_;
+  boost::shared_ptr<triangle_mesh_msgs::TriangleMesh> mesh_;
 };
 
 }//namespace cloud_algos

@@ -3,7 +3,7 @@
 #include <map>
 #include <ctime>
 #include <ros/node_handle.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 #include <ias_table_msgs/TableWithObjects.h>
 #include <ias_table_msgs/PrologReturn.h>
 #include <ias_table_srvs/ias_table_clusters_service.h>
@@ -14,7 +14,7 @@
 #include <mapping_msgs/PolygonalMap.h>
 #include <geometry_msgs/Polygon.h>
 
-#include <position_string_rviz_plugin/PositionStringList.h>
+#include <position_string_msgs/PositionStringList.h>
 
 // cloud_algos plugin stuff
 #include <cloud_algos/rotational_estimation.h>
@@ -66,7 +66,7 @@ struct TableObject
   std::string object_color;
   std::string object_geometric_type;
   std::string perception_method;
-  boost::shared_ptr<const triangle_mesh::TriangleMesh> mesh;
+  boost::shared_ptr<const triangle_mesh_msgs::TriangleMesh> mesh;
   unsigned long long lo_id;
   // this number is _NOT_ unique per cluster! it is meant in a tracking sense!
   unsigned long long object_cop_id;
@@ -270,7 +270,7 @@ class TableMemory
       cop_beliefstate_pub_ = nh_.advertise<ias_table_msgs::TableObject> (cop_beliefstate_topic_, 1);
       mem_state_pub_ = nh_.advertise<mapping_msgs::PolygonalMap> (output_table_state_topic_, 1);
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud> (output_cloud_topic_, 1);
-      cluster_name_pub_ = nh_.advertise<position_string_rviz_plugin::PositionStringList> (output_cluster_name_topic_, 1);
+      cluster_name_pub_ = nh_.advertise<position_string_msgs::PositionStringList> (output_cluster_name_topic_, 1);
       marker_pub_ = nh_.advertise<visualization_msgs::Marker>("object_marker", 1);
       table_memory_clusters_service_ = nh_.advertiseService ("table_memory_clusters_service", &TableMemory::clusters_service, this);
       jlo_client_ = nh_.serviceClient<vision_srvs::srvjlo> ("/located_object", true);
@@ -446,7 +446,7 @@ class TableMemory
       ROS_INFO("[update_table] got response: %s", process_answer_box.c_str ());
       boost::shared_ptr<const RobustBoxEstimation::OutputType> table_mesh = ((RobustBoxEstimation*)alg_box)->output ();
       old_table.coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
-      ROS_INFO("[update_table] Publishing result as triangle_mesh::TriangleMesh on topic: table_mesh");
+      ROS_INFO("[update_table] Publishing result as triangle_mesh_msgs::TriangleMesh on topic: table_mesh");
       table_mesh_pub_.publish (table_mesh);
       alg_box->post();
     }
@@ -1051,7 +1051,7 @@ class TableMemory
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers (new sensor_msgs::PointCloud ());
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers2 (new sensor_msgs::PointCloud ());
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_outliers (new sensor_msgs::PointCloud ());
-          boost::shared_ptr<const triangle_mesh::TriangleMesh> cyl_mesh;
+          boost::shared_ptr<const triangle_mesh_msgs::TriangleMesh> cyl_mesh;
           visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_cyl_est)->getMarker ();
           for (int j = 0; j < nr_rep_cyl; j++)
           {
@@ -1083,7 +1083,7 @@ class TableMemory
           boost::shared_ptr<sensor_msgs::PointCloud> box_inliers (new sensor_msgs::PointCloud ());
           boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 (new sensor_msgs::PointCloud ());
           std::vector<double> box_coeff;
-          boost::shared_ptr<const triangle_mesh::TriangleMesh> box_mesh;
+          boost::shared_ptr<const triangle_mesh_msgs::TriangleMesh> box_mesh;
           visualization_msgs::Marker box_marker;
           for (int j = 0; j < nr_rep_box; j++)
           {
@@ -1348,7 +1348,7 @@ class TableMemory
       cloud_pub_.publish (pc);
 
       // publish cluster names
-      position_string_rviz_plugin::PositionStringList names;
+      position_string_msgs::PositionStringList names;
       names.header.frame_id = global_frame_;
       for (unsigned int i = 0; i < tables.size(); i++)
       {

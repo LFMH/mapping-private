@@ -58,7 +58,7 @@
 //TriangleMesh to output resultant triangles
 #include <sensor_msgs/PointCloud.h>
 #include <geometry_msgs/Point32.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 //boost
 #include <boost/thread/mutex.hpp>
 
@@ -77,7 +77,7 @@ class DepthImageTriangulation : public CloudAlgo
   // Input/Output type
   typedef sensor_msgs::PointCloud InputType;
   //typedef mapping_msgs::PolygonalMap OutputType;
-  typedef triangle_mesh::TriangleMesh OutputType;
+  typedef triangle_mesh_msgs::TriangleMesh OutputType;
   // Topic name to advertise
   static std::string default_output_topic ()
   {

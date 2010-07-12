@@ -11,7 +11,7 @@ using namespace cloud_algos;
 
 void
   findRotationalObjects (sensor_msgs::PointCloud cloud, double threshold_, double probability_, 
-                         int max_iterations_, boost::shared_ptr<triangle_mesh::TriangleMesh> mesh_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<position_string_rviz_plugin::PositionStringList> vis_text, std::vector<int> &final_inliers, std::vector<int> &final_outliers)
+                         int max_iterations_, boost::shared_ptr<triangle_mesh_msgs::TriangleMesh> mesh_synth, boost::shared_ptr<mapping_msgs::PolygonalMap> &pmap, boost::shared_ptr<position_string_msgs::PositionStringList> vis_text, std::vector<int> &final_inliers, std::vector<int> &final_outliers)
 {
   int debug = 0;
   ias_sample_consensus::SACModelRotational *sac_model_ = new ias_sample_consensus::SACModelRotational (pmap);
@@ -169,7 +169,7 @@ void RotationalEstimation::init (ros::NodeHandle &nh)
   vis_cloud_pub_ = nh_.advertise <sensor_msgs::PointCloud> ("vis_rotational_objects", 1);
   vis_cloud_outliers_pub_ = nh_.advertise <sensor_msgs::PointCloud> (output_cloud_outliers_, 1);
   vis_pmap_pub_ = nh_.advertise <mapping_msgs::PolygonalMap> ("vis_rotational_objects_axis", 1);
-  vis_text_pub_ = nh_.advertise <position_string_rviz_plugin::PositionStringList> ("vis_rotational_objects_text", 1);
+  vis_text_pub_ = nh_.advertise <position_string_msgs::PositionStringList> ("vis_rotational_objects_text", 1);
 }
 
 void RotationalEstimation::pre ()
@@ -180,8 +180,8 @@ void RotationalEstimation::pre ()
                            (new sensor_msgs::PointCloud ());
   vis_cloud_outliers_ = boost::shared_ptr<sensor_msgs::PointCloud> 
                            (new sensor_msgs::PointCloud ());
-  vis_text_ = boost::shared_ptr<position_string_rviz_plugin::PositionStringList> 
-                           (new position_string_rviz_plugin::PositionStringList ());
+  vis_text_ = boost::shared_ptr<position_string_msgs::PositionStringList> 
+                           (new position_string_msgs::PositionStringList ());
 }
 
 void RotationalEstimation::post ()
@@ -207,7 +207,7 @@ std::vector<std::string> RotationalEstimation::provides ()
 std::string RotationalEstimation::process (const boost::shared_ptr<const RotationalEstimation::InputType> cloud)
 {
   cloud_ = cloud;
-  mesh_ = boost::shared_ptr <triangle_mesh::TriangleMesh>(new triangle_mesh::TriangleMesh ());
+  mesh_ = boost::shared_ptr <triangle_mesh_msgs::TriangleMesh>(new triangle_mesh_msgs::TriangleMesh ());
   mesh_->header = cloud_->header;
   mesh_->sending_node = ros::this_node::getName();
   if (debug_ > 0)

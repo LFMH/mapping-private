@@ -364,7 +364,7 @@ std::string DepthImageTriangulation::process (const boost::shared_ptr<const Dept
   mesh_->header = cloud_with_line_.header;   
   mesh_->sending_node = ros::this_node::getName();   
   geometry_msgs::Point32 tr_i, tr_j, tr_k;
-  triangle_mesh::Triangle tr_mesh;
+  triangle_mesh_msgs::Triangle tr_mesh;
 
 #ifdef DEBUG  
   if (verbosity_level_ > 1) ROS_INFO("Triangle a: %d, b: %d, c: %d", tr[i].a, tr[i].b, tr[i].c);

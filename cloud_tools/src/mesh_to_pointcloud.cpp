@@ -35,7 +35,7 @@ point cloud topic
 
 #include <ctime>
 #include <ros/node_handle.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 #include <sensor_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -60,7 +60,7 @@ class MeshToPointcloud
     }
     
     void
-      mesh_cb (const triangle_mesh::TriangleMesh::ConstPtr& mesh)
+      mesh_cb (const triangle_mesh_msgs::TriangleMesh::ConstPtr& mesh)
     {
       sensor_msgs::PointCloud p;
       p.header = mesh->header;

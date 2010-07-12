@@ -31,16 +31,16 @@
 /** 
 @file
 
-@brief triangular_mesh_to_vtk concatenates n [triangle_mesh/TriangleMesh] 
+@brief triangular_mesh_to_vtk concatenates n [triangle_mesh_msgs/TriangleMesh] 
 messages and writes them to a VTK (http://www.vtk.org/VTK/img/file-formats.pdf) compliant format.
 NOTE: You have to specify the list of nodes publishing TriangleMesh(es) that you 
 would like to concatenate and save to .vtk format. See \b subscribed_to_nodes parameter
 in triangular_mesh_to_vtk.launch file.
 
 @par Advertises
-- \b topic with concatenated triangle_mesh/TriangleMesh messages
+- \b topic with concatenated triangle_mesh_msgs/TriangleMesh messages
 @par Subscribes
-- \b topic with triangle_mesh/TriangleMesh message
+- \b topic with triangle_mesh_msgs/TriangleMesh message
 @par Parameters
 -  std::string input_mesh_topic, output_vtk_file
 -  int file_name_counter_;
@@ -51,7 +51,7 @@ in triangular_mesh_to_vtk.launch file.
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <point_cloud_mapping/cloud_io.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 
 #include <math.h>
 
@@ -72,7 +72,7 @@ protected:
   
 public:  
   // ROS messages
-  triangle_mesh::TriangleMesh mesh_; 
+  triangle_mesh_msgs::TriangleMesh mesh_; 
 
 
   TriangleMeshToVTK (ros::NodeHandle &n) : nh_(n)
@@ -89,7 +89,7 @@ public:
       ROS_INFO("node_names: %s, toggle values: %d", (*it_).first.c_str(), (*it_).second);
 
     mesh_sub_ = nh_.subscribe(input_mesh_topic_, 10, &TriangleMeshToVTK::mesh_cb, this);
-    mesh_pub_ = nh_.advertise<triangle_mesh::TriangleMesh> ("mesh_output", 1);
+    mesh_pub_ = nh_.advertise<triangle_mesh_msgs::TriangleMesh> ("mesh_output", 1);
     mesh_.points.resize(0);
     mesh_.triangles.resize(0);
     file_name_counter_ = 0;
@@ -100,7 +100,7 @@ public:
    * \brief mesh callback
    * \param mesh mesh messages constituting our to-be-reconstructed object
    */
-  void mesh_cb(const triangle_mesh::TriangleMeshConstPtr& mesh)
+  void mesh_cb(const triangle_mesh_msgs::TriangleMeshConstPtr& mesh)
   {
     mesh_.header = mesh->header;
     ROS_INFO("Sending node name: %s", mesh->sending_node.c_str());
@@ -153,7 +153,7 @@ public:
    * \param output vtk output file
    * \param mesh_ input mesh message
    */
-  void write_vtk_file(std::string output, triangle_mesh::TriangleMesh &mesh_)
+  void write_vtk_file(std::string output, triangle_mesh_msgs::TriangleMesh &mesh_)
   {
     /* writing VTK file */
     ROS_WARN("Writting to vtk file");

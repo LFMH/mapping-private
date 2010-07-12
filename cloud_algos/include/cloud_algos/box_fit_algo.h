@@ -32,8 +32,8 @@
 #define CLOUD_ALGOS_BOX_ESTIMATION_H
 #include <cloud_algos/cloud_algos.h>
 #include <mapping_msgs/PolygonalMap.h>
-#include <position_string_rviz_plugin/PositionStringList.h>
-#include <triangle_mesh/TriangleMesh.h>
+#include <position_string_msgs/PositionStringList.h>
+#include <triangle_mesh_msgs/TriangleMesh.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include "visualization_msgs/Marker.h"
 #include "visualization_msgs/MarkerArray.h"
@@ -55,7 +55,7 @@ class BoxEstimation : public CloudAlgo
     publish_marker_ = true;
   };
 
-  typedef triangle_mesh::TriangleMesh OutputType;
+  typedef triangle_mesh_msgs::TriangleMesh OutputType;
   typedef sensor_msgs::PointCloud InputType;
 
   static std::string default_input_topic ()

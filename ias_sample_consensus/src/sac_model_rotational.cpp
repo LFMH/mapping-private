@@ -653,7 +653,7 @@ namespace ias_sample_consensus
   
   void
     SACModelRotational::samplePointsOnRotational (const std::vector<double> modelCoefficients, std::vector<int> inliers, 
-                                                  boost::shared_ptr<triangle_mesh::TriangleMesh> ret)
+                                                  boost::shared_ptr<triangle_mesh_msgs::TriangleMesh> ret)
   {
     static int count = 0;
     count++;
@@ -749,7 +749,7 @@ namespace ias_sample_consensus
         p.z = q_0[2];
         
         ret->points.push_back (p);
-        triangle_mesh::Triangle tr;
+        triangle_mesh_msgs::Triangle tr;
         if (i > 0) // not first line
         {
           if (j > 0)

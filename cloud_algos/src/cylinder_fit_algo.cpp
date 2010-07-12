@@ -59,7 +59,7 @@ void CylinderEstimation::pre  ()
   points_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud);
   cylinder_points_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud);
   outlier_points_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud);
-  mesh_ = boost::shared_ptr <triangle_mesh::TriangleMesh>(new triangle_mesh::TriangleMesh ());
+  mesh_ = boost::shared_ptr <triangle_mesh_msgs::TriangleMesh>(new triangle_mesh_msgs::TriangleMesh ());
 }
 
 
@@ -289,7 +289,7 @@ void CylinderEstimation::triangulate_cylinder(std::vector<double> &coeff)
   mesh_->header = points_->header;
   mesh_->sending_node = ros::this_node::getName();
   geometry_msgs::Point32 p1, p2, p3, p4;
-  triangle_mesh::Triangle triangle1, triangle2;
+  triangle_mesh_msgs::Triangle triangle1, triangle2;
   double radius = coeff[6];
   int angle_step = 10;
   for (int angle = 0; angle < 360; angle = angle + angle_step)
