@@ -454,10 +454,10 @@ class TableMemory
       for (unsigned int up = 0; up < update_prolog_.size(); up++)
         {
           ias_table_msgs::PrologReturn pr =  getPrologReturn (update_prolog_[up]);
-          if (pr.object_type != "nn" )
+          if (pr.object_type != "nn"  || pr.object_type != "")
             resp.prolog_return.push_back(pr);
           else
-            ROS_WARN ("object_type \"nn\" with center: %f, %f, %f", pr.object_center.x, pr.object_center.y, pr.object_center.z);
+            ROS_WARN ("object_type %s with center: %f, %f, %f", pr.object_type.c_str(), pr.object_center.x, pr.object_center.y, pr.object_center.z);
         }
       //TODO lock
       update_prolog_.clear();
