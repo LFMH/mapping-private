@@ -442,7 +442,7 @@ class TableObjectDetector
 //           break;
         }
         else
-          ROS_WARN ("NO, this is not our table. dist = %f", sqrt(sqr_dist_to_wanted_table));
+          ROS_WARN ("NO, this is not our table. dist(%g,%g) = %f", table_center.x, table_center.y, sqrt(sqr_dist_to_wanted_table));
  
       }
 

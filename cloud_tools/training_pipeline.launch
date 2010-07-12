@@ -19,7 +19,8 @@
       <param name="sac_distance_threshold" value="0.015" />
       <param name="normal_eps_angle" value="5" />
       <param name="table_delta_z" value="0.01" />
-      <rosparam>{wanted_table_center_x: 2.5, wanted_table_center_y: -1.0, max_sqr_dist_to_wanted_table: 1.0}</rosparam>
+      <!-- <rosparam>{wanted_table_center_x: 2.5, wanted_table_center_y: -1.0, max_sqr_dist_to_wanted_table: 1.0}</rosparam> -->
+      <rosparam>{wanted_table_center_x: -1.5, wanted_table_center_y: -1.5, max_sqr_dist_to_wanted_table: 1.0}</rosparam>
     </node>
   
     <!-- Table Message Splitter -->
