@@ -164,7 +164,8 @@ class TableMemory
     /// if this is true, we consider table positions and outlines to be fixed.
     /// they will not get updated
     bool fix_tables_;
-
+    //if this is false, do not update table memory
+    int update_table_memory_;
     //insert lo_ids waiting for prolog update
     std::vector<unsigned long long> update_prolog_;
     //this number never resets in the life cycle of program
@@ -254,6 +255,7 @@ class TableMemory
     , color_probability_(0.2), object_unique_id_(0), object_cop_id_counter_(700000)
     {
       nh_.param ("fix_tables", fix_tables_, false);
+      nh_.param ("/update_table_memory", update_table_memory_, 1);
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
@@ -1142,6 +1144,7 @@ class TableMemory
     void update_parameters ()
     {
       nh_.param ("fix_tables", fix_tables_, false);
+      nh_.param ("/update_table_memory", update_table_memory_, 1);
     }
 
     // incoming data...
@@ -1149,6 +1152,11 @@ class TableMemory
       table_cb (const ias_table_msgs::TableWithObjects::ConstPtr& table)
     {
       update_parameters ();
+      if (update_table_memory_ == 0)
+      {
+        ROS_WARN("update_table_memory set to false, not updating it");
+        return;
+      }
       int table_found = -1;
       ROS_INFO ("Looking for table in list of known tables.");
       for (int i = 0; i < (signed int) tables.size (); i++)
