@@ -912,7 +912,6 @@ class TableMemory
           }
 
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
-          std::cerr << "stamp:" << cluster->header.stamp.toSec () << std::endl;
 
           // TODO: ideally all parameters should be set in the launch file
 
