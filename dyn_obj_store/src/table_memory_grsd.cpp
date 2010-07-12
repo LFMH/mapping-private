@@ -1145,45 +1145,87 @@ class TableMemory
           {
             case 1: // bowl
             {
-              ROS_INFO("Found Bowl-Eating");
-              to->object_type = "Bowl-Eating";
-              if (!is_object_geometric_type_box) // will enter default if true
-                break;
+              if (!is_object_geometric_type_box)
+              {
+                ROS_INFO("Found Bowl-Eating");
+                to->object_type = "Bowl-Eating";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 2: // cereal
             {
-              ROS_INFO("Found BreakfastCereal");
-              to->object_type = "BreakfastCereal";
-              if (is_object_geometric_type_box) // will enter default if true
-                break;
+              if (is_object_geometric_type_box)
+              {
+                ROS_INFO("Found BreakfastCereal");
+                to->object_type = "BreakfastCereal";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 3: // icetea
             {
-              ROS_INFO("Found Tea-Iced");
-              to->object_type = "Tea-Iced";
-              if (is_object_geometric_type_box) // will enter default if true
-                break;
+              if (is_object_geometric_type_box)
+              {
+                ROS_INFO("Found Tea-Iced");
+                to->object_type = "Tea-Iced";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 4: // milk
             {
-              ROS_INFO("Found CowsMilk-Product");
-              to->object_type = "CowsMilk-Product";
-              if (is_object_geometric_type_box) // will enter default if true
-                break;
+              if (is_object_geometric_type_box)
+              {
+                ROS_INFO("Found CowsMilk-Product");
+                to->object_type = "CowsMilk-Product";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 5: // mug
             {
-              ROS_INFO("Found Cup");
-              to->object_type = "Cup";
-              if (!is_object_geometric_type_box) // will enter default if true
-                break;
+              if (!is_object_geometric_type_box)
+              {
+                ROS_INFO("Found Cup");
+                to->object_type = "Cup";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 6: // chips
             {
-              ROS_INFO("Found Potato-Chips");
-              to->object_type = "Potato-Chips";
-              if (!is_object_geometric_type_box) // will enter default if true
-                break;
+              if (!is_object_geometric_type_box)
+              {
+                ROS_INFO("Found Potato-Chips");
+                to->object_type = "Potato-Chips";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
             }
             case 0: // output was invalid
             default:
