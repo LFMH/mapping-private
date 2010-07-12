@@ -113,7 +113,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
   // Create the final cloud with 1 point (cluster center) to hold the Global Radius-based Surface Descriptor
   cloud_grsd_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud());
-  cloud_grsd_->header   = cloud->header;
+  cloud_grsd_->header = cloud->header;
   cloud_grsd_->points.resize (1);
 
   // Allocate the extra needed channels
@@ -304,13 +304,10 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
         // Save the label of the cell
         octomap::OcTreeNodePCL *node_ray = octree_->search(*centroid_ray);
-        if (node_ray == NULL)
+        if (node_ray == NULL) // TODO: this should never happen, the octree_ should be fully expanded!
           histogram_pair.first = -1;
         else
-        {
           histogram_pair.first = node_ray->label;
-          ROS_ERROR("GOOD: node_ray != NULL");
-        }
 
         // Save data about cell
         histogram_values.push_back (histogram_pair);

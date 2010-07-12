@@ -1,5 +1,5 @@
 name: PositionString Display
-library: position_string_rviz_plugin
+library: position_string_rviz_plugin_no_msgs
 displays:
   -
     class_name: position_string_rviz_plugin::PositionStringDisplay

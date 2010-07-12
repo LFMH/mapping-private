@@ -755,14 +755,9 @@ class TableMemory
             to_now->lo_id = to_last->lo_id;
             to_now->object_cop_id = to_last->object_cop_id;
             to_now->number = to_last->number;
-            if (to_now->object_geometric_type == to_last->object_geometric_type)
-              to_now->name = to_last->name;
-            else
-            {
-              std::stringstream name;
-              name << to_now->object_geometric_type << "_" << to_now->number;
-              to_now->name = name.str();
-            }
+            std::stringstream name;
+            name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
+            to_now->name = name.str();
             break;
           }
         }
@@ -840,7 +835,7 @@ class TableMemory
           return;
         }
 
-      std::cerr << "loading plugins" << std::endl;
+      //std::cerr << "loading plugins" << std::endl;
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
       CloudAlgo * alg_cyl_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
@@ -855,7 +850,7 @@ class TableMemory
       alg_grsd->verbosity_level_ = 0;
       alg_svm->verbosity_level_ = 0;
       alg_denoise->verbosity_level_ = 0;
-      std::cerr << "successfully loaded plugins" << std::endl;
+      //std::cerr << "successfully loaded plugins" << std::endl;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
       ros::Publisher pub_cyl = find_publisher ("cloud_algos/CylinderEstimation");
@@ -917,6 +912,7 @@ class TableMemory
           }
 
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
+          std::cerr << "stamp:" << cluster->header.stamp.toSec () << std::endl;
 
           // TODO: ideally all parameters should be set in the launch file
 
@@ -926,13 +922,13 @@ class TableMemory
           ((StatisticalNoiseRemoval*)alg_denoise)->neighborhood_size_ = 30;
           ((StatisticalNoiseRemoval*)alg_denoise)->min_nr_pts_ = 0; // thus output will be always valid
           std::cout << "[reconstruct_table_objects] Calling noise removal with a PCD with " <<
-                        to->point_cluster.points.size () << " points." << std::endl;
+                       cluster->points.size () << " points." << std::endl;
           std::string process_answer_denoise = ((StatisticalNoiseRemoval*)alg_denoise)->process
                       (cluster);
           ROS_INFO("got response: %s", process_answer_denoise.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> denoise_cloud = (((StatisticalNoiseRemoval*)alg_denoise)->output ());
           alg_denoise->post();
-          //pub_denoise.publish (denoise_cloud);
+          pub_denoise.publish (denoise_cloud);
 
           // call MLS
           //std::vector<std::string> pre_mls = alg_mls->requires ();
@@ -951,7 +947,7 @@ class TableMemory
           ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
-          //pub_mls.publish (mls_cloud);
+          pub_mls.publish (mls_cloud);
 
           // call GRSD
           alg_grsd->pre();
