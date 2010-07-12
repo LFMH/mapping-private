@@ -46,7 +46,6 @@ struct IntersectedLeaf
 {
   double sqr_distance; // square distance from source node
   octomap::point3d centroid; // leaf center coordinates
-  int nr_points; // number of points in cell
 };
 
 inline bool
@@ -105,7 +104,7 @@ class GlobalRSD : public CloudAlgo
     width_ = 0.03;
     step_ = 0;
     min_voxel_pts_ = 1;
-    nr_bins_ = NR_CLASS*(NR_CLASS+1)/2;
+    nr_bins_ = (NR_CLASS+1)*(NR_CLASS+2)/2;
   }
   ~GlobalRSD ()
   {
@@ -269,7 +268,7 @@ class GlobalRSD : public CloudAlgo
     octomap::ScanGraph* octomap_graph = new octomap::ScanGraph();
     octomap_graph->addNode(&octomap_pointcloud, laser_pose);
 
-    ROS_INFO("Number of points in graph: %d", octomap_graph->getNumPoints());
+    //ROS_INFO("Number of points in scene graph: %d", octomap_graph->getNumPoints());
 
     // Converting from octomap graph to octomap tree (octree)
     octree_ = new octomap::OcTreePCL(octree_res);

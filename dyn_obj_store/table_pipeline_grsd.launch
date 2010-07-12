@@ -45,8 +45,10 @@
     <param name="table_delta_z" value="0.01" />
   </node>
 
-  <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true" launch-prefix="xterm -e gdb -args">
+  <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true"> <!-- launch-prefix="xterm -e gdb -args"> -->
     <param name="input_table_topic" value="/table_with_objects" />
+    <param name="model_file_name" value="$(find cloud_algos)/svm/grsd.model" />
+    <param name="scale_file_name" value="$(find cloud_algos)/svm/grsd.scp" />
   </node>
 
 

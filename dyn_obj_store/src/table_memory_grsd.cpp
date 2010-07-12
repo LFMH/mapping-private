@@ -989,7 +989,7 @@ class TableMemory
             pub_svm.publish (svm_cloud);
             int pcIdx = getChannelIndex(svm_cloud, "point_class");
             int object_pose_class = svm_cloud->channels.at (pcIdx).values.at (0);
-            ROS_INFO("CLASSIFICATION RESULT: %d", object_class);
+            ROS_INFO("CLASSIFICATION RESULT: %d", object_pose_class);
             object_class = object_pose_class / 10;
           }
 
@@ -1049,7 +1049,7 @@ class TableMemory
           int sum_nrc = 0;
 
           // call rotational estimation
-          std::cout << "[reconstruct_table_objects] Calling RotEst with a PCD with " <<
+          std::cout << "[reconstruct_table_objects] Calling CylinderEstimation with a PCD with " <<
                         mls_cloud->points.size () << " points." << std::endl;
           std::vector<double> cylinder_coeff;
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers (new sensor_msgs::PointCloud ());

@@ -82,6 +82,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
   if ((model = svm_load_model (model_file_name_.c_str ())) == 0)
   {
     if (verbosity_level_ > -2) ROS_ERROR ("[SVMClassification] Couldn't load SVM model from %s", model_file_name_.c_str ());
+    output_valid_ = false;
     return std::string("incorrect model file");
   }
   node = (struct svm_node*) malloc ((nr_values+1) * sizeof (struct svm_node));
@@ -102,7 +103,9 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
     value_ranges = parseScaleParameterFile (scale_file_name_.c_str (), lower, upper, nr_values);
     if (value_ranges == NULL)
     {
-      if (verbosity_level_ > -1) ROS_WARN ("[SVMClassification] Scaling requested from file %s but it is not possible!", scale_file_name_.c_str ());
+      if (verbosity_level_ > -2) ROS_ERROR ("[SVMClassification] Scaling requested from file %s but it is not possible!", scale_file_name_.c_str ());
+      output_valid_ = false;
+      return std::string("incorrect scale parameter file");
     }
     else
     {

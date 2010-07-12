@@ -297,34 +297,20 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       // Iterate over leaves
       for (vector<octomap::point3d>::iterator centroid_ray = ray.begin (); centroid_ray != ray.end (); centroid_ray++)
       {
-        // Get a cell
-        octomap::OcTreeNodePCL *node_ray = octree_->search(*centroid_ray);
-	if (node_ray == NULL)
-	  continue;
-
-        // Get its contents
-        vector<int> indices_ray = node_ray->get3DPointInliers ();
-	if (indices_ray.size() == 0)
-	  continue;
-
         // Compute the distance to the start leaf
         pair<int, IntersectedLeaf> histogram_pair;
         histogram_pair.second.centroid = *centroid_ray;
         histogram_pair.second.sqr_distance = _sqr_dist (*centroid_ray, centroid_i);
-        histogram_pair.second.nr_points = indices_ray.size ();
 
-        // Get its contents, if empty set to EMPTY_VALUE
-        if (histogram_pair.second.nr_points < min_voxel_pts_)
+        // Save the label of the cell
+        octomap::OcTreeNodePCL *node_ray = octree_->search(*centroid_ray);
+        if (node_ray == NULL)
           histogram_pair.first = -1;
         else
-	  {
-	    std::cerr << "regIdx: " << regIdx << "indices_ray size: " << indices_ray.size() << std::endl;
-	    std::cerr << "ch. size: " << cloud_vrsd_->channels.size() << "val size: " << cloud_vrsd_->channels[regIdx].values.size() << std:: endl;
-	    histogram_pair.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_ray.at (0)]);
-	  }
-        // TEST
-        if (histogram_pair.first != node_ray->label)
-          ROS_ERROR("LABEL MISMATCH: %d != %d", histogram_pair.first, node_ray->label);
+        {
+          histogram_pair.first = node_ray->label;
+          ROS_ERROR("GOOD: node_ray != NULL");
+        }
 
         // Save data about cell
         histogram_values.push_back (histogram_pair);
@@ -334,16 +320,16 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
       pair<int, IntersectedLeaf> histogram_pair1;
       histogram_pair1.second.sqr_distance = _sqr_dist (centroid_i, centroid_i); // 0.0
       histogram_pair1.second.centroid = centroid_i;
-      histogram_pair1.second.nr_points = indices_i.size ();
-      histogram_pair1.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_i.at (0)]);
+      histogram_pair1.first = node_i->label;
+      //histogram_pair1.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_i.at (0)]);
       histogram_values.push_back (histogram_pair1);
 
       // Add the last voxel
       pair<int, IntersectedLeaf> histogram_pair2;
       histogram_pair2.second.sqr_distance = _sqr_dist (centroid_j, centroid_i); // line length
       histogram_pair2.second.centroid = centroid_j;
-      histogram_pair2.second.nr_points = indices_j.size ();
-      histogram_pair2.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_j.at (0)]);
+      histogram_pair2.first = node_j->label;
+      //histogram_pair2.first = (int)(cloud_vrsd_->channels[regIdx].values[indices_j.at (0)]);
       histogram_values.push_back (histogram_pair2);
 
       // Sort the histogram according to the distance of the leaves to the start leaf
