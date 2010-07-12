@@ -144,7 +144,9 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
   //*
   // Create a fixed-size octree decomposition
+  ts = ros::Time::now ();
   setOctree (cloud_vrsd_, width_, -1);
+  if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] kdTree created in %g seconds.", (ros::Time::now () - ts).toSec ());
 
   // Maximum distance in the user-specified neighborhood
   double max_dist = (2*step_+1)*width_*sqrt(3);
@@ -214,6 +216,8 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
               continue;
             // accumulate indices
             octomap::OcTreeNodePCL *node_neighbor = octree_->search(centroid_neighbor);
+            if (node_neighbor == NULL) // TODO: why does the previous check fail?
+              continue;
             vector<int> ni = node_neighbor->get3DPointInliers ();
             neighbors.insert (neighbors.end (), ni.begin (), ni.end ());
           } // i

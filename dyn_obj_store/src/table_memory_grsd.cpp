@@ -1147,12 +1147,12 @@ class TableMemory
             {
               if (!is_object_geometric_type_box)
               {
-                ROS_INFO("Found Bowl-Eating");
+                ROS_WARN("Found Bowl-Eating");
                 to->object_type = "Bowl-Eating";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
@@ -1161,12 +1161,12 @@ class TableMemory
             {
               if (is_object_geometric_type_box)
               {
-                ROS_INFO("Found BreakfastCereal");
+                ROS_WARN("Found BreakfastCereal");
                 to->object_type = "BreakfastCereal";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
@@ -1175,12 +1175,12 @@ class TableMemory
             {
               if (is_object_geometric_type_box)
               {
-                ROS_INFO("Found Tea-Iced");
+                ROS_WARN("Found Tea-Iced");
                 to->object_type = "Tea-Iced";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
@@ -1189,12 +1189,12 @@ class TableMemory
             {
               if (is_object_geometric_type_box)
               {
-                ROS_INFO("Found CowsMilk-Product");
+                ROS_WARN("Found CowsMilk-Product");
                 to->object_type = "CowsMilk-Product";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
@@ -1203,12 +1203,12 @@ class TableMemory
             {
               if (!is_object_geometric_type_box)
               {
-                ROS_INFO("Found Cup");
+                ROS_WARN("Found Cup");
                 to->object_type = "Cup";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
@@ -1217,12 +1217,12 @@ class TableMemory
             {
               if (!is_object_geometric_type_box)
               {
-                ROS_INFO("Found Potato-Chips");
+                ROS_WARN("Found Potato-Chips");
                 to->object_type = "Potato-Chips";
               }
               else
               {
-                ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
                 to->object_type = "nn";
               }
               break;
