@@ -1105,7 +1105,7 @@ class TableMemory
             ROS_INFO("Found BreakfastCereal");
             to->object_type = "BreakfastCereal";
           }
-          else if ((to->maxP.z - to->minP.z) > 0.18 
+          else if ((to->maxP.z - to->minP.z) > 0.16 
                    &&
                    (to->maxP.z - to->minP.z) < 0.22) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Box")
           {
