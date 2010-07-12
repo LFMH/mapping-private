@@ -765,7 +765,7 @@ class TableMemory
         {
           to_now->number = cluster_name_counter_++;
           std::stringstream name;
-          name << to_now->object_geometric_type << "_" << to_now->number;
+          name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
           to_now->name = name.str();
           to_now->object_cop_id = object_cop_id_counter_++;
         }
@@ -989,55 +989,6 @@ class TableMemory
             object_class = object_pose_class / 10;
           }
 
-          // Setting object class: TODO load this mapping from a configuration file generated during training
-          switch (object_class)
-          {
-            case 1: // cereal
-            {
-              ROS_INFO("Found BreakfastCereal");
-              to->object_type = "BreakfastCereal";
-              break;
-            }
-            case 2: // chips
-            {
-              ROS_INFO("Found Potato-Chips");
-              to->object_type = "Potato-Chips";
-              break;
-            }
-            case 3: // icetea
-            {
-              ROS_INFO("Found Tea-Iced");
-              to->object_type = "Tea-Iced";
-              break;
-            }
-            case 4: // milk
-            {
-              ROS_INFO("Found CowsMilk-Product");
-              to->object_type = "CowsMilk-Product";
-              break;
-            }
-            case 5: // mug
-            {
-              ROS_INFO("Found Cup");
-              to->object_type = "Cup";
-              break;
-            }
-            case 6: // small bowl
-            {
-              ROS_INFO("Found Bowl-Eating");
-              to->object_type = "Bowl-Eating";
-              break;
-            }
-            case 0: // output was invalid
-            default:
-            {
-              ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
-              to->object_type = "nn";
-            }
-          }
-
-          //*
-
           // repeat fits of cylinders and boxes, to stabilize decision
           int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
           int nr_rep_cyl = 3; // TODO: fitting cylinders is slow... but 4-5 would be better probably
@@ -1161,10 +1112,12 @@ class TableMemory
             std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
           // save the best model
+          bool is_object_geometric_type_box = false;
           std::stringstream tmp_type;
           // extra checks of radius size and orientation to limit cylinders
           if (is_box || cylinder_radius > 0.08 || fabs (axis_z) < 0.966) // this is 75 degrees; ideal looking: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
           {
+            is_object_geometric_type_box = true;
             marker_pub_.publish (box_marker);
             to->mesh = box_mesh;
             to->object_geometric_type = "Box";
@@ -1186,8 +1139,60 @@ class TableMemory
           }
           if (debug > 1)
             std::cerr << tmp_type.str () << std::endl;
-          //*/
-          
+
+          // Setting object class: TODO load this mapping from a configuration file generated during training
+          switch (object_class)
+          {
+            case 1: // bowl
+            {
+              ROS_INFO("Found Bowl-Eating");
+              to->object_type = "Bowl-Eating";
+              if (!is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 2: // cereal
+            {
+              ROS_INFO("Found BreakfastCereal");
+              to->object_type = "BreakfastCereal";
+              if (is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 3: // icetea
+            {
+              ROS_INFO("Found Tea-Iced");
+              to->object_type = "Tea-Iced";
+              if (is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 4: // milk
+            {
+              ROS_INFO("Found CowsMilk-Product");
+              to->object_type = "CowsMilk-Product";
+              if (is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 5: // mug
+            {
+              ROS_INFO("Found Cup");
+              to->object_type = "Cup";
+              if (!is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 6: // chips
+            {
+              ROS_INFO("Found Potato-Chips");
+              to->object_type = "Potato-Chips";
+              if (!is_object_geometric_type_box) // will enter default if true
+                break;
+            }
+            case 0: // output was invalid
+            default:
+            {
+              ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+              to->object_type = "nn";
+            }
+          }
+
           // call triangulation on outliers
 //          alg_triangulation->pre();
 //          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
