@@ -74,7 +74,7 @@ std::string SVMClassification::process (const boost::shared_ptr<const SVMClassif
       break;
     }
   if (plIdx == -1)
-    if (verbosity_level_ > -1) ROS_WARN ("[SVMClassification] Points are not labeled with the expected classification results. If you want to evaluate the results please add point_label channel.");
+    if (verbosity_level_ > 0) ROS_INFO ("[SVMClassification] NOTE: Points are not labeled with the expected classification results. If you want to evaluate the results please add point_label channel.");
 
   /// Load the SVM model
   struct svm_node* node;

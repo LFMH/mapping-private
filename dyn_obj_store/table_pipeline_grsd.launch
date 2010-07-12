@@ -55,8 +55,8 @@
 -->
     <param name="width" value="0.03" />
     <param name="step" value="0" />
-    <param name="model_file_name" value="$(find cloud_algos)/svm/grsd_merged.model" />
-    <param name="scale_file_name" value="$(find cloud_algos)/svm/grsd_merged.scp" />
+    <param name="model_file_name" value="$(find cloud_algos)/svm/grsd_merged_chips.model" />
+    <param name="scale_file_name" value="$(find cloud_algos)/svm/grsd_merged_chips.scp" />
   </node>
 
 
