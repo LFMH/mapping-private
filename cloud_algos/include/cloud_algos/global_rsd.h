@@ -202,7 +202,7 @@ class GlobalRSD : public CloudAlgo
 
     // Simple categorization to reduce feature vector size, but should use co-occurance of min-max radius bins
     int type;// = EMPTY_VALUE;
-    if (min_radius > 0.045) // 0.066
+    if (min_radius > 0.05) // 0.066
       type = 1; // plane
     else if ((min_radius < 0.030) && (max_radius < 0.050))
       type = 0; // noise/corner

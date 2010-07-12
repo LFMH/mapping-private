@@ -952,8 +952,8 @@ class TableMemory
           // call GRSD
           alg_grsd->pre();
           ((GlobalRSD*)alg_grsd)->min_voxel_pts_ = 0; // the step value will assure that we get enough points for feature estimation (if 0 then a search around the centroid is performed)
-          ((GlobalRSD*)alg_grsd)->step_ = 0;
-          ((GlobalRSD*)alg_grsd)->width_ = 0.03;
+          ((GlobalRSD*)alg_grsd)->step_ = 1;
+          ((GlobalRSD*)alg_grsd)->width_ = 0.015;
           // publishing partial results if anyone cares :)
           ((GlobalRSD*)alg_grsd)->publish_cloud_centroids_ = true;
           ((GlobalRSD*)alg_grsd)->publish_cloud_vrsd_ = true;
