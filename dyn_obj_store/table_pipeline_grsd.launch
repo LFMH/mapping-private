@@ -47,6 +47,14 @@
 
   <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true"> <!-- launch-prefix="xterm -e gdb -args"> -->
     <param name="input_table_topic" value="/table_with_objects" />
+<!--
+    <param name="width" value="0.015" />
+    <param name="step" value="1" />
+    <param name="model_file_name" value="$(find cloud_algos)/svm/grsd_step1_width15.model" />
+    <param name="scale_file_name" value="$(find cloud_algos)/svm/grsd_step1_width15.scp" />
+-->
+    <param name="width" value="0.03" />
+    <param name="step" value="0" />
     <param name="model_file_name" value="$(find cloud_algos)/svm/grsd.model" />
     <param name="scale_file_name" value="$(find cloud_algos)/svm/grsd.scp" />
   </node>

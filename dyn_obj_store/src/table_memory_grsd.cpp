@@ -920,11 +920,11 @@ class TableMemory
           ((StatisticalNoiseRemoval*)alg_denoise)->alpha_ = 2;
           ((StatisticalNoiseRemoval*)alg_denoise)->neighborhood_size_ = 30;
           ((StatisticalNoiseRemoval*)alg_denoise)->min_nr_pts_ = 0; // thus output will be always valid
-          std::cout << "[reconstruct_table_objects] Calling noise removal with a PCD with " <<
-                       cluster->points.size () << " points." << std::endl;
+          //std::cout << "[reconstruct_table_objects] Calling noise removal with a PCD with " <<
+          //             cluster->points.size () << " points." << std::endl;
           std::string process_answer_denoise = ((StatisticalNoiseRemoval*)alg_denoise)->process
                       (cluster);
-          ROS_INFO("got response: %s", process_answer_denoise.c_str ());
+          //ROS_INFO("got response: %s", process_answer_denoise.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> denoise_cloud = (((StatisticalNoiseRemoval*)alg_denoise)->output ());
           alg_denoise->post();
           pub_denoise.publish (denoise_cloud);
@@ -939,11 +939,11 @@ class TableMemory
           // TODO: alternative to above: default value is not smoothing enough
           //double gauss_param = 3*((MovingLeastSquares*)alg_mls)->radius_; // the bigger this is, the more weight will distant points have
           //((MovingLeastSquares*)alg_mls)->sqr_gauss_param_ = gauss_param*gauss_param;
-          std::cout << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
-                        denoise_cloud->points.size () << " points." << std::endl;
+          //std::cout << "[reconstruct_table_objects] Calling MLS with a PCD with " <<
+          //              denoise_cloud->points.size () << " points." << std::endl;
           std::string process_answer_mls = ((MovingLeastSquares*)alg_mls)->process
                       (denoise_cloud);
-          ROS_INFO("got response: %s", process_answer_mls.c_str ());
+          //ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
           pub_mls.publish (mls_cloud);
@@ -951,8 +951,8 @@ class TableMemory
           // call GRSD
           alg_grsd->pre();
           ((GlobalRSD*)alg_grsd)->min_voxel_pts_ = 0; // the step value will assure that we get enough points for feature estimation (if 0 then a search around the centroid is performed)
-          ((GlobalRSD*)alg_grsd)->step_ = 1;
-          ((GlobalRSD*)alg_grsd)->width_ = 0.015;
+          //((GlobalRSD*)alg_grsd)->step_ = 0; // 1
+          //((GlobalRSD*)alg_grsd)->width_ = 0.03; // 0.015
           // publishing partial results if anyone cares :)
           ((GlobalRSD*)alg_grsd)->publish_cloud_centroids_ = true;
           ((GlobalRSD*)alg_grsd)->publish_cloud_vrsd_ = true;
@@ -961,10 +961,13 @@ class TableMemory
                         mls_cloud->points.size () << " points." << std::endl;
           std::string process_answer_grsd = ((GlobalRSD*)alg_grsd)->process
                       (mls_cloud);
-          ROS_INFO("got response: %s", process_answer_grsd.c_str ());
+          //ROS_INFO("got response: %s", process_answer_grsd.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
           alg_grsd->post();
           pub_grsd.publish (grsd_cloud);
+          for (int channel_idx = 0; channel_idx < grsd_cloud->channels.size (); channel_idx++)
+            std::cerr << grsd_cloud->channels.at (channel_idx).name << ": " << grsd_cloud->channels.at (channel_idx).values.at (0) << " ";
+          std::cerr << std::endl;
 
           // call SVM classification
           alg_svm->pre();
@@ -995,8 +998,8 @@ class TableMemory
           int sum_nrc = 0;
 
           // call rotational estimation
-          std::cout << "[reconstruct_table_objects] Calling CylinderEstimation with a PCD with " <<
-                        mls_cloud->points.size () << " points." << std::endl;
+          //std::cout << "[reconstruct_table_objects] Calling CylinderEstimation with a PCD with " <<
+          //              mls_cloud->points.size () << " points." << std::endl;
           std::vector<double> cylinder_coeff;
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers (new sensor_msgs::PointCloud ());
           boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers2 (new sensor_msgs::PointCloud ());
@@ -1009,11 +1012,11 @@ class TableMemory
             ((CylinderEstimation*)alg_cyl_est)->publish_marker_ = false;
             std::string process_answer_rot = ((CylinderEstimation*)alg_cyl_est)->process
                         (mls_cloud);
-            ROS_INFO("got response: %s", process_answer_rot.c_str ());
+            //ROS_INFO("got response: %s", process_answer_rot.c_str ());
             //boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
             boost::shared_ptr<sensor_msgs::PointCloud> tmp_cyl_inliers2 = ((CylinderEstimation*)alg_cyl_est)->getThresholdedInliers (0.2);
             alg_cyl_est->post ();
-            ROS_INFO("found cylinder with %ld inliers", tmp_cyl_inliers2->points.size ());
+            //ROS_INFO("found cylinder with %ld inliers", tmp_cyl_inliers2->points.size ());
             // summing up inliers and saving the best results
             sum_nrc += tmp_cyl_inliers2->points.size ();
             if (tmp_cyl_inliers2->points.size () > cyl_inliers2->points.size ())
@@ -1028,8 +1031,8 @@ class TableMemory
           }
 
           // call box estimation
-          std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
-                        mls_cloud->points.size () << " points." << std::endl;
+          //std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
+          //              mls_cloud->points.size () << " points." << std::endl;
           boost::shared_ptr<sensor_msgs::PointCloud> box_inliers (new sensor_msgs::PointCloud ());
           boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 (new sensor_msgs::PointCloud ());
           std::vector<double> box_coeff;
@@ -1042,13 +1045,13 @@ class TableMemory
             ((RobustBoxEstimation*)alg_box)->success_probability_ = 1; // do exhaustive search for best model
             std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
                         (mls_cloud);
-            ROS_INFO("got response: %s", process_answer_box.c_str ());
+            //ROS_INFO("got response: %s", process_answer_box.c_str ());
             std::vector<double> tmp_box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
             ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, tmp_box_coeff, 0.01, 0.00001);
             //boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
             boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
             alg_box->post();
-            ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
+            //ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
             // summing up inliers and saving the best results
             sum_nrb += tmp_box_inliers2->points.size ();
             if (tmp_box_inliers2->points.size () > box_inliers2->points.size ())
