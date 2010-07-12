@@ -305,6 +305,7 @@ class TableObjectDetector
             continue;
 
         table.objects[cluster_count].points.header.seq =  table_cluster_counter_ ++;
+        table.objects[cluster_count].points.header.stamp = points.header.stamp;
 
         table.objects[cluster_count].points.header.frame_id =  points.header.frame_id;
         table.objects[cluster_count].points.points.resize (object_idx.size ());
