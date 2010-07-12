@@ -726,7 +726,18 @@ class TableMemory
       TableStateInstance *t_now = t.getCurrentInstance();
       std::vector<TableStateInstance*> t_temp = t.getLastInstances(2);
       if (t_temp.size() < 2)
+      {
+        for (int i = 0; i < (signed int) t_now->objects.size (); i++)
+        {
+          TableObject* to_now = t_now->objects.at (i);
+          to_now->number = cluster_name_counter_++;
+          std::stringstream name;
+          name << to_now->object_geometric_type << "_" << to_now->number;
+          to_now->name = name.str();
+          to_now->object_cop_id = object_cop_id_counter_++;
+        }
         return;
+      }
       TableStateInstance *t_last = t_temp [1];
 
       for (int i = 0; i < (signed int) t_now->objects.size (); i++)
