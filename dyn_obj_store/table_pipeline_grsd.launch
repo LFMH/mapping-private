@@ -15,10 +15,10 @@
 
   
   <!-- Box Filter -->
-  <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node" output="screen" respawn="true">
+  <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node1" output="screen" respawn="true">
     <param name="input_cloud_topic" value="/shoulder_cloud" />
     <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
-    <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
+    <param name="output_cloud_topic" value="/box_filter/shoulder_cloud_clipped" />
     <param name="box_min_y" value="-3.0" />
     <param name="box_max_y" value="2.0" />
     <param name="box_min_x" value="-3.0" />
@@ -36,17 +36,17 @@
   <!--From here on we will work in /map coordinate frame -->
   <param name="global_frame_id" value="/map" />	
   <!-- Table Object Detector (passive version) -->
-  <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen"  respawn="true">
-    <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
+  <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive1" output="screen"  respawn="true">
+    <param name="input_cloud_topic" value="/box_filter/shoulder_cloud_clipped" />
     <param name="table_delta_z" value="0.02" />
-    <param name="output_table_topic" value="/table_with_objects" />
+    <param name="output_table_topic" value="/table_object_detector_passive1/table_with_objects" />
     <param name="sac_distance_threshold" value="0.015" />
     <param name="normal_eps_angle" value="5" />
     <param name="table_delta_z" value="0.01" />
   </node>
 
   <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true"> <!-- launch-prefix="xterm -e gdb -args"> -->
-    <param name="input_table_topic" value="/table_with_objects" />
+    <param name="input_table_topic" value="/table_object_detector_passive1/table_with_objects" />
 <!--
     <param name="width" value="0.015" />
     <param name="step" value="1" />

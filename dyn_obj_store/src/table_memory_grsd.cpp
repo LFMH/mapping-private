@@ -756,7 +756,8 @@ class TableMemory
             to_now->object_cop_id = to_last->object_cop_id;
             to_now->number = to_last->number;
             std::stringstream name;
-            name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
+            //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
+            name << to_now->object_type;
             to_now->name = name.str();
             break;
           }
@@ -766,6 +767,7 @@ class TableMemory
           to_now->number = cluster_name_counter_++;
           std::stringstream name;
           name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
+          name << to_now->object_type;
           to_now->name = name.str();
           to_now->object_cop_id = object_cop_id_counter_++;
         }
@@ -1147,7 +1149,8 @@ class TableMemory
           {
             case 1: // bowl
             {
-              if (!is_object_geometric_type_box)
+              //if (!is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found Bowl-Eating");
                 to->object_type = "Bowl-Eating";
@@ -1161,7 +1164,8 @@ class TableMemory
             }
             case 2: // cereal
             {
-              if (is_object_geometric_type_box)
+              //              if (is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found BreakfastCereal");
                 to->object_type = "BreakfastCereal";
@@ -1175,7 +1179,8 @@ class TableMemory
             }
             case 3: // icetea
             {
-              if (is_object_geometric_type_box)
+              //              if (is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found Tea-Iced");
                 to->object_type = "Tea-Iced";
@@ -1189,7 +1194,8 @@ class TableMemory
             }
             case 4: // milk
             {
-              if (is_object_geometric_type_box)
+              //              if (is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found CowsMilk-Product");
                 to->object_type = "CowsMilk-Product";
@@ -1203,7 +1209,8 @@ class TableMemory
             }
             case 5: // mug
             {
-              if (!is_object_geometric_type_box)
+              //              if (!is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found Cup");
                 to->object_type = "Cup";
@@ -1217,7 +1224,8 @@ class TableMemory
             }
             case 6: // chips
             {
-              if (!is_object_geometric_type_box)
+              //              if (!is_object_geometric_type_box)
+              if (true)
               {
                 ROS_WARN("Found Potato-Chips");
                 to->object_type = "Potato-Chips";
