@@ -33,11 +33,16 @@
 <!--     <param name="output_cloud_topic" value="/shoulder_cloud_no_walls" /> -->
 <!--   </node>  -->
 
+  <node pkg="cloud_algos" type="statistical_noise_removal_node" name="statistical_noise_removal_node" output="screen" respawn="true">
+    <remap from="~cloud_pcd" to="/shoulder_cloud_clipped" />
+    <rosparam>{alpha: 1, neighborhood_size: 30}</rosparam>
+  </node>
+
   <!--From here on we will work in /map coordinate frame -->
   <param name="global_frame_id" value="/map" />	
   <!-- Table Object Detector (passive version) -->
   <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive" output="screen"  respawn="true">
-    <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
+    <param name="input_cloud_topic" value="/statistical_noise_removal_node/cloud_denoise" />
     <param name="table_delta_z" value="0.02" />
     <param name="output_table_topic" value="/table_with_objects" />
     <param name="sac_distance_threshold" value="0.015" />

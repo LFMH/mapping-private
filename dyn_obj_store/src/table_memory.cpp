@@ -590,7 +590,7 @@ class TableMemory
         to.object_type = o->object_type;
         to.object_color = o->object_color;
         to.object_geometric_type = o->object_geometric_type;
-
+        ROS_DEBUG("published to table_mem_belief with cop_id: %ld, table num: %d and object_type: %s", to.object_cop_id, table_num, to.object_type.c_str());
         cop_beliefstate_pub_.publish (to);
       }
     }
@@ -754,6 +754,7 @@ class TableMemory
 
           //if (d < 0.1)
           //if (d < 0.1 && to_now->object_geometric_type == to_last->object_geometric_type)
+          ROS_DEBUG("Euclidean distance: %lf", d);
           if (d < 0.1)
           {
             to_now->name = to_last->name;
@@ -1111,7 +1112,7 @@ class TableMemory
             ROS_INFO("Found CowsMilk-Product");
             to->object_type = "CowsMilk-Product";
           }
-          else if ((to->maxP.z - to->minP.z) > 0.07 
+          else if ((to->maxP.z - to->minP.z) > 0.05 
                    &&
                    (to->maxP.z - to->minP.z) < 0.15) //&& tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
           {
@@ -1120,7 +1121,7 @@ class TableMemory
           }
           else if ((to->maxP.z - to->minP.z)> 0.0 
                    &&
-                   (to->maxP.z - to->minP.z) < 0.07)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+                   (to->maxP.z - to->minP.z) < 0.05)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
           {
             ROS_INFO("Found Bowl-Eating");
             to->object_type = "Bowl-Eating";
