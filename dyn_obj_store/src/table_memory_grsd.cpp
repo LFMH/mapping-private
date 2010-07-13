@@ -168,6 +168,9 @@ class TableMemory
     /// they will not get updated
     bool fix_tables_;
 
+    // if this is checked, the geometric class and the classification results must be consistent
+    bool check_geometry_;
+
     //insert lo_ids waiting for prolog update
     std::vector<unsigned long long> update_prolog_;
     //this number never resets in the life cycle of program
@@ -257,6 +260,7 @@ class TableMemory
     , color_probability_(0.2), object_unique_id_(0), object_cop_id_counter_(700000)
     {
       nh_.param ("fix_tables", fix_tables_, false);
+      nh_.param ("check_geometry", check_geometry_, false);
       nh_.param ("input_table_topic", input_table_topic_, std::string("table_with_objects"));       // 15 degrees
       nh_.param ("input_cop_topic", input_cop_topic_, std::string("/tracking/out"));       // 15 degrees
       nh_.param ("output_cloud_topic", output_cloud_topic_, std::string("table_mem_state_point_clusters"));       // 15 degrees
@@ -755,10 +759,9 @@ class TableMemory
             to_now->lo_id = to_last->lo_id;
             to_now->object_cop_id = to_last->object_cop_id;
             to_now->number = to_last->number;
-            std::stringstream name;
+            //std::stringstream name;
             //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
-            name << to_now->object_type;
-            to_now->name = name.str();
+            //to_now->name = name.str();
             break;
           }
         }
@@ -766,8 +769,10 @@ class TableMemory
         {
           to_now->number = cluster_name_counter_++;
           std::stringstream name;
-          name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
+          //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
           name << to_now->object_type;
+          if (check_geometry_)
+            name << "_" << to_now->object_geometric_type;
           to_now->name = name.str();
           to_now->object_cop_id = object_cop_id_counter_++;
         }
@@ -1149,8 +1154,7 @@ class TableMemory
           {
             case 1: // bowl
             {
-              //if (!is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || !is_object_geometric_type_box)
               {
                 ROS_WARN("Found Bowl-Eating");
                 to->object_type = "Bowl-Eating";
@@ -1171,8 +1175,7 @@ class TableMemory
             }
             case 2: // cereal
             {
-              //              if (is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || is_object_geometric_type_box)
               {
                 ROS_WARN("Found BreakfastCereal");
                 to->object_type = "BreakfastCereal";
@@ -1186,8 +1189,7 @@ class TableMemory
             }
             case 3: // icetea
             {
-              //              if (is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || is_object_geometric_type_box)
               {
                 ROS_WARN("Found Tea-Iced");
                 to->object_type = "Tea-Iced";
@@ -1201,8 +1203,7 @@ class TableMemory
             }
             case 4: // milk
             {
-              //              if (is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || is_object_geometric_type_box)
               {
                 ROS_WARN("Found CowsMilk-Product");
                 to->object_type = "CowsMilk-Product";
@@ -1216,8 +1217,7 @@ class TableMemory
             }
             case 5: // mug
             {
-              //              if (!is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || !is_object_geometric_type_box)
               {
                 ROS_WARN("Found Cup");
                 to->object_type = "Cup";
@@ -1238,8 +1238,7 @@ class TableMemory
             }
             case 6: // chips
             {
-              //              if (!is_object_geometric_type_box)
-              if (true)
+              if (!check_geometry_ || !is_object_geometric_type_box)
               {
                 ROS_WARN("Found Potato-Chips");
                 to->object_type = "Potato-Chips";
@@ -1322,6 +1321,7 @@ class TableMemory
     void update_parameters ()
     {
       nh_.param ("fix_tables", fix_tables_, false);
+      nh_.param ("check_geometry", check_geometry_, false);
     }
 
     // incoming data...
