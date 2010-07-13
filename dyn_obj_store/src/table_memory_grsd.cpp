@@ -919,6 +919,11 @@ class TableMemory
           }
 
           boost::shared_ptr<const sensor_msgs::PointCloud> cluster = sensor_msgs::PointCloudConstPtr (&to->point_cluster, dummy_deleter());
+          if (cluster->header.frame_id == "")
+            ROS_ERROR ("Processed cluster has empty frame id!");
+          else
+            ROS_INFO ("Processed cluster has %s frame id!", cluster->header.frame_id.c_str ());
+          //std::cerr << "Processed cluster has frame id " << cluster->header.frame_id << std::endl;
 
           // TODO: ideally all parameters should be set in the launch file
 
@@ -972,7 +977,7 @@ class TableMemory
           boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
           alg_grsd->post();
           pub_grsd.publish (grsd_cloud);
-          for (int channel_idx = 0; channel_idx < grsd_cloud->channels.size (); channel_idx++)
+          for (unsigned channel_idx = 0; channel_idx < grsd_cloud->channels.size (); channel_idx++)
             std::cerr << grsd_cloud->channels.at (channel_idx).name << ": " << grsd_cloud->channels.at (channel_idx).values.at (0) << " ";
           std::cerr << std::endl;
 
@@ -1036,6 +1041,10 @@ class TableMemory
               cylinder_coeff = ((CylinderEstimation*)alg_cyl_est)->getCoeff ();
             }
           }
+          if (cylinder_marker.header.frame_id == "")
+            ROS_ERROR ("Cylinder marker has empty frame id!");
+          else
+            ROS_INFO ("Cylinder marker has %s frame id!", cylinder_marker.header.frame_id.c_str ());
 
           // call box estimation
           //std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
@@ -1070,11 +1079,17 @@ class TableMemory
               box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
             }
           }
+          if (box_marker.header.frame_id == "")
+            ROS_ERROR ("Box marker has empty frame id!");
+          else
+            ROS_INFO ("Box marker has %s frame id!", box_marker.header.frame_id.c_str ());
 
           // set up both markers with same NS/ID, but only one will get published anyways
           box_marker.id = cylinder_marker.id = i;
           //box_marker.id = cylinder_marker.id = to->number;
           box_marker.ns = cylinder_marker.ns = marker_namespace.str ();
+          // forcing markers to have correct frame id
+          box_marker.header.frame_id = cylinder_marker.header.frame_id = "/map";
 
           // publish both markers for each object?
           //box_marker.lifetime = cylinder_marker.lifetime = ros::Duration (10);
