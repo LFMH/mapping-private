@@ -115,7 +115,6 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
   cloud_grsd_ = boost::shared_ptr<sensor_msgs::PointCloud> (new sensor_msgs::PointCloud());
   cloud_grsd_->header = cloud->header;
   cloud_grsd_->points.resize (1);
-  geometry_msgs::Point32 central_point;
   cloud_geometry::nearest::computeCentroid (*cloud_vrsd_, cloud_grsd_->points.at (0));
 
   // Allocate the extra needed channels
