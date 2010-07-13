@@ -91,7 +91,7 @@ class BoxEstimation : public CloudAlgo
    * box dimensions: dx, dy, dz, 
    * box eigen axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
    */
-  virtual void find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+  virtual bool find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**

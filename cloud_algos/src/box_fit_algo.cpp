@@ -107,26 +107,36 @@ std::string BoxEstimation::process (const boost::shared_ptr<const InputType> inp
   if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] PointCloud message received on %s with %d points", default_input_topic().c_str (), (int)input->points.size ());
 
   // Compute model coefficients
-  find_model (input, coeff_);
+  bool model_found = find_model (input, coeff_);
 
-  // Create mesh as output
-  triangulate_box (input, coeff_);
-
-  // Publish fitted box on marker topic
-  if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
-  if (publish_marker_)
-    publish_marker (input, coeff_);
+  // Check if a valid model was found
+  if (!model_found)
+  {
+    output_valid_ = false;
+    return std::string ("no model found");
+  }
   else
-    computeMarker (input, coeff_);
+  {
+    // Create mesh as output
+    triangulate_box (input, coeff_);
 
-  // Get which points verify the model and which don't
-  cloud_ = input;
-  computeInAndOutliers (input, coeff_, threshold_in_, threshold_out_);
-  inliers_pub_.publish (getInliers ());
-  outliers_pub_.publish (getOutliers ());
-  contained_pub_.publish (getContained ());
+    // Publish fitted box on marker topic
+    if (verbosity_level_ > 0) ROS_INFO ("[BoxEstimation] Publishing box marker on topic %s.", nh_.resolveName (output_box_topic_).c_str ());
+    if (publish_marker_)
+      publish_marker (input, coeff_);
+    else
+      computeMarker (input, coeff_);
 
-  return std::string ("ok");
+    // Get which points verify the model and which don't
+    cloud_ = input;
+    computeInAndOutliers (input, coeff_, threshold_in_, threshold_out_);
+    inliers_pub_.publish (getInliers ());
+    outliers_pub_.publish (getOutliers ());
+    contained_pub_.publish (getContained ());
+
+    output_valid_ = true;
+    return std::string ("ok");
+  }
 }
 
 boost::shared_ptr<const BoxEstimation::OutputType> BoxEstimation::output () 
@@ -271,7 +281,7 @@ void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::P
 /**
  * actual model fitting happens here
  */
-void BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
+bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
   cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
   coeff[0] = box_centroid_.x;
@@ -346,6 +356,9 @@ void BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] Eigen vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f", pt0_bbox_features[3], pt0_bbox_features[4],
            pt0_bbox_features[5], pt0_bbox_features[6], pt0_bbox_features[7], pt0_bbox_features[8], 
            pt0_bbox_features[9], pt0_bbox_features[10],pt0_bbox_features[11]);
+
+  // TODO: we should get feedback on success from the compute function
+  return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -462,6 +475,7 @@ void BoxEstimation::computeMarker (boost::shared_ptr<const sensor_msgs::PointClo
   marker_.color.r = 0.0;
   marker_.color.g = 1.0;
   marker_.color.b = 0.0;
+  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
 }
 
 #ifndef NO_BOXFIT_NODE

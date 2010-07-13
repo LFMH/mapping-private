@@ -755,13 +755,16 @@ class TableMemory
           //if (d < 0.1 && to_now->object_geometric_type == to_last->object_geometric_type)
           if (d < 0.1)
           {
-            to_now->name = to_last->name;
+            //to_now->name = to_last->name;
             to_now->lo_id = to_last->lo_id;
             to_now->object_cop_id = to_last->object_cop_id;
             to_now->number = to_last->number;
-            //std::stringstream name;
+            std::stringstream name;
             //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
-            //to_now->name = name.str();
+            name << to_now->object_type;
+            if (check_geometry_)
+              name << "_" << to_now->object_geometric_type;
+            to_now->name = name.str();
             break;
           }
         }
@@ -1067,16 +1070,19 @@ class TableMemory
             //boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
             boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
             alg_box->post();
-            //ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
-            // summing up inliers and saving the best results
-            sum_nrb += tmp_box_inliers2->points.size ();
-            if (tmp_box_inliers2->points.size () > box_inliers2->points.size ())
+            if (alg_box->output_valid_)
             {
-              box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
-              box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
-              box_coeff = tmp_box_coeff;
-              box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
-              box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
+              ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
+              // summing up inliers and saving the best results
+              sum_nrb += tmp_box_inliers2->points.size ();
+              if (tmp_box_inliers2->points.size () > box_inliers2->points.size ())
+              {
+                box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+                box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
+                box_coeff = tmp_box_coeff;
+                box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+                box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
+              }
             }
           }
           if (box_marker.header.frame_id == "")
@@ -1089,7 +1095,7 @@ class TableMemory
           //box_marker.id = cylinder_marker.id = to->number;
           box_marker.ns = cylinder_marker.ns = marker_namespace.str ();
           // forcing markers to have correct frame id
-          box_marker.header.frame_id = cylinder_marker.header.frame_id = "/map";
+          //box_marker.header.frame_id = cylinder_marker.header.frame_id = "/map";
 
           // publish both markers for each object?
           //box_marker.lifetime = cylinder_marker.lifetime = ros::Duration (10);
@@ -1104,51 +1110,56 @@ class TableMemory
           double nrb2 = box_inliers2->points.size();
           double nrc2 = cyl_inliers2->points.size();
 
-          // decide on box versus cylinder
-          bool is_box = false;
-          double axis_z = 0;
-          double cylinder_radius = 0;
-          int decision = -1;
-          // TODO visibility, radius histogram and MSAC score would make better checks...
-          if (nrc == 0)
-            { is_box = true; decision = 0; }
-          else
-          {
-            Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
-            axis_z = axis.normalized()(2);
-            cylinder_radius = cylinder_coeff[6];
-            // check if models are dissimilar enough
-            if (nrc/nrb < 0.6)
-              { is_box = true; decision = 1; }
-            // same for best inliers
-            else if (nrc2/nrb2 < 0.6)
-              { is_box = true; decision = 2; }
-            // since box has inliers on top as well, (unless cylinder has more support) take the one with smaller volume
-            else if ((nrb > nrc) && (nrb2 > nrc2) && (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0)))
-              { is_box = true; decision = 3; }
-            else
-              decision = 4;
-          }
-
           // maybe make this a parameter :)
           int debug = 0;
-          if (debug > 1)
-            std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
-          // save the best model
+          // TODO: we should check the output of the cylinder fit as well
           bool is_object_geometric_type_box = false;
+          int decision = -1;
           std::stringstream tmp_type;
-          // extra checks of radius size and orientation to limit cylinders
-          if (is_box || cylinder_radius > 0.08 || fabs (axis_z) < 0.966) // this is 75 degrees; ideal looking: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
+          if (alg_box->output_valid_)
           {
-            is_object_geometric_type_box = true;
-            marker_pub_.publish (box_marker);
-            to->mesh = box_mesh;
-            to->object_geometric_type = "Box";
-            tmp_type << mls_cloud->points.size ()/10 << "_B_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
-            //pub_box.publish (box_mesh);
+            // decide on box versus cylinder
+            bool is_box = false;
+            double axis_z = 0;
+            double cylinder_radius = 0;
+            // TODO visibility, radius histogram and MSAC score would make better checks...
+            if (nrc == 0)
+              { is_box = true; decision = 0; }
+            else
+            {
+              Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+              axis_z = axis.normalized()(2);
+              cylinder_radius = cylinder_coeff[6];
+              // check if models are dissimilar enough
+              if (nrc/nrb < 0.6)
+                { is_box = true; decision = 1; }
+              // same for best inliers
+              else if (nrc2/nrb2 < 0.6)
+                { is_box = true; decision = 2; }
+              // since box has inliers on top as well, (unless cylinder has more support) take the one with smaller volume
+              else if ((nrb > nrc) && (nrb2 > nrc2) && (box_coeff[3]*box_coeff[4]*box_coeff[5] < axis.norm () * M_PI * pow (cylinder_radius, 2.0)))
+                { is_box = true; decision = 3; }
+              else
+                decision = 4;
+            }
+
+            if (debug > 1)
+              std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
+
+            // save the best model
+            // extra checks of radius size and orientation to limit cylinders
+            if (is_box || cylinder_radius > 0.08 || fabs (axis_z) < 0.966) // this is 75 degrees; ideal looking: 0.994, but for mugs it needs 0.985 (80 degrees) - 0.977 (77.7 degrees)
+            {
+              is_object_geometric_type_box = true;
+              marker_pub_.publish (box_marker);
+              to->mesh = box_mesh;
+              to->object_geometric_type = "Box";
+              tmp_type << mls_cloud->points.size ()/10 << "_B_" << decision << "_" << nrb << "/" << nrc << "_" << nrb2 << "/" << nrc2;
+              //pub_box.publish (box_mesh);
+            }
           }
-          else
+          if (is_object_geometric_type_box )
           {
             marker_pub_.publish (cylinder_marker);
             to->mesh = cyl_mesh;

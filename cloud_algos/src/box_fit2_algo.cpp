@@ -66,7 +66,7 @@ void RobustBoxEstimation::pre ()
 /**
  * actual model fitting happens here
  */
-void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
+bool RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
   if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Looking for box in a cluster of %u points", (unsigned)cloud->points.size ());
 
@@ -94,7 +94,7 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
     if (!sac->computeModel ())
     {
       if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
-      return;
+      return false;
     }
 
     // Get inliers and refine result
@@ -144,7 +144,7 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
     else
     {
       if (verbosity_level_ > -2) ROS_ERROR ("[RobustBoxEstimation] No model found using the angular threshold of %g!", eps_angle_);
-      return;
+      return false;
     }
   }
 
@@ -209,6 +209,8 @@ void RobustBoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointC
       coeff[3+3], coeff[3+4], coeff[3+5],
       coeff[3+6], coeff[3+7], coeff[3+8],
       coeff[3+9], coeff[3+10],coeff[3+11]);
+
+  return true;
 }
 
 #ifdef CREATE_NODE
