@@ -1,11 +1,11 @@
-/* 
- * Copyright (c) 2010, Dejan Pangercic <dejan.pangercic@cs.tum.edu>, 
+/*
+ * Copyright (c) 2010, Dejan Pangercic <dejan.pangercic@cs.tum.edu>,
  Zoltan-Csaba Marton <marton@cs.tum.edu>, Nico Blodow <blodow@cs.tum.edu>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -56,7 +56,7 @@ class BoxEstimation : public CloudAlgo
   };
 
   typedef triangle_mesh_msgs::TriangleMesh OutputType;
-  typedef sensor_msgs::PointCloud InputType;
+  typedef sensor_msgs::PointCloud2 InputType;
 
   static std::string default_input_topic ()
     {return std::string ("cloud_pcd");}
@@ -64,7 +64,7 @@ class BoxEstimation : public CloudAlgo
   static std::string default_output_topic ()
     {return std::string ("mesh_box");};
 
-  static std::string default_node_name () 
+  static std::string default_node_name ()
     {return std::string ("box_estimation_node");};
 
   void init (ros::NodeHandle&);
@@ -76,22 +76,22 @@ class BoxEstimation : public CloudAlgo
   boost::shared_ptr<const OutputType> output ();
 
   // Get inlier and outlier points
-  virtual boost::shared_ptr<sensor_msgs::PointCloud> getInliers ();
-  virtual boost::shared_ptr<sensor_msgs::PointCloud> getOutliers ();
-  virtual boost::shared_ptr<sensor_msgs::PointCloud> getContained ();
-  virtual boost::shared_ptr<sensor_msgs::PointCloud> getThresholdedInliers (double eps_angle);
-  virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out);
+  virtual boost::shared_ptr<sensor_msgs::PointCloud2> getInliers ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud2> getOutliers ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud2> getContained ();
+  virtual boost::shared_ptr<sensor_msgs::PointCloud2> getThresholdedInliers (double eps_angle);
+  virtual void computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud2> cloud, std::vector<double> coeff, double threshold_in, double threshold_out);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief function for actual model fitting
    * \param cloud de-noisified input point cloud message
    * \param coeff box to-be-filled-in coefficients(15 elements):
-   * box center: cx, cy, cz, 
-   * box dimensions: dx, dy, dz, 
-   * box eigen axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
+   * box center: cx, cy, cz,
+   * box dimensions: dx, dy, dz,
+   * box eigen axes: e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z
    */
-  virtual bool find_model (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+  virtual bool find_model (boost::shared_ptr<const sensor_msgs::PointCloud2> cloud, std::vector<double> &coeff);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -99,7 +99,7 @@ class BoxEstimation : public CloudAlgo
    * \param cloud input point cloud message
    * \param coeff box coefficients (see find_model function):
    */
-  void triangulate_box (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
+  void triangulate_box (boost::shared_ptr<const sensor_msgs::PointCloud2> cloud, std::vector<double> &coeff);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -107,15 +107,15 @@ class BoxEstimation : public CloudAlgo
    * \param cloud input point cloud message
    * \param coeff box coefficients (see find_model function):
    */
-  void publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff);
- 
+  void publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud2> cloud, std::vector<double> &coeff);
+
   ////////////////////////////////////////////////////////////////////////////////
   /**
    * \brief Sets the internal box as marker for rvis visualisation.
    * \param cloud input point cloud message
    * \param coeff box coefficients (see find_model function):
    */
-  void computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff);
+  void computeMarker (boost::shared_ptr<const sensor_msgs::PointCloud2> cloud, std::vector<double> coeff);
 
   ////////////////////////////////////////////////////////////////////////////////
   /**
@@ -138,7 +138,7 @@ class BoxEstimation : public CloudAlgo
     ros::Publisher p = nh.advertise<OutputType> (default_output_topic (), 5);
     return p;
   }
- protected: 
+ protected:
   boost::shared_ptr<OutputType> mesh_;
   std::vector<int> inliers_;
   std::vector<int> outliers_;
@@ -146,7 +146,7 @@ class BoxEstimation : public CloudAlgo
   double threshold_in_;
   double threshold_out_;
 
-  boost::shared_ptr<const sensor_msgs::PointCloud> cloud_;
+  boost::shared_ptr<const sensor_msgs::PointCloud2> cloud_;
 
   ros::NodeHandle nh_;
 
@@ -156,9 +156,9 @@ class BoxEstimation : public CloudAlgo
   ros::Publisher outliers_pub_;
   ros::Publisher contained_pub_;
 
-  //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z  
+  //box coefficients: cx, cy, cz, dx, dy, dz, e1_x, e1y, e1z, e2_x, e2y, e2z, e3_x, e3y, e3z
   std::vector<double> coeff_;
-  geometry_msgs::Point32 box_centroid_;
+  pcl::PointT box_centroid_;
   visualization_msgs::Marker marker_;
 
   //publish box as marker
