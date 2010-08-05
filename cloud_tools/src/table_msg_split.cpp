@@ -92,8 +92,8 @@ class TableMsgSplit
       {
         sensor_msgs::PointCloud pc;
         pc.header = table->header;
-	      pc.points = table->objects[i].points.points;
-        std::cerr << "publishing pcd" << std::endl;
+	pc.points = table->objects[i].points.points;
+	ROS_INFO("publishing pcd");
         if (sleep_)
           sleep(1);
         clusters_pub_.publish (pc);

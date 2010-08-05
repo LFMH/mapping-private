@@ -9,7 +9,7 @@
   <group ns="object_classification_training">
 
     <!--From here on we will work in /map coordinate frame -->
-    <param name="global_frame_id" value="/map" />	
+    <param name="global_frame_id" value="/base_link" />	
 
     <!-- Table Object Detector (passive version) -->
     <node pkg="cloud_tools" type="table_object_detector_passive_node_one_table" name="table_object_detector_passive" output="screen"  respawn="true">
@@ -21,7 +21,7 @@
       <param name="table_delta_z" value="0.01" />
       <!-- <rosparam>{wanted_table_center_x: 2.5, wanted_table_center_y: -1.0, max_sqr_dist_to_wanted_table: 1.0}</rosparam> -->
       <!-- <rosparam>{wanted_table_center_x: -1.5, wanted_table_center_y: -1.5, max_sqr_dist_to_wanted_table: 1.0}</rosparam> -->
-      <rosparam>{wanted_table_center_x: 2, wanted_table_center_y: -1.5, max_sqr_dist_to_wanted_table: 1.0}</rosparam>
+      <rosparam>{wanted_table_center_x: 1, wanted_table_center_y: 0, max_sqr_dist_to_wanted_table: 1.0}</rosparam>
     </node>
   
     <!-- Table Message Splitter -->
