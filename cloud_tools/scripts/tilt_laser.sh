@@ -1,0 +1,1 @@
+rosservice call laser_tilt_controller/set_periodic_cmd '{ command: { header: { stamp: 0 }, profile: "linear" , period: 10 , amplitude: 0.5 , offset: 0.5 }}'
