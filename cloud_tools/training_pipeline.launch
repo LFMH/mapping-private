@@ -2,14 +2,13 @@
 
 <launch>
 
+  <!--From here on we will work in /map coordinate frame -->
+  <param name="/global_frame_id" value="/base_link" />	
   <!--
   <node pkg="ros" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(optenv bag /home/marton/work/datasets/GRSD/test/2010-07-02-17-27-00.bag) -r $(optenv rate 1)" />
   -->
 
   <group ns="object_classification_training">
-
-    <!--From here on we will work in /map coordinate frame -->
-    <param name="global_frame_id" value="/base_link" />	
 
     <!-- Table Object Detector (passive version) -->
     <node pkg="cloud_tools" type="table_object_detector_passive_node_one_table" name="table_object_detector_passive" output="screen"  respawn="true">
