@@ -9,10 +9,22 @@
   -->
 
   <group ns="object_classification_training">
+    <node pkg="cloud_tools" type="box_filter_node" name="box_filter_node" output="screen" respawn="true">
+      <param name="input_cloud_topic" value="/shoulder_cloud" />
+      <param name="output_cloud_topic" value="/shoulder_cloud_clipped" />
+    <param name="box_min_y" value="-1.0" />
+    <param name="box_max_y" value="1.0" />
+    <param name="box_min_x" value="0.0" />
+    <param name="box_max_x" value="1.5" />
+    <param name="box_min_z" value="0.0" />
+    <param name="box_max_z" value="2.0" />
+  </node>
+
+
 
     <!-- Table Object Detector (passive version) -->
     <node pkg="cloud_tools" type="table_object_detector_passive_node_one_table" name="table_object_detector_passive" output="screen"  respawn="true">
-      <param name="input_cloud_topic" value="/shoulder_cloud" />
+      <param name="input_cloud_topic" value="/shoulder_cloud_clipped" />
       <param name="table_delta_z" value="0.02" />
       <param name="output_table_topic" value="/object_classification_training/one_table_with_objects" />
       <param name="sac_distance_threshold" value="0.015" />
