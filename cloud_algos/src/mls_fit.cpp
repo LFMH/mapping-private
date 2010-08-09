@@ -697,6 +697,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
   // Finish
   if (verbosity_level_ > 0) ROS_INFO ("[MovingLeastSquares] MLS fit done in %g seconds.", (ros::Time::now () - global_time).toSec ());
   //pub_.publish (*cloud_fit_);
+  output_valid_ = true;
   return std::string("ok");
 }
 

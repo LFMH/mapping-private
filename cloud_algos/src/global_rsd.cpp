@@ -74,6 +74,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
   if (nxIdx == -1)
   {
     if (verbosity_level_ > -2) ROS_ERROR ("[GlobalRSD] Provided point cloud does not have normals. Use the normal_estimation or mls_fit first!");
+    output_valid_ = false;
     return std::string("missing normals");
   }
   /// @NOTE: we assume that if nx exists then ny and nz are the channels following it
@@ -377,6 +378,7 @@ std::string GlobalRSD::process (const boost::shared_ptr<const GlobalRSD::InputTy
 
   // Finish
   if (verbosity_level_ > 0) ROS_INFO ("[GlobalRSD] Computed features in %g seconds.", (ros::Time::now () - global_time).toSec ());
+  output_valid_ = true;
   return std::string("ok");
 }
 

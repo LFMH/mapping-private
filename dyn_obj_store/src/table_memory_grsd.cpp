@@ -942,6 +942,11 @@ class TableMemory
           //ROS_INFO("got response: %s", process_answer_denoise.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> denoise_cloud = (((StatisticalNoiseRemoval*)alg_denoise)->output ());
           alg_denoise->post();
+          if (!alg_denoise->output_valid_)
+          {
+            ROS_ERROR("Noise removal failed, skipping object!");
+            continue;
+          }
           pub_denoise.publish (denoise_cloud);
 
           // call MLS
@@ -961,6 +966,11 @@ class TableMemory
           //ROS_INFO("got response: %s", process_answer_mls.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> mls_cloud = (((MovingLeastSquares*)alg_mls)->output ());
           alg_mls->post();
+          if (!alg_mls->output_valid_)
+          {
+            ROS_ERROR("MLS computation failed, skipping object!");
+            continue;
+          }
           pub_mls.publish (mls_cloud);
 
           // call GRSD
@@ -979,6 +989,11 @@ class TableMemory
           //ROS_INFO("got response: %s", process_answer_grsd.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> grsd_cloud = (((GlobalRSD*)alg_grsd)->output ());
           alg_grsd->post();
+          if (!alg_grsd->output_valid_)
+          {
+            ROS_ERROR("GRSD computation failed, skipping object!");
+            continue;
+          }
           pub_grsd.publish (grsd_cloud);
           for (unsigned channel_idx = 0; channel_idx < grsd_cloud->channels.size (); channel_idx++)
             std::cerr << grsd_cloud->channels.at (channel_idx).name << ": " << grsd_cloud->channels.at (channel_idx).values.at (0) << " ";
@@ -996,15 +1011,131 @@ class TableMemory
           ROS_INFO("got response: %s", process_answer_svm.c_str ());
           boost::shared_ptr <const sensor_msgs::PointCloud> svm_cloud = (((SVMClassification*)alg_svm)->output ());
           alg_svm->post();
-          int object_class = 0;
-          if (alg_svm->output_valid_)
+          if (!alg_svm->output_valid_)
           {
-            pub_svm.publish (svm_cloud);
-            int pcIdx = getChannelIndex(svm_cloud, "point_class");
-            int object_pose_class = svm_cloud->channels.at (pcIdx).values.at (0);
-            ROS_INFO("CLASSIFICATION RESULT: %d", object_pose_class);
-            object_class = object_pose_class / 10;
+            ROS_ERROR("SVM classification failed, skipping object!");
+            continue;
           }
+          pub_svm.publish (svm_cloud);
+          int pcIdx = getChannelIndex(svm_cloud, "point_class");
+          int object_pose_class = svm_cloud->channels.at (pcIdx).values.at (0);
+          ROS_INFO("CLASSIFICATION RESULT: %d", object_pose_class);
+          int object_class = object_pose_class / 10;
+
+          /// TODO: DO FIT BASED ON CLASSIFICATION RESULT.. rearrange code
+
+          // dummy declartion to avoid compilation error
+          bool is_object_geometric_type_box = true;
+          // Setting object class: TODO load this mapping from a configuration file generated during training
+          switch (object_class)
+          {
+            case 1: // small bowl and mug
+            {
+              if (!check_geometry_ || !is_object_geometric_type_box)
+              {
+                ROS_WARN("Found Bowl-Eating");
+                to->object_type = "Bowl-Eating";
+                if ((to->maxP.z - to->minP.z) > 0.06 
+                    &&
+                    (to->maxP.z - to->minP.z) < 0.15)
+                {
+                  ROS_WARN("Re-casted to Cup");
+                  to->object_type = "Cup";
+                }
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 2: // cereal
+            {
+              if (!check_geometry_ || is_object_geometric_type_box)
+              {
+                ROS_WARN("Found BreakfastCereal");
+                to->object_type = "BreakfastCereal";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 3: // icetea
+            {
+              if (!check_geometry_ || is_object_geometric_type_box)
+              {
+                ROS_WARN("Found Tea-Iced");
+                to->object_type = "Tea-Iced";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 4: // milk
+            {
+              if (!check_geometry_ || is_object_geometric_type_box)
+              {
+                ROS_WARN("Found CowsMilk-Product");
+                to->object_type = "CowsMilk-Product";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 5: // teapot
+            {
+              if (!check_geometry_ || !is_object_geometric_type_box)
+              {
+                ROS_WARN("Found Cup");
+                to->object_type = "Cup";
+                if ((to->maxP.z - to->minP.z)> 0.0 
+                    &&
+                    (to->maxP.z - to->minP.z) < 0.06)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
+                {
+                  ROS_WARN("Re-casted to Bowl-Eating");
+                  to->object_type = "Bowl-Eating";
+                }
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 6: // chips
+            {
+              if (!check_geometry_ || !is_object_geometric_type_box)
+              {
+                ROS_WARN("Found Potato-Chips");
+                to->object_type = "Potato-Chips";
+              }
+              else
+              {
+                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
+                to->object_type = "nn";
+              }
+              break;
+            }
+            case 0: // output was invalid
+            default:
+            {
+              ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
+              to->object_type = "nn";
+            }
+          }
+
+#ifdef OLD_CLASSIFICATION
 
           // repeat fits of cylinders and boxes, to stabilize decision
           int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
@@ -1284,6 +1415,7 @@ class TableMemory
             }
           }
 
+#endif
           // call triangulation on outliers
 //          alg_triangulation->pre();
 //          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
