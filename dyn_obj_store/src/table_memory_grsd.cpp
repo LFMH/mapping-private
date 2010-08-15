@@ -1024,107 +1024,57 @@ class TableMemory
 
           /// TODO: DO FIT BASED ON CLASSIFICATION RESULT.. rearrange code
 
-          // dummy declartion to avoid compilation error
-          bool is_object_geometric_type_box = true;
           // Setting object class: TODO load this mapping from a configuration file generated during training
+          int geometric_model = 0; // 1-box, 2-cylinder, 3-rotational
           switch (object_class)
           {
             case 1: // small bowl and mug
             {
-              if (!check_geometry_ || !is_object_geometric_type_box)
+              geometric_model = 2;
+              ROS_WARN("Found small cylinder");
+              to->object_type = "Bowl-Eating";
+              if ((to->maxP.z - to->minP.z) > 0.06 
+                  &&
+                  (to->maxP.z - to->minP.z) < 0.15)
               {
-                ROS_WARN("Found Bowl-Eating");
-                to->object_type = "Bowl-Eating";
-                if ((to->maxP.z - to->minP.z) > 0.06 
-                    &&
-                    (to->maxP.z - to->minP.z) < 0.15)
-                {
-                  ROS_WARN("Re-casted to Cup");
-                  to->object_type = "Cup";
-                }
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
+                ROS_WARN("Re-casted to Cup");
+                to->object_type = "Cup";
               }
               break;
             }
             case 2: // cereal
             {
-              if (!check_geometry_ || is_object_geometric_type_box)
-              {
-                ROS_WARN("Found BreakfastCereal");
-                to->object_type = "BreakfastCereal";
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
-              }
+              geometric_model = 1;
+              ROS_WARN("Found big flat box");
+              to->object_type = "BreakfastCereal";
               break;
             }
             case 3: // icetea
             {
-              if (!check_geometry_ || is_object_geometric_type_box)
-              {
-                ROS_WARN("Found Tea-Iced");
-                to->object_type = "Tea-Iced";
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
-              }
+              geometric_model = 1;
+              ROS_WARN("Found tetrapack");
+              to->object_type = "Tea-Iced";
               break;
             }
             case 4: // milk
             {
-              if (!check_geometry_ || is_object_geometric_type_box)
-              {
-                ROS_WARN("Found CowsMilk-Product");
-                to->object_type = "CowsMilk-Product";
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
-              }
+              geometric_model = 1;
+              ROS_WARN("Found medium box");
+              to->object_type = "CowsMilk-Product";
               break;
             }
             case 5: // teapot
             {
-              if (!check_geometry_ || !is_object_geometric_type_box)
-              {
-                ROS_WARN("Found Cup");
-                to->object_type = "Cup";
-                if ((to->maxP.z - to->minP.z)> 0.0 
-                    &&
-                    (to->maxP.z - to->minP.z) < 0.06)// && tables[idxs[0]].inst[idxs[1]]->objects[idxs[2]]->object_geometric_type == "Cyl")
-                {
-                  ROS_WARN("Re-casted to Bowl-Eating");
-                  to->object_type = "Bowl-Eating";
-                }
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
-              }
+              geometric_model = 3;
+              ROS_WARN("Found rotational");
+              to->object_type = "Tea-Pot";
               break;
             }
             case 6: // chips
             {
-              if (!check_geometry_ || !is_object_geometric_type_box)
-              {
-                ROS_WARN("Found Potato-Chips");
-                to->object_type = "Potato-Chips";
-              }
-              else
-              {
-                ROS_WARN("Object class %d is not consistent with cluster geometry! Setting \"nn\"", object_class);
-                to->object_type = "nn";
-              }
+              geometric_model = 2;
+              ROS_WARN("Found tall cylinder");
+              to->object_type = "Potato-Chips";
               break;
             }
             case 0: // output was invalid
@@ -1133,6 +1083,121 @@ class TableMemory
               ROS_WARN("Object class %d is not valid! Setting \"nn\"", object_class);
               to->object_type = "nn";
             }
+          }
+          
+          // repeat fits of cylinders and boxes, to get the best result
+          int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
+          int nr_rep_cyl = 3; // TODO: fitting cylinders is slow... but 4-5 would be better probably
+          
+          // fit the detected geometric model
+          if (geometric_model == 1)
+          {
+            // call box estimation
+            //std::cout << "[reconstruct_table_objects] Calling RobustBoxEstimation with a cluster with " <<
+            //              mls_cloud->points.size () << " points." << std::endl;
+            boost::shared_ptr<sensor_msgs::PointCloud> box_inliers (new sensor_msgs::PointCloud ());
+            boost::shared_ptr<sensor_msgs::PointCloud> box_inliers2 (new sensor_msgs::PointCloud ());
+            std::vector<double> box_coeff;
+            boost::shared_ptr<const triangle_mesh_msgs::TriangleMesh> box_mesh;
+            visualization_msgs::Marker box_marker;
+            for (int j = 0; j < nr_rep_box; j++)
+            {
+              alg_box->pre();
+              ((RobustBoxEstimation*)alg_box)->publish_marker_ = false;
+              ((RobustBoxEstimation*)alg_box)->success_probability_ = 1; // do exhaustive search for best model
+              std::string process_answer_box = ((RobustBoxEstimation*)alg_box)->process
+                          (mls_cloud);
+              //ROS_INFO("got response: %s", process_answer_box.c_str ());
+              if (alg_box->output_valid_)
+              {
+                std::vector<double> tmp_box_coeff = ((RobustBoxEstimation*)alg_box)->getCoeff ();
+                ((RobustBoxEstimation*)alg_box)->computeInAndOutliers (mls_cloud, tmp_box_coeff, 0.01, 0.00001);
+                //boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+                boost::shared_ptr<sensor_msgs::PointCloud> tmp_box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
+                ROS_INFO("found box with %ld inliers", tmp_box_inliers2->points.size ());
+                if (tmp_box_inliers2->points.size () > box_inliers2->points.size ())
+                {
+                  box_inliers = ((RobustBoxEstimation*)alg_box)->getInliers ();
+                  box_inliers2 = ((RobustBoxEstimation*)alg_box)->getThresholdedInliers (0.2); // 0.15
+                  box_coeff = tmp_box_coeff;
+                  box_mesh = ((RobustBoxEstimation*)alg_box)->output ();
+                  box_marker = ((RobustBoxEstimation*)alg_box)->getMarker ();
+                }
+              }
+              alg_box->post();
+            }
+            //if (box_marker.header.frame_id == "")
+            //  ROS_ERROR ("Box marker has empty frame id!");
+            //else
+            //  ROS_INFO ("Box marker has %s frame id!", box_marker.header.frame_id.c_str ());
+            
+            // if no output was valid, publish should still work with a dummy marker
+            if (box_inliers2->points.size () == 0)
+              box_marker = visualization_msgs::Marker();
+              
+            // set up id and namespace for marker  
+            box_marker.id = i;
+            //box_marker.id = to->number;
+            box_marker.ns = marker_namespace.str ();
+
+            // publish and save results
+            marker_pub_.publish (box_marker);
+            to->mesh = box_mesh;
+            to->object_geometric_type = "Box";
+          }
+          else if (geometric_model == 2)
+          {
+            // call cylinder estimation
+            //std::cout << "[reconstruct_table_objects] Calling CylinderEstimation with a PCD with " <<
+            //              mls_cloud->points.size () << " points." << std::endl;
+            std::vector<double> cylinder_coeff;
+            boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers (new sensor_msgs::PointCloud ());
+            boost::shared_ptr<sensor_msgs::PointCloud> cyl_inliers2 (new sensor_msgs::PointCloud ());
+            boost::shared_ptr<sensor_msgs::PointCloud> cyl_outliers (new sensor_msgs::PointCloud ());
+            boost::shared_ptr<const triangle_mesh_msgs::TriangleMesh> cyl_mesh;
+            visualization_msgs::Marker cylinder_marker = ((CylinderEstimation*)alg_cyl_est)->getMarker ();
+            for (int j = 0; j < nr_rep_cyl; j++)
+            {
+              alg_cyl_est->pre ();
+              ((CylinderEstimation*)alg_cyl_est)->publish_marker_ = false;
+              std::string process_answer_rot = ((CylinderEstimation*)alg_cyl_est)->process
+                          (mls_cloud);
+              //ROS_INFO("got response: %s", process_answer_rot.c_str ());
+              if (alg_cyl_est->output_valid_)
+              {
+                //boost::shared_ptr<sensor_msgs::PointCloud> tmp_rot_inliers = ((CylinderEstimation*)alg_rot_est)->getInliers ();
+                boost::shared_ptr<sensor_msgs::PointCloud> tmp_cyl_inliers2 = ((CylinderEstimation*)alg_cyl_est)->getThresholdedInliers (0.2);
+                //ROS_INFO("found cylinder with %ld inliers", tmp_cyl_inliers2->points.size ());
+                if (tmp_cyl_inliers2->points.size () > cyl_inliers2->points.size ())
+                {
+                  cyl_inliers = ((CylinderEstimation*)alg_cyl_est)->getInliers ();
+                  cyl_inliers2 = ((CylinderEstimation*)alg_cyl_est)->getThresholdedInliers (0.2);
+                  cyl_outliers = ((CylinderEstimation*)alg_cyl_est)->getOutliers ();
+                  cyl_mesh = ((CylinderEstimation*)alg_cyl_est)->output ();
+                  cylinder_marker = ((CylinderEstimation*)alg_cyl_est)->getMarker ();
+                  cylinder_coeff = ((CylinderEstimation*)alg_cyl_est)->getCoeff ();
+                }
+              }
+              alg_cyl_est->post ();
+            }
+            //if (cylinder_marker.header.frame_id == "")
+            //  ROS_ERROR ("Cylinder marker has empty frame id!");
+            //else
+            //  ROS_INFO ("Cylinder marker has %s frame id!", cylinder_marker.header.frame_id.c_str ());
+            
+            // if no output was valid, publish should still work with a dummy marker
+            if (cyl_inliers2->points.size () == 0)
+              cylinder_marker = visualization_msgs::Marker();
+              
+            // set up id and namespace for marker  
+            cylinder_marker.id = i;
+            //cylinder_marker.id = to->number;
+            cylinder_marker.ns = marker_namespace.str ();
+
+            // publish and save results
+            marker_pub_.publish (cylinder_marker);
+            to->mesh = cyl_mesh;
+            to->object_geometric_type = "Cyl";
           }
 
 #ifdef OLD_CLASSIFICATION
@@ -1143,7 +1208,7 @@ class TableMemory
           int sum_nrb = 0;
           int sum_nrc = 0;
 
-          // call rotational estimation
+          // call cylinder estimation
           //std::cout << "[reconstruct_table_objects] Calling CylinderEstimation with a PCD with " <<
           //              mls_cloud->points.size () << " points." << std::endl;
           std::vector<double> cylinder_coeff;
