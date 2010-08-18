@@ -1,0 +1,16 @@
+<package>
+  <description>
+  </description>
+
+  <author>Uli Klank, Dejan Pangercic</author>
+  <license>GPL</license>
+  <review status="experimental" notes="beta"/>
+
+  <!--See http://octomap.sourceforge.net/ -->
+  <depend package="vision_srvs"/>
+  <depend package="annotation_srvs"/>
+  <depend package="pcl_cloud_tools" />
+  <depend package="vtk" />
+  <depend package="cognitive_perception" />
+  <depend package="cop_halcon_plugins" />
+</package>
