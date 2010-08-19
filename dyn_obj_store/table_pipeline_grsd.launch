@@ -41,8 +41,11 @@
     <param name="table_delta_z" value="0.02" />
     <param name="output_table_topic" value="/table_object_detector_passive1/table_with_objects" />
     <param name="sac_distance_threshold" value="0.015" />
-    <param name="normal_eps_angle" value="5" />
-    <param name="table_delta_z" value="0.01" />
+    <param name="normal_eps_angle" value="15" />
+    <param name="downsample_leaf_width_x" value="0.03" />
+    <param name="downsample_leaf_width_y" value="0.03" />
+    <param name="downsample_leaf_width_z" value="0.03" />
+    <param name="search_k_closest" value="30" />
   </node>
 
   <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true"> <!-- launch-prefix="xterm -e gdb -args"> -->
