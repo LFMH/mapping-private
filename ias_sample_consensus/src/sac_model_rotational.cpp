@@ -339,10 +339,14 @@ namespace ias_sample_consensus
         A(d1,d2) = pow (vals_2d_x[d1], (double) d2);
     }
 
+    // add weighting
+    Eigen::VectorXd weight_vector = Eigen::VectorXd::Ones (samples.size());
+    Eigen::MatrixXd At_weight = A.transpose() * weight_vector.asDiagonal();
+
     // allocate and initialize the parts of the equation system
     Eigen::MatrixXd M (polynomial_order+1,polynomial_order+1);
-    M.part<Eigen::SelfAdjoint>() = A.transpose() * A;
-    Eigen::VectorXd x = A.transpose() * b;
+    M.part<Eigen::SelfAdjoint>() = At_weight * A;
+    Eigen::VectorXd x = At_weight * b;
 
     // solve
     //Eigen::VectorXd x1 = x;
