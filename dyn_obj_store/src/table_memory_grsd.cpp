@@ -1033,7 +1033,7 @@ class TableMemory
               geometric_model = 2;
               ROS_WARN("Found small cylinder");
               to->object_type = "Bowl-Eating";
-              if ((to->maxP.z - to->minP.z) > 0.06 
+              if ((to->maxP.z - to->minP.z) > 0.06
                   &&
                   (to->maxP.z - to->minP.z) < 0.15)
               {
