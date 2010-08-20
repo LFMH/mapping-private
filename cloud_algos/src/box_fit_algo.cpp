@@ -475,7 +475,7 @@ void BoxEstimation::computeMarker (boost::shared_ptr<const sensor_msgs::PointClo
   marker_.color.r = 0.0;
   marker_.color.g = 1.0;
   marker_.color.b = 0.0;
-  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
+  //std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
 }
 
 #ifndef NO_BOXFIT_NODE

@@ -319,7 +319,7 @@ class TableMemory
         ROS_WARN ("fix_tables is set to false, but could not find Polygon Clipper");
       
 
-      // if center of new (invcomplete) table is within old
+      // if center of new (incomplete) table is within old
       // table bounds, it's the same
       geometry_msgs::Point32 center;
       center.x = new_table->table_min.x + (new_table->table_max.x - new_table->table_min.x) / 2.0;
@@ -332,9 +332,9 @@ class TableMemory
       double y = center.y;
       double z = center.z;
 
-      std::cerr << "Table compare returns false. Center = <" << x << "," << y << "," << z << ">." << std::endl;
+      std::cout << "Table compare returns false. Center = <" << x << "," << y << "," << z << ">." << std::endl;
       for (unsigned int i = 0; i < old_table.polygon.points.size() ; i ++)
-        std::cerr << "\t Polygon points " << i << " = <" << old_table.polygon.points[i].x
+        std::cout << "\t Polygon points " << i << " = <" << old_table.polygon.points[i].x
                   << "," << old_table.polygon.points[i].y
                   << "," << old_table.polygon.points[i].z
                   << ">." << std::endl;
@@ -761,9 +761,9 @@ class TableMemory
             to_now->number = to_last->number;
             std::stringstream name;
             //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
-            name << to_now->object_type;
             if (check_geometry_)
-              name << "_" << to_now->object_geometric_type;
+              name << to_now->object_geometric_type << "_";
+            name << to_now->object_type;
             to_now->name = name.str();
             break;
           }
@@ -773,9 +773,9 @@ class TableMemory
           to_now->number = cluster_name_counter_++;
           std::stringstream name;
           //name << to_now->object_type << "_" << to_now->object_geometric_type << "_" << to_now->number;
-          name << to_now->object_type;
           if (check_geometry_)
-            name << "_" << to_now->object_geometric_type;
+            name << to_now->object_geometric_type << "_";
+          name << to_now->object_type;
           to_now->name = name.str();
           to_now->object_cop_id = object_cop_id_counter_++;
         }
@@ -845,7 +845,6 @@ class TableMemory
           return;
         }
 
-      //std::cerr << "loading plugins" << std::endl;
       CloudAlgo * alg_triangulation = find_algorithm ("cloud_algos/DepthImageTriangulation");
       CloudAlgo * alg_cyl_est = find_algorithm ("cloud_algos/CylinderEstimation");
       CloudAlgo * alg_mls = find_algorithm ("cloud_algos/MovingLeastSquares");
@@ -860,7 +859,6 @@ class TableMemory
       alg_grsd->verbosity_level_ = 0;
       alg_svm->verbosity_level_ = 0;
       alg_denoise->verbosity_level_ = 0;
-      //std::cerr << "successfully loaded plugins" << std::endl;
 
       ros::Publisher pub_mls = find_publisher ("cloud_algos/MovingLeastSquares");
       ros::Publisher pub_cyl = find_publisher ("cloud_algos/CylinderEstimation");
@@ -926,7 +924,6 @@ class TableMemory
             ROS_ERROR ("Processed cluster has empty frame id!");
           else
             ROS_INFO ("Processed cluster has %s frame id!", cluster->header.frame_id.c_str ());
-          //std::cerr << "Processed cluster has frame id " << cluster->header.frame_id << std::endl;
 
           // TODO: ideally all parameters should be set in the launch file
 
@@ -996,8 +993,8 @@ class TableMemory
           }
           pub_grsd.publish (grsd_cloud);
           for (unsigned channel_idx = 0; channel_idx < grsd_cloud->channels.size (); channel_idx++)
-            std::cerr << grsd_cloud->channels.at (channel_idx).name << ": " << grsd_cloud->channels.at (channel_idx).values.at (0) << " ";
-          std::cerr << std::endl;
+            std::cout << grsd_cloud->channels.at (channel_idx).name << ": " << grsd_cloud->channels.at (channel_idx).values.at (0) << " ";
+          std::cout << std::endl;
 
           // call SVM classification
           alg_svm->pre();
@@ -1089,6 +1086,10 @@ class TableMemory
           int nr_rep_box = 1; // if SAC fit is used: up to 20 is still OK speed-wise
           int nr_rep_cyl = 3; // TODO: fitting cylinders is slow... but 4-5 would be better probably
           
+          // create PCD for outliers
+          boost::shared_ptr<sensor_msgs::PointCloud> all_outliers (new sensor_msgs::PointCloud ());
+          all_outliers->header = mls_cloud->header;
+          
           // fit the detected geometric model
           if (geometric_model == 1)
           {
@@ -1131,19 +1132,40 @@ class TableMemory
             //else
             //  ROS_INFO ("Box marker has %s frame id!", box_marker.header.frame_id.c_str ());
             
-            // if no output was valid, publish should still work with a dummy marker
-            if (box_inliers2->points.size () == 0)
-              box_marker = visualization_msgs::Marker();
-              
-            // set up id and namespace for marker  
-            box_marker.id = i;
-            //box_marker.id = to->number;
-            box_marker.ns = marker_namespace.str ();
+            // if the output was valid at least once
+            if (box_inliers2->points.size () != 0)
+            {
+              // set up id and namespace for marker
+              box_marker.id = i;
+              //box_marker.id = to->number;
+              box_marker.ns = marker_namespace.str ();
 
-            // publish and save results
-            marker_pub_.publish (box_marker);
-            to->mesh = box_mesh;
-            to->object_geometric_type = "Box";
+              // publish and save results
+              marker_pub_.publish (box_marker);
+              to->mesh = box_mesh;
+              to->object_geometric_type = "Box";
+              
+              // save shape parameters instead of object type
+              if (check_geometry_)
+              {
+                std::stringstream tmp_type;
+                std::vector<double> sorted_dimensions (3); // don't break values in box_coeff as they relate to the first, second and up directions
+                sorted_dimensions[0] = box_coeff[3];
+                sorted_dimensions[1] = box_coeff[4];
+                sorted_dimensions[2] = box_coeff[5];
+                sort (sorted_dimensions.begin (), sorted_dimensions.end ());
+                tmp_type.precision (2);
+                tmp_type << sorted_dimensions[0] << "x" << sorted_dimensions[1] << "x" << sorted_dimensions[2];
+                to->object_type = tmp_type.str ();
+                // output model parameters to be checked
+                std::cerr << sorted_dimensions[0] << " " << sorted_dimensions[1] << " " << sorted_dimensions[2] << std::endl;
+              }
+              
+              // add outliers to be triangulated -- oriented bounding box has no outliers!
+              //all_outliers->points.insert (all_outliers->points.end (), cyl_outliers->points.begin (), cyl_outliers->points.end ());
+            }
+            else
+              all_outliers->points.insert (all_outliers->points.end (), mls_cloud->points.begin (), mls_cloud->points.end ());
           }
           else if (geometric_model == 2)
           {
@@ -1185,19 +1207,55 @@ class TableMemory
             //else
             //  ROS_INFO ("Cylinder marker has %s frame id!", cylinder_marker.header.frame_id.c_str ());
             
-            // if no output was valid, publish should still work with a dummy marker
-            if (cyl_inliers2->points.size () == 0)
-              cylinder_marker = visualization_msgs::Marker();
-              
-            // set up id and namespace for marker  
-            cylinder_marker.id = i;
-            //cylinder_marker.id = to->number;
-            cylinder_marker.ns = marker_namespace.str ();
+            // if the output was valid at least once
+            if (cyl_inliers2->points.size () != 0)
+            {
+              // set up id and namespace for marker
+              cylinder_marker.id = i;
+              //cylinder_marker.id = to->number;
+              cylinder_marker.ns = marker_namespace.str ();
 
-            // publish and save results
-            marker_pub_.publish (cylinder_marker);
-            to->mesh = cyl_mesh;
-            to->object_geometric_type = "Cyl";
+              // publish and save results
+              marker_pub_.publish (cylinder_marker);
+              to->mesh = cyl_mesh;
+              to->object_geometric_type = "Cyl";
+              
+              // save shape parameters instead of object type
+              if (check_geometry_)
+              {
+                std::stringstream tmp_type;
+                tmp_type.precision (2);
+                Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+                axis.normalize ();
+                tmp_type << "(" << axis[0] << "," << axis[1] << "," << axis[2] << ")_" << cylinder_coeff[6];
+                to->object_type = tmp_type.str ();
+                // output model parameters to be checked
+                std::cerr << acos(fabs(axis[2]))*180/M_PI << " " << cylinder_coeff[6] << std::endl;
+              }
+              
+              // add outliers to be triangulated
+              all_outliers->points.insert (all_outliers->points.end (), cyl_outliers->points.begin (), cyl_outliers->points.end ());
+            }
+            else
+              all_outliers->points.insert (all_outliers->points.end (), mls_cloud->points.begin (), mls_cloud->points.end ());
+          }
+          else if (geometric_model == 3)
+          {
+            /// TODO: test rotational estimation and add it here!
+            all_outliers->points.insert (all_outliers->points.end (), mls_cloud->points.begin (), mls_cloud->points.end ());
+          }
+
+          // call triangulation on outliers
+          if (all_outliers->points.size () > 0)
+          {
+            alg_triangulation->pre();
+            std::cout << "[reconstruct_table_objects] Calling Triangulation with the outliers from the reconstruction methods: " <<
+                          all_outliers->points.size () << " points." << std::endl;
+            //std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process
+            //            (all_outliers);
+            //ROS_INFO ("got response: %s", process_answer_tri.c_str ());
+            //pub_tri.publish (((DepthImageTriangulation*)alg_triangulation)->output ());
+            //alg_triangulation->post ();
           }
 
 #ifdef OLD_CLASSIFICATION
@@ -1341,7 +1399,7 @@ class TableMemory
             }
 
             if (debug > 1)
-              std::cerr << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
+              std::cout << decision << ": " << nrb << "/" << nrc << " " << box_inliers->points.size() << "-" << box_inliers2->points.size() << "_" << cyl_inliers->points.size() << "-" << cyl_inliers2->points.size() << " " << is_box << " " << cylinder_radius << " " << axis_z << std::endl;
 
             // save the best model
             // extra checks of radius size and orientation to limit cylinders
@@ -1483,7 +1541,7 @@ class TableMemory
 #endif
           // call triangulation on outliers
 //          alg_triangulation->pre();
-//          std::cerr << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
+//          std::cout << "[reconstruct_table_objects] Calling Triangulation with the outliers from RotEst with " <<
 //                        rot_outliers->points.size () << " points." << std::endl;
 //          std::string process_answer_tri = ((DepthImageTriangulation*)alg_triangulation)->process
 //                      (rot_outliers);
@@ -1660,16 +1718,16 @@ class TableMemory
     void
       print_mem_stats (int table_num)
     {
-      std::cerr << "Tables : " << tables.size () << std::endl;
+      std::cout << "Tables : " << tables.size () << std::endl;
       for (unsigned int t = 0; t < tables.size(); t++)
       {
         double x = tables[t].center.x;
         double y = tables[t].center.y;
         double z = tables[t].center.z;
-        std::cerr << "\tTable " << t << " : " << tables[t].inst.size () << " instances. Center = <" << x << "," << y << "," << z << ">." << std::endl;
+        std::cout << "\tTable " << t << " : " << tables[t].inst.size () << " instances. Center = <" << x << "," << y << "," << z << ">." << std::endl;
 
       }
-      std::cerr << "\tCurrent Table : " << table_num << " (" << tables[table_num].getCurrentInstance ()->objects.size () << " objects)" << std::endl;
+      std::cout << "\tCurrent Table : " << table_num << " (" << tables[table_num].getCurrentInstance ()->objects.size () << " objects)" << std::endl;
     }
 
   int record_to_file(std::string file, double time, double pos)
