@@ -50,7 +50,7 @@
 
   <node pkg="dyn_obj_store" type="table_memory_grsd" name="table_memory_grsd" output="screen" respawn="true"> <!-- launch-prefix="xterm -e gdb -args"> -->
     <param name="input_table_topic" value="/table_object_detector_passive1/table_with_objects" />
-    <param name="check_geometry" value="true" />
+    <param name="check_geometry" value="false" />
     <param name="width" value="0.03" />
     <param name="step" value="0" />
 <!--
