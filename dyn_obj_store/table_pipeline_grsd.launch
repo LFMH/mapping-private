@@ -19,10 +19,10 @@
     <param name="input_cloud_topic" value="/shoulder_cloud" />
     <!--<param name="input_cloud_topic" value="/cloud_pcd" />-->
     <param name="output_cloud_topic" value="/box_filter/shoulder_cloud_clipped" />
-    <param name="box_min_y" value="-3.0" />
-    <param name="box_max_y" value="2.0" />
-    <param name="box_min_x" value="-3.0" />
-    <param name="box_max_x" value="3.0" />
+    <param name="box_min_y" value="-1.0" />
+    <param name="box_max_y" value="1.0" />
+    <param name="box_min_x" value="0.0" />
+    <param name="box_max_x" value="1.5" />
     <param name="box_min_z" value="0.0" />
     <param name="box_max_z" value="2.0" />
   </node>
@@ -34,7 +34,7 @@
 <!--   </node>  -->
 
   <!--From here on we will work in /map coordinate frame -->
-  <param name="global_frame_id" value="/map" />	
+  <param name="global_frame_id" value="/base_link" />	
   <!-- Table Object Detector (passive version) -->
   <node pkg="cloud_tools" type="table_object_detector_passive_node" name="table_object_detector_passive1" output="screen"  respawn="true">
     <param name="input_cloud_topic" value="/box_filter/shoulder_cloud_clipped" />
