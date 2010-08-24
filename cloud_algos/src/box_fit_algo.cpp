@@ -1,11 +1,11 @@
-/* 
- * Copyright (c) 2010, Dejan Pangercic <dejan.pangercic@cs.tum.edu>, 
+/*
+ * Copyright (c) 2010, Dejan Pangercic <dejan.pangercic@cs.tum.edu>,
  Zoltan-Csaba Marton <marton@cs.tum.edu>, Nico Blodow <blodow@cs.tum.edu>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -139,7 +139,7 @@ std::string BoxEstimation::process (const boost::shared_ptr<const InputType> inp
   }
 }
 
-boost::shared_ptr<const BoxEstimation::OutputType> BoxEstimation::output () 
+boost::shared_ptr<const BoxEstimation::OutputType> BoxEstimation::output ()
 {
   return mesh_;
 };
@@ -298,9 +298,9 @@ bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   {
     interest_pts.push_back(&(cloud->points[i]));
   }
-  
+
   cloud_kdtree::KdTreeANN data_kdtree(*cloud);
-  
+
   // ----------------------------------------------
   // SpectralAnalysis is not a descriptor, it is a class that holds
   // intermediate data to be used/shared by different descriptors.
@@ -321,7 +321,7 @@ bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   descriptors_3d.push_back(&o_tangent);
   //   descriptors_3d.push_back(&position);
   descriptors_3d.push_back(&bbox_spectral);
-  
+
   // ----------------------------------------------
   // Iterate over each descriptor and compute features for each point in the point cloud.
   // The compute() populates a vector of vector of floats, i.e. a feature vector for each
@@ -346,7 +346,7 @@ bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   for (size_t i = 0 ; i < pt0_bbox_features.size() ; i++)
   {
     if (i < 12)
-    {     
+    {
       coeff[i+3] = pt0_bbox_features[i];
     }
     else
@@ -354,7 +354,7 @@ bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
   }
   if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] Box dimensions x: %f, y: %f, z: %f ", pt0_bbox_features[0],  pt0_bbox_features[1],  pt0_bbox_features[2]);
   if (verbosity_level_ > 0) ROS_INFO("[BoxEstimation] Eigen vectors: \n\t%f %f %f \n\t%f %f %f \n\t%f %f %f", pt0_bbox_features[3], pt0_bbox_features[4],
-           pt0_bbox_features[5], pt0_bbox_features[6], pt0_bbox_features[7], pt0_bbox_features[8], 
+           pt0_bbox_features[5], pt0_bbox_features[6], pt0_bbox_features[7], pt0_bbox_features[8],
            pt0_bbox_features[9], pt0_bbox_features[10],pt0_bbox_features[11]);
 
   // TODO: we should get feedback on success from the compute function
@@ -364,7 +364,7 @@ bool BoxEstimation::find_model(boost::shared_ptr<const sensor_msgs::PointCloud> 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * \brief triangulates box
- */  
+ */
 void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
   geometry_msgs::Point32 current_point;
@@ -399,10 +399,10 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
         //current_point.z = coeff[2] + k * coeff[5]/2;
 
         mesh_->points[counter++] = current_point;
-      } 
+      }
     }
   }
-  
+
   // fill in the box sides (2 triangles per side)
   counter = 0;
   triangle.i = 0, triangle.j = 1, triangle.k = 2;
@@ -434,7 +434,7 @@ void BoxEstimation::triangulate_box(boost::shared_ptr<const sensor_msgs::PointCl
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * \brief publishes model marker (to rviz)
- */  
+ */
 void BoxEstimation::publish_marker (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> &coeff)
 {
   computeMarker (cloud, coeff);
