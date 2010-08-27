@@ -1,0 +1,21 @@
+<package>
+  <description brief="pointcloud_segmentation">
+
+     pointcloud_segmentation
+
+  </description>
+  <author>Hozefa Indorewala</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pointcloud_segmentation</url>
+  <depend package="roscpp"/>
+  <depend package="pcl"/>
+  <depend package="sensor_msgs"/>
+
+  <export>
+     <cpp cflags="-I${prefix}/include -I${prefix}/src"/>
+  </export>
+
+</package>
+
+

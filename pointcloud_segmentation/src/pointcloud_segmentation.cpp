@@ -1,0 +1,44 @@
+#include <pointcloud_segmentation/pointcloud_segmentation.h>
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PointCloudSegmentation::PointCloudSegmentation(): nh_("~")
+{
+  nh_.param("subscribe_pointcloud_topic", subscribe_pointcloud_topic_, std::string("/point_cloud"));
+  run();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+PointCloudSegmentation::~PointCloudSegmentation()
+{
+  ROS_INFO("Shutting down pointcloud_segmentation node!");
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void PointCloudSegmentation::run()
+{
+  pointcloud_subscriber_ = nh_.subscribe(subscribe_pointcloud_topic_, 100, &PointCloudSegmentation::pointcloudSegmentationCallBack, this);
+  ros::spin();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void PointCloudSegmentation::pointcloudSegmentationCallBack(const sensor_msgs::PointCloud2& pointcloud2_msg)
+{
+  ROS_INFO("Received a point cloud.");
+  frame_id_ = pointcloud2_msg.header.frame_id;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "pointcloud_segmentation");
+    PointCloudSegmentation pointcloud_segmentation;
+    return(0);
+}
+
+
