@@ -4,7 +4,7 @@
   <node pkg="pointcloud_segmentation" type="pointcloud_segmentation" name="pointcloud_segmentation" output="screen" respawn="false">
    
     <!-- Topic to subscribe to receive point clouds --> 
-    <param name="subscribe_pointcloud_topic" value="/shoulder_cloud"/>
+    <param name="subscribe_pointcloud_topic" value="/merged_cloud"/>
  
  </node>
 
