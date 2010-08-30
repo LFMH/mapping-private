@@ -11,27 +11,42 @@
 //Point type
 #include "pointcloud_segmentation/pointcloud_segmentation_point_types.h"
 
+//Other includes
+#include "visualization_msgs/Marker.h"
+#include "tf/tf.h"
+#include <boost/thread.hpp>
+
 class PointCloudSegmentation
 {
   public:
     PointCloudSegmentation();
     ~PointCloudSegmentation();
-    void pointcloudSegmentationCallBack(const sensor_msgs::PointCloud2& msg);
+    void pointcloudSegmentationCallBack(const sensor_msgs::PointCloud2& pointcloud);
+    void boxfitCallBack(const visualization_msgs::Marker& marker);
     void run();
 
+    pcl::PointCloud<pcl::PointXYZINormal> updatePointCloud(pcl::PointCloud<pcl::PointXYZINormal> cloud, pcl::PointIndices inliers);
     void publishPointCloud(pcl::PointCloud<pcl::PointSegmentation> pointcloud);
-    void publishPointCloud(pcl::PointCloud<pcl::PointNormal> pointcloud);
-    void segmentPointCloud(pcl::PointCloud<pcl::PointNormal> &pointcloud);
+    void publishPointCloud(pcl::PointCloud<pcl::PointXYZINormal> pointcloud);
+    void segmentPointCloud(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
+    void segmentFloor(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
+    void segmentVerticalPlanes(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
+    void spin();
+
   private:
     ros::NodeHandle nh_;
-    std::string subscribe_pointcloud_topic_, frame_id_;
+    std::string subscribe_pointcloud_topic_, subscribe_box_fit_topic_, frame_id_;
     ros::Subscriber pointcloud_subscriber_;
+    ros::Subscriber box_fit_subscriber_;
     ros::Publisher pointcloud_publisher_;
     ros::Publisher segment_publisher_;
+    boost::thread spin_thread_;
     // Create the segmentation object
-    pcl::SACSegmentation<pcl::PointNormal> seg_;
-    Eigen::Vector3f axis_;
-    int label_;
+    pcl::SACSegmentation<pcl::PointXYZINormal> seg_;
+    Eigen::Vector3f axis_x_, axis_y_, axis_z_;
+    int label_, model_type_, method_type_;
+    bool set_axis_, floor_detected_, marker_published_, point_cloud_received_;
+    pcl::PointCloud<pcl::PointXYZINormal> input_cloud_;
 
 };
 
