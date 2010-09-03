@@ -20,8 +20,6 @@
  */
 
 
-//TODO: check what exactly does this mean!!!
-volatile bool g_stopall = false;
 
 #include <iostream>
 #include <string>
