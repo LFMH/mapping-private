@@ -1,6 +1,14 @@
 #include <pointcloud_segmentation/pointcloud_segmentation.h>
 #include <iostream>
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+double getRGB (float r, float g, float b)
+{
+  int res = (int (r * 255) << 16) | (int (g*255) << 8) | int (b*255);
+  double rgb = *(float*)(&res);
+  return (rgb);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 PointCloudSegmentation::PointCloudSegmentation(): nh_("~")
 {
@@ -9,7 +17,6 @@ PointCloudSegmentation::PointCloudSegmentation(): nh_("~")
   nh_.param("model_type", model_type_, pcl::SACMODEL_PLANE);
   nh_.param("method_type", method_type_, pcl::SAC_RANSAC);
   nh_.param("set_axis", set_axis_, true);
-  floor_detected_ = true;
   marker_published_ = false;
   point_cloud_received_ = false;
   ROS_INFO("pointcloud_segmentation node is up and running.");
@@ -43,27 +50,69 @@ void PointCloudSegmentation::spin()
   while( point_cloud_received_ == false)
     loop_rate.sleep();
 
-    while( nh_.ok() && input_cloud_.points.size() > 100 )
-    {
-      loop_rate.sleep();
-      while(floor_detected_ == true)
-      {
-        segmentFloor(input_cloud_);
-        loop_rate.sleep();
-      }
-    }
+    //while( nh_.ok() && input_cloud_.points.size() > 100 )
+    //{
+    loop_rate.sleep();
+    segmentFloor();
+    segmentCeiling();
+    segmentPointCloud();
+    loop_rate.sleep();
+    //}
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-pcl::PointCloud<pcl::PointXYZINormal> PointCloudSegmentation::updatePointCloud(pcl::PointCloud<pcl::PointXYZINormal> cloud, pcl::PointIndices inliers)
+pcl::PointCloud<pcl::PointSegmentation> PointCloudSegmentation::createSegmentedPointCloud(pcl::PointIndices inliers, double rgb )
+{
+  pcl::PointCloud<pcl::PointSegmentation> segmented_point_cloud;
+  segmented_point_cloud.points.resize(inliers.indices.size());
+  for(u_int i = 0 ; i < inliers.indices.size(); i++)
+  {
+    segmented_point_cloud.points[i].x = input_cloud_.points[inliers.indices[i]].x;
+    segmented_point_cloud.points[i].y = input_cloud_.points[inliers.indices[i]].y;
+    segmented_point_cloud.points[i].z = input_cloud_.points[inliers.indices[i]].z;
+    segmented_point_cloud.points[i].intensity = input_cloud_.points[inliers.indices[i]].intensity;
+    segmented_point_cloud.points[i].rgb = rgb;
+    segmented_point_cloud.points[i].normal[0] = input_cloud_.points[inliers.indices[i]].normal[0];
+    segmented_point_cloud.points[i].normal[1] = input_cloud_.points[inliers.indices[i]].normal[1];
+    segmented_point_cloud.points[i].normal[2] = input_cloud_.points[inliers.indices[i]].normal[2];
+    segmented_point_cloud.points[i].curvature = input_cloud_.points[inliers.indices[i]].curvature;
+  }
+
+  return (segmented_point_cloud);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+pcl::PointCloud<pcl::PointSegmentation> PointCloudSegmentation::createSegmentedPointCloud(pcl::PointCloud<pcl::PointXYZINormal> cloud, pcl::PointIndices inliers, double rgb )
+{
+  pcl::PointCloud<pcl::PointSegmentation> segmented_point_cloud;
+  segmented_point_cloud.points.resize(inliers.indices.size());
+  for(u_int i = 0 ; i < inliers.indices.size(); i++)
+  {
+    segmented_point_cloud.points[i].x = cloud.points[inliers.indices[i]].x;
+    segmented_point_cloud.points[i].y = cloud.points[inliers.indices[i]].y;
+    segmented_point_cloud.points[i].z = cloud.points[inliers.indices[i]].z;
+    segmented_point_cloud.points[i].intensity = cloud.points[inliers.indices[i]].intensity;
+    segmented_point_cloud.points[i].rgb = rgb;
+    segmented_point_cloud.points[i].normal[0] = cloud.points[inliers.indices[i]].normal[0];
+    segmented_point_cloud.points[i].normal[1] = cloud.points[inliers.indices[i]].normal[1];
+    segmented_point_cloud.points[i].normal[2] = cloud.points[inliers.indices[i]].normal[2];
+    segmented_point_cloud.points[i].curvature = cloud.points[inliers.indices[i]].curvature;
+  }
+
+  return (segmented_point_cloud);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+pcl::PointCloud<pcl::PointXYZINormal> PointCloudSegmentation::updatePointCloud( pcl::PointIndices inliers)
 {
   int check = 0;
   pcl::PointCloud<pcl::PointXYZINormal> ret_cloud;
 
-  for(u_int i = 0; i < cloud.points.size(); i++)
+  for(u_int i = 0; i < input_cloud_.points.size(); i++)
   {
     for(u_int j = 0 ; j < inliers.indices.size(); j++)
     {
@@ -75,7 +124,7 @@ pcl::PointCloud<pcl::PointXYZINormal> PointCloudSegmentation::updatePointCloud(p
     }
     if(check == 0)
     {
-      ret_cloud.points.push_back(cloud.points[i]);
+      ret_cloud.points.push_back(input_cloud_.points[i]);
     }
     else
       check = 0;
@@ -108,7 +157,7 @@ void PointCloudSegmentation::publishPointCloud(pcl::PointCloud<pcl::PointSegment
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloudSegmentation::segmentVerticalPlanes(pcl::PointCloud<pcl::PointXYZINormal> &input_cloud)
+void PointCloudSegmentation::segmentVerticalPlanes()
 {
   ROS_INFO("Looking for vertical planes perpendicular to the x-axis");
   pcl::ModelCoefficients coefficients;
@@ -121,24 +170,13 @@ void PointCloudSegmentation::segmentVerticalPlanes(pcl::PointCloud<pcl::PointXYZ
   seg_.setDistanceThreshold (0.01);
 
   seg_.setAxis(axis_x_);
-  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud));
+  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud_));
   seg_.segment(inliers, coefficients);
 
-  segmented_vertical_planes_x.points.resize(inliers.indices.size());
-  for(u_int i = 0 ; i < inliers.indices.size(); i++)
-  {
-    segmented_vertical_planes_x.points[i].x = input_cloud.points[inliers.indices[i]].x;
-    segmented_vertical_planes_x.points[i].y = input_cloud.points[inliers.indices[i]].y;
-    segmented_vertical_planes_x.points[i].z = input_cloud.points[inliers.indices[i]].z;
-    segmented_vertical_planes_x.points[i].normal[0] = input_cloud.points[inliers.indices[i]].normal[0];
-    segmented_vertical_planes_x.points[i].normal[1] = input_cloud.points[inliers.indices[i]].normal[1];
-    segmented_vertical_planes_x.points[i].normal[2] = input_cloud.points[inliers.indices[i]].normal[2];
-    segmented_vertical_planes_x.points[i].curvature = input_cloud.points[inliers.indices[i]].curvature;
-    segmented_vertical_planes_x.points[i].label = 1;
-  }
+  segmented_vertical_planes_x = createSegmentedPointCloud(inliers);
   publishPointCloud(segmented_vertical_planes_x);
-  input_cloud = updatePointCloud(input_cloud, inliers);
-  publishPointCloud(input_cloud);
+  input_cloud_ = updatePointCloud(inliers);
+  publishPointCloud(input_cloud_);
 
   if(inliers.indices.size() == 0 )
   {
@@ -153,74 +191,57 @@ void PointCloudSegmentation::segmentVerticalPlanes(pcl::PointCloud<pcl::PointXYZ
   seg_.setDistanceThreshold (0.01);
 
   seg_.setAxis(axis_y_);
-  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud));
+  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud_));
   seg_.segment(inliers, coefficients);
 
-  segmented_vertical_planes_y.points.resize(inliers.indices.size());
-  for(u_int i = 0 ; i < inliers.indices.size(); i++)
-  {
-    segmented_vertical_planes_y.points[i].x = input_cloud.points[inliers.indices[i]].x;
-    segmented_vertical_planes_y.points[i].y = input_cloud.points[inliers.indices[i]].y;
-    segmented_vertical_planes_y.points[i].z = input_cloud.points[inliers.indices[i]].z;
-    segmented_vertical_planes_y.points[i].normal[0] = input_cloud.points[inliers.indices[i]].normal[0];
-    segmented_vertical_planes_y.points[i].normal[1] = input_cloud.points[inliers.indices[i]].normal[1];
-    segmented_vertical_planes_y.points[i].normal[2] = input_cloud.points[inliers.indices[i]].normal[2];
-    segmented_vertical_planes_y.points[i].curvature = input_cloud.points[inliers.indices[i]].curvature;
-    segmented_vertical_planes_y.points[i].label = 2;
-  }
+  segmented_vertical_planes_y = createSegmentedPointCloud(inliers);
   publishPointCloud(segmented_vertical_planes_y);
-  input_cloud = updatePointCloud(input_cloud, inliers);
+  input_cloud_ = updatePointCloud(inliers);
 
-  publishPointCloud(input_cloud);
+  publishPointCloud(input_cloud_);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PointCloudSegmentation::segmentFloor(pcl::PointCloud<pcl::PointXYZINormal> &input_cloud)
+void PointCloudSegmentation::segmentCeiling()
 {
-  ROS_INFO("Segmenting floor.");
-  label_ = 0 ;
+  ROS_INFO("Segmenting ceiling from point cloud of size %d", (int)input_cloud_.points.size());
+
+  //first we remove the ceiling candidate points from the input cloud i.e. the points that lie between above 2.7 m
+  pcl::PointCloud<pcl::PointXYZINormal> ceiling_candidate;
+  pcl::PointIndices ceiling_points;
+
+  for(u_int i = 0 ; i  < input_cloud_.points.size(); i++)
+  {
+    if(input_cloud_.points[i].z > 2.7)
+    {
+      ceiling_candidate.points.push_back(input_cloud_.points[i]);
+      ceiling_points.indices.push_back(i);
+    }
+  }
+  ceiling_candidate.width = 1;
+  ceiling_candidate.height = ceiling_candidate.points.size();
 
   pcl::ModelCoefficients coefficients;
   pcl::PointIndices inliers;
-  pcl::PointCloud<pcl::PointSegmentation> segmented_floor;
+  pcl::PointCloud<pcl::PointSegmentation> segmented_ceiling;
 
   seg_.setOptimizeCoefficients (true);
-  seg_.setModelType (pcl::SACMODEL_PLANE);
+  seg_.setModelType (pcl::SACMODEL_ORIENTED_PLANE);
   seg_.setMethodType (pcl::SAC_RANSAC);
   seg_.setDistanceThreshold (0.01);
 
-  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud));
+  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (ceiling_candidate));
   seg_.segment(inliers, coefficients);
 
-  for(u_int i = 0 ; i < inliers.indices.size(); i++)
+  if(inliers.indices.size() > 0 )
   {
-    //check if the plane detected is the floor or not
-    if(input_cloud.points[inliers.indices[i]].z > 0.10)
-    {
-      floor_detected_ = false;
-      break;
-    }
-  }
-  if(floor_detected_ == true)
-  {
-    ROS_INFO("Floor detected successfully");
-    segmented_floor.points.resize(inliers.indices.size());
-    for(u_int i = 0 ; i < inliers.indices.size(); i++)
-    {
-      segmented_floor.points[i].x = input_cloud.points[inliers.indices[i]].x;
-      segmented_floor.points[i].y = input_cloud.points[inliers.indices[i]].y;
-      segmented_floor.points[i].z = input_cloud.points[inliers.indices[i]].z;
-      segmented_floor.points[i].normal[0] = input_cloud.points[inliers.indices[i]].normal[0];
-      segmented_floor.points[i].normal[1] = input_cloud.points[inliers.indices[i]].normal[1];
-      segmented_floor.points[i].normal[2] = input_cloud.points[inliers.indices[i]].normal[2];
-      segmented_floor.points[i].curvature = input_cloud.points[inliers.indices[i]].curvature;
-      segmented_floor.points[i].label = label_;
-    }
-    publishPointCloud(segmented_floor);
+    ROS_INFO("Ceiling detected successfully");
+    segmented_ceiling = createSegmentedPointCloud(ceiling_candidate, inliers);
+    publishPointCloud(segmented_ceiling);
     ROS_INFO("Segmented floor published");
-    input_cloud = updatePointCloud(input_cloud, inliers);
-    publishPointCloud(input_cloud);
-    ROS_INFO("Current unsegmented point cloud published");
+    input_cloud_ = updatePointCloud( ceiling_points);
+    publishPointCloud(input_cloud_);
+    ROS_INFO("Current unsegmented point cloud of size %d published", (int)input_cloud_.points.size());
   }
   else
   {
@@ -228,13 +249,61 @@ void PointCloudSegmentation::segmentFloor(pcl::PointCloud<pcl::PointXYZINormal> 
   }
 
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void PointCloudSegmentation::segmentFloor()
+{
+  ROS_INFO("Segmenting floor from point cloud of size %d", (int)input_cloud_.points.size());
+
+  //first we remove the floor candidate points from the input cloud i.e. the points that lie between 0 - 10 cm
+  pcl::PointCloud<pcl::PointXYZINormal> floor_candidate;
+  pcl::PointIndices floor_points;
+
+  for(u_int i = 0 ; i  < input_cloud_.points.size(); i++)
+  {
+    if(input_cloud_.points[i].z < 0.1)
+    {
+      floor_candidate.points.push_back(input_cloud_.points[i]);
+      floor_points.indices.push_back(i);
+    }
+  }
+  floor_candidate.width = 1;
+  floor_candidate.height = floor_candidate.points.size();
+
+  pcl::ModelCoefficients coefficients;
+  pcl::PointIndices inliers;
+  pcl::PointCloud<pcl::PointSegmentation> segmented_floor;
+
+  seg_.setOptimizeCoefficients (true);
+  seg_.setModelType (pcl::SACMODEL_ORIENTED_PLANE);
+  seg_.setMethodType (pcl::SAC_RANSAC);
+  seg_.setDistanceThreshold (0.01);
+
+  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (floor_candidate));
+  seg_.segment(inliers, coefficients);
+
+  if(inliers.indices.size() > 0 )
+  {
+    ROS_INFO("Floor detected successfully");
+    segmented_floor = createSegmentedPointCloud(floor_candidate, inliers);
+    publishPointCloud(segmented_floor);
+    ROS_INFO("Segmented floor published");
+    input_cloud_ = updatePointCloud( floor_points);
+    publishPointCloud(input_cloud_);
+    ROS_INFO("Current unsegmented point cloud of size %d published", (int)input_cloud_.points.size());
+  }
+  else
+  {
+    ROS_WARN("No ceiling detected");
+  }
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PointCloudSegmentation::segmentPointCloud(pcl::PointCloud<pcl::PointXYZINormal> &input_cloud)
+void PointCloudSegmentation::segmentPointCloud()
 {
-  ROS_INFO("Segmenting Point Cloud of size %d", (int) input_cloud.points.size());
-  label_ ++;
+  ROS_INFO("Segmenting Point Cloud of size %d", (int) input_cloud_.points.size());
   pcl::ModelCoefficients coefficients;
   pcl::PointIndices inliers;
   pcl::PointCloud<pcl::PointSegmentation> segmented_plane;
@@ -242,14 +311,13 @@ void PointCloudSegmentation::segmentPointCloud(pcl::PointCloud<pcl::PointXYZINor
   seg_.setOptimizeCoefficients (true);
   seg_.setModelType (pcl::SACMODEL_PLANE);
   seg_.setMethodType (pcl::SAC_RANSAC);
-  seg_.setDistanceThreshold (0.05);
+  seg_.setDistanceThreshold (0.01);
 
-  if(set_axis_ == true)
-  {
-    //seg_.setAxis(axis_);
-  }
+  axis_x_[0] = 1; axis_x_[1] = 0 ; axis_x_[2] = 0;
 
-  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud));
+  //seg_.setAxis(axis_x_);
+
+  seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (input_cloud_));
   seg_.segment(inliers, coefficients);
 
   if (inliers.indices.size () == 0)
@@ -258,22 +326,11 @@ void PointCloudSegmentation::segmentPointCloud(pcl::PointCloud<pcl::PointXYZINor
     exit(1);
   }
 
-  segmented_plane.points.resize(inliers.indices.size());
-  for(u_int i = 0 ; i < inliers.indices.size(); i++)
-  {
-    segmented_plane.points[i].x = input_cloud.points[inliers.indices[i]].x;
-    segmented_plane.points[i].y = input_cloud.points[inliers.indices[i]].y;
-    segmented_plane.points[i].z = input_cloud.points[inliers.indices[i]].z;
-    segmented_plane.points[i].normal[0] = input_cloud.points[inliers.indices[i]].normal[0];
-    segmented_plane.points[i].normal[1] = input_cloud.points[inliers.indices[i]].normal[1];
-    segmented_plane.points[i].normal[2] = input_cloud.points[inliers.indices[i]].normal[2];
-    segmented_plane.points[i].curvature = input_cloud.points[inliers.indices[i]].curvature;
-    segmented_plane.points[i].label = label_;
-  }
+  segmented_plane = createSegmentedPointCloud(inliers);
   publishPointCloud(segmented_plane);
   ROS_INFO("Segmented Plane published");
-  input_cloud = updatePointCloud(input_cloud, inliers);
-  publishPointCloud(input_cloud);
+  input_cloud_ = updatePointCloud(inliers);
+  publishPointCloud(input_cloud_);
   ROS_INFO("Current unsegmented point cloud published");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

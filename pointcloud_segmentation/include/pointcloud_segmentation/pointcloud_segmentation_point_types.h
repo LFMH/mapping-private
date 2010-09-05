@@ -48,11 +48,12 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (pcl::PointSegmentation,
                                    (float, x, x)
                                    (float, y, y)
                                    (float, z, z)
+                                   (float, intensity, intensity)
                                    (float, normal[0], normal_x)
                                    (float, normal[1], normal_y)
                                    (float, normal[2], normal_z)
                                    (float, curvature, curvature)
-                                   (uint32_t, label, label)
+                                   (float, rgb, rgb)
 );
 
 #endif  //#ifndef POINTCLOUD_SEGMENTATION_POINT_TYPES_H_

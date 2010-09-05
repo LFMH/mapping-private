@@ -33,14 +33,15 @@ namespace pcl
   struct PointSegmentation
   {
     PCL_ADD_POINT4D;
+    float intensity;
     PCL_ADD_NORMAL4D;
     float curvature;
-    uint32_t label;
+    float rgb;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   } EIGEN_ALIGN_128;
   inline std::ostream& operator<<(std::ostream& os, const PointSegmentation& p)
   {
-    os << "("<<p.x<<","<<p.y<<","<<p.z<<" - "<<" - "<<p.normal[0]<<","<<p.normal[1]<<","<<p.normal[2]<<" - "<<p.curvature<<" - "<<p.label<<")";
+    os << "("<<p.x<<","<<p.y<<","<<p.z<<" - "<<p.intensity<<" - "<<p.normal[0]<<","<<p.normal[1]<<","<<p.normal[2]<<" - "<<p.curvature<<" - "<<p.rgb<<")";
     return os;
   }
 

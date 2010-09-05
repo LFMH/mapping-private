@@ -25,12 +25,15 @@ class PointCloudSegmentation
     void boxfitCallBack(const visualization_msgs::Marker& marker);
     void run();
 
-    pcl::PointCloud<pcl::PointXYZINormal> updatePointCloud(pcl::PointCloud<pcl::PointXYZINormal> cloud, pcl::PointIndices inliers);
+    pcl::PointCloud<pcl::PointXYZINormal> updatePointCloud( pcl::PointIndices inliers);
+    pcl::PointCloud<pcl::PointSegmentation> createSegmentedPointCloud( pcl::PointIndices inliers, double rgb = 0.1);
+    pcl::PointCloud<pcl::PointSegmentation> createSegmentedPointCloud( pcl::PointCloud<pcl::PointXYZINormal> cloud, pcl::PointIndices inliers, double rgb = 0.1);
     void publishPointCloud(pcl::PointCloud<pcl::PointSegmentation> pointcloud);
     void publishPointCloud(pcl::PointCloud<pcl::PointXYZINormal> pointcloud);
-    void segmentPointCloud(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
-    void segmentFloor(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
-    void segmentVerticalPlanes(pcl::PointCloud<pcl::PointXYZINormal> &pointcloud);
+    void segmentPointCloud();
+    void segmentFloor();
+    void segmentCeiling();
+    void segmentVerticalPlanes();
     void spin();
 
   private:
@@ -45,7 +48,7 @@ class PointCloudSegmentation
     pcl::SACSegmentation<pcl::PointXYZINormal> seg_;
     Eigen::Vector3f axis_x_, axis_y_, axis_z_;
     int label_, model_type_, method_type_;
-    bool set_axis_, floor_detected_, marker_published_, point_cloud_received_;
+    bool set_axis_, marker_published_, point_cloud_received_;
     pcl::PointCloud<pcl::PointXYZINormal> input_cloud_;
 
 };

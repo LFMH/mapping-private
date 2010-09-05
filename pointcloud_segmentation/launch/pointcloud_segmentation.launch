@@ -4,9 +4,9 @@
   <node pkg="pointcloud_segmentation" type="pointcloud_segmentation" name="pointcloud_segmentation" output="screen" respawn="false">
    
     <!-- Topic to subscribe to receive point clouds --> 
-    <param name="subscribe_pointcloud_topic" value="/merged_cloud"/>
+    <param name="subscribe_pointcloud_topic" value="/cloud_pcd"/>
     
-    <param name="model_type" value="pcl::SACMODEL_NORMAL_PLANE"/>
+    <param name="model_type" value="pcl::SACMODEL_PLANE"/>
     
     <param name="method_type" value="pcl::SAC_RANSAC"/>
     
