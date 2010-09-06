@@ -1,0 +1,157 @@
+commit b012d26b330df156d9288b1ea11bea7b801c0929
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Sep 6 15:04:23 2010 +0200
+
+    do not build until dependency on point_cloud_mapping gets fixed (replaced by pcl)
+
+commit 055dda8211643a362015cc5e77d296eefc250359
+Author: blodow <blodow@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Sat Oct 31 08:39:04 2009 +0000
+
+    minor changes to cluster_voxelization
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@242 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 08ff46d9aa4ee9fc4ec16b3e096edf56fa168d45
+Author: dejanpan <dejanpan@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Mon Oct 12 04:00:57 2009 +0000
+
+    node.h to node_handle.h
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@207 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 95aa516027eb542430db9af013e74a5a72c18cec
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Sat Sep 19 12:06:34 2009 +0000
+
+    clearer manifest files
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@190 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit c5cde947c718be5afc2370a37b8b5c71e0c0a92b
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Mon Aug 24 11:28:00 2009 +0000
+
+    ROS svn compliant
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@101 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 0847cb003e7be6745a5faea2f38efc640bdaa9a5
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Sat Jul 4 11:18:00 2009 +0000
+
+    msg change
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@80 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 0cd23abd187f5404ee09bb4fbe3489dcb71e4ec1
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Thu Jul 2 10:38:09 2009 +0000
+
+    small changes
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@74 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit fcaa8c6aff34ccb31f64c7f554b04e5a064bcdeb
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 17:07:30 2009 +0000
+
+    timing complete
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@73 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 2f252271838f4424af9c8b158b30fc0be6c0c41a
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 16:41:19 2009 +0000
+
+    timing
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@72 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 88b69fe6d883fdc0b6091c670c9f3d4a8e7a584e
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 16:23:05 2009 +0000
+
+    voxles
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@71 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit e43d0be4655d9aa2d49c5e6fe01b4575947e5ab1
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 15:29:53 2009 +0000
+
+    compiles now
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@69 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 17626e6d5c16c04fc496ca474f402e0033d24c9c
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 15:23:46 2009 +0000
+
+    in progress
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@68 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 70d2bba65246550b7b2109286afbb3586464c7d7
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 13:07:46 2009 +0000
+
+    works now
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@64 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 6a9d658f30ce353d5025494b0dfc35b011670614
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 12:41:47 2009 +0000
+
+    almost there - compiles now
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@63 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 9aa2a325757bac381045fae3fa40e4dcc89af72f
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 12:33:07 2009 +0000
+
+    more work
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@62 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit aeae2383506ab9bf8d3eed21c789a9cb04dc1b22
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 11:31:48 2009 +0000
+
+    more beef
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@61 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 1e1be30f47ef28d68f42e2643185276a9d20e7d1
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 11:09:13 2009 +0000
+
+    small change
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@60 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 9b778d71c836067ab836e527565dc716cf4a809a
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 10:47:47 2009 +0000
+
+    query
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@59 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit 0d829d7c1f44b646a5669d327d528e8c03444ae8
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 10:40:10 2009 +0000
+
+    skel
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@58 dbf9194a-e3ba-47af-a5b3-857fd3661128
+
+commit fcd9d5edc2d691d3669d659d4cfd068c334ba731
+Author: veedee <veedee@dbf9194a-e3ba-47af-a5b3-857fd3661128>
+Date:   Wed Jul 1 10:13:56 2009 +0000
+
+    new structure
+    
+    git-svn-id: https://tum-ros-pkg.svn.sourceforge.net/svnroot/tum-ros-pkg@54 dbf9194a-e3ba-47af-a5b3-857fd3661128
