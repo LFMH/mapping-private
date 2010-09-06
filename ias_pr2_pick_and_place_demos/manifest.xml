@@ -1,8 +1,9 @@
 <package>
   <description brief="ias_pr2_pick_and_place_demos">
-
-     ias_pr2_pick_and_place_demos
-
+Assuming that the following launch file is running:
+"roslaunch pr2_tabletop_manipulation_launch pr2_tabletop_manipulation.launch"
+clean_table.py will simply clean all the object off the table to the (right) side of 
+the PR2.
   </description>
   <author>Dejan Pangercic</author>
   <license>BSD</license>
