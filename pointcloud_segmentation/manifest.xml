@@ -1,7 +1,7 @@
 <package>
   <description brief="pointcloud_segmentation">
-
-     pointcloud_segmentation
+    pointcloud_segmentation creates the semantic map of the kitchen-like
+    environments.
 
   </description>
   <author>Hozefa Indorewala</author>
