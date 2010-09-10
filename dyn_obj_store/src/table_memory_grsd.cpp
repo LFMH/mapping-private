@@ -1244,6 +1244,8 @@ class TableMemory
             /// TODO: test rotational estimation and add it here!
             all_outliers->points.insert (all_outliers->points.end (), mls_cloud->points.begin (), mls_cloud->points.end ());
           }
+          else
+            all_outliers->points.insert (all_outliers->points.end (), mls_cloud->points.begin (), mls_cloud->points.end ());
 
           // call triangulation on outliers
           if (all_outliers->points.size () > 0)
