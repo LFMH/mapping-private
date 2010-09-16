@@ -441,21 +441,21 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
       // storing partial result for reuse
       #ifndef GLOBAL
-      P_weight_ = P_ * weight_vec_.asDiagonal();
+      P_weight_ = (P_ * weight_vec_.asDiagonal()).lazy ();
       #else
-      P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
+      P_weight_ = (P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal()).lazy ();
       #endif
 
       /// @NOTE: result is symmetrical... hopefully part<SelfAdjoint>() is the only thing that Eigen needs to fully optimize it
       #ifndef GLOBAL
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.transpose ();
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = (P_weight_ * P_.transpose ()).lazy ();
       #else
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = (P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ()).lazy ();
       #endif
 
       // Solve linear equation system - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
       #ifndef INVERSE
-      c_vec_ = P_weight_ * f_vec_;
+      c_vec_ = (P_weight_ * f_vec_).lazy ();
       P_weight_Pt_.llt().solveInPlace(c_vec_);
       #endif
 
@@ -511,9 +511,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         {
           // solve the equation system
           #ifndef GLOBAL
-          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_;
+          c_vec_ = (inv_P_weight_Pt_ * P_weight_ * f_vec_;
           #else
-          c_vec_ = inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
+          c_vec_ = (inv_P_weight_Pt_ * P_weight_ * f_vec_.start(k);
           #endif
         #endif
 
@@ -576,7 +576,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             }
 
             // move the point to the corresponding surface point
-            Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.start<3>();
+            Eigen::Vector3d movement = (u_coord * u + v_coord * v + height * plane_parameters.start<3>()).lazy ();
             cloud_fit_->points[cp].x += movement[0];
             cloud_fit_->points[cp].y += movement[1];
             cloud_fit_->points[cp].z += movement[2];
@@ -597,8 +597,8 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           ts_tmp = ros::Time::now ();
           #endif
           // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-          Eigen::Vector3d n_a = u + plane_parameters.start<3>() * du;
-          Eigen::Vector3d n_b = v + plane_parameters.start<3>() * dv;
+          Eigen::Vector3d n_a = (u + plane_parameters.start<3>() * du).lazy ();
+          Eigen::Vector3d n_b = (v + plane_parameters.start<3>() * dv).lazy ();
           //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
           //plane_parameters[0] = n[0];
           //plane_parameters[1] = n[1];
