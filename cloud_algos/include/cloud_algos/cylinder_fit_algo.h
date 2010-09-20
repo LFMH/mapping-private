@@ -63,7 +63,7 @@
 #include <tf/tf.h>
 
 // Eigen
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 
 #include <cloud_algos/cloud_algos.h>

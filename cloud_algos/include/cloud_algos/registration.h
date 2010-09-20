@@ -3,7 +3,7 @@
 #include <geometry_msgs/Transform.h>
 #include <sensor_msgs/PointCloud.h>
 #include <cloud_algos/cloud_algos.h>
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <Eigen/SVD> 
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>

@@ -33,7 +33,7 @@
 #include <cloud_algos/cloud_algos.h>
 
 // For extra Eigen functions
-#include <Eigen/Array>
+#include <Eigen/Core>
 // if needed:
 #include <Eigen/LU> // matrix inversion
 #include <Eigen/Geometry> // cross product

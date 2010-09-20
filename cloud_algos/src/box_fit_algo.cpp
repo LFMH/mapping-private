@@ -54,7 +54,7 @@
 #include <tf/tf.h>
 
 // Eigen
-#include <Eigen/Array>
+#include <Eigen/Core>
 
 #include <angles/angles.h>
 

@@ -37,7 +37,7 @@
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Eigen
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 
 namespace ias_sample_consensus

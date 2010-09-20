@@ -62,7 +62,7 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
     A(i, 4) = normal_y;
     A(i, 5) = normal_z;
   }
-  Eigen::SVD<Eigen::MatrixXd::PlainMatrixType> svd = A.svd();
+  Eigen::SVD<Eigen::MatrixXd> svd = A.svd();
 
   const Eigen::MatrixXd U = svd.matrixU();
   const Eigen::MatrixXd V = svd.matrixV();
@@ -70,8 +70,8 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   
   Eigen::MatrixXd S_plus(S);
   for (int i = 0; i < S_plus.size(); i++)
-    if (S_plus[i] != 0.0)
-      S_plus[i] = 1.0f / S_plus[i];
+    if (S_plus(i) != 0.0)
+      S_plus(i) = 1.0f / S_plus(i);
       
   Eigen::MatrixXd A_plus = V*S_plus.col(0).asDiagonal()*U.transpose();
   Eigen::VectorXd x_opt = A_plus * b;

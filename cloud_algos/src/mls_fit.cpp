@@ -398,8 +398,8 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       #endif
 
       // get local coordinate system (Darboux frame)
-      Eigen::Vector3d v = plane_parameters.start<3>().unitOrthogonal ();
-      Eigen::Vector3d u = plane_parameters.start<3>().cross (v);
+      Eigen::Vector3d v = plane_parameters.head<3>().unitOrthogonal ();
+      Eigen::Vector3d u = plane_parameters.head<3>().cross (v);
 
       // --[ Build up matrices for getting the coefficients ]--
 
@@ -417,7 +417,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
         de_meaned[2] = cloud->points[points_indices_[cp][i]].z - cloud_fit_->points[cp].z;
         u_coord = de_meaned.dot (u);
         v_coord = de_meaned.dot (v);
-        f_vec_(i) = de_meaned.dot (plane_parameters.start<3>());
+        f_vec_(i) = de_meaned.dot (plane_parameters.head<3>());
         //cerr << "f_vec[" << i << "] = " << f_vec[i] << endl;
 
         // compute the polynomial's terms at the current point
@@ -439,24 +439,26 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
       // --[ Computing coefficients ]--
 
+      // TODO: test selfadjointView<Upper>() and noalias() on the left hand side for efficiency
+
       // storing partial result for reuse
       #ifndef GLOBAL
-      P_weight_ = (P_ * weight_vec_.asDiagonal()).lazy ();
+      P_weight_ = P_ * weight_vec_.asDiagonal();
       #else
-      P_weight_ = (P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal()).lazy ();
+      P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
       #endif
 
       /// @NOTE: result is symmetrical... hopefully part<SelfAdjoint>() is the only thing that Eigen needs to fully optimize it
       #ifndef GLOBAL
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = (P_weight_ * P_.transpose ()).lazy ();
+      P_weight_Pt_ = P_weight_ * P_.transpose ();
       #else
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = (P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ()).lazy ();
+      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
       #endif
 
       // Solve linear equation system - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
       #ifndef INVERSE
-      c_vec_ = (P_weight_ * f_vec_).lazy ();
-      P_weight_Pt_.llt().solveInPlace(c_vec_);
+      c_vec_ = P_weight_ * f_vec_;
+      c_vec_ = P_weight_Pt_.llt().solve(c_vec_); // TODO: try B = A.selfadjointView<Lower>.llt().solve(B);
       #endif
 
       #ifdef INVERSE
@@ -576,7 +578,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             }
 
             // move the point to the corresponding surface point
-            Eigen::Vector3d movement = (u_coord * u + v_coord * v + height * plane_parameters.start<3>()).lazy ();
+            Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.head<3>();
             cloud_fit_->points[cp].x += movement[0];
             cloud_fit_->points[cp].y += movement[1];
             cloud_fit_->points[cp].z += movement[2];
@@ -597,14 +599,14 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           ts_tmp = ros::Time::now ();
           #endif
           // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-          Eigen::Vector3d n_a = (u + plane_parameters.start<3>() * du).lazy ();
-          Eigen::Vector3d n_b = (v + plane_parameters.start<3>() * dv).lazy ();
+          Eigen::Vector3d n_a = u + plane_parameters.head<3>() * du;
+          Eigen::Vector3d n_b = v + plane_parameters.head<3>() * dv;
           //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
           //plane_parameters[0] = n[0];
           //plane_parameters[1] = n[1];
           //plane_parameters[2] = n[2];
-          plane_parameters.start<3>() = n_a.cross (n_b);
-          plane_parameters.start<3>().normalize ();
+          plane_parameters.head<3>() = n_a.cross (n_b);
+          plane_parameters.head<3>().normalize ();
           /*ANNpoint n = annAllocPt(3);
           n[0] = -c_vec[order+1][0];
           n[1] = -c_vec[1][0];
