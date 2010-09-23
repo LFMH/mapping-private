@@ -1,0 +1,21 @@
+<package>
+  <description brief="xml_to_semantic_map">
+
+     Test package for transforming the XML version of semantic maps into the
+     SemMap message and publishing it. Depends only on the messages in
+     mod_semantic_map, so rosjava is actually not needed for this.
+
+  </description>
+  <author>Zoltan-Csaba Marton</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/xml_to_semantic_map</url>
+  <depend package="roscpp"/>
+  <depend package="eigen3"/>
+  <depend package="mod_semantic_map"/>
+  
+  <rosdep name="libxml++2.6-dev"/>
+  
+</package>
+
+
