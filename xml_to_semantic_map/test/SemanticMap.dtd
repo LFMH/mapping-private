@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+DTD for the Semantic Object Map
+-->
+
+<!ELEMENT SemanticMap	(wall | knob | candidate | handle)+>
+
+<!ELEMENT wall      (model, minD, maxD)>
+  <!ATTLIST wall name CDATA #REQUIRED>
+  <!ATTLIST wall id CDATA #REQUIRED>
+
+<!ELEMENT knob      (center, radius, doorID)>
+  <!ATTLIST knob name CDATA #REQUIRED>
+  <!ATTLIST knob id CDATA #REQUIRED>
+
+<!ELEMENT handle    (center, elongation, doorID)>
+  <!ATTLIST handle name CDATA #REQUIRED>
+  <!ATTLIST handle id CDATA #REQUIRED>
+
+<!ELEMENT candidate (wallID, face+, handles, knobs)>
+  <!ATTLIST candidate name CDATA #REQUIRED>
+  <!ATTLIST candidate typename CDATA #REQUIRED>
+  <!ATTLIST candidate id CDATA #REQUIRED>
+  <!ATTLIST candidate type CDATA #REQUIRED>
+
+<!ELEMENT face (point0, point1, point2, point3)>
+  <!ATTLIST face side CDATA #REQUIRED>
+
+<!ELEMENT model      (#PCDATA)>
+<!ELEMENT minD       (#PCDATA)>
+<!ELEMENT maxD       (#PCDATA)>
+<!ELEMENT center     (#PCDATA)>
+<!ELEMENT radius     (#PCDATA)>
+<!ELEMENT doorID     (#PCDATA)>
+<!ELEMENT wallID     (#PCDATA)>
+<!ELEMENT handles    (#PCDATA)>
+<!ELEMENT knobs      (#PCDATA)>
+<!ELEMENT elongation (#PCDATA)>
+<!ELEMENT point0     (#PCDATA)>
+<!ELEMENT point1     (#PCDATA)>
+<!ELEMENT point2     (#PCDATA)>
+<!ELEMENT point3     (#PCDATA)>
