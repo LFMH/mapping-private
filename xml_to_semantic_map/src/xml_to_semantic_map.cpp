@@ -58,15 +58,10 @@ int main(int argc, char **argv)
       //std::vector<mod_semantic_map::SemMapObject> objects;
       std::map<int, int> candidate_door;
       std::vector<Eigen::Vector3f> min_front_points;
+      std::vector<Eigen::Matrix4f> poses;
       for (std::vector<Candidate>::iterator cit = map_xml.candidates.begin (); cit != map_xml.candidates.end (); cit++)
       {
-        // setting up door parameters first
-        mod_semantic_map::SemMapObject obj_door;
-        obj_door.partOf = cit->id;
-        obj_door.id = id_cnt++;
-        obj_door.type = "door";
-        obj_door.pose.resize (16);
-        Eigen::Map<Eigen::Matrix4f> final_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
+        // getting the corner points
         Eigen::MatrixXf fp (3,4);
         fp.col(0) = Eigen::Map<Eigen::Vector3d> (cit->front.p0).cast<float> ();
         fp.col(1) = Eigen::Map<Eigen::Vector3d> (cit->front.p1).cast<float> ();
@@ -80,6 +75,18 @@ int main(int argc, char **argv)
         //Eigen::Vector3f bp1 = Eigen::Map<Eigen::Vector3d> (cit->back.p1).cast<float> ();
         //Eigen::Vector3f bp2 = Eigen::Map<Eigen::Vector3d> (cit->back.p2).cast<float> ();
         //Eigen::Vector3f bp3 = Eigen::Map<Eigen::Vector3d> (cit->back.p3).cast<float> ();
+
+        // saving the row-wise minimum coordinate for future use of by the fixtures
+        min_front_points.push_back (fp.col(0).array().min(fp.col(1).array()).min(fp.col(2).array()).min(fp.col(3).array()));
+        //std::cerr << "points:" << std::endl << fp << std::endl << "min:" << std::endl << min_front_points[obj_door.id-1] << std::endl;
+
+        // setting up door parameters first
+        mod_semantic_map::SemMapObject obj_door;
+        obj_door.partOf = cit->id;
+        obj_door.id = id_cnt++;
+        obj_door.type = "door";
+        obj_door.pose.resize (16);
+        Eigen::Map<Eigen::Matrix4f> final_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
         Eigen::Vector3f a = bp0 - fp.col(0);
         Eigen::Vector3f b = fp.col(3) - fp.col(0);
         Eigen::Vector3f c = fp.col(1) - fp.col(0);
@@ -100,9 +107,8 @@ int main(int argc, char **argv)
         // saving the door's id belonging to the candidate
         candidate_door[obj_door.partOf] = obj_door.id;
 
-        // saving the row-wise minimum coordinate
-        min_front_points.push_back (fp.col(0).array().min(fp.col(1).array()).min(fp.col(2).array()).min(fp.col(3).array()));
-        //std::cerr << "points:" << std::endl << fp << std::endl << "min:" << std::endl << min_front_points[obj_door.id-1] << std::endl;
+        // saving the pose for future use of by the fixtures
+        poses.push_back (pose);
 
         // now adjusting it to obtain candidate parameters
         mod_semantic_map::SemMapObject obj = obj_door;
@@ -132,9 +138,9 @@ int main(int argc, char **argv)
         obj.height = hit->elongation[2];
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
-        pose.block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (hit->center).cast<float> ();
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (hit->center).cast<float> ();
+        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
@@ -149,9 +155,9 @@ int main(int argc, char **argv)
         obj.height = kit->radius;
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
-        pose.block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (kit->center).cast<float> ();
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (kit->center).cast<float> ();
+        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
