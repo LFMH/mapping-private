@@ -133,9 +133,12 @@ int main(int argc, char **argv)
         obj.partOf = candidate_door[hit->doorID];
         obj.id = hit->id;
         obj.type = "handle";
-        obj.depth = hit->elongation[0];
-        obj.width = hit->elongation[1];
-        obj.height = hit->elongation[2];
+        Eigen::Map<Eigen::Vector3d> e (&(hit->elongation[0]));
+        Eigen::Vector3f d = (poses[obj.partOf-1].topLeftCorner<3,3> () * e.cast<float> ()).array ().abs ();
+        std::cerr << d.transpose () << std::endl;
+        obj.depth = d[0];
+        obj.width = d[1];
+        obj.height = d[2];
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
         //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
