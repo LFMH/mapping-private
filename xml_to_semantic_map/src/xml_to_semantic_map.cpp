@@ -53,20 +53,19 @@ int main(int argc, char **argv)
       ros::Time ts = ros::Time::now ();
 
       // Creating the list of objects from the file
-      int id_cnt = 0;
+      int id_cnt = 1; /// @NOTE: the map itself has ID 0
       mod_semantic_map::SemMap map_msg;
       //std::vector<mod_semantic_map::SemMapObject> objects;
       std::map<int, int> candidate_door;
       for (std::vector<Candidate>::iterator cit = map_xml.candidates.begin (); cit != map_xml.candidates.end (); cit++)
       {
-        mod_semantic_map::SemMapObject obj;
-
-        // adding door first
-        obj.partOf = cit->id;
-        obj.id = id_cnt++;
-        obj.type = "door";
-        obj.pose.resize (16);
-        Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
+        // setting up door parameters first
+        mod_semantic_map::SemMapObject obj_door;
+        obj_door.partOf = cit->id;
+        obj_door.id = id_cnt++;
+        obj_door.type = "door";
+        obj_door.pose.resize (16);
+        Eigen::Map<Eigen::Matrix4f> final_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
         Eigen::Vector3f fp0 = Eigen::Map<Eigen::Vector3d> (cit->front.p0).cast<float> ();
         Eigen::Vector3f fp1 = Eigen::Map<Eigen::Vector3d> (cit->front.p1).cast<float> ();
         //Eigen::Vector3f fp2 = Eigen::Map<Eigen::Vector3d> (cit->front.p2).cast<float> ();
@@ -78,25 +77,25 @@ int main(int argc, char **argv)
         Eigen::Vector3f a = bp0 - fp0;
         Eigen::Vector3f b = fp3 - fp0;
         Eigen::Vector3f c = fp1 - fp0;
-        obj.depth = 0.01;
-        obj.width = b.norm ();
-        obj.height = c.norm ();
-        c /= obj.height;
+        obj_door.depth = 0.01;
+        obj_door.width = b.norm ();
+        obj_door.height = c.norm ();
+        c /= obj_door.height;
         Eigen::Vector3f v = c.cross (b).normalized ();
         Eigen::Vector3f u = v.cross (c);
         Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
         pose.block<3,1>(0,0) = u;
         pose.block<3,1>(0,1) = v;
         pose.block<3,1>(0,2) = c;// / obj.height;
-        pose.block<3,1>(0,3) = fp0 + u*obj.width/2 + c*obj.height/2;
+        pose.block<3,1>(0,3) = fp0 + u*obj_door.width/2 + c*obj_door.height/2;
         final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.type << std::endl << final_pose.transpose () << std::endl;
-        map_msg.objects.push_back (obj);
 
-        // saving the door's id belonging to thei candiate
-        candidate_door[obj.partOf] = obj.id;
+        // saving the door's id belonging to the candidate
+        candidate_door[obj_door.partOf] = obj_door.id;
 
-        // now adding candidate
+        // now adjusting it to obtain candidate parameters
+        mod_semantic_map::SemMapObject obj = obj_door;
         obj.partOf = 0;
         obj.id = cit->id;
         obj.type = getTypeName (cit->type);
@@ -104,7 +103,10 @@ int main(int argc, char **argv)
         pose.block<3,1>(0,3) += v*obj.depth/2;
         final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << cit->name << std::endl << final_pose.transpose () << std::endl;
+
+        // adding candidate first then door to preserve hierarchy
         map_msg.objects.push_back (obj);
+        map_msg.objects.push_back (obj_door);
       }
       for (std::vector<Handle>::iterator hit = map_xml.handles.begin (); hit != map_xml.handles.end (); hit++)
       {
