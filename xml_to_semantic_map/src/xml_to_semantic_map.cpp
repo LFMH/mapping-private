@@ -1,9 +1,11 @@
 #include <cstdlib>
 #include <vector>
 #include <sstream>
+#include <fstream>
 #include <ros/ros.h>
 #include "xml_to_semantic_map/xml_semantic_map_parser.h"
 #include "mod_semantic_map/SemMap.h"
+#include "mod_semantic_map/GenerateSemanticMapOWL.h"
 
 // Eigen
 #include <Eigen/Core>
@@ -14,14 +16,15 @@
 int main(int argc, char **argv)
 {
   // Getting parameters
-  if (argc < 2)
+  if (argc < 4)
   {
-    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate>" << std::endl;
+    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file>" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
     return -1;
   }
   std::stringstream ss (argv[2]);
   double rate = 0;
   ss >> rate;
+  std::string fileName (argv[3]);
 
   // ROS stuff
   ros::init (argc, argv, "xml_to_semantic_map");
@@ -31,10 +34,11 @@ int main(int argc, char **argv)
 
   // Spin at least once
   int count = 0;
+  bool owl_saved = false;
   while ((ros::ok ()) && (count == 0 || rate != 0))
   {
     ++count;
-    ROS_INFO("Publishing map from %s (rate: %g, count: %d)", argv[1], rate, count);
+    ROS_INFO("Loading map from %s (rate: %g, count: %d)", argv[1], rate, count);
 
     // Create transformation between the coordinate frame of the XML and that of /map
     Eigen::Matrix4f map_frame = Eigen::Matrix4f::Identity ();
@@ -136,12 +140,40 @@ int main(int argc, char **argv)
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
+      ROS_INFO ("Generated data for message in %g seconds.", (ros::Time::now () - ts).toSec ());
 
       // Creating the map message and publishing it
-      ROS_INFO ("Generated data for message in %g seconds.", (ros::Time::now () - ts).toSec ());
       map_msg.header.frame_id = "/map";
       map_msg.header.stamp = ros::Time::now ();
       semantic_map_pub.publish (map_msg);
+      ROS_INFO ("Published message on the %s topic.", semantic_map_pub.getTopic ().c_str ());
+
+      // Requesting OWL conversion and saving it (if not succeeded already)
+      if (!owl_saved)
+      {
+        mod_semantic_map::GenerateSemanticMapOWL srv;
+        srv.request.map = map_msg;
+        ros::ServiceClient client = nh.serviceClient<mod_semantic_map::GenerateSemanticMapOWL>("/generate_owl_map");
+        if (client.call(srv))
+        {
+          ROS_INFO ("Received OWL file with %ld characters.", srv.response.owlmap.size ());
+          std::ofstream fs;
+          fs.open (fileName.c_str ());
+          if (fs.is_open ())
+          {
+            fs << srv.response.owlmap;
+            fs.close ();
+            ROS_INFO ("OWL file written to %s", fileName.c_str ());
+            owl_saved = true;
+          }
+          else
+            ROS_ERROR ("Couldn't open %s for reading!", fileName.c_str ());
+        }
+        else
+          ROS_ERROR("Failed to call service mod_semantic_map::GenerateSemanticMapOWL");
+      }
+      else
+        ROS_WARN ("OWL file was already requested and written to %s ...", fileName.c_str ());
     }
     else
       ROS_ERROR ("Could not read a valid semantic map from %s!", argv[1]);

@@ -1,0 +1,2231 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://ias.cs.tum.edu/kb/ias_semantic_map.owl#"
+     xml:base="http://ias.cs.tum.edu/kb/ias_semantic_map.owl"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:knowrob="http://ias.cs.tum.edu/kb/knowrob.owl#">
+    <owl:Ontology rdf:about="http://ias.cs.tum.edu/kb/ias_semantic_map.owl#">
+        <owl:imports rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#"/>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#describedInMap -->
+
+    <owl:ObjectProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#describedInMap"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#eventOccursAt -->
+
+    <owl:ObjectProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#eventOccursAt"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#objectActedOn -->
+
+    <owl:ObjectProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#objectActedOn"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#properPhysicalParts -->
+
+    <owl:ObjectProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#properPhysicalParts"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#startTime -->
+
+    <owl:ObjectProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#startTime"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#depthOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#depthOfObject"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#heightOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#heightOfObject"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m00 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m00"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m01 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m01"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m02 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m02"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m03 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m03"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m10 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m10"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m11 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m11"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m12 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m12"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m13 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m13"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m20 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m20"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m21 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m21"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m22 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m22"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m23 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m23"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m30 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m30"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m31 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m31"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m32 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m32"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#m33 -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#m33"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#widthOfObject -->
+
+    <owl:DatatypeProperty rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#widthOfObject"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticEnvironmentMap -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticEnvironmentMap"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#TimePoint -->
+
+    <owl:Class rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#TimePoint"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob744 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob744">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob747 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob747">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob750 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob750">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob753 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob753">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob756 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob756">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob759 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob759">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.015</knowrob:heightOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard639 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard639">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0173205</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.338121</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58045006</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard645 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard645">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0173205</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.3104254</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.31567</knowrob:heightOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard651 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard651">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0173205</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.289617</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.318202</knowrob:heightOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard657 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard657">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.014142122</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.60763</knowrob:heightOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard663 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard663">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320506</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.567465</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard669 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard669">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320555</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5971915</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.61296</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard675 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard675">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320672</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.59053993</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.723777</knowrob:heightOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard681 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard681">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320426</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.267237</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.78538793</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard687 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard687">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320508</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.26929498</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.7862201</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard693 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard693">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.017320491</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.14406002</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.784871</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard699 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard699">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00999999</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.110000014</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard705 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard705">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00999999</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58045006</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.98</knowrob:heightOfObject>
+        <knowrob:describedInMap rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door636 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door636">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.338121</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58045006</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle708"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door642 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door642">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.3104254</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.31567</knowrob:heightOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle711"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door648 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door648">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.289617</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.318202</knowrob:heightOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle714"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door654 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door654">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.60763</knowrob:heightOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob744"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob747"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob750"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob753"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob756"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob759"/>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle717"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door660 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door660">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.567465</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle720"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door666 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door666">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5971915</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.61296</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle723"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door672 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door672">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.59053993</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.723777</knowrob:heightOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle726"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door678 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door678">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.267237</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.78538793</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle729"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door684 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door684">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.26929498</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.7862201</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle732"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door690 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door690">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.14406002</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.784871</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle735"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door696 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door696">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.110000014</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5742007</knowrob:widthOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle738"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Door702 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Door702">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door"/>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.01</knowrob:depthOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58045006</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.98</knowrob:heightOfObject>
+        <knowrob:properPhysicalParts rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle741"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle708 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle708">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00152457</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00466835</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.178959</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle711 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle711">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00278479</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0061208</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle714 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle714">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00429827</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00952679</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.178605</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle717 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle717">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00577462</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0186943</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.50899</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle720 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle720">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00692618</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00896072</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.179062</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle723 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle723">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00569415</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">4.87447E-4</knowrob:heightOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle726 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle726">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00787163</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">8.19564E-4</knowrob:heightOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle729 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle729">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00308084</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00522155</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle732 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle732">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00418764</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00448108</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle735 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle735">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00448751</knowrob:widthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0061506</knowrob:heightOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.18</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle738 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle738">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00692618</knowrob:heightOfObject>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00896072</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.179062</knowrob:depthOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#Handle741 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#Handle741">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle"/>
+        <knowrob:widthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.00896072</knowrob:widthOfObject>
+        <knowrob:depthOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.009062</knowrob:depthOfObject>
+        <knowrob:heightOfObject rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.15692618</knowrob:heightOfObject>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D637 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D637">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.717305</knowrob:m03>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.32638448</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.574538</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D640 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D640">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.717305</knowrob:m03>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.32638448</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58319825</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D643 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D643">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.2147873</knowrob:m03>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.574353</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.815785</knowrob:m23>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D646 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D646">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.2147873</knowrob:m03>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58301324</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.815785</knowrob:m23>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D649 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D649">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.572308</knowrob:m13>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6778085</knowrob:m03>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.816479</knowrob:m23>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D652 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D652">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.58096826</knowrob:m13>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6778085</knowrob:m03>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.816479</knowrob:m23>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D655 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D655">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.574795</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.168725</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D658 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D658">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5818661</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.168725</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D661 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D661">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.44326752</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.570865</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D664 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D664">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.44326752</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.57952523</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D667 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D667">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.10448</knowrob:m03>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.36801526</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.780802</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D670 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D670">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.10448</knowrob:m03>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.36801526</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.78946227</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D673 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D673">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-1.50273</knowrob:m03>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.4702375</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.780982</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D676 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D676">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-1.50273</knowrob:m03>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.4702375</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.78964233</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D679 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D679">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78879595</knowrob:m03>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.24322951</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.782271</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D682 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D682">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78879595</knowrob:m03>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.24322951</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.7909312</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D685 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D685">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78811</knowrob:m03>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5321995</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.781565</knowrob:m13>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D688 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D688">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78811</knowrob:m03>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5321995</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.79022527</knowrob:m13>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D691 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D691">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78863454</knowrob:m03>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.76331</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.782328</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99999994</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99999994</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D694 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D694">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.78863454</knowrob:m03>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.76331</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.79098827</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99999994</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99999994</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D697 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D697">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.574795</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.795</knowrob:m23>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D700 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D700">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.23052165</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.579795</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.795</knowrob:m23>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D703 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D703">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.717305</knowrob:m03>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.574538</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99</knowrob:m23>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D706 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D706">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.717305</knowrob:m03>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.579538</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.99</knowrob:m23>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D709 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D709">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.715518</knowrob:m03>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.459872</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6031275</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D712 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D712">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.22</knowrob:m03>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.61196285</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.970477</knowrob:m23>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D715 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D715">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.60292953</knowrob:m13>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.679303</knowrob:m03>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.971112</knowrob:m23>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D718 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D718">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.2334213</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.59990144</knowrob:m13>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.35348</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D721 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D721">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.22953132</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.60388637</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.687829</knowrob:m23>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D724 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D724">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.0949988</knowrob:m03>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6348185</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.8122474</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D727 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D727">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-1.495</knowrob:m03>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.77571505</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.81345963</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D730 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D730">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.79499894</knowrob:m03>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.342954</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.8115102</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D733 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D733">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.79500306</knowrob:m03>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.631842</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.8117366</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D736 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D736">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.794997</knowrob:m03>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.7805212</knowrob:m23>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.8015889</knowrob:m13>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D739 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D739">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.22953132</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6078164</knowrob:m13>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.83000004</knowrob:m23>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D742 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D742">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-2.45753</knowrob:m03>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.6075594</knowrob:m13>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m23>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D745 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D745">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">-0.0215787</knowrob:m03>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D748 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D748">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.028421301</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D751 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D751">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.068421304</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D754 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D754">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.1034213</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D757 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D757">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.1434213</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D760 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D760">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D"/>
+        <knowrob:m30 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m30>
+        <knowrob:m31 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m31>
+        <knowrob:m20 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m20>
+        <knowrob:m01 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m01>
+        <knowrob:m10 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m10>
+        <knowrob:m02 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m02>
+        <knowrob:m21 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m21>
+        <knowrob:m32 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m32>
+        <knowrob:m12 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</knowrob:m12>
+        <knowrob:m03 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.1984213</knowrob:m03>
+        <knowrob:m13 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.5948364</knowrob:m13>
+        <knowrob:m22 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m22>
+        <knowrob:m33 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m33>
+        <knowrob:m11 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m11>
+        <knowrob:m00 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</knowrob:m00>
+        <knowrob:m23 rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.43491</knowrob:m23>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticEnvironmentMap635 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticEnvironmentMap635">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticEnvironmentMap"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception638 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception638">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door636"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D637"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception641 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception641">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard639"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D640"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception644 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception644">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door642"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D643"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception647 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception647">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard645"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D646"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception650 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception650">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door648"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D649"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception653 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception653">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard651"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D652"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception656 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception656">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door654"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D655"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception659 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception659">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard657"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D658"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception662 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception662">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door660"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D661"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception665 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception665">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard663"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D664"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception668 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception668">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door666"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D667"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception671 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception671">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard669"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D670"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception674 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception674">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door672"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D673"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception677 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception677">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard675"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D676"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception680 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception680">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door678"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D679"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception683 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception683">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard681"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D682"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception686 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception686">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door684"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D685"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception689 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception689">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard687"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D688"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception692 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception692">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door690"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D691"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception695 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception695">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard693"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D694"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception698 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception698">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door696"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D697"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception701 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception701">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard699"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D700"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception704 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception704">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Door702"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D703"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception707 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception707">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Cupboard705"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D706"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception710 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception710">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle708"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D709"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception713 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception713">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle711"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D712"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception716 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception716">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle714"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D715"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception719 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception719">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle717"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D718"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception722 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception722">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle720"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D721"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception725 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception725">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle723"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D724"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception728 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception728">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle726"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D727"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception731 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception731">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle729"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D730"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception734 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception734">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle732"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D733"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception737 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception737">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle735"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D736"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception740 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception740">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle738"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D739"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception743 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception743">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#Handle741"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D742"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception746 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception746">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob744"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D745"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception749 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception749">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob747"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D748"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception752 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception752">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob750"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D751"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception755 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception755">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob753"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D754"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception758 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception758">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob756"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D757"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception761 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception761">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#SemanticMapPerception"/>
+        <knowrob:objectActedOn rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#ControlKnob759"/>
+        <knowrob:eventOccursAt rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#RotationMatrix3D760"/>
+        <knowrob:startTime rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718 -->
+
+    <owl:NamedIndividual rdf:about="http://ias.cs.tum.edu/kb/knowrob.owl#timepoint_1285252718">
+        <rdf:type rdf:resource="http://ias.cs.tum.edu/kb/knowrob.owl#TimePoint"/>
+    </owl:NamedIndividual>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.0.0.1413) http://owlapi.sourceforge.net -->
+
