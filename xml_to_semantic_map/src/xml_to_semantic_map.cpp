@@ -154,9 +154,9 @@ int main(int argc, char **argv)
         obj.partOf = candidate_door[kit->doorID];
         obj.id = kit->id;
         obj.type = "knob";
-        obj.depth = kit->radius;
-        obj.width = kit->radius;
-        obj.height = kit->radius;
+        obj.depth = 2*kit->radius;
+        obj.width = 2*kit->radius;
+        obj.height = 2*kit->radius;
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
         //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();

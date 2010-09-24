@@ -3,8 +3,8 @@
 
 <SemanticMap>
 	<handle name="handle17000" id="17000">
-		<center>0.292012 0.0285895 0.302548</center>
-		<elongation>0.178959 0.00466835 0.00152457</elongation>
+		<center>0.292012 0.06 0.302548</center>
+		<elongation>0.505 0.015 0.015</elongation>
 		<doorID>25000</doorID>
 	</handle>
 
@@ -17,18 +17,18 @@
 			<point3>-2.42708 0.574538 0.157324</point3>
 		</face>
 		<face side="back">
-			<point0>-3.01753 0.564538 0.147324</point0>
-			<point1>-3.01753 0.564538 0.485445</point1>
-			<point2>-2.43708 0.564538 0.485445</point2>
-			<point3>-2.43708 0.564538 0.147324</point3>
+			<point0>-3.00753 0 0.157324</point0>
+			<point1>-3.00753 0 0.495445</point1>
+			<point2>-2.42708 0 0.495445</point2>
+			<point3>-2.42708 0 0.157324</point3>
 		</face>
 		<handles>17000 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17005" id="17005">
-		<center>0.15 0.0376099 0.812527</center>
-		<elongation>0.18 0.0061208 0.00278479</elongation>
+		<center>0.15 0.06 0.657835</center>
+		<elongation>0.015 0.015 1.245</elongation>
 		<doorID>25001</doorID>
 	</handle>
 
@@ -41,18 +41,18 @@
 			<point3>-0.0595746 0.574353 0.15795</point3>
 		</face>
 		<face side="back">
-			<point0>-0.38 0.564353 0.14795</point0>
-			<point1>-0.38 0.564353 1.46362</point1>
-			<point2>-0.0695746 0.564353 1.46362</point2>
-			<point3>-0.0695746 0.564353 0.14795</point3>
+			<point0>-0.37 0 0.15795</point0>
+			<point1>-0.37 0 1.47362</point1>
+			<point2>-0.0595746 0 1.47362</point2>
+			<point3>-0.0595746 0 0.15795</point3>
 		</face>
 		<handles>17005 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17008" id="17008">
-		<center>0.146303 0.0306215 0.813734</center>
-		<elongation>0.178605 0.00952679 0.00429827</elongation>
+		<center>0.146303 0.06 0.657835</center>
+		<elongation>0.015 0.015 1.245</elongation>
 		<doorID>25002</doorID>
 	</handle>
 
@@ -65,54 +65,48 @@
 			<point3>0.822617 0.572308 0.157378</point3>
 		</face>
 		<face side="back">
-			<point0>0.523 0.562308 0.147378</point0>
-			<point1>0.523 0.562308 1.46558</point1>
-			<point2>0.812617 0.562308 1.46558</point2>
-			<point3>0.812617 0.562308 0.147378</point3>
+			<point0>0.533 0 0.157378</point0>
+			<point1>0.533 0 1.47558</point1>
+			<point2>0.822617 0 1.47558</point2>
+			<point3>0.822617 0 0.157378</point3>
 		</face>
 		<handles>17008 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17009" id="17009">
-		<center>0.29 0.0251064 0.48857</center>
+		<center>0.29 0.035 0.44</center>
 		<elongation>0.50899 0.0186943 0.00577462</elongation>
 		<doorID>25003</doorID>
 	</handle>
 
 	<knob name="knob18000" id="18000">
-		<center>0.035 0.0200414 0.57</center>
-		<radius>0.015</radius>
+		<center>0.145 0.015 0.51</center>
+		<radius>0.02</radius>
 		<doorID>25003</doorID>
 	</knob>
 
 	<knob name="knob18001" id="18001">
-		<center>0.085 0.0200414 0.57</center>
-		<radius>0.015</radius>
+		<center>0.325 0.015 0.51</center>
+		<radius>0.02</radius>
 		<doorID>25003</doorID>
 	</knob>
 
 	<knob name="knob18002" id="18002">
-		<center>0.125 0.0200414 0.57</center>
-		<radius>0.015</radius>
+		<center>0.385 0.015 0.51</center>
+		<radius>0.02</radius>
 		<doorID>25003</doorID>
 	</knob>
 
 	<knob name="knob18003" id="18003">
-		<center>0.16 0.0200414 0.57</center>
-		<radius>0.015</radius>
+		<center>0.445 0.015 0.51</center>
+		<radius>0.02</radius>
 		<doorID>25003</doorID>
 	</knob>
 
 	<knob name="knob18004" id="18004">
-		<center>0.2 0.0200414 0.57</center>
-		<radius>0.015</radius>
-		<doorID>25003</doorID>
-	</knob>
-
-	<knob name="knob18005" id="18005">
-		<center>0.255 0.0200414 0.57</center>
-		<radius>0.015</radius>
+		<center>0.505 0.0200414 0.51</center>
+		<radius>0.02</radius>
 		<doorID>25003</doorID>
 	</knob>
 
@@ -125,18 +119,18 @@
 			<point3>0.517622 0.574795 0.86491</point3>
 		</face>
 		<face side="back">
-			<point0>-0.0565787 0.564795 0.85491</point0>
-			<point1>-0.0565787 0.564795 1.46254</point1>
-			<point2>0.517622 0.564795 1.46254</point2>
-			<point3>0.517622 0.564795 0.85491</point3>
+			<point0>-0.0565787 0 0.86491</point0>
+			<point1>-0.0565787 0 1.47254</point1>
+			<point2>0.517622 0 1.47254</point2>
+			<point3>0.517622 0 0.86491</point3>
 		</face>
 		<handles>17009 </handles>
-		<knobs>18000 18001 18002 18003 18004 18005 </knobs>
+		<knobs>18000 18001 18002 18003 18004 </knobs>
 	</candidate>
 
 	<handle name="handle17007" id="17007">
-		<center>0.28611 0.0330214 0.528294</center>
-		<elongation>0.179062 0.00896072 0.00692618</elongation>
+		<center>0.28611 0.06 0.528294</center>
+		<elongation>0.505 0.015 0.015</elongation>
 		<doorID>25004</doorID>
 	</handle>
 
@@ -149,18 +143,18 @@
 			<point3>0.517622 0.570865 0.159535</point3>
 		</face>
 		<face side="back">
-			<point0>-0.0665787 0.560865 0.149535</point0>
-			<point1>-0.0665787 0.560865 0.717</point1>
-			<point2>0.507622 0.560865 0.717</point2>
-			<point3>0.507622 0.560865 0.149535</point3>
+			<point0>-0.0565787 0 0.159535</point0>
+			<point1>-0.0565787 0 0.727</point1>
+			<point2>0.517622 0 0.727</point2>
+			<point3>0.517622 0 0.159535</point3>
 		</face>
 		<handles>17007 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17001" id="17001">
-		<center>0.315961 0.0314454 0.565399</center>
-		<elongation>0.18 0.00569415 0.000487447</elongation>
+		<center>0.315961 0.06 0.565399</center>
+		<elongation>0.505 0.015 0.015</elongation>
 		<doorID>25005</doorID>
 	</handle>
 
@@ -173,18 +167,18 @@
 			<point3>-1.798 0.780802 0.0694195</point3>
 		</face>
 		<face side="back">
-			<point0>-2.42096 0.770802 0.0594194</point0>
-			<point1>-2.42096 0.770802 0.656611</point1>
-			<point2>-1.808 0.770802 0.656611</point2>
-			<point3>-1.808 0.770802 0.0594194</point3>
+			<point0>-2.41096 0.2 0.0694195</point0>
+			<point1>-2.41096 0.2 0.666611</point1>
+			<point2>-1.798 0.2 0.666611</point2>
+			<point3>-1.798 0.2 0.0694195</point3>
 		</face>
 		<handles>17001 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17002" id="17002">
-		<center>0.303 0.0324776 0.667366</center>
-		<elongation>0.18 0.00787163 0.000819564</elongation>
+		<center>0.303 0.06 0.667366</center>
+		<elongation>0.505 0.015 0.015</elongation>
 		<doorID>25006</doorID>
 	</handle>
 
@@ -197,18 +191,18 @@
 			<point3>-1.20746 0.780982 0.108349</point3>
 		</face>
 		<face side="back">
-			<point0>-1.808 0.770982 0.0983487</point0>
-			<point1>-1.808 0.770982 0.822126</point1>
-			<point2>-1.21746 0.770982 0.822126</point2>
-			<point3>-1.21746 0.770982 0.0983487</point3>
+			<point0>-1.798 0.2 0.108349</point0>
+			<point1>-1.798 0.2 0.832126</point1>
+			<point2>-1.20746 0.2 0.832126</point2>
+			<point3>-1.20746 0.2 0.108349</point3>
 		</face>
 		<handles>17002 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17003" id="17003">
-		<center>0.386491 0.0292392 0.233343</center>
-		<elongation>0.18 0.00522155 0.00308084</elongation>
+		<center>0.386491 0.06 0.233343</center>
+		<elongation>0.705 0.015 0.015</elongation>
 		<doorID>25007</doorID>
 	</handle>
 
@@ -221,18 +215,18 @@
 			<point3>-0.396102 0.782271 0.109611</point3>
 		</face>
 		<face side="back">
-			<point0>-1.19149 0.772271 0.0996113</point0>
-			<point1>-1.19149 0.772271 0.366848</point1>
-			<point2>-0.406102 0.772271 0.366848</point2>
-			<point3>-0.406102 0.772271 0.0996113</point3>
+			<point0>-1.18149 0.2 0.109611</point0>
+			<point1>-1.18149 0.2 0.376848</point1>
+			<point2>-0.396102 0.2 0.376848</point2>
+			<point3>-0.396102 0.2 0.109611</point3>
 		</face>
 		<handles>17003 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17004" id="17004">
-		<center>0.386217 0.0301716 0.23429</center>
-		<elongation>0.18 0.00448108 0.00418764</elongation>
+		<center>0.386217 0.06 0.23429</center>
+		<elongation>0.705 0.015 0.015</elongation>
 		<doorID>25008</doorID>
 	</handle>
 
@@ -245,18 +239,18 @@
 			<point3>-0.395 0.781565 0.397552</point3>
 		</face>
 		<face side="back">
-			<point0>-1.19122 0.771565 0.387552</point0>
-			<point1>-1.19122 0.771565 0.656847</point1>
-			<point2>-0.405 0.771565 0.656847</point2>
-			<point3>-0.405 0.771565 0.387552</point3>
+			<point0>-1.18122 0.2 0.397552</point0>
+			<point1>-1.18122 0.2 0.666847</point1>
+			<point2>-0.395 0.2 0.666847</point2>
+			<point3>-0.395 0.2 0.397552</point3>
 		</face>
 		<handles>17004 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17006" id="17006">
-		<center>0.386073 0.0192609 0.0892412</center>
-		<elongation>0.18 0.00448751 0.0061506</elongation>
+		<center>0.386073 0.06 0.0892412</center>
+		<elongation>0.705 0.015 0.015</elongation>
 		<doorID>25009</doorID>
 	</handle>
 
@@ -269,18 +263,18 @@
 			<point3>-0.396199 0.782328 0.69128</point3>
 		</face>
 		<face side="back">
-			<point0>-1.19107 0.772328 0.68128</point0>
-			<point1>-1.19107 0.772328 0.82534</point1>
-			<point2>-0.406199 0.772328 0.82534</point2>
-			<point3>-0.406199 0.772328 0.68128</point3>
+			<point0>-1.18107 0.2 0.69128</point0>
+			<point1>-1.18107 0.2 0.83534</point1>
+			<point2>-0.396199 0.2 0.83534</point2>
+			<point3>-0.396199 0.2 0.69128</point3>
 		</face>
 		<handles>17006 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17011" id="17011">
-		<center>0.28611 0.0330214 0.09</center>
-		<elongation>0.179062 0.00896072 0.00692618</elongation>
+		<center>0.28611 0.06 0.09</center>
+		<elongation>0.505 0.015 0.015</elongation>
 		<doorID>25010</doorID>
 	</handle>
 
@@ -293,18 +287,18 @@
 			<point3>0.517622 0.574795 0.74</point3>
 		</face>
 		<face side="back">
-			<point0>-0.0565787 0.564795 0.74</point0>
-			<point1>-0.0565787 0.564795 0.85</point1>
-			<point2>0.517622 0.564795 0.85</point2>
-			<point3>0.517622 0.564795 0.74</point3>
+			<point0>-0.0565787 0 0.74</point0>
+			<point1>-0.0565787 0 0.85</point1>
+			<point2>0.517622 0 0.85</point2>
+			<point3>0.517622 0 0.74</point3>
 		</face>
 		<handles>17011 </handles>
 		<knobs></knobs>
 	</candidate>
 
 	<handle name="handle17010" id="17010">
-		<center>0.55 0.0330214 0.5</center>
-		<elongation>0.009062 0.00896072 0.15692618</elongation>
+		<center>0.55 0.06 0.5</center>
+		<elongation>0.015 0.015 0.855</elongation>
 		<doorID>25011</doorID>
 	</handle>
 
@@ -317,10 +311,10 @@
 			<point3>-2.42708 0.574538 0.5</point3>
 		</face>
 		<face side="back">
-			<point0>-3.00753 0.564538 0.5</point0>
-			<point1>-3.00753 0.564538 1.48</point1>
-			<point2>-2.42708 0.564538 1.48</point2>
-			<point3>-2.42708 0.564538 0.5</point3>
+			<point0>-3.00753 0 0.5</point0>
+			<point1>-3.00753 0 1.48</point1>
+			<point2>-2.42708 0 1.48</point2>
+			<point3>-2.42708 0 0.5</point3>
 		</face>
 		<handles>17010 </handles>
 		<knobs></knobs>
