@@ -141,10 +141,10 @@ int main(int argc, char **argv)
         obj.height = d[2];
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+        //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
         //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen::Matrix4f::Identity ();
-        pose.block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (hit->center).cast<float> ();
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (hit->center).cast<float> ();
+        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
@@ -159,9 +159,10 @@ int main(int argc, char **argv)
         obj.height = kit->radius;
         obj.pose.resize (16);
         Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
-        pose.block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (kit->center).cast<float> ();
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        //Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+        //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen::Matrix4f::Identity ();
+        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen::Map<Eigen::Vector3d> (kit->center).cast<float> ();
+        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
