@@ -1,10 +1,10 @@
 <launch>
   <node pkg="sick_lms400" type="lms400_node"
 	name="lms400_node">
-    <param name="angular_resolution" type="double" value="0.5"/>
+    <param name="angular_resolution" type="double" value="0.25"/>
     <param name="scanning_frequency" type="double" value="360"/>
-    <param name="mean_filter_parameter" type="int" value="3"/>	
-    <param name="filter" type="int" value="11"/>	
+    <param name="mean_filter_parameter" type="int" value="3"/>
+    <param name="filter" type="int" value="11"/>
   </node>
   <node pkg="powercube_node" type="powercube_node.py"
 	name="ptu"
@@ -18,9 +18,9 @@
   
   <node type="laser_scan_assembler" pkg="laser_assembler"
         name="tilt_scan_assembler">
-    <remap from="scan" to="laser_scan"/>
+    <remap from="scan" to="/lms400_node/laser_scan"/>
     <param name="max_scans" type="int" value="900" />
-    <param name="fixed_frame" type="string" value="base_link" />
+    <param name="fixed_frame" type="string" value="/base_link" />
     <param name="ignore_laser_skew" type="bool" value="true" />
   </node>
   
