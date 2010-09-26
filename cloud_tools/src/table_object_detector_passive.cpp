@@ -698,7 +698,7 @@ class TableObjectDetector
       for (int i = 0; i < (int)cloud.points.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
-        Eigen::Vector4d plane_parameters;
+        Eigen3::Vector4d plane_parameters;
         double curvature;
         cloud_geometry::nearest::computePointNormal (cloud, points_k_indices[i], plane_parameters, curvature);
 
