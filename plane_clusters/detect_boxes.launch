@@ -1,4 +1,0 @@
-<launch>
-  <node pkg="plane_clusters" type="detect_boxes_node" name="detect_boxes_service" output="screen" respawn="true">
-  </node>
-</launch>
