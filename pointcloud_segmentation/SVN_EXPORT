@@ -1,0 +1,29 @@
+commit f65f191b0f5618437577577031e820b753a0387c
+Author: Dejan Pangercic <dejan.pangercic@cs.tum.edu>
+Date:   Mon Sep 6 16:09:45 2010 +0200
+
+    description
+
+commit 7ae38cf3b6c18109630ef6aa77400a5de18d5dd5
+Author: Hozefa Indorewala <indorewala@ias.in.tum.de>
+Date:   Sun Sep 5 23:33:30 2010 +0200
+
+    Ceiling segmentation added. Modified point type PointSegmentation to include rgb value. Refactored code.
+
+commit d4dda144e270fabab959deec7b873cdbdf3048d4
+Author: Hozefa Indorewala <indorewala@ias.in.tum.de>
+Date:   Mon Aug 30 18:32:10 2010 +0200
+
+    Included floor segmentation. Implemented threads for multiple call back functions. Implemented vertical plane segmentation
+
+commit d1af48b6bc186d27be530d4565c122ff7e64cc80
+Author: Hozefa Indorewala <indorewala@ias.in.tum.de>
+Date:   Sun Aug 29 20:57:02 2010 +0200
+
+    Created new point type for segmentation with labeling feature. Implemented basic segmentation functionality
+
+commit 687d8b6c9f3f895650b5c36f2fa8ce8cbf0c5013
+Author: Hozefa Indorewala <indorewala@ias.in.tum.de>
+Date:   Fri Aug 27 14:32:28 2010 +0200
+
+    Added new package pointcloud_segmentation. Functionality to be implemented in later commits.
