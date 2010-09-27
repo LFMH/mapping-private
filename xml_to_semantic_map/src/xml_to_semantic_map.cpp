@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     SemanticMap map_xml;
     if (parseXML (argv[1], map_xml)) /// @NOTE: this sets the global smap variable declared in xml_semantic_map_parser.h
     {
-      ROS_INFO("Loaded %ld candidates, %ld handles, %ld knobs and %ld walls", map_xml.candidates.size (), map_xml.handles.size (), map_xml.knobs.size (), map_xml.walls.size ());
+      ROS_INFO("Loaded %ld candidates, %ld handles, %ld knobs and %ld planes", map_xml.candidates.size (), map_xml.handles.size (), map_xml.knobs.size (), map_xml.planes.size ());
       ros::Time ts = ros::Time::now ();
 
       // Creating the list of objects from the file
@@ -165,6 +165,29 @@ int main(int argc, char **argv)
         final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
+      }
+      for (std::vector<Plane>::iterator pit = map_xml.planes.begin (); pit != map_xml.planes.end (); pit++)
+      {
+        if (getTypeName (checkObjectClass (pit->id)) == "horizontal")
+        {
+          mod_semantic_map::SemMapObject obj;
+          obj.partOf = 0;
+          obj.id = pit->id;
+          obj.type = "horizontal_plane";
+          Eigen::Vector3f minD = Eigen::Map<Eigen::Vector3d> (pit->minD).cast<float> ();
+          Eigen::Vector3f maxD = Eigen::Map<Eigen::Vector3d> (pit->maxD).cast<float> ();
+          std::cerr << minD.transpose () << std::endl << maxD.transpose () << std::endl;
+          obj.depth = maxD[0] - minD[0];
+          obj.width = maxD[1] - minD[1];
+          obj.height = 0.02;
+          obj.pose.resize (16);
+          Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
+          Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+          pose.block<3,1>(0,3) = minD + (maxD - minD)/2;
+          final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+          std::cerr << obj.id << ": " << obj.depth << " " << obj.width << " " << obj.height << std::endl << final_pose.transpose () << std::endl;
+          map_msg.objects.push_back (obj);
+        }
       }
       ROS_INFO ("Generated data for message in %g seconds.", (ros::Time::now () - ts).toSec ());
 

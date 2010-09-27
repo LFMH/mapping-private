@@ -2,8 +2,14 @@
 #include <libxml++/parsers/textreader.h>
 #include "StringTokenizer.h"
 
-//using namespace std;
-
+// The increment between the OC base types
+#define INCREMENT_OC 1000
+#define OC_FLOOR   1000
+#define OC_CEILING 2000
+//#define OC_WALL    3000
+#define OC_WALL_X  4000
+#define OC_WALL_Y  5000
+#define OC_TABLE   6000
 #define OC_HANDLE             17000
 #define OC_KNOB               18000
 #define OC_CONTAINER          20000
@@ -27,12 +33,43 @@ std::string getTypeName (int type)
     case OC_CUPBOARD:       return "cupboard"; break;
     //case OC_CABINET:        return "cabinet"; break;
     case OC_CLOSET:         return "closet"; break;
+    case OC_FLOOR:          return "floor"; break;
+    case OC_CEILING:        return "ceiling"; break;
+    //case OC_WALL:           return "wall"; break;
+    case OC_WALL_X:         return "wall_x"; break;
+    case OC_WALL_Y:         return "wall_y"; break;
+    case OC_TABLE:          return "horizontal"; break;
     default:;
   }
   return "UNDEFINED";
 }
 
-struct Wall
+inline int
+  checkObjectClass (double ocDim)
+{
+  return (((int)(ocDim) / INCREMENT_OC) * INCREMENT_OC);
+}
+
+inline int
+  getObjectClassIndex (double ocDim)
+{
+  return ((int)(ocDim) % INCREMENT_OC);
+}
+
+inline void
+  getObjectClassAndIndex (double ocDim, int &oc, int &idx)
+{
+  oc = (((int)(ocDim) / INCREMENT_OC) * INCREMENT_OC);
+  idx = ((int)(ocDim) % INCREMENT_OC);
+}
+
+inline int
+  getObjectClassDimension (int oc, int idx)
+{
+  return oc + idx;
+}
+
+struct Plane
 {
   std::string name;
   int id;
@@ -42,19 +79,19 @@ struct Wall
   double maxD[3];       // maximum dimensions
 
   bool
-    operator < (Wall const & b) const
+    operator < (Plane const & b) const
   {
     return this->id < b.id;
   }
 
   bool
-    operator > (Wall const & b) const
+    operator > (Plane const & b) const
   {
     return this->id > b.id;
   }
 
   bool
-    operator == (Wall const & b) const
+    operator == (Plane const & b) const
   {
     return this->id == b.id;
   }
@@ -157,7 +194,7 @@ struct SemanticMap
   std::vector<Candidate> candidates;
   std::vector<Knob> knobs;
   std::vector<Handle> handles;
-  std::vector<Wall> walls;
+  std::vector<Plane> planes;
 };
 
 //SemanticMap smap;
@@ -174,7 +211,7 @@ void
   xmlpp::Node::NodeList::iterator lit = list.begin ();
   std::string textValue = interpretNode (*lit, smap);
 
-  Wall w;
+  Plane w;
   StringTokenizer st = StringTokenizer (textValue, " ");
   w.model[0] = st.nextFloatToken ();
   w.model[1] = st.nextFloatToken ();
@@ -192,10 +229,10 @@ void
   else
     fprintf (stderr, "No ID attribute found.\n");
 
-  std::vector<Wall>::iterator it = find (smap.walls.begin (), smap.walls.end (), w);
-  if (it != smap.walls.end ())
+  std::vector<Plane>::iterator it = find (smap.planes.begin (), smap.planes.end (), w);
+  if (it != smap.planes.end ())
   {
-    Wall *pwall = &(*it);
+    Plane *pwall = &(*it);
     for (int d = 0; d < 4; d++)
       pwall->model[d] = w.model[d];
 #if DEBUG
@@ -215,7 +252,7 @@ void
   xmlpp::Node::NodeList::iterator lit = list.begin ();
   std::string textValue = interpretNode (*lit, smap);
 
-  Wall w;
+  Plane w;
   StringTokenizer st = StringTokenizer (textValue, " ");
   w.minD[0] = st.nextFloatToken ();
   w.minD[1] = st.nextFloatToken ();
@@ -232,10 +269,10 @@ void
   else
     fprintf (stderr, "No ID attribute found.\n");
 
-  std::vector<Wall>::iterator it = find (smap.walls.begin (), smap.walls.end (), w);
-  if (it != smap.walls.end ())
+  std::vector<Plane>::iterator it = find (smap.planes.begin (), smap.planes.end (), w);
+  if (it != smap.planes.end ())
   {
-    Wall *pwall = &(*it);
+    Plane *pwall = &(*it);
     for (int d = 0; d < 3; d++)
       pwall->minD[d] = w.minD[d];
 #if DEBUG
@@ -255,7 +292,7 @@ void
   xmlpp::Node::NodeList::iterator lit = list.begin ();
   std::string textValue = interpretNode (*lit, smap);
 
-  Wall w;
+  Plane w;
   StringTokenizer st = StringTokenizer (textValue, " ");
   w.maxD[0] = st.nextFloatToken ();
   w.maxD[1] = st.nextFloatToken ();
@@ -272,10 +309,10 @@ void
   else
     fprintf (stderr, "No ID attribute found.\n");
 
-  std::vector<Wall>::iterator it = find (smap.walls.begin (), smap.walls.end (), w);
-  if (it != smap.walls.end ())
+  std::vector<Plane>::iterator it = find (smap.planes.begin (), smap.planes.end (), w);
+  if (it != smap.planes.end ())
   {
-    Wall *pwall = &(*it);
+    Plane *pwall = &(*it);
     for (int d = 0; d < 3; d++)
       pwall->maxD[d] = w.maxD[d];
 #if DEBUG
@@ -757,13 +794,13 @@ std::string
   }
 
   /// Process the node just stored
-  if (nodeName == "wall")
+  if (nodeName == "wall" || nodeName == "horizontal")
   {
-    Wall w;
+    Plane w;
     w.name = nameValue;
     w.id = atoi (regionValue.c_str ());
 
-    smap.walls.push_back (w);
+    smap.planes.push_back (w);
 #if DEBUG
     fprintf (stderr, "Adding node [%s:%d] to the map.\n", w.name.c_str (), w.id);
 #endif

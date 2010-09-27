@@ -2,6 +2,27 @@
 <!DOCTYPE SemanticMap PUBLIC "" "SemanticMap.dtd">
 
 <SemanticMap>
+
+	<!-- Walls treated as in BreakWithLines.cc and Cuboids.h -->
+
+	<wall name="back-wall" id="5000">
+		<model>0 1 0 0</model>
+		<minD>-3.88 0 0</minD>
+		<maxD>1 0 2.5</maxD>
+	</wall>
+
+	<wall name="stick-out" id="5001">
+		<model>0 1 0 0.21</model>
+		<minD>-2.42 0 0</minD>
+		<maxD>-0.74 0 2.5</maxD>
+	</wall>
+
+	<horizontal name="counter" id="6000">
+		<model>0 0 1 0.85</model>
+		<minD>-2.42 0.21 0.85</minD>
+		<maxD>-0.37 0.58 0.85</maxD>
+	</horizontal>
+
 	<handle name="handle17000" id="17000">
 		<center>0.292012 0.06 0.302548</center>
 		<elongation>0.505 0.015 0.015</elongation>

@@ -3,11 +3,15 @@
 DTD for the Semantic Object Map
 -->
 
-<!ELEMENT SemanticMap	(wall | knob | candidate | handle)+>
+<!ELEMENT SemanticMap	(wall | horizontal | knob | candidate | handle)+>
 
 <!ELEMENT wall      (model, minD, maxD)>
   <!ATTLIST wall name CDATA #REQUIRED>
   <!ATTLIST wall id CDATA #REQUIRED>
+
+<!ELEMENT horizontal (model, minD, maxD)>
+  <!ATTLIST horizontal name CDATA #REQUIRED>
+  <!ATTLIST horizontal id CDATA #REQUIRED>
 
 <!ELEMENT knob      (center, radius, doorID)>
   <!ATTLIST knob name CDATA #REQUIRED>
