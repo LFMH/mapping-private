@@ -86,7 +86,6 @@ int main(int argc, char **argv)
         obj_door.id = id_cnt++;
         obj_door.type = "door";
         obj_door.pose.resize (16);
-        Eigen3::Map<Eigen3::Matrix4f> final_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
         Eigen3::Vector3f a = bp0 - fp.col(0);
         Eigen3::Vector3f b = fp.col(3) - fp.col(0);
         Eigen3::Vector3f c = fp.col(1) - fp.col(0);
@@ -101,8 +100,9 @@ int main(int argc, char **argv)
         pose.block<3,1>(0,1) = v;
         pose.block<3,1>(0,2) = c;// / obj.height;
         pose.block<3,1>(0,3) = fp.col(0) + v*obj_door.width/2 + c*obj_door.height/2;
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
-        //std::cerr << obj.type << std::endl << final_pose.transpose () << std::endl;
+        Eigen3::Map<Eigen3::Matrix4f> final_door_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
+        final_door_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        //std::cerr << obj.type << std::endl << final_door_pose.transpose () << std::endl;
 
         // saving the door's id belonging to the candidate
         candidate_door[obj_door.partOf] = obj_door.id;
@@ -111,20 +111,21 @@ int main(int argc, char **argv)
         poses.push_back (pose);
 
         // now adjusting it to obtain candidate parameters
-        mod_semantic_map::SemMapObject obj = obj_door;
-        obj.partOf = 0;
-        obj.id = cit->id;
-        obj.type = getTypeName (cit->type);
-        obj.depth = a.norm ();
+        mod_semantic_map::SemMapObject obj_box = obj_door;
+        obj_box.partOf = 0;
+        obj_box.id = cit->id;
+        obj_box.type = getTypeName (cit->type);
+        obj_box.depth = a.norm ();
         if (a.dot (u) > 0)
-          pose.block<3,1>(0,3) += u*obj.depth/2;
+          pose.block<3,1>(0,3) += u*obj_box.depth/2;
         else
-          pose.block<3,1>(0,3) -= u*obj.depth/2;
-        final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
-        //std::cerr << cit->name << std::endl << final_pose.transpose () << std::endl;
+          pose.block<3,1>(0,3) -= u*obj_box.depth/2;
+        Eigen3::Map<Eigen3::Matrix4f> final_box_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
+        final_box_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        //std::cerr << cit->name << std::endl << final_box_pose.transpose () << std::endl;
 
         // adding candidate first then door to preserve hierarchy
-        map_msg.objects.push_back (obj);
+        map_msg.objects.push_back (obj_box);
         map_msg.objects.push_back (obj_door);
       }
       for (std::vector<Handle>::iterator hit = map_xml.handles.begin (); hit != map_xml.handles.end (); hit++)
@@ -176,7 +177,7 @@ int main(int argc, char **argv)
           obj.type = "horizontal_plane";
           Eigen3::Vector3f minD = Eigen3::Map<Eigen3::Vector3d> (pit->minD).cast<float> ();
           Eigen3::Vector3f maxD = Eigen3::Map<Eigen3::Vector3d> (pit->maxD).cast<float> ();
-          std::cerr << minD.transpose () << std::endl << maxD.transpose () << std::endl;
+          //std::cerr << minD.transpose () << std::endl << maxD.transpose () << std::endl;
           obj.depth = maxD[0] - minD[0];
           obj.width = maxD[1] - minD[1];
           obj.height = 0.02;
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
           Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
           pose.block<3,1>(0,3) = minD + (maxD - minD)/2;
           final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
-          std::cerr << obj.id << ": " << obj.depth << " " << obj.width << " " << obj.height << std::endl << final_pose.transpose () << std::endl;
+          //std::cerr << obj.id << ": " << obj.depth << " " << obj.width << " " << obj.height << std::endl << final_pose.transpose () << std::endl;
           map_msg.objects.push_back (obj);
         }
       }
