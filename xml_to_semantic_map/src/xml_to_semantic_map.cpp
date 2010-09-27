@@ -174,15 +174,15 @@ int main(int argc, char **argv)
           obj.partOf = 0;
           obj.id = pit->id;
           obj.type = "horizontal_plane";
-          Eigen::Vector3f minD = Eigen::Map<Eigen::Vector3d> (pit->minD).cast<float> ();
-          Eigen::Vector3f maxD = Eigen::Map<Eigen::Vector3d> (pit->maxD).cast<float> ();
+          Eigen3::Vector3f minD = Eigen3::Map<Eigen3::Vector3d> (pit->minD).cast<float> ();
+          Eigen3::Vector3f maxD = Eigen3::Map<Eigen3::Vector3d> (pit->maxD).cast<float> ();
           std::cerr << minD.transpose () << std::endl << maxD.transpose () << std::endl;
           obj.depth = maxD[0] - minD[0];
           obj.width = maxD[1] - minD[1];
           obj.height = 0.02;
           obj.pose.resize (16);
-          Eigen::Map<Eigen::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
-          Eigen::Matrix4f pose = Eigen::Matrix4f::Identity ();
+          Eigen3::Map<Eigen3::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
+          Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
           pose.block<3,1>(0,3) = minD + (maxD - minD)/2;
           final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
           std::cerr << obj.id << ": " << obj.depth << " " << obj.width << " " << obj.height << std::endl << final_pose.transpose () << std::endl;
