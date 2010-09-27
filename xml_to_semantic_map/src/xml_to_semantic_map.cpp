@@ -41,7 +41,13 @@ int main(int argc, char **argv)
     ROS_INFO("Loading map from %s (rate: %g, count: %d)", argv[1], rate, count);
 
     // Create transformation between the coordinate frame of the XML and that of /map
-    Eigen3::Matrix4f map_frame = Eigen3::Matrix4f::Identity ();
+    Eigen3::Matrix4f corner_frame; // = Eigen3::Matrix4f::Identity (); 1.4 2.8 0 3.21 0 0
+    // sorry for the obfuscated code (here as well :P)
+    corner_frame << (Eigen3::Matrix3f() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished().transpose(), // rotation part, columns (i.e. new axes) first
+                 (Eigen3::MatrixXf(3,1) << 0, 0.822617, 0).finished(),                         // translation part
+                 0, 0, 0, 1;                                                                   // fixed part
+    Eigen3::Matrix4f map_frame = Eigen3::Matrix4f::Identity (); //1.4 2.8 0 3.21 0 0
+    map_frame *= corner_frame; // TODO: check order and direction...
     ROS_INFO("Applying the following transformation to the map:");
     std::cerr << map_frame << std::endl;
 
@@ -120,7 +126,7 @@ int main(int argc, char **argv)
           pose.block<3,1>(0,3) += u*obj_box.depth/2;
         else
           pose.block<3,1>(0,3) -= u*obj_box.depth/2;
-        Eigen3::Map<Eigen3::Matrix4f> final_box_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
+        Eigen3::Map<Eigen3::Matrix4f> final_box_pose (&(obj_box.pose[0])); // map an eigen matrix onto the vector
         final_box_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << cit->name << std::endl << final_box_pose.transpose () << std::endl;
 
