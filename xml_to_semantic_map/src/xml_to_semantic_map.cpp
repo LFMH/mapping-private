@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   // Getting parameters
   if (argc < 4)
   {
-    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file>" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
+    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file> <Tx Ty Rz>" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
     return -1;
   }
   std::stringstream ss (argv[2]);
@@ -32,6 +32,32 @@ int main(int argc, char **argv)
   ros::Publisher semantic_map_pub = nh.advertise<mod_semantic_map::SemMap> ("semantic_map", 1);
   ros::Rate loop_rate (rate);
 
+  // Create transformation from the 0 in data/cad_based_map.xml to the back left corner of the kitchen block, as in ias_kitchen_defs
+  Eigen3::Matrix4f corner_frame;
+  corner_frame << (Eigen3::Matrix3f() << 0, 1, 0, -1, 0, 0, 0, 0, 1).finished(), // rotation part by rows
+                  (Eigen3::MatrixXf(3,1) << 0, 0.822617, 0).finished(),          // translation part
+                  0, 0, 0, 1;                                                    // fixed part
+  /// @NOTE: this should be taken from the parameters as well, but as Nico got the transform between this frame and map its easier like this than keeping it general :P
+
+  // Create transformation between the coordinate frame of the XML and that of /map
+  Eigen3::Matrix4f map_frame = Eigen3::Matrix4f::Identity (); //1.4 2.8 3.21
+  if (argc == 7)
+  {
+    std::stringstream tx (argv[4]);
+    tx >> map_frame(0,3);
+    std::stringstream ty (argv[5]);
+    ty >> map_frame(1,3);
+    double angle;
+    std::stringstream rz (argv[6]);
+    rz >> angle;
+    map_frame(0,0) = map_frame(1,1) = std::cos (angle);
+    map_frame(0,1) = +std::sin (angle);
+    map_frame(1,0) = -std::sin (angle);
+  }
+  map_frame *= corner_frame; // TODO: check order and direction...
+  ROS_INFO("Applying the following transformation to the map:");
+  std::cerr << map_frame << std::endl;
+
   // Spin at least once
   int count = 0;
   bool owl_saved = false;
@@ -39,17 +65,6 @@ int main(int argc, char **argv)
   {
     ++count;
     ROS_INFO("Loading map from %s (rate: %g, count: %d)", argv[1], rate, count);
-
-    // Create transformation between the coordinate frame of the XML and that of /map
-    Eigen3::Matrix4f corner_frame; // = Eigen3::Matrix4f::Identity (); 1.4 2.8 0 3.21 0 0
-    // sorry for the obfuscated code (here as well :P)
-    corner_frame << (Eigen3::Matrix3f() << 0, -1, 0, 1, 0, 0, 0, 0, 1).finished().transpose(), // rotation part, columns (i.e. new axes) first
-                 (Eigen3::MatrixXf(3,1) << 0, 0.822617, 0).finished(),                         // translation part
-                 0, 0, 0, 1;                                                                   // fixed part
-    Eigen3::Matrix4f map_frame = Eigen3::Matrix4f::Identity (); //1.4 2.8 0 3.21 0 0
-    map_frame *= corner_frame; // TODO: check order and direction...
-    ROS_INFO("Applying the following transformation to the map:");
-    std::cerr << map_frame << std::endl;
 
     // Parse XML file
     SemanticMap map_xml;
@@ -107,7 +122,7 @@ int main(int argc, char **argv)
         pose.block<3,1>(0,2) = c;// / obj.height;
         pose.block<3,1>(0,3) = fp.col(0) + v*obj_door.width/2 + c*obj_door.height/2;
         Eigen3::Map<Eigen3::Matrix4f> final_door_pose (&(obj_door.pose[0])); // map an eigen matrix onto the vector
-        final_door_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        final_door_pose.noalias() = (map_frame * pose).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.type << std::endl << final_door_pose.transpose () << std::endl;
 
         // saving the door's id belonging to the candidate
@@ -127,7 +142,7 @@ int main(int argc, char **argv)
         else
           pose.block<3,1>(0,3) -= u*obj_box.depth/2;
         Eigen3::Map<Eigen3::Matrix4f> final_box_pose (&(obj_box.pose[0])); // map an eigen matrix onto the vector
-        final_box_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        final_box_pose.noalias() = (map_frame * pose).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << cit->name << std::endl << final_box_pose.transpose () << std::endl;
 
         // adding candidate first then door to preserve hierarchy
@@ -151,7 +166,7 @@ int main(int argc, char **argv)
         //Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
         //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen3::Matrix4f::Identity ();
         poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (hit->center).cast<float> ();
-        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        final_pose.noalias() = (map_frame * poses[obj.partOf-1]).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
@@ -169,7 +184,7 @@ int main(int argc, char **argv)
         //Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
         //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen3::Matrix4f::Identity ();
         poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (kit->center).cast<float> ();
-        final_pose.noalias() = (poses[obj.partOf-1] * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        final_pose.noalias() = (map_frame * poses[obj.partOf-1]).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
@@ -191,7 +206,7 @@ int main(int argc, char **argv)
           Eigen3::Map<Eigen3::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
           Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
           pose.block<3,1>(0,3) = minD + (maxD - minD)/2;
-          final_pose.noalias() = (pose * map_frame).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+          final_pose.noalias() = (map_frame * pose).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
           //std::cerr << obj.id << ": " << obj.depth << " " << obj.width << " " << obj.height << std::endl << final_pose.transpose () << std::endl;
           map_msg.objects.push_back (obj);
         }
