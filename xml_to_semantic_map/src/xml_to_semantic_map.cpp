@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   // Getting parameters
   if (argc < 4)
   {
-    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file> <Tx Ty Rz>" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
+    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file> [<Tx Ty Rz>]" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
     return -1;
   }
   std::stringstream ss (argv[2]);
