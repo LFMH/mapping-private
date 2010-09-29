@@ -23,13 +23,19 @@
 		<maxD>-0.37 0.785 0.85</maxD>
 	</horizontal>
 
+	<horizontal name="island" id="6001">
+		<model>0 0 1 0.85</model>
+		<minD>-1.02 3 0.85</minD>
+		<maxD>1.47 3.8 0.85</maxD>
+	</horizontal>
+
 	<handle name="handle17000" id="17000">
 		<center>0.292012 0.06 0.302548</center>
 		<elongation>0.505 0.015 0.015</elongation>
-		<doorID>25000</doorID>
+		<doorID>24000</doorID>
 	</handle>
 
-	<candidate name="cupboard0" id="25000" type="25000" typename="cupboard">
+	<candidate name="drawer0" id="24000" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-3.00753 0.574538 0.157324</point0>
@@ -50,10 +56,10 @@
 	<handle name="handle17005" id="17005">
 		<center>0.15 0.06 0.657835</center>
 		<elongation>0.015 0.015 1.245</elongation>
-		<doorID>25001</doorID>
+		<doorID>24001</doorID>
 	</handle>
 
-	<candidate name="cupboard1" id="25001" type="25000" typename="cupboard">
+	<candidate name="drawer1" id="24001" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-0.37 0.574353 0.15795</point0>
@@ -74,10 +80,10 @@
 	<handle name="handle17008" id="17008">
 		<center>0.146303 0.06 0.657835</center>
 		<elongation>0.015 0.015 1.245</elongation>
-		<doorID>25002</doorID>
+		<doorID>24002</doorID>
 	</handle>
 
-	<candidate name="cupboard2" id="25002" type="25000" typename="cupboard">
+	<candidate name="drawer2" id="24002" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>0.533 0.572308 0.157378</point0>
@@ -98,40 +104,40 @@
 	<handle name="handle17009" id="17009">
 		<center>0.29 0.035 0.44</center>
 		<elongation>0.50899 0.0186943 0.00577462</elongation>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</handle>
 
 	<knob name="knob18000" id="18000">
 		<center>0.145 0.015 0.51</center>
 		<radius>0.02</radius>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</knob>
 
 	<knob name="knob18001" id="18001">
 		<center>0.325 0.015 0.51</center>
 		<radius>0.02</radius>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</knob>
 
 	<knob name="knob18002" id="18002">
 		<center>0.385 0.015 0.51</center>
 		<radius>0.02</radius>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</knob>
 
 	<knob name="knob18003" id="18003">
 		<center>0.445 0.015 0.51</center>
 		<radius>0.02</radius>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</knob>
 
 	<knob name="knob18004" id="18004">
 		<center>0.505 0.0200414 0.51</center>
 		<radius>0.02</radius>
-		<doorID>25003</doorID>
+		<doorID>23000</doorID>
 	</knob>
 
-	<candidate name="cupboard3" id="25003" type="25000" typename="cupboard">
+	<candidate name="oven0" id="23000" type="23000" typename="oven">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-0.0565787 0.574795 0.86491</point0>
@@ -152,10 +158,10 @@
 	<handle name="handle17007" id="17007">
 		<center>0.28611 0.06 0.528294</center>
 		<elongation>0.505 0.015 0.015</elongation>
-		<doorID>25004</doorID>
+		<doorID>24004</doorID>
 	</handle>
 
-	<candidate name="cupboard4" id="25004" type="25000" typename="cupboard">
+	<candidate name="drawer4" id="24004" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-0.0565787 0.570865 0.159535</point0>
@@ -176,10 +182,10 @@
 	<handle name="handle17001" id="17001">
 		<center>0.315961 0.06 0.565399</center>
 		<elongation>0.505 0.015 0.015</elongation>
-		<doorID>25005</doorID>
+		<doorID>24005</doorID>
 	</handle>
 
-	<candidate name="cupboard5" id="25005" type="25000" typename="cupboard">
+	<candidate name="drawer5" id="24005" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-2.41096 0.780802 0.0694195</point0>
@@ -200,10 +206,10 @@
 	<handle name="handle17002" id="17002">
 		<center>0.303 0.06 0.667366</center>
 		<elongation>0.505 0.015 0.015</elongation>
-		<doorID>25006</doorID>
+		<doorID>22000</doorID>
 	</handle>
 
-	<candidate name="cupboard6" id="25006" type="25000" typename="cupboard">
+	<candidate name="dishwasher0" id="22000" type="22000" typename="dishwasher">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-1.798 0.780982 0.108349</point0>
@@ -224,10 +230,10 @@
 	<handle name="handle17003" id="17003">
 		<center>0.386491 0.06 0.233343</center>
 		<elongation>0.705 0.015 0.015</elongation>
-		<doorID>25007</doorID>
+		<doorID>24007</doorID>
 	</handle>
 
-	<candidate name="cupboard7" id="25007" type="25000" typename="cupboard">
+	<candidate name="drawer7" id="24007" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-1.18149 0.782271 0.109611</point0>
@@ -248,10 +254,10 @@
 	<handle name="handle17004" id="17004">
 		<center>0.386217 0.06 0.23429</center>
 		<elongation>0.705 0.015 0.015</elongation>
-		<doorID>25008</doorID>
+		<doorID>24008</doorID>
 	</handle>
 
-	<candidate name="cupboard8" id="25008" type="25000" typename="cupboard">
+	<candidate name="drawer8" id="24008" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-1.18122 0.781565 0.397552</point0>
@@ -272,10 +278,10 @@
 	<handle name="handle17006" id="17006">
 		<center>0.386073 0.06 0.0892412</center>
 		<elongation>0.705 0.015 0.015</elongation>
-		<doorID>25009</doorID>
+		<doorID>24009</doorID>
 	</handle>
 
-	<candidate name="cupboard9" id="25009" type="25000" typename="cupboard">
+	<candidate name="drawer9" id="24009" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-1.18107 0.782328 0.69128</point0>
@@ -296,10 +302,10 @@
 	<handle name="handle17011" id="17011">
 		<center>0.28611 0.06 0.09</center>
 		<elongation>0.505 0.015 0.015</elongation>
-		<doorID>25010</doorID>
+		<doorID>24010</doorID>
 	</handle>
 
-	<candidate name="cupboard10" id="25010" type="25000" typename="cupboard">
+	<candidate name="drawer10" id="24010" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-0.0565787 0.574795 0.74</point0>
@@ -320,10 +326,10 @@
 	<handle name="handle17010" id="17010">
 		<center>0.55 0.06 0.5</center>
 		<elongation>0.015 0.015 0.855</elongation>
-		<doorID>25011</doorID>
+		<doorID>27000</doorID>
 	</handle>
 
-	<candidate name="cupboard11" id="25011" type="25000" typename="cupboard">
+	<candidate name="refrigerator0" id="27000" type="27000" typename="refrigerator">
 		<wallID>-1</wallID>
 		<face side="front">
 			<point0>-3.00753 0.574538 0.5</point0>
@@ -338,6 +344,228 @@
 			<point3>-2.42708 0 0.5</point3>
 		</face>
 		<handles>17010 </handles>
+		<knobs></knobs>
+	</candidate>
+
+<!-- island middle -->
+
+	<handle name="handle17012" id="17012">
+		<center>0.5 -0.06 0.233343</center>
+		<elongation>0.91 0.015 0.015</elongation>
+		<doorID>24012</doorID>
+	</handle>
+
+	<candidate name="drawer12" id="24012" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>0.725 3.1 0.109611</point0>
+			<point1>0.725 3.1 0.376848</point1>
+			<point2>-0.275 3.1 0.376848</point2>
+			<point3>-0.275 3.1 0.109611</point3>
+		</face>
+		<face side="back">
+			<point0>0.725 3.7 0.109611</point0>
+			<point1>0.725 3.7 0.376848</point1>
+			<point2>-0.275 3.7 0.376848</point2>
+			<point3>-0.275 3.7 0.109611</point3>
+		</face>
+		<handles>17012 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17013" id="17013">
+		<center>0.5 -0.06 0.23429</center>
+		<elongation>0.91 0.015 0.015</elongation>
+		<doorID>24013</doorID>
+	</handle>
+
+	<candidate name="drawer13" id="24013" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>0.725 3.1 0.397552</point0>
+			<point1>0.725 3.1 0.666847</point1>
+			<point2>-0.275 3.1 0.666847</point2>
+			<point3>-0.275 3.1 0.397552</point3>
+		</face>
+		<face side="back">
+			<point0>0.725 3.7 0.397552</point0>
+			<point1>0.725 3.7 0.666847</point1>
+			<point2>-0.275 3.7 0.666847</point2>
+			<point3>-0.275 3.7 0.397552</point3>
+		</face>
+		<handles>17013 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17014" id="17014">
+		<center>0.5 -0.06 0.0892412</center>
+		<elongation>0.91 0.015 0.015</elongation>
+		<doorID>24014</doorID>
+	</handle>
+
+	<candidate name="drawer14" id="24014" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>0.725 3.1 0.69128</point0>
+			<point1>0.725 3.1 0.83534</point1>
+			<point2>-0.275 3.1 0.83534</point2>
+			<point3>-0.275 3.1 0.69128</point3>
+		</face>
+		<face side="back">
+			<point0>0.725 3.7 0.69128</point0>
+			<point1>0.725 3.7 0.83534</point1>
+			<point2>-0.275 3.7 0.83534</point2>
+			<point3>-0.275 3.7 0.69128</point3>
+		</face>
+		<handles>17014 </handles>
+		<knobs></knobs>
+	</candidate>
+
+<!-- island right -->
+
+	<handle name="handle17015" id="17015">
+		<center>0.3 -0.06 0.233343</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24015</doorID>
+	</handle>
+
+	<candidate name="drawer15" id="24015" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>1.34 3.1 0.109611</point0>
+			<point1>1.34 3.1 0.376848</point1>
+			<point2>0.74 3.1 0.376848</point2>
+			<point3>0.74 3.1 0.109611</point3>
+		</face>
+		<face side="back">
+			<point0>1.34 3.7 0.109611</point0>
+			<point1>1.34 3.7 0.376848</point1>
+			<point2>0.74 3.7 0.376848</point2>
+			<point3>0.74 3.7 0.109611</point3>
+		</face>
+		<handles>17015 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17016" id="17016">
+		<center>0.3 -0.06 0.23429</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24016</doorID>
+	</handle>
+
+	<candidate name="drawer16" id="24016" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>1.34 3.1 0.397552</point0>
+			<point1>1.34 3.1 0.666847</point1>
+			<point2>0.74 3.1 0.666847</point2>
+			<point3>0.74 3.1 0.397552</point3>
+		</face>
+		<face side="back">
+			<point0>1.34 3.7 0.397552</point0>
+			<point1>1.34 3.7 0.666847</point1>
+			<point2>0.74 3.7 0.666847</point2>
+			<point3>0.74 3.7 0.397552</point3>
+		</face>
+		<handles>17016 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17017" id="17017">
+		<center>0.3 -0.06 0.0892412</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24017</doorID>
+	</handle>
+
+	<candidate name="drawer17" id="24017" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>1.34 3.1 0.69128</point0>
+			<point1>1.34 3.1 0.83534</point1>
+			<point2>0.74 3.1 0.83534</point2>
+			<point3>0.74 3.1 0.69128</point3>
+		</face>
+		<face side="back">
+			<point0>1.34 3.7 0.69128</point0>
+			<point1>1.34 3.7 0.83534</point1>
+			<point2>0.74 3.7 0.83534</point2>
+			<point3>0.74 3.7 0.69128</point3>
+		</face>
+		<handles>17017 </handles>
+		<knobs></knobs>
+	</candidate>
+
+<!-- island left -->
+
+	<handle name="handle17018" id="17018">
+		<center>0.3 -0.06 0.233343</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24018</doorID>
+	</handle>
+
+	<candidate name="drawer18" id="24018" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>-0.29 3.1 0.109611</point0>
+			<point1>-0.29 3.1 0.376848</point1>
+			<point2>-0.89 3.1 0.376848</point2>
+			<point3>-0.89 3.1 0.109611</point3>
+		</face>
+		<face side="back">
+			<point0>-0.29 3.7 0.109611</point0>
+			<point1>-0.29 3.7 0.376848</point1>
+			<point2>-0.89 3.7 0.376848</point2>
+			<point3>-0.89 3.7 0.109611</point3>
+		</face>
+		<handles>17018 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17019" id="17019">
+		<center>0.3 -0.06 0.23429</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24019</doorID>
+	</handle>
+
+	<candidate name="drawer19" id="24019" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>-0.29 3.1 0.397552</point0>
+			<point1>-0.29 3.1 0.666847</point1>
+			<point2>-0.89 3.1 0.666847</point2>
+			<point3>-0.89 3.1 0.397552</point3>
+		</face>
+		<face side="back">
+			<point0>-0.29 3.7 0.397552</point0>
+			<point1>-0.29 3.7 0.666847</point1>
+			<point2>-0.89 3.7 0.666847</point2>
+			<point3>-0.89 3.7 0.397552</point3>
+		</face>
+		<handles>17019 </handles>
+		<knobs></knobs>
+	</candidate>
+
+	<handle name="handle17020" id="17020">
+		<center>0.3 -0.06 0.0892412</center>
+		<elongation>0.505 0.015 0.015</elongation>
+		<doorID>24020</doorID>
+	</handle>
+
+	<candidate name="drawer20" id="24020" type="24000" typename="drawer">
+		<wallID>-1</wallID>
+		<face side="front">
+			<point0>-0.29 3.1 0.69128</point0>
+			<point1>-0.29 3.1 0.83534</point1>
+			<point2>-0.89 3.1 0.83534</point2>
+			<point3>-0.89 3.1 0.69128</point3>
+		</face>
+		<face side="back">
+			<point0>-0.29 3.7 0.69128</point0>
+			<point1>-0.29 3.7 0.83534</point1>
+			<point2>-0.89 3.7 0.83534</point2>
+			<point3>-0.89 3.7 0.69128</point3>
+		</face>
+		<handles>17020 </handles>
 		<knobs></knobs>
 	</candidate>
 

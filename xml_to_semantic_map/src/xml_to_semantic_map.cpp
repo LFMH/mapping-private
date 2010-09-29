@@ -136,6 +136,7 @@ int main(int argc, char **argv)
         obj_box.partOf = 0;
         obj_box.id = cit->id;
         obj_box.type = getTypeName (cit->type);
+        //std::cerr << obj_box.type << std::endl;
         obj_box.depth = a.norm ();
         if (a.dot (u) > 0)
           pose.block<3,1>(0,3) += u*obj_box.depth/2;
@@ -152,7 +153,7 @@ int main(int argc, char **argv)
       for (std::vector<Handle>::iterator hit = map_xml.handles.begin (); hit != map_xml.handles.end (); hit++)
       {
         mod_semantic_map::SemMapObject obj;
-        obj.partOf = candidate_door[hit->doorID];
+        obj.partOf = candidate_door[hit->doorID]; // using find and check if exists would be nicer, but poses.at() does the check
         obj.id = hit->id;
         obj.type = "handle";
         Eigen3::Map<Eigen3::Vector3d> e (&(hit->elongation[0]));
@@ -165,15 +166,15 @@ int main(int argc, char **argv)
         Eigen3::Map<Eigen3::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
         //Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
         //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen3::Matrix4f::Identity ();
-        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (hit->center).cast<float> ();
-        final_pose.noalias() = (map_frame * poses[obj.partOf-1]).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        poses.at(obj.partOf-1).block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (hit->center).cast<float> ();
+        final_pose.noalias() = (map_frame * poses.at(obj.partOf-1)).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
       for (std::vector<Knob>::iterator kit = map_xml.knobs.begin (); kit != map_xml.knobs.end (); kit++)
       {
         mod_semantic_map::SemMapObject obj;
-        obj.partOf = candidate_door[kit->doorID];
+        obj.partOf = candidate_door[kit->doorID]; // using find and check if exists would be nicer, but poses.at() does the check
         obj.id = kit->id;
         obj.type = "knob";
         obj.depth = 2*kit->radius;
@@ -183,8 +184,8 @@ int main(int argc, char **argv)
         Eigen3::Map<Eigen3::Matrix4f> final_pose (&(obj.pose[0])); // map an eigen matrix onto the vector
         //Eigen3::Matrix4f pose = Eigen3::Matrix4f::Identity ();
         //poses[obj.partOf-1].topLeftCorner<3,3>() = Eigen3::Matrix4f::Identity ();
-        poses[obj.partOf-1].block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (kit->center).cast<float> ();
-        final_pose.noalias() = (map_frame * poses[obj.partOf-1]).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
+        poses.at(obj.partOf-1).block<3,1>(0,3) = min_front_points[obj.partOf-1] + Eigen3::Map<Eigen3::Vector3d> (kit->center).cast<float> ();
+        final_pose.noalias() = (map_frame * poses.at(obj.partOf-1)).transpose (); /// @NOTE: the mapped vector holds the matrices transposed!
         //std::cerr << obj.id << "/" << obj.partOf << std::endl << final_pose.transpose () << std::endl;
         map_msg.objects.push_back (obj);
       }
@@ -225,6 +226,7 @@ int main(int argc, char **argv)
         mod_semantic_map::GenerateSemanticMapOWL srv;
         srv.request.map = map_msg;
         ros::ServiceClient client = nh.serviceClient<mod_semantic_map::GenerateSemanticMapOWL>("/generate_owl_map");
+        ROS_INFO ("Calling service %s ... [valid: %d, exists: %d]", client.getService().c_str(), client.isValid(), client.exists());
         if (client.call(srv))
         {
           ROS_INFO ("Received OWL file with %ld characters.", srv.response.owlmap.size ());

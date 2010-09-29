@@ -20,6 +20,7 @@
 #define OC_CUPBOARD           25000
 //#define OC_CABINET          25000
 #define OC_CLOSET             26000
+#define OC_FRIDGE             27000
 
 std::string getTypeName (int type)
 {
@@ -33,6 +34,7 @@ std::string getTypeName (int type)
     case OC_CUPBOARD:       return "cupboard"; break;
     //case OC_CABINET:        return "cabinet"; break;
     case OC_CLOSET:         return "closet"; break;
+    case OC_FRIDGE:         return "refrigerator"; break;
     case OC_FLOOR:          return "floor"; break;
     case OC_CEILING:        return "ceiling"; break;
     //case OC_WALL:           return "wall"; break;
