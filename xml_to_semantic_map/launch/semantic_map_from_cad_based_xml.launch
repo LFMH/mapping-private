@@ -2,7 +2,7 @@
   <group ns="semantic_map_from_cad_based_xml">
 
   <node pkg="xml_to_semantic_map" type="xml_to_semantic_map" name="xml_to_semantic_map" output="screen"
-    args="$(find xml_to_semantic_map)/data/cad_based_map.xml 0 $(find xml_to_semantic_map)/data/cad_based_map.owl 1.4 2.8 3.21">
+    args="$(find xml_to_semantic_map)/data/cad_based_map.xml 0 $(find xml_to_semantic_map)/data/cad_based_map.owl 1.4 2.8 3.053">
   </node>
 
   </group>
