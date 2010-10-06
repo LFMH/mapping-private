@@ -38,16 +38,16 @@
 	<candidate name="drawer0" id="24000" type="24000" typename="drawer">
 		<wallID>-1</wallID>
 		<face side="front">
-			<point0>-3.00753 0.574538 0.157324</point0>
-			<point1>-3.00753 0.574538 0.495445</point1>
-			<point2>-2.42708 0.574538 0.495445</point2>
-			<point3>-2.42708 0.574538 0.157324</point3>
+			<point0>-3.00753 0.674538 0.157324</point0>
+			<point1>-3.00753 0.674538 0.495445</point1>
+			<point2>-2.42708 0.674538 0.495445</point2>
+			<point3>-2.42708 0.674538 0.157324</point3>
 		</face>
 		<face side="back">
-			<point0>-3.00753 0 0.157324</point0>
-			<point1>-3.00753 0 0.495445</point1>
-			<point2>-2.42708 0 0.495445</point2>
-			<point3>-2.42708 0 0.157324</point3>
+			<point0>-3.00753 0.1 0.157324</point0>
+			<point1>-3.00753 0.1 0.495445</point1>
+			<point2>-2.42708 0.1 0.495445</point2>
+			<point3>-2.42708 0.1 0.157324</point3>
 		</face>
 		<handles>17000 </handles>
 		<knobs></knobs>
@@ -332,16 +332,16 @@
 	<candidate name="refrigerator0" id="27000" type="27000" typename="refrigerator">
 		<wallID>-1</wallID>
 		<face side="front">
-			<point0>-3.00753 0.574538 0.5</point0>
-			<point1>-3.00753 0.574538 1.48</point1>
-			<point2>-2.42708 0.574538 1.48</point2>
-			<point3>-2.42708 0.574538 0.5</point3>
+			<point0>-3.00753 0.674538 0.5</point0>
+			<point1>-3.00753 0.674538 1.48</point1>
+			<point2>-2.42708 0.674538 1.48</point2>
+			<point3>-2.42708 0.674538 0.5</point3>
 		</face>
 		<face side="back">
-			<point0>-3.00753 0 0.5</point0>
-			<point1>-3.00753 0 1.48</point1>
-			<point2>-2.42708 0 1.48</point2>
-			<point3>-2.42708 0 0.5</point3>
+			<point0>-3.00753 0.1 0.5</point0>
+			<point1>-3.00753 0.1 1.48</point1>
+			<point2>-2.42708 0.1 1.48</point2>
+			<point3>-2.42708 0.1 0.5</point3>
 		</face>
 		<handles>17010 </handles>
 		<knobs></knobs>
