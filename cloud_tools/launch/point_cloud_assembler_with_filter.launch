@@ -10,7 +10,7 @@
   </node>
   
   <node type="laser_scan_assembler" pkg="laser_assembler"
-        name="tilt_scan_assembler" respwan="true">
+        name="tilt_scan_assembler" respawn="true">
     <remap from="scan" to="shoulder_scan"/>
     <param name="max_scans" type="int" value="900" />
     <param name="fixed_frame" type="string" value="/base_link" />
