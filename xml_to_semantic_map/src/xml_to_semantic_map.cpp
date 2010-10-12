@@ -18,7 +18,7 @@ int main(int argc, char **argv)
   // Getting parameters
   if (argc < 4)
   {
-    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file> [<Tx Ty Rz>]" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
+    std::cerr << "USAGE: " << argv[0] << " <xml-file> <publishing-rate> <owl-file> [<Tx Ty Rz>] [<frame-id>]" << std::endl << "NOTE: owl file is written only once (attempts until successful), and if rate is 0 only one publish and owl conversion request is tried" << std::endl;
     return -1;
   }
   std::stringstream ss (argv[2]);
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
   // Create transformation between the coordinate frame of the XML and that of /map
   Eigen3::Matrix4f map_frame = Eigen3::Matrix4f::Identity (); //1.4 2.8 3.21
-  if (argc == 7)
+  if (argc >= 7)
   {
     std::stringstream tx (argv[4]);
     tx >> map_frame(0,3);
@@ -57,6 +57,11 @@ int main(int argc, char **argv)
   map_frame *= corner_frame; // TODO: check order and direction...
   ROS_INFO("Applying the following transformation to the map:");
   std::cerr << map_frame << std::endl;
+
+  // Get the frame id
+  std::string frame ("/map");
+  if (argc >= 8)
+    frame = std::string (argv[7]);
 
   // Spin at least once
   int count = 0;
@@ -215,10 +220,10 @@ int main(int argc, char **argv)
       ROS_INFO ("Generated data for message in %g seconds.", (ros::Time::now () - ts).toSec ());
 
       // Creating the map message and publishing it
-      map_msg.header.frame_id = "/map";
+      map_msg.header.frame_id = frame;
       map_msg.header.stamp = ros::Time::now ();
       semantic_map_pub.publish (map_msg);
-      ROS_INFO ("Published message on the %s topic.", semantic_map_pub.getTopic ().c_str ());
+      ROS_INFO ("Published message in frame %s on the %s topic.", map_msg.header.frame_id.c_str (), semantic_map_pub.getTopic ().c_str ());
 
       // Requesting OWL conversion and saving it (if not succeeded already)
       if (!owl_saved)
