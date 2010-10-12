@@ -38,3 +38,5 @@ INCLUDE_DIRECTORIES (/usr/lib/libxml++-2.6/include)
 
 rosbuild_add_executable(xml_to_semantic_map src/xml_to_semantic_map.cpp src/StringTokenizer.cc)
 target_link_libraries(xml_to_semantic_map glibmm-2.4 xml++-2.6)
+
+rosbuild_add_executable(semantic_map_to_marker src/semantic_map_to_marker.cpp)

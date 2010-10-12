@@ -12,6 +12,7 @@
   <url>http://ros.org/wiki/xml_to_semantic_map</url>
   <depend package="roscpp"/>
   <depend package="eigen3"/>
+  <depend package="visualization_msgs"/>
   <depend package="mod_semantic_map"/>
   
   <rosdep name="libxml++2.6-dev"/>
