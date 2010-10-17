@@ -1,6 +1,6 @@
 <!-- Point Cloud Msg generator -->
 <launch>
-  <node pkg="point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
+  <node pkg="fixed_point_cloud_mapping" type="pcd_to_msg_node" name="pcd_to_msg_node" output="screen" respawn="true"
  	args="$(optenv pcd /home/pangerci/work/iros_cad/hokuyo/pfh_denoise/teapot_handle_side-denoise.pcd) $(optenv period 15)" />
 <!-- Rotational Object Estimator -->
 <node pkg="cloud_algos" type="rotational_estimation_node" name="rotational_estimation_node" output="screen" respawn="true">
@@ -17,7 +17,7 @@
 <node pkg="topic_tools" type="relay" name="relay_rotational_estimation" args="/rotational_estimation_node/cloud_normals /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/>
 <node pkg="topic_tools" type="relay" name="relay_depth_image_triangulation" args="/depth_image_triangulation_node/cloud_triangulated /triangular_mesh_to_vtk_node/mesh" respawn="false" output="screen"/>
 <!-- TriangularMesh to VTK Writer -->
-<node pkg="cloud_tools" type="triangular_mesh_to_vtk" name="triangular_mesh_to_vtk_node" output="screen" respawn="true">
+<node pkg="cloud_tools" type="triangular_mesh_to_vtk_node" name="triangular_mesh_to_vtk_node" output="screen" respawn="true">
   <param name="input_mesh_topic" type="string" value="mesh"/>
   <param name="output_vtk_file" type="string" value="teapot.vtk"/>
   <rosparam param="subscribed_to_nodes">["/depth_image_triangulation_node", "/rotational_estimation_node"]</rosparam>
