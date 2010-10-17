@@ -37,7 +37,7 @@ std::vector<std::string> Registration::provides ()
   {return std::vector<std::string>();}
 
 
-double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msgs::PointCloud>& source, std::vector<int> &src, std::vector<int> &tgt, Eigen::Matrix4d &transform)
+double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msgs::PointCloud>& source, std::vector<int> &src, std::vector<int> &tgt, Eigen3::Matrix4d &transform)
 {
   // Compute centroid of both point clouds
   geometry_msgs::Point32 source_centroid;
@@ -45,8 +45,8 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   cloud_geometry::nearest::computeCentroid (source, src, source_centroid);
   cloud_geometry::nearest::computeCentroid (target_, tgt, target_centroid);
 
-  Eigen::VectorXd b(src.size());
-  Eigen::MatrixXd A(tgt.size(), 6);
+  Eigen3::VectorXd b(src.size());
+  Eigen3::MatrixXd A(tgt.size(), 6);
 
   for (int i = 0; i < (int)src.size(); i++)
   {
@@ -62,22 +62,22 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
     A(i, 4) = normal_y;
     A(i, 5) = normal_z;
   }
-  Eigen::SVD<Eigen::MatrixXd> svd = A.svd();
+  Eigen3::SVD<Eigen3::MatrixXd> svd = A.svd();
 
-  const Eigen::MatrixXd U = svd.matrixU();
-  const Eigen::MatrixXd V = svd.matrixV();
-  const Eigen::VectorXd S = svd.singularValues();
+  const Eigen3::MatrixXd U = svd.matrixU();
+  const Eigen3::MatrixXd V = svd.matrixV();
+  const Eigen3::VectorXd S = svd.singularValues();
   
-  Eigen::MatrixXd S_plus(S);
+  Eigen3::MatrixXd S_plus(S);
   for (int i = 0; i < S_plus.size(); i++)
     if (S_plus(i) != 0.0)
       S_plus(i) = 1.0f / S_plus(i);
       
-  Eigen::MatrixXd A_plus = V*S_plus.col(0).asDiagonal()*U.transpose();
-  Eigen::VectorXd x_opt = A_plus * b;
+  Eigen3::MatrixXd A_plus = V*S_plus.col(0).asDiagonal()*U.transpose();
+  Eigen3::VectorXd x_opt = A_plus * b;
   std::cout << "Solution: " << x_opt << std::endl;
   
-  Eigen::MatrixXd T (4,4);
+  Eigen3::MatrixXd T (4,4);
   T.setIdentity ();
   T(0, 3) = x_opt(3);
   T(1, 3) = x_opt(4);
@@ -87,7 +87,7 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   double beta  = x_opt(1);
   double gamma = x_opt(2);
 
-  Eigen::MatrixXd R (4,4);
+  Eigen3::MatrixXd R (4,4);
   R.setIdentity ();
   R(1, 1) =   cos(gamma) * cos(beta);
   R(1, 2) = - sin(gamma) * cos(alpha) + cos(gamma) * sin(beta) * sin(alpha);
@@ -100,13 +100,13 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
   R(3, 3) =   cos(beta) * cos(alpha);
 
   transform = T * R * transform;
-  //Eigen::Matrix
+  //Eigen3::Matrix
   //x = A_plus
 
   return 0.0;
 }
 
-double Registration::oneIteration (const boost::shared_ptr<const sensor_msgs::PointCloud>& source, Eigen::Matrix4d &transform)
+double Registration::oneIteration (const boost::shared_ptr<const sensor_msgs::PointCloud>& source, Eigen3::Matrix4d &transform)
 {
   std::vector<bool> drawn (source->points.size(), false);
  
@@ -150,7 +150,7 @@ std::string Registration::process (const boost::shared_ptr<const Registration::I
     int max_iterations_ = 100;
     double error_bound = 0.0001;
 
-    Eigen::Matrix4d transform;
+    Eigen3::Matrix4d transform;
     transform.setIdentity ();
     
     for (int iterations = 0; iterations < max_iterations_; iterations++)

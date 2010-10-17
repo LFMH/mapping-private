@@ -54,7 +54,7 @@
 #include <tf/tf.h>
 
 // Eigen
-#include <Eigen/Core>
+#include <Eigen3/Core>
 
 #include <angles/angles.h>
 
@@ -208,14 +208,14 @@ boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getThresholdedInliers 
     return getInliers ();
   else
   {
-    Eigen::Matrix3d axes = Eigen::Matrix3d::Map(&coeff_[6]).transpose ();
-    //Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff_[6]).cast<float> ().transpose ();
+    Eigen3::Matrix3d axes = Eigen3::Matrix3d::Map(&coeff_[6]).transpose ();
+    //Eigen3::Matrix3f axes = Eigen3::Matrix3d::Map(&coeff_[6]).cast<float> ().transpose ();
     boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
     ret->points.reserve (inliers_.size ());
     ret->header = cloud_->header;
     for (unsigned int i = 0; i < inliers_.size (); i++)
     {
-      Eigen::Vector3d normal (cloud_->channels.at (nxIdx+0).values.at (inliers_.at (i)),
+      Eigen3::Vector3d normal (cloud_->channels.at (nxIdx+0).values.at (inliers_.at (i)),
                               cloud_->channels.at (nxIdx+1).values.at (inliers_.at (i)),
                               cloud_->channels.at (nxIdx+2).values.at (inliers_.at (i)));
       // TODO: include top inliers to cylinders!
@@ -237,8 +237,8 @@ boost::shared_ptr<sensor_msgs::PointCloud> BoxEstimation::getThresholdedInliers 
 
 void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::PointCloud> cloud, std::vector<double> coeff, double threshold_in, double threshold_out)
 {
-  //Eigen::Matrix3f axes = Eigen::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
-  Eigen::Matrix3d axes = Eigen::Matrix3d::Map(&coeff[6]).transpose ();
+  //Eigen3::Matrix3f axes = Eigen3::Matrix3d::Map(&coeff[6]).cast<float> ().transpose ();
+  Eigen3::Matrix3d axes = Eigen3::Matrix3d::Map(&coeff[6]).transpose ();
   //std::cerr << "the 3 axes:\n" << axes << std::endl;
   //std::cerr << "threshold: " << threshold << std::endl;
 
@@ -249,7 +249,7 @@ void BoxEstimation::computeInAndOutliers (boost::shared_ptr<const sensor_msgs::P
   for (unsigned i = 0; i < cloud->points.size (); i++)
   {
     // compute point-center
-    Eigen::Vector3d centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
+    Eigen3::Vector3d centered (cloud->points[i].x - coeff[0], cloud->points[i].y - coeff[1], cloud->points[i].z - coeff[2]);
     // project (point-center) on axes and check if inside or outside the +/- dimensions
     bool inlier = false;
     bool outlier = false;

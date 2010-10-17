@@ -3,8 +3,8 @@
 #include <geometry_msgs/Transform.h>
 #include <sensor_msgs/PointCloud.h>
 #include <cloud_algos/cloud_algos.h>
-#include <Eigen/Core>
-#include <Eigen/SVD> 
+#include <Eigen3/Core>
+#include <Eigen3/SVD> 
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 #include <point_cloud_mapping/cloud_io.h>
@@ -37,8 +37,8 @@ class Registration : public CloudAlgo
   std::string process (const boost::shared_ptr<const InputType>&);
   OutputType output ();
  
-  double RigidTransformSVD (const boost::shared_ptr<const sensor_msgs::PointCloud>&, std::vector<int>&, std::vector<int>&, Eigen::Matrix4d&);
-  double oneIteration (const boost::shared_ptr<const sensor_msgs::PointCloud>&, Eigen::Matrix4d&);
+  double RigidTransformSVD (const boost::shared_ptr<const sensor_msgs::PointCloud>&, std::vector<int>&, std::vector<int>&, Eigen3::Matrix4d&);
+  double oneIteration (const boost::shared_ptr<const sensor_msgs::PointCloud>&, Eigen3::Matrix4d&);
   void setTarget (const boost::shared_ptr<const sensor_msgs::PointCloud>&);
   boost::shared_ptr<const sensor_msgs::PointCloud> target_;
  

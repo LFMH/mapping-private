@@ -12,7 +12,7 @@ using namespace cloud_algos;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Get a u-v-n coordinate system that lies on a plane defined by its normal
 inline void
-  getCoordinateSystemOnPlane (const Eigen::Vector4d &plane_coeff, Eigen::Vector3d &u, Eigen::Vector3d &v)
+  getCoordinateSystemOnPlane (const Eigen3::Vector4d &plane_coeff, Eigen3::Vector3d &u, Eigen3::Vector3d &v)
 {
   // Initialize normalized u vector with "random" values not parallel with normal
   u (1) = 0;
@@ -140,16 +140,16 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
   #ifdef GLOBAL
   // allocating space for "global" matrices - TODO here?
-  //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
-  Eigen::VectorXd weight_vec_(max_nn_);
-  Eigen::MatrixXd P_(nr_coeff_, max_nn_);
-  Eigen::VectorXd f_vec_(max_nn_);
-  Eigen::VectorXd c_vec_; //(nr_coeff_);
-  Eigen::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
-  Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
-  Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
-  //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
-  /*//weight_ = Eigen::MatrixXd::Zero (max_nn_, max_nn_);
+  //Eigen3::MatrixXd weight_ = Eigen3::MatrixXd::Zero (max_nn_, max_nn_);
+  Eigen3::VectorXd weight_vec_(max_nn_);
+  Eigen3::MatrixXd P_(nr_coeff_, max_nn_);
+  Eigen3::VectorXd f_vec_(max_nn_);
+  Eigen3::VectorXd c_vec_; //(nr_coeff_);
+  Eigen3::MatrixXd P_weight_; //(nr_coeff_, max_nn_);
+  Eigen3::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
+  Eigen3::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
+  //Eigen3::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, max_nn_);
+  /*//weight_ = Eigen3::MatrixXd::Zero (max_nn_, max_nn_);
   weight_vec_.resize (max_nn_);
   P_.resize (nr_coeff_, max_nn_);
   f_vec_.resize (max_nn_);
@@ -319,7 +319,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
     #ifdef PARTIAL_TIMES
     ts_tmp = ros::Time::now ();
     #endif
-    Eigen::Vector4d plane_parameters; /// @NOTE: both () and [] is defined for Eigen vectors !!!
+    Eigen3::Vector4d plane_parameters; /// @NOTE: both () and [] is defined for Eigen vectors !!!
     double curvature, j1, j2, j3;
     /// @NOTE: while the neighborhood of the points from cloud_fit is used, the plane has to be computed from cloud
     switch (approximating_tangent_)
@@ -375,18 +375,18 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
       //#ifdef PARALELL
       #ifndef GLOBAL
-      //Eigen::MatrixXd weight_ = Eigen::MatrixXd::Zero (k, k);
-      Eigen::VectorXd weight_vec_(k);
-      Eigen::MatrixXd P_(nr_coeff_, k);
-      Eigen::VectorXd f_vec_(k);
-      Eigen::VectorXd c_vec_; //(nr_coeff_);
-      Eigen::MatrixXd P_weight_; //(nr_coeff_, k);
-      Eigen::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
+      //Eigen3::MatrixXd weight_ = Eigen3::MatrixXd::Zero (k, k);
+      Eigen3::VectorXd weight_vec_(k);
+      Eigen3::MatrixXd P_(nr_coeff_, k);
+      Eigen3::VectorXd f_vec_(k);
+      Eigen3::VectorXd c_vec_; //(nr_coeff_);
+      Eigen3::MatrixXd P_weight_; //(nr_coeff_, k);
+      Eigen3::MatrixXd P_weight_Pt_(nr_coeff_, nr_coeff_);
       #ifdef INVERSE
-      Eigen::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
+      Eigen3::MatrixXd inv_P_weight_Pt_(nr_coeff_, nr_coeff_);
       #endif
-      //Eigen::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, k);
-      /*//weight_ = Eigen::MatrixXd::Zero (k, k);
+      //Eigen3::MatrixXd inv_P_weight_Pt_P_weight_; //(nr_coeff_, k);
+      /*//weight_ = Eigen3::MatrixXd::Zero (k, k);
       weight_vec_.resize (k);
       P_.resize (nr_coeff_, k);
       f_vec_.resize (k);
@@ -398,13 +398,13 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       #endif
 
       // get local coordinate system (Darboux frame)
-      Eigen::Vector3d v = plane_parameters.head<3>().unitOrthogonal ();
-      Eigen::Vector3d u = plane_parameters.head<3>().cross (v);
+      Eigen3::Vector3d v = plane_parameters.head<3>().unitOrthogonal ();
+      Eigen3::Vector3d u = plane_parameters.head<3>().cross (v);
 
       // --[ Build up matrices for getting the coefficients ]--
 
       // go through neighbors, transform them in the local coordinate system, save height and the evaluation of the polynome's terms
-      Eigen::Vector3d de_meaned;
+      Eigen3::Vector3d de_meaned;
       double u_coord, v_coord, u_pow, v_pow;
       for (size_t i = 0; i < points_indices_[cp].size (); i++)
       {
@@ -445,14 +445,14 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       #ifndef GLOBAL
       P_weight_ = P_ * weight_vec_.asDiagonal();
       #else
-      P_weight_ = P_.corner(Eigen::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
+      P_weight_ = P_.corner(Eigen3::TopLeft, nr_coeff_,k) * weight_vec_.start(k).asDiagonal();
       #endif
 
       /// @NOTE: result is symmetrical... hopefully part<SelfAdjoint>() is the only thing that Eigen needs to fully optimize it
       #ifndef GLOBAL
       P_weight_Pt_ = P_weight_ * P_.transpose ();
       #else
-      P_weight_Pt_.part<Eigen::SelfAdjoint>() = P_weight_ * P_.corner(Eigen::TopLeft, nr_coeff_,k).transpose ();
+      P_weight_Pt_.part<Eigen3::SelfAdjoint>() = P_weight_ * P_.corner(Eigen3::TopLeft, nr_coeff_,k).transpose ();
       #endif
 
       // Solve linear equation system - TODO: maybe experiment with ldlt () - supposedly faster and more stable Cholesky decomposition but doesn't work...
@@ -478,7 +478,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
 
         //if (cp < 10)
         //{
-        //  Eigen::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
+        //  Eigen3::MatrixXd identity_check = P_weight_Pt_ * inv_P_weight_Pt_;
         //  cerr << "identity: " << identity_check.isIdentity(1e-5) << endl;// << identity_check << endl;
         //  cerr << "diagonal has values between " << identity_check.diagonal().minCoeff() << " and " << identity_check.diagonal().maxCoeff() << endl;
         //  cerr << "off-diagonal max: " << (identity_check - identity_check.diagonal().asDiagonal()).maxCoeff() << endl;
@@ -578,7 +578,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
             }
 
             // move the point to the corresponding surface point
-            Eigen::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.head<3>();
+            Eigen3::Vector3d movement = u_coord * u + v_coord * v + height * plane_parameters.head<3>();
             cloud_fit_->points[cp].x += movement[0];
             cloud_fit_->points[cp].y += movement[1];
             cloud_fit_->points[cp].z += movement[2];
@@ -599,9 +599,9 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
           ts_tmp = ros::Time::now ();
           #endif
           // compute tangent vectors using du and dv evaluated at the current point - which is the origin in case of projection along the normals, or (u_coord,v_coord)
-          Eigen::Vector3d n_a = u + plane_parameters.head<3>() * du;
-          Eigen::Vector3d n_b = v + plane_parameters.head<3>() * dv;
-          //Eigen::Vector3d n = n_a.cross (n_b).normalize ();
+          Eigen3::Vector3d n_a = u + plane_parameters.head<3>() * du;
+          Eigen3::Vector3d n_b = v + plane_parameters.head<3>() * dv;
+          //Eigen3::Vector3d n = n_a.cross (n_b).normalize ();
           //plane_parameters[0] = n[0];
           //plane_parameters[1] = n[1];
           //plane_parameters[2] = n[2];
@@ -666,7 +666,7 @@ std::string MovingLeastSquares::process (const boost::shared_ptr<const MovingLea
       cloud_fit_->channels[original_chan_size + 5].values[cp] = j2;
       cloud_fit_->channels[original_chan_size + 6].values[cp] = j3;
     }
-    // TODO: bool cloud_geometry::nearest::isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
+    // TODO: bool cloud_geometry::nearest::isBoundaryPoint (const sensor_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen3::Vector3d& u, const Eigen3::Vector3d& v, double angle_threshold)
     #ifdef PARTIAL_TIMES
     sum_ts_extra += (ros::Time::now () - ts_tmp).toSec ();
     #endif

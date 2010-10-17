@@ -3,7 +3,7 @@
 #include <cloud_algos/cloud_algos.h>
 
 // Eigen
-//#include <Eigen/Array>
+//#include <Eigen3/Array>
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>

@@ -3,10 +3,10 @@
 #include <cloud_algos/cloud_algos.h>
 
 // Eigen
-#include <Eigen/Core>
+#include <Eigen3/Core>
 // if needed:
-#include <Eigen/LU> // matrix inversion
-#include <Eigen/Geometry> // cross product
+#include <Eigen3/LU> // matrix inversion
+#include <Eigen3/Geometry> // cross product
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
@@ -153,18 +153,18 @@ class MovingLeastSquares : public CloudAlgo
 
   /*
   // diagonal weight matrix
-  Eigen::MatrixXd weight_;
+  Eigen3::MatrixXd weight_;
   // matrix for the powers of the polynomial representation evaluated for the neighborhood
-  Eigen::MatrixXd P_;
+  Eigen3::MatrixXd P_;
   // vector for storing function values
-  Eigen::VectorXd f_vec_;
+  Eigen3::VectorXd f_vec_;
   // vector for storing coefficients
-  Eigen::VectorXd c_vec_;
+  Eigen3::VectorXd c_vec_;
   // matrices for intermediary results
-  Eigen::MatrixXd P_weight_;
-  Eigen::MatrixXd P_weight_Pt_;
-  Eigen::MatrixXd inv_P_weight_Pt_;
-  //Eigen::MatrixXd inv_P_weight_Pt_P_weight_;
+  Eigen3::MatrixXd P_weight_;
+  Eigen3::MatrixXd P_weight_Pt_;
+  Eigen3::MatrixXd inv_P_weight_Pt_;
+  //Eigen3::MatrixXd inv_P_weight_Pt_P_weight_;
   */
 };
 

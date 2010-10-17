@@ -188,7 +188,7 @@ void CylinderEstimation::estimatePointNormals (sensor_msgs::PointCloud cloud)
   for (int i = 0; i < (int)cloud.points.size (); i++)
   {
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
-    Eigen::Vector4d plane_parameters;
+    Eigen3::Vector4d plane_parameters;
     double curvature;
     cloud_geometry::nearest::computePointNormal (*points_, points_k_indices[i], plane_parameters, curvature);
     
@@ -393,13 +393,13 @@ boost::shared_ptr<sensor_msgs::PointCloud> CylinderEstimation::getThresholdedInl
   boost::shared_ptr<sensor_msgs::PointCloud> ret (new sensor_msgs::PointCloud ());
   ret->points.reserve (cylinder_points_->points.size ());
   ret->header = points_->header;
-  Eigen::Vector3d axis (coeff_[3]-coeff_[0], coeff_[4]-coeff_[1], coeff_[5]-coeff_[2]);
+  Eigen3::Vector3d axis (coeff_[3]-coeff_[0], coeff_[4]-coeff_[1], coeff_[5]-coeff_[2]);
   for (unsigned int i = 0; i < points_->points.size (); i++)
   {
     if (fabs (cloud_geometry::distances::pointToLineDistance (points_->points[i], coeff_) - coeff_[6]) < TMP_FIX)
     {
-      Eigen::Vector3d relative (coeff_[3]-points_->points[i].x, coeff_[4]-points_->points[i].y, coeff_[5]-points_->points[i].z);
-      Eigen::Vector3d normal (points_->channels[nx_+0].values[i], points_->channels[nx_+1].values[i], points_->channels[nx_+2].values[i]);
+      Eigen3::Vector3d relative (coeff_[3]-points_->points[i].x, coeff_[4]-points_->points[i].y, coeff_[5]-points_->points[i].z);
+      Eigen3::Vector3d normal (points_->channels[nx_+0].values[i], points_->channels[nx_+1].values[i], points_->channels[nx_+2].values[i]);
       double cosine = fabs (axis.cross (relative).cross (axis).normalized ().dot (normal));
       if (cosine > 1) cosine = 1;
       //if (cosine < -1) cosine = -1;

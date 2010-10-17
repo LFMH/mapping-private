@@ -38,8 +38,8 @@
 #include <sensor_msgs/PointCloud.h>
 #include <algorithm>
 #include <iterator>
-#include <Eigen/Cholesky>
-#include <Eigen/LU>
+#include <Eigen3/Cholesky>
+#include <Eigen3/LU>
  
 //#include <lm.h>
 #include <cminpack.h>
@@ -328,8 +328,8 @@ namespace ias_sample_consensus
     // compute mean: double mv = accumulate (cont.begin(), cont.end(), 0) / distance(cont.begin(),cont.end());
 
     // refit polynomial
-    Eigen::MatrixXd A = Eigen::MatrixXd (samples.size(), polynomial_order+1); // 4 == polynomial order + 1
-    Eigen::VectorXd b = Eigen::VectorXd (samples.size());
+    Eigen3::MatrixXd A = Eigen3::MatrixXd (samples.size(), polynomial_order+1); // 4 == polynomial order + 1
+    Eigen3::VectorXd b = Eigen3::VectorXd (samples.size());
 
     // fill in A and b from the 2d arrays (vals_2d_[x,y])
     for (unsigned int d1 = 0; d1 < vals_2d_x.size(); d1++)
@@ -342,21 +342,21 @@ namespace ias_sample_consensus
     // TODO: test selfadjointView<Upper>() and noalias() on the left hand side for efficiency
 
     // add weighting
-//    Eigen::VectorXd weight_vector = Eigen::VectorXd::Ones (samples.size());
-//    Eigen::MatrixXd At_weight = A.transpose() * weight_vector.asDiagonal();
+//    Eigen3::VectorXd weight_vector = Eigen3::VectorXd::Ones (samples.size());
+//    Eigen3::MatrixXd At_weight = A.transpose() * weight_vector.asDiagonal();
 
     // allocate and initialize the parts of the equation system
-    Eigen::MatrixXd M (polynomial_order+1,polynomial_order+1);
-//    M.part<Eigen::SelfAdjoint>() = At_weight * A;
-//    Eigen::VectorXd x = At_weight * b;
+    Eigen3::MatrixXd M (polynomial_order+1,polynomial_order+1);
+//    M.part<Eigen3::SelfAdjoint>() = At_weight * A;
+//    Eigen3::VectorXd x = At_weight * b;
     M = A.transpose() * A;
-    Eigen::VectorXd x = A.transpose() * b;
+    Eigen3::VectorXd x = A.transpose() * b;
 
     // solve
-    //Eigen::VectorXd x1 = x;
+    //Eigen3::VectorXd x1 = x;
     x = M.llt().solve(x); // TODO: test B = A.selfadjointView<Lower>.llt().solve(B);
 
-    //Eigen::VectorXd x2 = M.inverse() * x;
+    //Eigen3::VectorXd x2 = M.inverse() * x;
     //std::cerr << x1.transpose() << std::endl << x2.transpose() << std::endl << (x1-x2).norm() << std::endl;
 
     // and dismount..
@@ -485,17 +485,17 @@ namespace ias_sample_consensus
     double min_k, max_k;
     Collect3DPointsInRotatedPlane (samples, *cloud_, temp_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
     
-    Eigen::Vector3d point0 (temp_coefficients[0], temp_coefficients[1], temp_coefficients[2]);
-    Eigen::Vector3d axis (temp_coefficients[3] - temp_coefficients[0],
+    Eigen3::Vector3d point0 (temp_coefficients[0], temp_coefficients[1], temp_coefficients[2]);
+    Eigen3::Vector3d axis (temp_coefficients[3] - temp_coefficients[0],
                           temp_coefficients[4] - temp_coefficients[1],
                           temp_coefficients[5] - temp_coefficients[2] );
-    Eigen::Vector3d axis_normalized = axis.normalized ();
+    Eigen3::Vector3d axis_normalized = axis.normalized ();
 
-    Eigen::Vector3d origin (temp_coefficients[6], temp_coefficients[7], temp_coefficients[8]);
+    Eigen3::Vector3d origin (temp_coefficients[6], temp_coefficients[7], temp_coefficients[8]);
     origin = point0 + (origin - point0).dot (axis_normalized) * axis_normalized;
    
-    Eigen::Vector3d p1 = origin + min_k * axis_normalized; 
-    Eigen::Vector3d p2 = origin + max_k * axis_normalized; 
+    Eigen3::Vector3d p1 = origin + min_k * axis_normalized; 
+    Eigen3::Vector3d p2 = origin + max_k * axis_normalized; 
     
         temp_coefficients[0] = p1[0];
         temp_coefficients[1] = p1[1];
@@ -674,22 +674,22 @@ namespace ias_sample_consensus
     Collect3DPointsInRotatedPlane (inliers, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
     //Collect3DPointsInRotatedPlane (indices_, *cloud_, model_coefficients, vals_2d_x, vals_2d_y, min_k, max_k);
    
-    Eigen::Vector3d point0 (model_coefficients[0], model_coefficients[1], model_coefficients[2]);
+    Eigen3::Vector3d point0 (model_coefficients[0], model_coefficients[1], model_coefficients[2]);
     geometry_msgs::Point32 point0_point;
     point0_point.x = point0[0];
     point0_point.y = point0[1];
     point0_point.z = point0[2];
 
-    Eigen::Vector3d axis (model_coefficients[3] - model_coefficients[0],
+    Eigen3::Vector3d axis (model_coefficients[3] - model_coefficients[0],
                           model_coefficients[4] - model_coefficients[1],
                           model_coefficients[5] - model_coefficients[2] );
-    Eigen::Vector3d axis_normalized = axis.normalized ();
+    Eigen3::Vector3d axis_normalized = axis.normalized ();
     geometry_msgs::Point32 axis_point;
     axis_point.x = axis_normalized[0];
     axis_point.y = axis_normalized[1];
     axis_point.z = axis_normalized[2];
 
-    Eigen::Vector3d origin (model_coefficients[6], model_coefficients[7], model_coefficients[8]);
+    Eigen3::Vector3d origin (model_coefficients[6], model_coefficients[7], model_coefficients[8]);
     geometry_msgs::Point32 origin_point;
     origin_point.x = origin[0];
     origin_point.y = origin[1];
@@ -697,8 +697,8 @@ namespace ias_sample_consensus
     
     origin = point0 + (origin - point0).dot (axis_normalized) * axis_normalized;
    
-    Eigen::Vector3d p1 = origin + min_k * axis_normalized; 
-    Eigen::Vector3d p2 = origin + max_k * axis_normalized; 
+    Eigen3::Vector3d p1 = origin + min_k * axis_normalized; 
+    Eigen3::Vector3d p2 = origin + max_k * axis_normalized; 
 
     ROS_ERROR ("------------------------ min_k, max_k = %f <-> %f", min_k, max_k);
     
@@ -710,7 +710,7 @@ namespace ias_sample_consensus
       double X = i / res_axial;
       
       geometry_msgs::Point32 X_3D;
-      Eigen::Vector3d p_temp = p1 + (p2-p1) * X; 
+      Eigen3::Vector3d p_temp = p1 + (p2-p1) * X; 
       X_3D.x = p_temp[0];
       X_3D.y = p_temp[1];
       X_3D.z = p_temp[2];
@@ -731,7 +731,7 @@ namespace ias_sample_consensus
         p.y = 0.0;
         p.z = ((double)i/res_axial)*(p2-p1).norm();
 
-        Eigen::Matrix3d rotation1, rotation2;
+        Eigen3::Matrix3d rotation1, rotation2;
         geometry_msgs::Point32 z_axis_vec;
         z_axis_vec.x = 0;
         z_axis_vec.y = 0;
@@ -741,16 +741,16 @@ namespace ias_sample_consensus
         z_axis[1] = 0;
         z_axis[2] = 1;
         cloud_geometry::transforms::convertAxisAngleToRotationMatrix (z_axis_vec, M_PI*2.0*((double)j)/res_radial, rotation2);
-        Eigen::Matrix4d transformation;
+        Eigen3::Matrix4d transformation;
         cloud_geometry::transforms::getPlaneToPlaneTransformation (z_axis, axis_point,
             p1[0],
             p1[1],
             p1[2], transformation);
         
-        Eigen::Vector3d p_0 (p.x, p.y, p.z);
+        Eigen3::Vector3d p_0 (p.x, p.y, p.z);
         p_0 = rotation2 * p_0;
-        Eigen::Vector4d p_1 (p_0[0], p_0[1], p_0[2], 1.0);
-        Eigen::Vector4d q_0 = transformation * p_1;
+        Eigen3::Vector4d p_1 (p_0[0], p_0[1], p_0[2], 1.0);
+        Eigen3::Vector4d q_0 = transformation * p_1;
 
         p.x = q_0[0];
         p.y = q_0[1];

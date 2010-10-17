@@ -72,17 +72,17 @@ namespace ias_sample_consensus
     min_max_distances[1] = min_max_distances[3] = min_max_distances[5] = -DBL_MAX;
 
     // The 3 coordinate axes are nm, nc and axis_
-    Eigen::Vector3f nm = Eigen::Vector3d::Map(&(*model_coefficients)[0]).cast<float> ();
-    Eigen::Vector3f nc = axis_.cross (nm);
+    Eigen3::Vector3f nm = Eigen3::Vector3d::Map(&(*model_coefficients)[0]).cast<float> ();
+    Eigen3::Vector3f nc = axis_.cross (nm);
 
     // Find minimum and maximum distances from origin along the three axes
     for (std::vector<int>::iterator it = inliers->begin (); it != inliers->end (); it++)
     //for (unsigned i = 0; i < inliers.size (); i++)
     {
       /// @NOTE inliers is a list of indices of the indices_ array!
-      Eigen::Vector3f point (cloud_->points[indices_[*it]].x, cloud_->points[indices_[*it]].y, cloud_->points[indices_[*it]].z);
-      //Eigen::Vector3f point (cloud_->points[indices_[*it]].x - center.x, cloud_->points[indices_[*it]].y - center.y, cloud_->points[indices_[*it]].z - center.z);
-      //Eigen::Vector3f point (cloud_->points[indices_[inliers[i]]].x, cloud_->points[indices_[inliers[i]]].y, cloud_->points[indices_[inliers[i]]].z);
+      Eigen3::Vector3f point (cloud_->points[indices_[*it]].x, cloud_->points[indices_[*it]].y, cloud_->points[indices_[*it]].z);
+      //Eigen3::Vector3f point (cloud_->points[indices_[*it]].x - center.x, cloud_->points[indices_[*it]].y - center.y, cloud_->points[indices_[*it]].z - center.z);
+      //Eigen3::Vector3f point (cloud_->points[indices_[inliers[i]]].x, cloud_->points[indices_[inliers[i]]].y, cloud_->points[indices_[inliers[i]]].z);
       double dists[3];
       dists[0] = nm.dot(point);
       dists[1] = nc.dot(point);
@@ -155,17 +155,17 @@ namespace ias_sample_consensus
     //*
 
     // Get source and acceptable distance from it
-    Eigen::Vector3f nm (normals_.points[refit_coefficients[3]].x, normals_.points[refit_coefficients[3]].y, normals_.points[refit_coefficients[3]].z);
+    Eigen3::Vector3f nm (normals_.points[refit_coefficients[3]].x, normals_.points[refit_coefficients[3]].y, normals_.points[refit_coefficients[3]].z);
     double eps_angle = M_PI/6; // or use a user defined threshold (eps_angle_)?
     double radius = 2 * sin (eps_angle/2);
     double sqr_radius = radius*radius;
 
     // get local coordinate system from the axis
-    //Eigen::Vector3f v = axis_.unitOrthogonal ();
-    //Eigen::Vector3f u = axis_.cross (v);
+    //Eigen3::Vector3f v = axis_.unitOrthogonal ();
+    //Eigen3::Vector3f u = axis_.cross (v);
 
-    //Eigen::MatrixXf rotated_normals(inliers.size (), 3);
-    Eigen::Vector3f sum_rotated_normals = Eigen::VectorXf::Zero(3);
+    //Eigen3::MatrixXf rotated_normals(inliers.size (), 3);
+    Eigen3::Vector3f sum_rotated_normals = Eigen3::VectorXf::Zero(3);
 
     // Rotate all inliers onto the first direction and sum them up
     for (unsigned it = 0; it < inliers.size (); it++)
@@ -173,9 +173,9 @@ namespace ias_sample_consensus
     {
       /// @NOTE inliers is a list of indices of the indices_ array!
       /// @NOTE normal_ contains only the elements listed in the indices_ array!
-      Eigen::Vector3f ni (normals_.points[inliers[it]].x, normals_.points[inliers[it]].y, normals_.points[inliers[it]].z);
+      Eigen3::Vector3f ni (normals_.points[inliers[it]].x, normals_.points[inliers[it]].y, normals_.points[inliers[it]].z);
       //std::cerr << "inlier " << it << "/" << inliers[it] << ": " << ni.transpose () << std::endl;
-      //Eigen::Vector3f ni2 = ni.cwise.square ();
+      //Eigen3::Vector3f ni2 = ni.cwise.square ();
       for (int i=0; i<4; i++)
       {
         // Find the orientation that is pointing in the same direction as the model

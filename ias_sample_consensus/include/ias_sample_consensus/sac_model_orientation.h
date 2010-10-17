@@ -37,8 +37,8 @@
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Eigen
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <Eigen3/Core>
+#include <Eigen3/Geometry>
 
 namespace ias_sample_consensus
 {
@@ -48,7 +48,7 @@ namespace ias_sample_consensus
    * \param axis the rotation axis
    * \param angle the rotation angle in radians
    */
-  inline Eigen::Vector3f rotateAroundAxis (Eigen::Vector3f r, Eigen::Vector3f axis, float angle)
+  inline Eigen3::Vector3f rotateAroundAxis (Eigen3::Vector3f r, Eigen3::Vector3f axis, float angle)
   {
     // Rodrigues' rotation formula
     return r * cos(angle) + (axis.cross(r)) * sin(angle) + axis * axis.dot(r) * (1-cos(angle));
@@ -61,7 +61,7 @@ namespace ias_sample_consensus
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief The fixed axis. */
-      Eigen::Vector3f axis_;
+      Eigen3::Vector3f axis_;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief The inlier threshold for normals, in radians. */

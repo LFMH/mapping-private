@@ -33,10 +33,10 @@
 #include <cloud_algos/cloud_algos.h>
 
 // For extra Eigen functions
-#include <Eigen/Core>
+#include <Eigen3/Core>
 // if needed:
-#include <Eigen/LU> // matrix inversion
-#include <Eigen/Geometry> // cross product
+#include <Eigen3/LU> // matrix inversion
+#include <Eigen3/Geometry> // cross product
 
 // Kd Tree
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
