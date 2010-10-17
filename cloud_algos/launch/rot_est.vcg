@@ -1,0 +1,73 @@
+Background\ ColorR=0.878431
+Background\ ColorG=0.878431
+Background\ ColorB=0.878431
+Fixed\ Frame=/base_link
+Target\ Frame=<Fixed Frame>
+Origin\ Axes.Enabled=0
+Origin\ Axes.Length=1
+Origin\ Axes.Radius=0.1
+Origin\ Axes.Reference\ Frame=<Fixed Frame>
+Point\ Cloud.Alpha=1
+Point\ Cloud.Billboard\ Size=0.01
+Point\ Cloud.Color\ Transformer=Intensity
+Point\ Cloud.Decay\ Time=0
+Point\ Cloud.Enabled=0
+Point\ Cloud.Position\ Transformer=XYZ
+Point\ Cloud.Selectable=1
+Point\ Cloud.Style=1
+Point\ Cloud.Topic=/cloud_pcd
+Point\ Cloud..Flat\ ColorColorR=1
+Point\ Cloud..Flat\ ColorColorG=1
+Point\ Cloud..Flat\ ColorColorB=1
+Point\ Cloud..IntensityAutocompute\ Intensity\ Bounds=1
+Point\ Cloud..IntensityMax\ ColorR=1
+Point\ Cloud..IntensityMax\ ColorG=1
+Point\ Cloud..IntensityMax\ ColorB=1
+Point\ Cloud..IntensityMax\ Intensity=8481
+Point\ Cloud..IntensityMin\ ColorR=0
+Point\ Cloud..IntensityMin\ ColorG=0
+Point\ Cloud..IntensityMin\ ColorB=0
+Point\ Cloud..IntensityMin\ Intensity=2577
+Triangle\ Mesh.ColorR=0.1
+Triangle\ Mesh.ColorG=1
+Triangle\ Mesh.ColorB=0
+Triangle\ Mesh.Enabled=0
+Triangle\ Mesh.Topic=/rotational_estimation_node/cloud_normals
+Triangle\ Mesh.Wireframe\ enable=1
+Triangle\ Mesh2.ColorR=0.894118
+Triangle\ Mesh2.ColorG=0.0352941
+Triangle\ Mesh2.ColorB=0.12549
+Triangle\ Mesh2.Enabled=0
+Triangle\ Mesh2.Topic=/depth_image_triangulation_node/cloud_triangulated
+Triangle\ Mesh2.Wireframe\ enable=1
+Triangle\ Mesh3.ColorR=0.0784314
+Triangle\ Mesh3.ColorG=0.133333
+Triangle\ Mesh3.ColorB=0.964706
+Triangle\ Mesh3.Enabled=1
+Triangle\ Mesh3.Topic=/triangular_mesh_to_vtk_node/mesh_output
+Triangle\ Mesh3.Wireframe\ enable=1
+Tool\ 2D\ Nav\ GoalTopic=move_base_simple/goal
+Tool\ 2D\ Pose\ EstimateTopic=initialpose
+Camera\ Type=rviz::OrbitViewController
+Camera\ Config=1.12738 2.89115 0.572594 0.137309 -0.236521 -0.905737
+Property\ Grid\ State=selection=Triangle Mesh3.Enabled.Triangle Mesh3.Wireframe enable;expanded=.Global Options,Origin Axes.Enabled.Origin Axes.StatusTopStatus,Point Cloud.Enabled,Triangle Mesh.Enabled,Triangle Mesh.Enabled.Triangle Mesh.StatusTopStatus,Triangle Mesh2.Enabled,Triangle Mesh2.Enabled.Triangle Mesh2.StatusTopStatus,Triangle Mesh3.Enabled,Triangle Mesh3.Enabled.Triangle Mesh3.StatusTopStatus;scrollpos=0,13;splitterpos=208,414;ispageselected=1
+[Display0]
+Name=Origin Axes
+Package=rviz
+ClassName=rviz::AxesDisplay
+[Display1]
+Name=Point Cloud
+Package=rviz
+ClassName=rviz::PointCloudDisplay
+[Display2]
+Name=Triangle Mesh
+Package=triangle_mesh_rviz_plugin
+ClassName=triangle_mesh::TriangleMeshDisplay
+[Display3]
+Name=Triangle Mesh2
+Package=triangle_mesh_rviz_plugin
+ClassName=triangle_mesh::TriangleMeshDisplay
+[Display4]
+Name=Triangle Mesh3
+Package=triangle_mesh_rviz_plugin
+ClassName=triangle_mesh::TriangleMeshDisplay
