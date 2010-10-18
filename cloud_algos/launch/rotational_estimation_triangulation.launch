@@ -22,5 +22,8 @@
   <param name="output_vtk_file" type="string" value="teapot.vtk"/>
   <rosparam param="subscribed_to_nodes">["/depth_image_triangulation_node", "/rotational_estimation_node"]</rosparam>
 </node>
+
+<!-- RVIZ -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find cloud_algos)/launch/rot_est.vcg"/>
 </launch>
 
