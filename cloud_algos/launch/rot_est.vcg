@@ -11,7 +11,7 @@ Point\ Cloud.Alpha=1
 Point\ Cloud.Billboard\ Size=0.01
 Point\ Cloud.Color\ Transformer=Intensity
 Point\ Cloud.Decay\ Time=0
-Point\ Cloud.Enabled=0
+Point\ Cloud.Enabled=1
 Point\ Cloud.Position\ Transformer=XYZ
 Point\ Cloud.Selectable=1
 Point\ Cloud.Style=1
@@ -43,14 +43,14 @@ Triangle\ Mesh2.Wireframe\ enable=1
 Triangle\ Mesh3.ColorR=0.0784314
 Triangle\ Mesh3.ColorG=0.133333
 Triangle\ Mesh3.ColorB=0.964706
-Triangle\ Mesh3.Enabled=1
+Triangle\ Mesh3.Enabled=0
 Triangle\ Mesh3.Topic=/triangular_mesh_to_vtk_node/mesh_output
 Triangle\ Mesh3.Wireframe\ enable=1
 Tool\ 2D\ Nav\ GoalTopic=move_base_simple/goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=1.12738 2.89115 0.572594 0.137309 -0.236521 -0.905737
-Property\ Grid\ State=selection=Triangle Mesh3.Enabled.Triangle Mesh3.Wireframe enable;expanded=.Global Options,Origin Axes.Enabled.Origin Axes.StatusTopStatus,Point Cloud.Enabled,Triangle Mesh.Enabled,Triangle Mesh.Enabled.Triangle Mesh.StatusTopStatus,Triangle Mesh2.Enabled,Triangle Mesh2.Enabled.Triangle Mesh2.StatusTopStatus,Triangle Mesh3.Enabled,Triangle Mesh3.Enabled.Triangle Mesh3.StatusTopStatus;scrollpos=0,13;splitterpos=208,414;ispageselected=1
+Camera\ Config=1.05738 2.32615 0.718262 0.137309 -0.236521 -0.905737
+Property\ Grid\ State=selection=Triangle Mesh.Enabled;expanded=.Global Options,Origin Axes.Enabled.Origin Axes.StatusTopStatus,Point Cloud.Enabled,Triangle Mesh.Enabled,Triangle Mesh.Enabled.Triangle Mesh.StatusTopStatus,Triangle Mesh2.Enabled,Triangle Mesh2.Enabled.Triangle Mesh2.StatusTopStatus,Triangle Mesh3.Enabled,Triangle Mesh3.Enabled.Triangle Mesh3.StatusTopStatus;scrollpos=0,13;splitterpos=208,414;ispageselected=1
 [Display0]
 Name=Origin Axes
 Package=rviz
