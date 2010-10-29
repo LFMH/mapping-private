@@ -1225,7 +1225,7 @@ class TableMemory
               {
                 std::stringstream tmp_type;
                 tmp_type.precision (2);
-                Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+                Eigen3::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
                 axis.normalize ();
                 tmp_type << "(" << axis[0] << "," << axis[1] << "," << axis[2] << ")_" << cylinder_coeff[6];
                 to->object_type = tmp_type.str ();
@@ -1384,7 +1384,7 @@ class TableMemory
               { is_box = true; decision = 0; }
             else
             {
-              Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+              Eigen3::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
               axis_z = axis.normalized()(2);
               cylinder_radius = cylinder_coeff[6];
               // check if models are dissimilar enough

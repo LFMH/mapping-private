@@ -1035,7 +1035,7 @@ class TableMemory
             { is_box = true; decision = 0; }
           else
           {
-            Eigen::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
+            Eigen3::Vector3d axis (cylinder_coeff[3]-cylinder_coeff[0], cylinder_coeff[4]-cylinder_coeff[1], cylinder_coeff[5]-cylinder_coeff[2]);
             axis_z = axis.normalized()(2);
             cylinder_radius = cylinder_coeff[6];
             // check if models are dissimilar enough
