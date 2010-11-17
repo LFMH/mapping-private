@@ -1,3 +1,9 @@
+/**
+Copyright (C) 2010 by Asako Kanezaki
+Disclaimer:
+This code cannot be used for a commercial enterprise.
+Note that this code is under patent application.
+**/
 #include "ColorCHLAC.hpp"
 #include <cmath>
 #include <iostream>

@@ -1,3 +1,9 @@
+/**
+Copyright (C) 2010 by Asako Kanezaki
+Disclaimer:
+This code cannot be used for a commercial enterprise.
+Note that this code is under patent application.
+**/
 #ifndef MY_COLOR_CHLAC_HPP
 #define MY_COLOR_CHLAC_HPP
 
