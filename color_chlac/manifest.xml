@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/color_chlac</url>
   <depend package="roscpp"/>
+  <depend package="pcl"/>
 
 </package>
 
