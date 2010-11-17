@@ -115,9 +115,16 @@ void ColorVoxel::points2voxel( pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cl
       + xsize * ((int)((cloud_object_cluster.points[i].y-y_min)/voxel_size) + 1)
       + xysize * ((int)((cloud_object_cluster.points[i].z-z_min)/voxel_size) + 1);
     exist_num[ idx ] ++;
-    red[ idx ] += cloud_object_cluster.points[i].rgb;   // TODO: change it to the actual R value
-    green[ idx ] += cloud_object_cluster.points[i].rgb; // TODO: change it to the actual G value
-    blue[ idx ] += cloud_object_cluster.points[i].rgb;  // TODO: change it to the actual B value
+
+    //convert back to r, g and b channels
+    int color = *reinterpret_cast<const int*>(&(cloud_object_cluster.points[i].rgb));
+    int r = (0xff0000 & color) >> 16;
+    int g = (0x00ff00 & color) >> 8;
+    int b =  0x0000ff & color;
+
+    red[ idx ] += (float)r;  
+    green[ idx ] += (float)g;
+    blue[ idx ] += (float)b;
   }
 
   for( int i=0; i<xyzsize; i++ )
