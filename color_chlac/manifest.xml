@@ -11,6 +11,8 @@
   <depend package="roscpp"/>
   <depend package="pcl"/>
 
+  <export>
+    <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_chlac"/>
+  </export>
+
 </package>
-
-
