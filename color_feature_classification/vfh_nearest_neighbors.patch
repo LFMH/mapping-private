@@ -1,0 +1,204 @@
+Index: src/nearest_neighbors.cpp
+===================================================================
+--- src/nearest_neighbors.cpp	(revision 46563)
++++ src/nearest_neighbors.cpp	(working copy)
+@@ -43,99 +43,8 @@
+   * model/VFH signature.
+   */
+ 
+-#include <vfh_cluster_classifier/common_io.h>
+-#include <iostream>
+-#include <utility>
+-#include <cctype>
+-#include <flann/flann.h>
+-#include <flann/io/hdf5.h>
++#include <vfh_cluster_classifier/vfh_nearest_neighbors.h>
+ 
+-#include <terminal_tools/parse.h>
+-#include <terminal_tools/print.h>
+-
+-#include <pcl/common/common.h>
+-#include <pcl/features/feature.h>
+-#include <pcl/registration/transforms.h>
+-#include <pcl_visualization/pcl_visualizer.h>
+-
+-using vfh_cluster_classifier::vfh_model;
+-
+-using namespace std;
+-using namespace pcl;
+-using namespace terminal_tools;
+-using namespace pcl_visualization;
+-
+-#define SIGMA 2
+-
+-////////////////////////////////////////////////////////////////////////////////
+-/** \brief Search for the closest k neighbors
+-  * \param index the tree
+-  * \param model the query model
+-  * \param k the number of neighbors to search for
+-  * \param indices the resultant neighbor indices
+-  * \param distances the resultant neighbor distances
+-  */
+-inline void
+-  nearestKSearch (flann::Index<float> &index, const vfh_model &model, 
+-                  int k, flann::Matrix<int> &indices, flann::Matrix<float> &distances)
+-{
+-  // Query point
+-  flann::Matrix<float> p = flann::Matrix<float>(new float[model.second.size ()], 1, model.second.size ());
+-  memcpy (&p.data[0], &model.second[0], p.cols * p.rows * sizeof (float));
+-
+-  indices = flann::Matrix<int>(new int[k], 1, k);
+-  distances = flann::Matrix<float>(new float[k], 1, k);
+-  index.knnSearch (p, indices, distances, k, flann::SearchParams (512));
+-}
+-
+-////////////////////////////////////////////////////////////////////////////////
+-/** \brief Load the list of file model names from an ASCII file
+-  * \param models the resultant list of model name
+-  * \param filename the input file name
+-  */
+-bool
+-  loadFileList (vector<vfh_model> &models, const string &filename)
+-{
+-  ifstream fs;
+-  fs.open (filename.c_str ());
+-  if (!fs.is_open () || fs.fail ())
+-    return (false);
+-
+-  string line;
+-  while (!fs.eof ())
+-  {
+-    getline (fs, line);
+-    if (line.empty ())
+-      continue;
+-    vfh_model m;
+-    m.first = line;
+-    models.push_back (m);
+-  }
+-  fs.close ();
+-  return (true);
+-}
+-
+-double
+-  computeThreshold (const flann::Matrix<float> &data, int k, double sigma)
+-{
+-  vector<float> distances (k);
+-  for (int i = 0; i < k; ++i)
+-    distances[i] = data[0][i];
+-
+-  double mean, stddev;
+-  pcl::getMeanStdDev (distances, mean, stddev);
+-
+-  // Outlier rejection
+-  vector<float> inliers;
+-  for (int i = 0; i < k; ++i)
+-    if ((distances[i] <= (mean + sigma * stddev)) && (distances[i] >= (mean - sigma * stddev)))
+-      inliers.push_back (distances[i]);
+-
+-  pcl::getMeanStdDev (inliers, mean, stddev);
+-  
+-  return (mean);
+-}
+-
+ /* ---[ */
+ int
+   main (int argc, char** argv)
+@@ -234,7 +143,7 @@
+   flann::Matrix<float> k_distances;
+   flann::Matrix<float> data;
+   // Check if the data has already been saved to disk
+-  if (!boost::filesystem::exists ("training_data.h5") || !boost::filesystem::exists ("training_data.list"))
++  if (!boost::filesystem::exists (training_data_h5_file_name) || !boost::filesystem::exists (training_data_list_file_name))
+   {
+     print_error ("Could not find training data models files %s and %s!\n", training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
+     return (-1);
+@@ -264,87 +173,9 @@
+   for (int i = 0; i < k; ++i)
+     print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
+ 
+-  // Compute the optimal separation threshold if 'thresh' not given
+-  if (thresh == DBL_MAX || thresh < 0)
+-    thresh = computeThreshold (k_distances, k, SIGMA);
+-  print_highlight ("Using "); print_value ("%f", thresh); print_info (" as an inlier distance threshold.\n");
++  // Visualize the results
++  visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
+ 
+-  // Load the results
+-  PCLVisualizer p (argc, argv, "VFH Cluster Classifier");
+-  int y_s = (int)floor (sqrt (k));
+-  int x_s = y_s + (int)ceil ((k / (double)y_s) - y_s);
+-  double x_step = (double)(1 / (double)x_s);
+-  double y_step = (double)(1 / (double)y_s);
+-  print_highlight ("Preparing to load "); print_value ("%d", k); print_info (" files ("); 
+-  print_value ("%d", x_s);    print_info ("x"); print_value ("%d", y_s); print_info (" / ");
+-  print_value ("%f", x_step); print_info ("x"); print_value ("%f", y_step); print_info (")\n");
+-
+-  int viewport = 0, l = 0, m = 0;
+-  for (int i = 0; i < k; ++i)
+-  {
+-    string cloud_name = models.at (k_indices[0][i]).first;
+-    boost::replace_last (cloud_name, "_vfh", "");
+-
+-    p.createViewPort (l * x_step, m * y_step, (l + 1) * x_step, (m + 1) * y_step, viewport);
+-    l++;
+-    if (l >= x_s)
+-    {
+-      l = 0;
+-      m++;
+-    }
+-
+-    sensor_msgs::PointCloud2 cloud;
+-    print_highlight (stderr, "Loading "); print_value (stderr, "%s ", cloud_name.c_str ());
+-    if (pcl::io::loadPCDFile (cloud_name, cloud) == -1)
+-      break;
+-
+-    // Convert from blob to PointCloud
+-    PointCloud<PointXYZ> cloud_xyz;
+-    fromROSMsg (cloud, cloud_xyz);
+-
+-    if (cloud_xyz.points.size () == 0)
+-      break;
+-
+-    print_info ("[done, "); print_value ("%d", (int)cloud_xyz.points.size ()); print_info (" points]\n");
+-    print_info ("Available dimensions: "); print_value ("%s\n", getFieldsList (cloud).c_str ());
+-
+-    // Demean the cloud
+-    Eigen3::Vector4f centroid;
+-    compute3DCentroid (cloud_xyz, centroid);
+-    PointCloud<PointXYZ> cloud_xyz_demean;
+-    demeanPointCloud<PointXYZ> (cloud_xyz, centroid, cloud_xyz_demean);
+-    // Add to renderer
+-    p.addPointCloud (cloud_xyz_demean, cloud_name, viewport);
+-    
+-    // Check if the model found is within our inlier tolerance
+-    stringstream ss;
+-    ss << k_distances[0][i];
+-    if (k_distances[0][i] > thresh)
+-    {
+-      p.addText (ss.str (), 20, 30, 1, 0, 0, ss.str (), viewport);  // display the text with red
+-
+-      // Create a red line
+-      PointXYZ min_p, max_p;
+-      pcl::getMinMax3D (cloud_xyz_demean, min_p, max_p);
+-      stringstream line_name;
+-      line_name << "line_" << i;
+-      p.addLine (min_p, max_p, 1, 0, 0, line_name.str (), viewport);
+-      p.setShapeRenderingProperties (PCL_VISUALIZER_LINE_WIDTH, 5, line_name.str (), viewport);
+-    }
+-    else
+-      p.addText (ss.str (), 20, 30, 0, 1, 0, ss.str (), viewport);
+-
+-    // Increase the font size for the score
+-    p.setShapeRenderingProperties (PCL_VISUALIZER_FONT_SIZE, 18, ss.str (), viewport);
+-
+-    // Add the cluster name
+-    p.addText (cloud_name, 20, 10, cloud_name, viewport);
+-  }
+-  // Add coordianate systems to all viewports
+-  p.addCoordinateSystem (0.1, 0);
+-  //p.setBackgroundColor (1.0, 1.0, 1.0);
+-
+-  p.spin ();
+   return (0);
+ }
+ /* ]--- */

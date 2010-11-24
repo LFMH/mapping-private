@@ -1,0 +1,2 @@
+class_num: 1
+dim: 50
