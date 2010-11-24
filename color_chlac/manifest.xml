@@ -10,7 +10,7 @@
   <url>http://ros.org/wiki/color_chlac</url>
   <depend package="roscpp"/>
   <depend package="pcl"/>
-
+  <depend package="pcl_cloud_algos"/>
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_chlac"/>
   </export>

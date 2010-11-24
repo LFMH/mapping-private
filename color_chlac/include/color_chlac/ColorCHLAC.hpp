@@ -1,6 +1,8 @@
 #ifndef MY_COLOR_CHLAC_HPP
 #define MY_COLOR_CHLAC_HPP
 
+#include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
+#include <pcl/features/feature.h>
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
@@ -20,6 +22,9 @@ enum RotateMode{ R_MODE_1, R_MODE_2, R_MODE_3, R_MODE_4 };
 
 class ColorCHLAC{
 public:
+  //* feature extraction (both RGB and RGB-binalized. 981(=495+486) dimension.)
+  static void extractColorCHLAC981( pcl::PointCloud<pcl::ColorCHLACSignature981> &result, ColorVoxel &voxel, const unsigned char thR, const unsigned char thG, const unsigned char thB );
+
   //* feature extraction (without RGB binalize)
   static void extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel );
   static void extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );

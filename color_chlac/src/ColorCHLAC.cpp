@@ -4,6 +4,22 @@
 
 using namespace std;
 
+//****************************************************************************
+//* feature extraction (both RGB and RGB-binalized. 981(=495+486) dimension.)
+void ColorCHLAC::extractColorCHLAC981( pcl::PointCloud<pcl::ColorCHLACSignature981> &result, ColorVoxel &voxel, const unsigned char thR, const unsigned char thG, const unsigned char thB ){
+  if( result.points.size() != 1 ) result.points.resize(1);
+  //result.points[0].histogram.resize( 981 );
+
+  std::vector<float> tmp_result;
+  extractColorCHLAC( tmp_result, voxel );
+  for(int t=0;t<DIM_COLOR_1_3;t++)
+    result.points[0].histogram[ t ] = tmp_result[ t ];
+  voxel.binarize( thR, thG, thB );
+  extractColorCHLAC_bin( tmp_result, voxel );
+  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
+    result.points[0].histogram[ t+DIM_COLOR_1_3 ] = tmp_result[ t ];
+}
+
 //********************************************
 //* feature extraction (without RGB binalize)
 void ColorCHLAC::extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel ){

@@ -25,34 +25,14 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   //  voxel.points2voxel( cloud_object_cluster, TRIGONOMETRIC );
   //old
   voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
-  ColorVoxel voxel_bin;
-  voxel_bin = voxel;
-  voxel_bin.binarize( 127, 127, 127 );
 
   // compute colorCHLAC
-  std::vector<float> colorCHLAC;
-  ColorCHLAC::extractColorCHLAC( colorCHLAC, voxel );
-  colorCHLAC.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3 );
-  std::vector<float> tmp;
-  ColorCHLAC::extractColorCHLAC_bin( tmp, voxel_bin );
-  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-    colorCHLAC[ t+DIM_COLOR_1_3 ] = tmp[ t ];
+  pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
+  ColorCHLAC::extractColorCHLAC981( colorCHLAC_signature, voxel, 127, 127, 127 );
 
   // save colorCHLAC
-  FILE *fp = fopen( name, "w" );
-  fprintf(fp,"# .PCD v.? - Point Cloud Data file format\n");
-  fprintf(fp,"FIELDS colorCHLAC\n");
-  fprintf(fp,"SIZE 4\n");
-  fprintf(fp,"TYPE F\n");
-  fprintf(fp,"COUNT %d\n",DIM_COLOR_BIN_1_3+DIM_COLOR_1_3);
-  fprintf(fp,"WIDTH 1\n");
-  fprintf(fp,"HEIGHT 1\n");
-  fprintf(fp,"POINTS 1\n");
-  fprintf(fp,"DATA ascii\n");
-  for(int t=0;t<DIM_COLOR_BIN_1_3+DIM_COLOR_1_3;t++)
-    fprintf(fp,"%f ",colorCHLAC[ t ]);
-  fprintf(fp,"\n");
-  fclose(fp);
+  pcl::io::savePCDFileASCII (name, colorCHLAC_signature);
+
   ROS_INFO("ColorCHLAC signatures written to %s", name);
   return 1;
 }
