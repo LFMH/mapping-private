@@ -4,6 +4,8 @@
 #include <vector>
 #include <Eigen3/Eigenvalues>
 
+using namespace Eigen3;
+
 /**********************/
 /* 主成分分析をするクラス */
 /**********************/
@@ -20,13 +22,13 @@ public:
   void solve();
     
   //* 主成分軸のマトリックスの取得
-  const Eigen3::MatrixXf &Axis() const { return axis; }
+  const MatrixXf &Axis() const { return axis; }
 
   //* 固有値を並べたベクトルの取得
-  const Eigen3::VectorXf &Variance() const { return variance; }
+  const VectorXf &Variance() const { return variance; }
 
   //* データの平均ベクトルの取得
-  const Eigen3::VectorXf &Mean() const;
+  const VectorXf &Mean() const;
     
   //* PCAのデータをファイルから読み込み
   void read( const char *filename, bool ascii = false );
@@ -38,13 +40,13 @@ private:
   int dim;               // 特徴次元
   bool mean_flg;         // 自己相関行列から平均値をひくか否かのフラグ
   long long nsample;     // サンプル数
-  Eigen3::VectorXf mean;     // 特徴量の平均
-  Eigen3::MatrixXf correlation;    // 自己相関行列
-  Eigen3::MatrixXf axis;           // 主成分軸
-  Eigen3::VectorXf variance; // 固有値を並べたベクトル
+  VectorXf mean;     // 特徴量の平均
+  MatrixXf correlation;    // 自己相関行列
+  MatrixXf axis;           // 主成分軸
+  VectorXf variance; // 固有値を並べたベクトル
 
 //   //* 固有値の大きい順に固有値と固有ベクトルを並び替える
-//   void sortVecAndVal( Eigen3::MatrixXf &vecs, Eigen3::VectorXf &vals );  
+//   void sortVecAndVal( MatrixXf &vecs, VectorXf &vals );  
 };
 
 #endif

@@ -54,17 +54,17 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   voxel.setVoxelSize( 0.05 );
   voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
   ColorVoxel voxel_bin;
-  cout << endl;
+  //cout << endl;
   voxel_bin = voxel;
-  for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
-  cout << endl;
-  for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
-  cout << endl;
+  //for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
+  //cout << endl;
+  //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
+  //cout << endl;
   voxel_bin.binarize( 127, 127, 127 );
-  for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
-  cout << endl;
-  for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
-  cout << endl;
+  //for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
+  //cout << endl;
+  //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
+  //cout << endl;
 
   // compute colorCHLAC
   std::vector<float> colorCHLAC;

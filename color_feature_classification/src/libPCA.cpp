@@ -16,8 +16,8 @@ PCA::PCA( bool _mean_flg ) :
 void PCA::addData( std::vector<float> &feature ){
   if( dim == -1 ){ // 初期
     dim = feature.size();
-    correlation = Eigen3::MatrixXf::Zero( dim, dim );
-    mean = Eigen3::VectorXf::Zero( dim );
+    correlation = MatrixXf::Zero( dim, dim );
+    mean = VectorXf::Zero( dim );
   }
   else if( feature.size() != (std::vector<float>::size_type)dim ){
     cerr << "ERR (in PCA::addData): vector size differs" << endl;
@@ -62,7 +62,7 @@ void PCA::solve(){
   }
   
   //* 固有値問題を解く
-  Eigen3::SelfAdjointEigenSolver< Eigen3::MatrixXf > pca ( correlation );
+  SelfAdjointEigenSolver< MatrixXf > pca ( correlation );
   axis = pca.eigenvectors();
   variance = pca.eigenvalues();
 
@@ -76,7 +76,7 @@ void PCA::solve(){
 
 //************************
 //* データの平均ベクトルの取得
-inline const Eigen3::VectorXf& PCA::Mean() const {
+inline const VectorXf& PCA::Mean() const {
   if( !mean_flg ){
     cerr << "ERR (in PCA::Mean): There is no mean vector (mean_flg=false)." << endl;
     exit( EXIT_FAILURE );

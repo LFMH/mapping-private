@@ -11,7 +11,6 @@
 #include "color_feature_classification/libPCA.hpp"
 
 using namespace pcl;
-using namespace Eigen3;
 
 // bool vfhExtraction(color_feature_classification::GetHoge::Request &req, color_feature_classification::GetHoge::Response &res){
 //   return(true);
@@ -47,6 +46,7 @@ bool getVFHsignature(pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, std::v
   pcl::PointCloud<pcl::VFHSignature308> vfh_signature;
   vfh.compute(vfh_signature);
   //vfh_vector = vfh_signature.points[0].histogram;
+  if( vfh_vector.size() != 308 ) vfh_vector.resize( 308 );
   for( int i=0; i<308; i++ )
     vfh_vector[i] = vfh_signature.points[0].histogram[i];
 
@@ -78,7 +78,7 @@ bool getColorCHLAC(pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, std::
 //--------------------------------------------------------------------------------------------
 // function3
 
-int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 6, int metric = 7, double thresh = DBL_MAX ){
+int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
   string kdtree_idx_file_name, training_data_h5_file_name, training_data_list_file_name;
 
   if( feature_type == 'v' ){
@@ -122,17 +122,30 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
   }
   else
   {
-    flann::Index<float> index (data, flann::SavedIndexParams ("kdtree.idx"));
+    flann::Index<float> index (data, flann::SavedIndexParams (kdtree_idx_file_name));
     index.buildIndex ();
     nearestKSearch (index, feature, k, k_indices, k_distances);
   }
 
   // Output the results on screen
-  print_highlight ("The closest %d neighbors for %s are:\n", k, feature.first);
+  print_highlight ("The closest %d neighbors for %s are:\n", k, feature.first.c_str() );
   for (int i = 0; i < k; ++i)
     print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
-
+  
   // Visualize the results
+  if( feature_type == 'c' ){
+    for( int m = 0; m < (int)models.size(); m++ ){
+      int len = models[ m ].first.length();
+      models[ m ].first[ len - 14 ] = 'v';
+      models[ m ].first[ len - 13 ] = 'f';
+      models[ m ].first[ len - 12 ] = 'h';
+      models[ m ].first[ len - 11 ] = '.';
+      models[ m ].first[ len - 10 ] = 'p';
+      models[ m ].first[ len - 9 ] = 'c';
+      models[ m ].first[ len - 8 ] = 'd';
+      models[ m ].first[ len - 7 ] = '\0';
+    }
+  }
   visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
 
   return(1);
@@ -141,18 +154,17 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
 //--------------------------------------------------------------------------------------------
 // function4
 
-int classify_by_subspace( vfh_model feature, const char feature_type, int argc, char** argv ){
+int classify_by_subspace( vfh_model feature, const char feature_type, int argc, char** argv, int dim_feature ){
   char dirname[ 300 ];
   char filename[ 300 ];
   Map<VectorXf> vec( &(feature.second[0]), feature.second.size() );
-  int dim_feature;
 
   if( feature_type == 'v' ){
-    dim_feature = 308;
+    if( dim_feature == -1 ) dim_feature = 308;
     sprintf( dirname, "pca_result_vfh" );
   }
   else if( feature_type == 'c' ){
-    dim_feature = 981;
+    if( dim_feature == -1 ) dim_feature = 981;
     sprintf( dirname, "pca_result_colorCHLAC" );
   }
   else{
@@ -166,7 +178,6 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
   if( fscanf( fp, "class_num: %d\n", &obj_class_num ) != 1 ) return -1;
   if( fscanf( fp, "dim: %d\n", &dim_subspace ) != 1 ) return -1;
   fclose( fp );
-
   // calc similarity
   PCA pca;
   int class_num = -1;
@@ -174,24 +185,42 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
-    //float sum = vec.transpose() * vec;
+    //float sum = vec.dot( vec );
+//     for( int t=0; t<981;t++ )
+//       printf("%f ",vec[t]);
     MatrixXf tmpMat = pca.Axis();
-    tmpMat.resize( dim_feature, dim_subspace );
-    VectorXf tmpVec = tmpMat.transpose() * vec;
-    const float dot = tmpVec.transpose() * tmpVec;
+    MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
+    VectorXf tmpVec = tmpMat2.transpose() * vec;
+    const float dot = tmpVec.dot( tmpVec );
     if( dot > dot_max ){
       dot_max = dot;
       class_num = i;
     }
   }
+  //cout << class_num << endl;
   return class_num;
+}
+
+void compressFeature( string filename, vfh_model &feature, const int dim, bool ascii ){
+  PCA pca;
+  pca.read( filename.c_str(), ascii );
+  MatrixXf tmpMat = pca.Axis();
+  MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
+  Map<VectorXf> vec( &(feature.second[0]), feature.second.size() );
+  //vec = tmpMat2.transpose() * vec;
+  VectorXf tmpvec = tmpMat2.transpose() * vec;
+  feature.second.resize( dim );
+  for( int t=0; t<dim; t++ )
+    feature.second[t] = tmpvec[t];
 }
 
 //--------------------------------------------------------------------------------------------
 int main( int argc, char** argv ){
   //ros::init( argc, argv, "test" );
-  if( argc != 4 ){
-    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(v or c)} {classifier_initial(k or s)}\n", argv[0]);
+  if( argc < 4 ){
+    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(v or c)} {classifier_initial(k or s)} [options]\n", argv[0]);
+    ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
+    ROS_INFO ("                          -comp filename = name of compress_axis file\n");
     return(-1);
   }
   const char feature_type = argv[2][0];
@@ -230,6 +259,20 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Unknown feature type.\n");
     return(-1);
   }
+  ROS_INFO ("Input feature vector extracted.\n");
+
+  //--------------------------------------------------
+  //* Compress the dimension of the vector (if needed)
+  int dim = -1;
+  if( parse_argument (argc, argv, "-dim", dim) > 0 ){
+    if ((dim < 0)||(dim >= (int)feature.second.size())){
+      print_error ("Invalid dimension (%d)!\n", dim);
+      return (-1);
+    }
+    string filename;
+    parse_argument (argc, argv, "-comp", filename);
+    compressFeature( filename, feature, dim, false );
+  }
 
   //--------------
   //* classifier
@@ -239,7 +282,7 @@ int main( int argc, char** argv ){
   }
   else if( classifier_type == 's' ){
     //* classifier - SubspaceMethod -
-    classify_by_subspace( feature, feature_type, argc, argv );
+    classify_by_subspace( feature, feature_type, argc, argv, dim );
   }
   else{
     ROS_ERROR ("Unknown classifier type.\n");
