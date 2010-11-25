@@ -6,47 +6,45 @@
 
 using namespace Eigen3;
 
-/**********************/
-/* 主成分分析をするクラス */
-/**********************/
+/*****************/
+/* class for PCA */
+/*****************/
 
 class PCA{
 public:
-  PCA( bool _mean_flg = true ); // 自己相関行列からサンプル平均値をひかない場合はfalseに
+  PCA( bool _mean_flg = true ); // _mean_flg should be "true" when you substract the mean vector from the correlation matrix
+  
   ~PCA(){}
-
-  //* 特徴ベクトルを読み込みながら自己相関行列を計算していく
+  
+  //* add feature vectors to the correlation matrix one by one
   void addData( std::vector<float> &feature );
 
-  //* 主成分分析を行う
+  //* solve PCA
   void solve();
     
-  //* 主成分軸のマトリックスの取得
+  //* get eigen vectors
   const MatrixXf &Axis() const { return axis; }
 
-  //* 固有値を並べたベクトルの取得
+  //* get eigen values
   const VectorXf &Variance() const { return variance; }
 
-  //* データの平均ベクトルの取得
+  //* get the mean vector of feature vectors
   const VectorXf &Mean() const;
     
-  //* PCAのデータをファイルから読み込み
+  //* read PCA file
   void read( const char *filename, bool ascii = false );
 
-  //* PCAのデータをファイルに出力
+  //* write PCA file
   void write( const char *filename, bool ascii = false );
     
 private:
-  int dim;               // 特徴次元
-  bool mean_flg;         // 自己相関行列から平均値をひくか否かのフラグ
-  long long nsample;     // サンプル数
-  VectorXf mean;     // 特徴量の平均
-  MatrixXf correlation;    // 自己相関行列
-  MatrixXf axis;           // 主成分軸
-  VectorXf variance; // 固有値を並べたベクトル
-
-//   //* 固有値の大きい順に固有値と固有ベクトルを並び替える
-//   void sortVecAndVal( MatrixXf &vecs, VectorXf &vals );  
+  int dim;              // dimension of feature vectors
+  bool mean_flg;        // "true" when you substract the mean vector from the correlation matrix
+  long long nsample;    // number of feature vectors
+  VectorXf mean;        // mean vector of feature vectors
+  MatrixXf correlation; // self correlation matrix
+  MatrixXf axis;        // eigen vectors
+  VectorXf variance;    // eigen values
 };
 
 #endif

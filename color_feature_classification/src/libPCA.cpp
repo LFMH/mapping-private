@@ -11,10 +11,10 @@ PCA::PCA( bool _mean_flg ) :
   nsample(0) {
 }
 
-//*********************************************
-//* 特徴ベクトルを読み込みながら自己相関行列を計算していく
+//***********************************************************
+//* add feature vectors to the correlation matrix one by one
 void PCA::addData( std::vector<float> &feature ){
-  if( dim == -1 ){ // 初期
+  if( dim == -1 ){ // initial value
     dim = feature.size();
     correlation = MatrixXf::Zero( dim, dim );
     mean = VectorXf::Zero( dim );
@@ -36,8 +36,8 @@ void PCA::addData( std::vector<float> &feature ){
   nsample++;
 }
 
-//***************
-//* 主成分分析を行う
+//************
+//* solve PCA
 void PCA::solve(){
   if( dim==-1 ){
     cerr << "ERR (in PCA::solve): there is no data" << endl;
@@ -61,21 +61,14 @@ void PCA::solve(){
     correlation -= mean * mean.transpose();
   }
   
-  //* 固有値問題を解く
+  //* solve eigen problem
   SelfAdjointEigenSolver< MatrixXf > pca ( correlation );
   axis = pca.eigenvectors();
   variance = pca.eigenvalues();
-
-//   //* 結果を受けとる
-//   Matrix tmp_vectors = real( eig.eigenvectors() );
-//   std::vector<float> tmp_values = real( eig.eigenvalues() );
-  
-//   //* 固有値を大きい順に
-//   sortVecAndVal( tmp_vectors, tmp_values );  
 }
 
-//************************
-//* データの平均ベクトルの取得
+//*****************************************
+//* get the mean vector of feature vectors
 inline const VectorXf& PCA::Mean() const {
   if( !mean_flg ){
     cerr << "ERR (in PCA::Mean): There is no mean vector (mean_flg=false)." << endl;
@@ -84,8 +77,8 @@ inline const VectorXf& PCA::Mean() const {
   return mean;
 }
 
-//*******************
-//* ファイルから読み込み
+//****************
+//* read PCA file
 void PCA::read( const char *filename, bool ascii )
 {
   FILE *fp;
@@ -96,21 +89,21 @@ void PCA::read( const char *filename, bool ascii )
     fp = fopen( filename, "rb" );
 
   if( ascii ){
-    //* 特徴次元
+    //* dimension of feature vectors
     if( fscanf( fp, "%d\n", &dim ) != 1 ) cerr << "fscanf err." << endl;
 
-    //* 主成分軸のマトリックス
+    //* eigen vectors
     axis.resize( dim, dim );
     for( int i=0; i<dim; i++ )
       for( int j=0; j<dim; j++ )
 	if( fscanf( fp, "%f ", &( axis( j, i ) ) ) != 1 ) cerr << "fscanf err." << endl;
     
-    //* 固有値を並べたベクトル
+    //* eigen values
     variance.resize( dim );
     for( int i=0; i<dim; i++ )
       if( fscanf( fp, "%f\n", &( variance( i ) ) ) != 1 ) cerr << "fscanf err." << endl;
 
-    //* データの平均ベクトル
+    //* mean vector of feature vectors
     float tmpVal;
     if( fscanf( fp, "%f\n", &tmpVal ) != 1 ){
       mean_flg = false;
@@ -123,21 +116,21 @@ void PCA::read( const char *filename, bool ascii )
 	if( fscanf( fp, "%f\n", &( mean( i ) ) ) != 1 ) cerr << "fscanf err." << endl;
     }
   }else{
-    //* 特徴次元
+    //* dimension of feature vectors
     if( fread( &dim, sizeof(int), 1, fp ) != 1 ) cerr << "fread err." << endl;
 
-    //* 主成分軸のマトリックス
+    //* eigen vectors
     axis.resize( dim, dim );
     for( int i=0; i<dim; i++ )
       for( int j=0; j<dim; j++ )
 	if( fread( &( axis( j, i ) ), sizeof(float), 1, fp ) != 1 ) cerr << "fread err." << endl;
 
-    //* 固有値を並べたベクトル
+    //* eigen values
     variance.resize( dim );
     for( int i=0; i<dim; i++ )
       if( fread( &( variance( i ) ), sizeof(float), 1, fp ) != 1 ) cerr << "fread err." << endl;
 
-    //* データの平均ベクトル
+    //* mean vector of feature vectors
     float tmpVal;
     if( fread( &tmpVal, sizeof(float), 1, fp ) != 1 ){
       mean_flg = false;
@@ -156,7 +149,7 @@ void PCA::read( const char *filename, bool ascii )
 
 
 //*****************
-//* ファイルへ書き出し
+//* write PCA file
 void PCA::write( const char *filename, bool ascii )
 { 
   const int dim = variance.size();
@@ -168,79 +161,43 @@ void PCA::write( const char *filename, bool ascii )
     fp = fopen( filename, "wb" );
 
   if( ascii ){
-    //* 特徴次元
+    //* dimension of feature vectors
     fprintf( fp, "%d\n", dim );
 
-    //* 主成分軸のマトリックス
+    //* eigen vectors
     for( int i=0; i<dim; i++ ){
       for( int j=0; j<dim; j++ )
 	fprintf( fp, "%f ", axis( j, i ) );
       fprintf( fp, "\n" );
     }
 
-    //* 固有値を並べたベクトル
+    //* eigen values
     for( int i=0; i<dim; i++ )
       fprintf( fp, "%f\n", variance( i ) );
 
     if( mean_flg )
-      //* データの平均ベクトル
+      //* mean vector of feature vectors
       for( int i=0; i<dim; i++ )
 	fprintf( fp, "%f\n", mean( i ) );
 
   }else{
-    //* 特徴次元
+    //* dimension of feature vectors
     fwrite( &dim, sizeof(int), 1, fp );
 
-    //* 主成分軸のマトリックス
+    //* eigen vectors
     for( int i=0; i<dim; i++ )
       for( int j=0; j<dim; j++ )
 	fwrite( &( axis( j, i ) ), sizeof(float), 1, fp );
 
-    //* 固有値を並べたベクトル
+    //* eigen values
     for( int i=0; i<dim; i++ )
       fwrite( &( variance( i ) ), sizeof(float), 1, fp );
 
     if( mean_flg )
-      //* データの平均ベクトル
+      //* mean vector of feature vectors
       for( int i=0; i<dim; i++ )
 	fwrite( &( mean( i ) ), sizeof(float), 1, fp );
   }
   
   fclose( fp );
 }
-
-//**************//
-//* private関数 *//
-//**************//
-
-// //*******************************************
-// //* 固有値の大きい順に固有値と固有ベクトルを並び替える
-// void PCA::sortVecAndVal( Matrix &vecs, std::vector<float> &vals ){
-//   int *index = new int[ dim ];
-//   for( int i = 0; i < dim; i++ )
-//     index[ i ] = i;
-
-//   //* 並び替え
-//   int tmpIndex;
-//   for( int i = 0; i < dim; i++ ){
-//     for( int j = 1; j < dim - i; j++ ){
-//       if( vals( index[ j - 1 ] ) < vals( index[ j ] ) ){
-// 	tmpIndex       = index[ j ];
-// 	index[ j ]     = index[ j - 1 ];
-// 	index[ j - 1 ] = tmpIndex;
-//       }
-//     }
-//   }
-  
-//   //* 軸と分散の取得
-//   axis.resize( dim, dim );
-//   variance.resize( dim );
-//   for( int i = 0; i < dim; i++ ){
-//     variance( i ) = vals( index[ i ] );
-//     for( int j = 0; j < dim; j++ )
-//       axis( j, i ) = vecs( j, index[ i ] );
-//   }
-
-//   //* メモリ解放
-//   delete[] index;  
-// }
