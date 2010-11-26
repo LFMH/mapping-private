@@ -62,7 +62,7 @@ double Registration::RigidTransformSVD (const boost::shared_ptr<const sensor_msg
     A(i, 4) = normal_y;
     A(i, 5) = normal_z;
   }
-  Eigen3::SVD<Eigen3::MatrixXd> svd = A.svd();
+  Eigen3::JacobiSVD<Eigen3::MatrixXd> svd (A, Eigen3::ComputeFullU | Eigen3::ComputeFullV);
 
   const Eigen3::MatrixXd U = svd.matrixU();
   const Eigen3::MatrixXd V = svd.matrixV();
