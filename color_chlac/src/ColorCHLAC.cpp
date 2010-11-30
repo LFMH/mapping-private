@@ -20,6 +20,18 @@ void ColorCHLAC::extractColorCHLAC981( pcl::PointCloud<pcl::ColorCHLACSignature9
     result.points[0].histogram[ t+DIM_COLOR_1_3 ] = tmp_result[ t ];
 }
 
+//****************************************************************************
+//* feature extraction (both RGB and RGB-binalized. 981(=495+486) dimension.)
+void ColorCHLAC::extractColorCHLAC981( std::vector<float> &result, ColorVoxel &voxel, const unsigned char thR, const unsigned char thG, const unsigned char thB ){
+  extractColorCHLAC( result, voxel );
+  result.resize( DIM_COLOR_BIN_1_3+DIM_COLOR_1_3 );
+  voxel.binarize( thR, thG, thB );
+  std::vector<float> tmp_result;
+  extractColorCHLAC_bin( tmp_result, voxel );
+  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
+    result[ t+DIM_COLOR_1_3 ] = tmp_result[ t ];
+}
+
 //********************************************
 //* feature extraction (without RGB binalize)
 void ColorCHLAC::extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel ){

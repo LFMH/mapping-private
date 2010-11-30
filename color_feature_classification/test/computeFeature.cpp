@@ -60,7 +60,12 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   //cout << endl;
   //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
   //cout << endl;
-  voxel_bin.binarize( 127, 127, 127 );
+
+  int thR, thG, thB;
+  FILE *fp = fopen( "color_threshold.txt", "r" );
+  fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
+  fclose(fp);
+  voxel_bin.binarize( thR, thG, thB );
   //for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
   //cout << endl;
   //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
@@ -76,7 +81,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
     colorCHLAC[ t+DIM_COLOR_1_3 ] = tmp[ t ];
 
   // save colorCHLAC
-  FILE *fp = fopen( name, "w" );
+  fp = fopen( name, "w" );
   fprintf(fp,"# .PCD v.? - Point Cloud Data file format\n");
   fprintf(fp,"FIELDS colorCHLAC\n");
   fprintf(fp,"SIZE 4\n");

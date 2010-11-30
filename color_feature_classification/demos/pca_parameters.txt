@@ -1,2 +1,2 @@
-class_num: 1
-dim: 50
+class_num: 4
+dim: 6

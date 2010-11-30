@@ -62,7 +62,11 @@ bool getColorCHLAC(pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, std::
   voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
   ColorVoxel voxel_bin;
   voxel_bin = voxel;
-  voxel_bin.binarize( 127, 127, 127 );
+  int thR, thG, thB;
+  FILE *fp = fopen( "color_threshold.txt", "r" );
+  fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
+  fclose(fp);
+  voxel_bin.binarize( thR, thG, thB );
 
   // compute colorCHLAC
   ColorCHLAC::extractColorCHLAC( colorCHLAC, voxel );
@@ -197,7 +201,7 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
       class_num = i;
     }
   }
-  //cout << class_num << endl;
+  cout << class_num << " " << dot_max << endl;
   return class_num;
 }
 

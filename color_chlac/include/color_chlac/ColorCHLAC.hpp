@@ -25,6 +25,9 @@ public:
   //* feature extraction (both RGB and RGB-binalized. 981(=495+486) dimension.)
   static void extractColorCHLAC981( pcl::PointCloud<pcl::ColorCHLACSignature981> &result, ColorVoxel &voxel, const unsigned char thR, const unsigned char thG, const unsigned char thB );
 
+  //* feature extraction (both RGB and RGB-binalized. 981(=495+486) dimension.)
+  static void extractColorCHLAC981( std::vector<float> &result, ColorVoxel &voxel, const unsigned char thR, const unsigned char thG, const unsigned char thB );
+
   //* feature extraction (without RGB binalize)
   static void extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel );
   static void extractColorCHLAC( std::vector<float> &result, ColorVoxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );
