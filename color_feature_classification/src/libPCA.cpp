@@ -38,7 +38,7 @@ void PCA::addData( std::vector<float> &feature ){
 
 //************
 //* solve PCA
-void PCA::solve(){
+void PCA::solve( bool regularization_flg, float regularization_nolm ){
   if( dim==-1 ){
     cerr << "ERR (in PCA::solve): there is no data" << endl;
     exit( EXIT_FAILURE );
@@ -60,6 +60,10 @@ void PCA::solve(){
       mean(i) *= inv_nsample;    
     correlation -= mean * mean.transpose();
   }
+
+  if( regularization_flg )
+    for(int i = 0; i < dim; i++ )
+      correlation( i, i ) += regularization_nolm;
   
   //* solve eigen problem
   SelfAdjointEigenSolver< MatrixXf > pca ( correlation );

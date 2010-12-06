@@ -186,10 +186,10 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
   PCA pca;
   int class_num = -1;
   float dot_max = 0;
+  float sum = vec.dot( vec );
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
-    //float sum = vec.dot( vec );
 //     for( int t=0; t<981;t++ )
 //       printf("%f ",vec[t]);
     MatrixXf tmpMat = pca.Axis();
@@ -201,7 +201,7 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
       class_num = i;
     }
   }
-  cout << class_num << " " << dot_max << endl;
+  cout << class_num << " " << dot_max / sum << endl;
   return class_num;
 }
 

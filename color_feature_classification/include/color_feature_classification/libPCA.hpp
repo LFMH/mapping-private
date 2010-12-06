@@ -20,7 +20,7 @@ public:
   void addData( std::vector<float> &feature );
 
   //* solve PCA
-  void solve();
+  void solve( bool regularization_flg = false, float regularization_nolm = 0.0001 );
     
   //* get eigen vectors
   const MatrixXf &Axis() const { return axis; }

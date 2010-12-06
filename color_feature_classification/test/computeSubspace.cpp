@@ -9,6 +9,9 @@ using namespace pcl;
 using namespace terminal_tools;
 using vfh_cluster_classifier::vfh_model;
 
+//#define TEST_COLOR_CHLAC
+#define SMALL_SAMPLES_FLG true
+
 ////////////////////////////////////////////////////////////////////////////////
 /** \brief Load a set of VFH features that will act as the model (training data)
   * \param argc the number of arguments (pass from main ())
@@ -33,6 +36,7 @@ void
     {
       // Load the histogram model and saves it into the global list of models
       vfh_model m;
+
       if (!vfh_cluster_classifier::loadHist (argv[i], m)){
 	m.first = argv[i];
 	m.second.resize( DIM_COLOR_BIN_1_3+DIM_COLOR_1_3 );
@@ -47,6 +51,71 @@ void
       }
       print_highlight ("Loading %s (%zu models loaded so far).\n", argv[i], models.size ());
       models.push_back (m);
+
+#ifdef TEST_COLOR_CHLAC
+      vfh_model m_rotate; m.first = argv[i];
+      vfh_model m_rotate_pre = m;
+      vfh_model m_rotate_pre2; m_rotate_pre2.first = argv[i];
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 1 - 3
+	m_rotate_pre = m_rotate;
+      }
+
+      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_3);
+      models.push_back ( m_rotate ); // 4
+      m_rotate_pre  = m_rotate;
+      m_rotate_pre2 = m_rotate;
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 5 - 7
+	m_rotate_pre = m_rotate;
+      }
+
+      ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
+      models.push_back ( m_rotate ); // 8
+      m_rotate_pre = m_rotate;
+      m_rotate_pre2 = m_rotate;
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 9 - 11
+	m_rotate_pre = m_rotate;
+      }
+
+      ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
+      models.push_back ( m_rotate ); // 12
+      m_rotate_pre = m_rotate;
+      //m_rotate_pre2 = m_rotate;
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 13 - 15
+	m_rotate_pre = m_rotate;
+      }
+      
+      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_1);
+      models.push_back ( m_rotate ); // 16
+      m_rotate_pre = m_rotate;
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 17 - 19
+	m_rotate_pre = m_rotate;
+      }
+
+      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_4);
+      models.push_back ( m_rotate ); // 20
+      m_rotate_pre = m_rotate;
+
+      for(int t=0;t<3;t++){
+	ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+	models.push_back ( m_rotate ); // 21 - 23
+	m_rotate_pre = m_rotate;
+      }
+#endif
     }
   }
 }
@@ -73,7 +142,7 @@ void computeSubspace( std::vector<vfh_model> models, const char* filename, bool 
   const int num = (int)models.size();
   for( int i=0; i<num; i++ )
     pca.addData( models[ i ].second );
-  pca.solve();  
+  pca.solve( SMALL_SAMPLES_FLG );  
   pca.write( filename, ascii );
 }
 

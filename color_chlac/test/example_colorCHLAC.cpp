@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <pcl/features/feature.h>
@@ -6,6 +7,15 @@
 #include "color_chlac/ColorVoxel.hpp"
 
 using namespace pcl;
+
+//* time
+double t1,t2;
+double my_clock()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec + (double)tv.tv_usec*1e-6;
+}
 
 template <typename T>
 bool readPoints( const char *name, T& cloud_object_cluster ){
@@ -20,7 +30,7 @@ bool readPoints( const char *name, T& cloud_object_cluster ){
 bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster ){
   // compute voxel
   ColorVoxel voxel;
-  voxel.setVoxelSize( 0.05 );
+  voxel.setVoxelSize( 0.01 );
   //new
   //  voxel.points2voxel( cloud_object_cluster, TRIGONOMETRIC );
   //old
@@ -28,7 +38,10 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
 
   // compute colorCHLAC
   pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
+  t1 = my_clock();
   ColorCHLAC::extractColorCHLAC981( colorCHLAC_signature, voxel, 127, 127, 127 );
+  t2 = my_clock();
+  ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
 
   // save colorCHLAC
   pcl::io::savePCDFileASCII (name, colorCHLAC_signature);
