@@ -73,7 +73,7 @@ void PCA::solve( bool regularization_flg, float regularization_nolm ){
 
 //*****************************************
 //* get the mean vector of feature vectors
-inline const VectorXf& PCA::Mean() const {
+const VectorXf& PCA::Mean() const {
   if( !mean_flg ){
     cerr << "ERR (in PCA::Mean): There is no mean vector (mean_flg=false)." << endl;
     exit( EXIT_FAILURE );

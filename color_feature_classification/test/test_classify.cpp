@@ -126,7 +126,7 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
   }
   else
   {
-    flann::Index<float> index (data, flann::SavedIndexParams (kdtree_idx_file_name));
+    flann::Index< flann::L2<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
     index.buildIndex ();
     nearestKSearch (index, feature, k, k_indices, k_distances);
   }
@@ -186,7 +186,7 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
   PCA pca;
   int class_num = -1;
   float dot_max = 0;
-  float sum = vec.dot( vec );
+  float sum, dot;
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
@@ -194,14 +194,24 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
 //       printf("%f ",vec[t]);
     MatrixXf tmpMat = pca.Axis();
     MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
-    VectorXf tmpVec = tmpMat2.transpose() * vec;
-    const float dot = tmpVec.dot( tmpVec );
+    VectorXf tmpVec;
+    if( pca.mean_flg ){
+      //cout << pca.Mean() << endl;
+      VectorXf tmpVec2 = vec-pca.Mean();
+      tmpVec = tmpMat2.transpose() * tmpVec2;
+      sum = tmpVec2.dot( tmpVec2 );
+      dot = tmpVec.dot( tmpVec ) / sum;
+    }
+    else{
+      tmpVec = tmpMat2.transpose() * vec;
+      dot = tmpVec.dot( tmpVec );
+    }
     if( dot > dot_max ){
       dot_max = dot;
       class_num = i;
     }
   }
-  cout << class_num << " " << dot_max / sum << endl;
+  cout << class_num << " " << dot_max << endl;
   return class_num;
 }
 

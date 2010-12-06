@@ -1,6 +1,48 @@
+Index: include/vfh_cluster_classifier/vfh_classifier.h
+===================================================================
+--- include/vfh_cluster_classifier/vfh_classifier.h	(revision 46887)
++++ include/vfh_cluster_classifier/vfh_classifier.h	(working copy)
+@@ -89,7 +89,7 @@
+ 	flann::Matrix<float> data_;
+ 	int knn_;
+ 
+-	flann::Index<float>* index_;
++	flann::Index< flann::L2<float> >* index_;
+ 
+ 
+ 
+Index: src/build_tree.cpp
+===================================================================
+--- src/build_tree.cpp	(revision 46887)
++++ src/build_tree.cpp	(working copy)
+@@ -146,7 +146,7 @@
+   * \param distances the resultant neighbor distances
+   */
+ inline void
+-  nearestKSearch (flann::Index<float> &index, const vfh_model &model, 
++nearestKSearch (flann::Index< flann::L2<float> > &index, const vfh_model &model, 
+                   int k, flann::Matrix<int> &indices, flann::Matrix<float> &distances)
+ {
+   // Query point
+@@ -304,13 +304,13 @@
+   print_error ("Building the kdtree index (%s) for %d elements...\n", kdtree_idx_file_name.c_str (), (int)data.rows);
+   if (linear == 0)
+   {
+-    flann::Index<float> index (data, flann::LinearIndexParams ());
++    flann::Index< flann::L2<float> > index (data, flann::LinearIndexParams ());
+     index.buildIndex ();
+     index.save (kdtree_idx_file_name);
+   }
+   else
+   {
+-    flann::Index<float> index (data, flann::KDTreeIndexParams (4));
++    flann::Index< flann::L2<float> > index (data, flann::KDTreeIndexParams (4));
+     index.buildIndex ();
+     index.save (kdtree_idx_file_name);
+   }
 Index: src/nearest_neighbors.cpp
 ===================================================================
---- src/nearest_neighbors.cpp	(revision 46563)
+--- src/nearest_neighbors.cpp	(revision 46887)
 +++ src/nearest_neighbors.cpp	(working copy)
 @@ -43,99 +43,8 @@
    * model/VFH signature.
@@ -112,6 +154,15 @@ Index: src/nearest_neighbors.cpp
    {
      print_error ("Could not find training data models files %s and %s!\n", training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
      return (-1);
+@@ -254,7 +163,7 @@
+   }
+   else
+   {
+-    flann::Index<float> index (data, flann::SavedIndexParams ("kdtree.idx"));
++    flann::Index< flann::L2<float> > index (data, flann::SavedIndexParams ("kdtree.idx"));
+     index.buildIndex ();
+     nearestKSearch (index, histogram, k, k_indices, k_distances);
+   }
 @@ -264,87 +173,9 @@
    for (int i = 0; i < k; ++i)
      print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
@@ -202,3 +253,16 @@ Index: src/nearest_neighbors.cpp
    return (0);
  }
  /* ]--- */
+Index: src/vfh_classifier.cpp
+===================================================================
+--- src/vfh_classifier.cpp	(revision 46887)
++++ src/vfh_classifier.cpp	(working copy)
+@@ -130,7 +130,7 @@
+ 				training_data_h5_file_name.string().c_str (), training_data_list_file_name.string().c_str ());
+ 
+ 		flann_set_distance_type ((flann_distance_t)7, 0);
+-		index_ =new flann::Index<float>( data_,flann::SavedIndexParams (index_filename.string().c_str()));
++		index_ =new flann::Index< flann::L2<float> >( data_,flann::SavedIndexParams (index_filename.string().c_str()));
+ 		index_->buildIndex ();
+ 	}
+ 

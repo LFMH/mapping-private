@@ -12,6 +12,8 @@ using namespace Eigen3;
 
 class PCA{
 public:
+  bool mean_flg;        // "true" when you substract the mean vector from the correlation matrix
+
   PCA( bool _mean_flg = true ); // _mean_flg should be "true" when you substract the mean vector from the correlation matrix
   
   ~PCA(){}
@@ -39,7 +41,6 @@ public:
     
 private:
   int dim;              // dimension of feature vectors
-  bool mean_flg;        // "true" when you substract the mean vector from the correlation matrix
   long long nsample;    // number of feature vectors
   VectorXf mean;        // mean vector of feature vectors
   MatrixXf correlation; // self correlation matrix

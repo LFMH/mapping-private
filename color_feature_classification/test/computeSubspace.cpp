@@ -9,7 +9,7 @@ using namespace pcl;
 using namespace terminal_tools;
 using vfh_cluster_classifier::vfh_model;
 
-//#define TEST_COLOR_CHLAC
+#define TEST_COLOR_CHLAC
 #define SMALL_SAMPLES_FLG true
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -138,11 +138,15 @@ void compressFeature( string filename, std::vector<vfh_model> &models, const int
 
 void computeSubspace( std::vector<vfh_model> models, const char* filename, bool ascii ){
   cout << models[0].second.size() << endl;
-  PCA pca( false );
+  PCA pca( true );
   const int num = (int)models.size();
   for( int i=0; i<num; i++ )
     pca.addData( models[ i ].second );
-  pca.solve( SMALL_SAMPLES_FLG );  
+#ifdef TEST_COLOR_CHLAC
+  pca.solve();
+#else
+  pca.solve( SMALL_SAMPLES_FLG, 0.1 );  
+#endif
   pca.write( filename, ascii );
 }
 
