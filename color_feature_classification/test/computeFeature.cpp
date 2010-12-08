@@ -41,7 +41,7 @@ bool writeVFHsignature( const char *name, pcl::PointCloud<pcl::PointXYZ> cloud_o
   vfh.compute(vfh_signature);
 
   // save vfh
-  pcl::io::savePCDFileASCII (name, vfh_signature);
+  pcl::io::savePCDFile (name, vfh_signature);
 
   return(1);
 }
@@ -51,7 +51,11 @@ bool writeVFHsignature( const char *name, pcl::PointCloud<pcl::PointXYZ> cloud_o
 bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster ){
   // compute voxel
   ColorVoxel voxel;
-  voxel.setVoxelSize( 0.05 );
+  float voxel_size;
+  FILE *fp = fopen( "voxel_size.txt", "r" );
+  fscanf( fp, "%f\n", &voxel_size );
+  fclose(fp);
+  voxel.setVoxelSize( voxel_size );
   voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
   ColorVoxel voxel_bin;
   //cout << endl;
@@ -62,7 +66,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   //cout << endl;
 
   int thR, thG, thB;
-  FILE *fp = fopen( "color_threshold.txt", "r" );
+  fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
   voxel_bin.binarize( thR, thG, thB );
@@ -102,7 +106,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
 //--------------------------------------------------------------------------------------------
 int main( int argc, char** argv ){
   if( argc != 3 ){
-    ROS_ERROR ("Need two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(v or c)}\n", argv[0]);
+    ROS_ERROR ("Need two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(v or c)} [option]\n", argv[0]);
     return(-1);
   }
   char filename[ 300 ];

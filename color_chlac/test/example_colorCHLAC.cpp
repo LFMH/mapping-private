@@ -44,7 +44,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
 
   // save colorCHLAC
-  pcl::io::savePCDFileASCII (name, colorCHLAC_signature);
+  pcl::io::savePCDFile (name, colorCHLAC_signature);
 
   ROS_INFO("ColorCHLAC signatures written to %s", name);
   return 1;

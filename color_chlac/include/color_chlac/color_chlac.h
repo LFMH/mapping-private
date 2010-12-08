@@ -2,6 +2,7 @@
 #define PCL_COLOR_CHLAC_H_
 
 #include <pcl/features/feature.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 
 namespace pcl
@@ -24,16 +25,40 @@ namespace pcl
       
       inline void setColorThreshold ( int thR, int thG, int thB ){ color_thR = thR; color_thG = thG; color_thB = thB; }
 
+      inline void setVoxelFilter ( pcl::VoxelGrid<PointXYZRGB> grid_ ){ grid = grid_; }
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
       //ColorCHLACEstimation () : voxel_size (0)
       ColorCHLACEstimation () : color_thR (-1), color_thG (-1), color_thB (-1)
       {
         feature_name_ = "ColorCHLACEstimation";
+	relative_coordinates.resize( 13 );
+	int idx = 0;
+	// 0 - 8
+	for( int i=-1; i<2; i++ ){
+	  for( int j=-1; j<2; j++ ){
+	    relative_coordinates[ idx ]( 0 ) = i;
+	    relative_coordinates[ idx ]( 1 ) = j;
+	    relative_coordinates[ idx ]( 2 ) = -1;
+	    idx++;
+	  }
+	}
+	// 9 - 11
+	for( int i=-1; i<2; i++ ){
+	  relative_coordinates[ idx ]( 0 ) = i;
+	  relative_coordinates[ idx ]( 1 ) = -1;
+	  relative_coordinates[ idx ]( 2 ) = 0;
+	  idx++;
+	}
+	// 12
+	relative_coordinates[ idx ]( 0 ) = -1;
+	relative_coordinates[ idx ]( 1 ) = 0;
+	relative_coordinates[ idx ]( 2 ) = 0;
       };
 
     protected:
-      inline void computeColorCHLAC (const pcl::PointCloud<PointXYZRGB> &cloud, const std::vector<int> &indices, PointCloudOut &output, const int center_idx );
+      inline void computeColorCHLAC (const pcl::PointCloud<PointXYZRGB> &cloud, PointCloudOut &output, const int center_idx );
       inline int binarize_r ( int val );
       inline int binarize_g ( int val );
       inline int binarize_b ( int val );
@@ -54,6 +79,8 @@ namespace pcl
       void computeFeature (PointCloudOut &output);
 
     private:
+      pcl::VoxelGrid<PointXYZRGB> grid;
+      std::vector<Eigen3::Vector3i> relative_coordinates;
       int color;
       int center_r;
       int center_g;

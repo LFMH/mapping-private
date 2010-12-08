@@ -10,7 +10,7 @@ using namespace terminal_tools;
 using vfh_cluster_classifier::vfh_model;
 
 #define TEST_COLOR_CHLAC
-#define SMALL_SAMPLES_FLG true
+#define SMALL_SAMPLES_FLG false //true
 
 ////////////////////////////////////////////////////////////////////////////////
 /** \brief Load a set of VFH features that will act as the model (training data)
@@ -138,7 +138,7 @@ void compressFeature( string filename, std::vector<vfh_model> &models, const int
 
 void computeSubspace( std::vector<vfh_model> models, const char* filename, bool ascii ){
   cout << models[0].second.size() << endl;
-  PCA pca( true );
+  PCA pca( false );
   const int num = (int)models.size();
   for( int i=0; i<num; i++ )
     pca.addData( models[ i ].second );

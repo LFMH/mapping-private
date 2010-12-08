@@ -1,6 +1,19 @@
+Index: include/vfh_cluster_classifier/common_io.h
+===================================================================
+--- include/vfh_cluster_classifier/common_io.h	(revision 46927)
++++ include/vfh_cluster_classifier/common_io.h	(working copy)
+@@ -68,7 +68,7 @@
+     try
+     {
+       sensor_msgs::PointCloud2 cloud;
+-      io::loadPCDFileHeader (ss.str (), cloud);
++      io::loadPCDFile (ss.str (), cloud);
+ 
+       vfh_idx = getFieldIndex (cloud, "vfh");
+       if (vfh_idx == -1)
 Index: include/vfh_cluster_classifier/vfh_classifier.h
 ===================================================================
---- include/vfh_cluster_classifier/vfh_classifier.h	(revision 46887)
+--- include/vfh_cluster_classifier/vfh_classifier.h	(revision 46927)
 +++ include/vfh_cluster_classifier/vfh_classifier.h	(working copy)
 @@ -89,7 +89,7 @@
  	flann::Matrix<float> data_;
@@ -13,7 +26,7 @@ Index: include/vfh_cluster_classifier/vfh_classifier.h
  
 Index: src/build_tree.cpp
 ===================================================================
---- src/build_tree.cpp	(revision 46887)
+--- src/build_tree.cpp	(revision 46927)
 +++ src/build_tree.cpp	(working copy)
 @@ -146,7 +146,7 @@
    * \param distances the resultant neighbor distances
@@ -42,7 +55,7 @@ Index: src/build_tree.cpp
    }
 Index: src/nearest_neighbors.cpp
 ===================================================================
---- src/nearest_neighbors.cpp	(revision 46887)
+--- src/nearest_neighbors.cpp	(revision 46927)
 +++ src/nearest_neighbors.cpp	(working copy)
 @@ -43,99 +43,8 @@
    * model/VFH signature.
@@ -255,7 +268,7 @@ Index: src/nearest_neighbors.cpp
  /* ]--- */
 Index: src/vfh_classifier.cpp
 ===================================================================
---- src/vfh_classifier.cpp	(revision 46887)
+--- src/vfh_classifier.cpp	(revision 46927)
 +++ src/vfh_classifier.cpp	(working copy)
 @@ -130,7 +130,7 @@
  				training_data_h5_file_name.string().c_str (), training_data_list_file_name.string().c_str ());

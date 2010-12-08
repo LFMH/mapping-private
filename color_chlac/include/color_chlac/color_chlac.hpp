@@ -1,8 +1,8 @@
-inline int pos( float val ){
-  if( val < -0.5 ) return 0;
-  if( val <  0.5 ) return 1;
-  return 2;
-}
+// inline int pos( float val ){
+//   if( val < -0.5 ) return 0;
+//   if( val <  0.5 ) return 1;
+//   return 2;
+// }
 
 inline int reverse( int val ){
   return 255 - val;
@@ -1291,43 +1291,38 @@ pcl::ColorCHLACEstimation::addColorCHLAC_1_bin ( PointCloudOut &output, int neig
 }
 
 inline void
-pcl::ColorCHLACEstimation::computeColorCHLAC (
-					      const pcl::PointCloud<PointXYZRGB> &cloud, const std::vector<int> &indices,
-					      PointCloudOut &output, const int center_idx )
+pcl::ColorCHLACEstimation::computeColorCHLAC ( const pcl::PointCloud<PointXYZRGB> &cloud,
+					       PointCloudOut &output, const int center_idx )
 {
-  if ( !indices.empty () ){    
-    color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
-    center_r = (0xff0000 & color) >> 16;
-    center_g = (0x00ff00 & color) >> 8;
-    center_b =  0x0000ff & color;
-    center_r_ = reverse( center_r );
-    center_g_ = reverse( center_g );
-    center_b_ = reverse( center_b );
-    center_bin_r = binarize_r( center_r );
-    center_bin_g = binarize_g( center_g );
-    center_bin_b = binarize_b( center_b );
-    addColorCHLAC_0( output );
-    addColorCHLAC_0_bin( output );
+  color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
+  center_r = (0xff0000 & color) >> 16;
+  center_g = (0x00ff00 & color) >> 8;
+  center_b =  0x0000ff & color;
+  center_r_ = reverse( center_r );
+  center_g_ = reverse( center_g );
+  center_b_ = reverse( center_b );
+  center_bin_r = binarize_r( center_r );
+  center_bin_g = binarize_g( center_g );
+  center_bin_b = binarize_b( center_b );
+  addColorCHLAC_0( output );
+  addColorCHLAC_0_bin( output );
 
-    for (size_t i = 0; i < indices.size (); ++i){
-      // Check if the point is invalid
-      if (pcl_isnan (cloud.points[indices[i]].x) || pcl_isnan (cloud.points[indices[i]].y) || pcl_isnan (cloud.points[indices[i]].z))
-	continue;
-      
-      // idx: 0 - 26
-      const int idx = pos( cloud.points[indices[i]].x - cloud.points[center_idx].x ) + 3 * pos( cloud.points[indices[i]].y - cloud.points[center_idx].y ) + 9 * pos( cloud.points[indices[i]].z - cloud.points[center_idx].z );
-      color = *reinterpret_cast<const int*>(&(cloud.points[indices[i]].rgb));
+//   vector<Eigen3::Vector3i> directions;                                          
+//   directions.push_back (Eigen3::Vector3i (0, 0, 1)); 
+//   std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], directions);
+  std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
+
+  for (int i = 0; i < 12; ++i){
+    // Check if the point is invalid
+    if ( neighbors[i]!=-1 ){
+      color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
       const int r = (0xff0000 & color) >> 16;
       const int g = (0x00ff00 & color) >> 8;
       const int b =  0x0000ff & color;
-
-      addColorCHLAC_1 ( output, idx, r, g, b );
-      addColorCHLAC_1_bin ( output, idx, binarize_r(r), binarize_g(g), binarize_b(b) );
+    
+      addColorCHLAC_1 ( output, i, r, g, b );
+      addColorCHLAC_1_bin ( output, i, binarize_r(r), binarize_g(g), binarize_b(b) );
     }
-
-    //     // debug
-    //     for( int t=0; t<27; t++ ) if( (tmp[ t ]!=0)&&(tmp[ t ]!=1) ) printf( "boo! %d\n",tmp[ t ] );
-
   }
 }
 
@@ -1352,11 +1347,6 @@ pcl::ColorCHLACEstimation::computeFeature (PointCloudOut &output)
     return;
   }
 
-  // Allocate enough space to hold the results
-  // \note This resize is irrelevant for a radiusSearch ().
-  std::vector<int> nn_indices (k_);
-  std::vector<float> nn_dists (k_);
-
   // We only output _1_ signature
   output.points.resize (1);
   output.width = 1;
@@ -1368,7 +1358,6 @@ pcl::ColorCHLACEstimation::computeFeature (PointCloudOut &output)
 
   // Iterating over the entire index vector
   for (size_t idx = 0; idx < indices_->size (); ++idx)
-    if (searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
-      computeColorCHLAC (*surface_, nn_indices, output, (*indices_)[idx] );
+    computeColorCHLAC (*surface_, output, (*indices_)[idx] );
   normalizeColorCHLAC( output );
 }

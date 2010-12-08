@@ -58,12 +58,16 @@ bool getVFHsignature(pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, std::v
 bool getColorCHLAC(pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, std::vector<float> &colorCHLAC ){
   // compute voxel
   ColorVoxel voxel;
-  voxel.setVoxelSize( 0.05 );
+  float voxel_size;
+  FILE *fp = fopen( "voxel_size.txt", "r" );
+  fscanf( fp, "%f\n", &voxel_size );
+  fclose(fp);
+  voxel.setVoxelSize( voxel_size );
   voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
   ColorVoxel voxel_bin;
   voxel_bin = voxel;
   int thR, thG, thB;
-  FILE *fp = fopen( "color_threshold.txt", "r" );
+  fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
   voxel_bin.binarize( thR, thG, thB );
@@ -190,6 +194,8 @@ int classify_by_subspace( vfh_model feature, const char feature_type, int argc, 
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
+//     cout << pca.Axis() << endl;
+//     continue;
 //     for( int t=0; t<981;t++ )
 //       printf("%f ",vec[t]);
     MatrixXf tmpMat = pca.Axis();

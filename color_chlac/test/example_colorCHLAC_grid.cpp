@@ -57,15 +57,16 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   grid_.setLeafSize (downsample_leaf_, downsample_leaf_, downsample_leaf_);
 
   grid_.setInputCloud (cloud_);
+  grid_.setSaveLeafLayout(true);
   grid_.filter (cloud_downsampled);
   pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
   cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
   
-  // Transform each point to the center of its nearest voxel
-  pcl::PointCloud<PointXYZRGB> voxel_grid;
-  getVoxelGrid( cloud_downsampled, voxel_grid, downsample_leaf_ );
-  pcl::PointCloud<PointXYZRGB>::ConstPtr voxel_grid_;
-  voxel_grid_.reset (new pcl::PointCloud<PointXYZRGB> (voxel_grid));
+//   // Transform each point to the center of its nearest voxel
+//   pcl::PointCloud<PointXYZRGB> voxel_grid;
+//   getVoxelGrid( cloud_downsampled, voxel_grid, downsample_leaf_ );
+//   pcl::PointCloud<PointXYZRGB>::ConstPtr voxel_grid_;
+//   voxel_grid_.reset (new pcl::PointCloud<PointXYZRGB> (voxel_grid));
 
   // ---[ Compute ColorCHLAC
   pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
@@ -75,12 +76,14 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   colorCHLAC_.setRadiusSearch (1.8);
   colorCHLAC_.setSearchMethod (normals_tree_);
   colorCHLAC_.setColorThreshold( 127, 127, 127 );
-  colorCHLAC_.setInputCloud (voxel_grid_);
+  //colorCHLAC_.setInputCloud (voxel_grid_);
+  colorCHLAC_.setVoxelFilter (grid_);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
-  pcl::io::savePCDFileASCII (name, colorCHLAC_signature);
+  pcl::io::savePCDFile (name, colorCHLAC_signature);
   ROS_INFO("ColorCHLAC signatures written to %s", name);
   
   return 1;

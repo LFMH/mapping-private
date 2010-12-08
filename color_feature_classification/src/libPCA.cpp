@@ -64,7 +64,7 @@ void PCA::solve( bool regularization_flg, float regularization_nolm ){
   if( regularization_flg )
     for(int i = 0; i < dim; i++ )
       correlation( i, i ) += regularization_nolm;
-  
+
   //* solve eigen problem
   SelfAdjointEigenSolver< MatrixXf > pca ( correlation );
   axis = pca.eigenvectors();
