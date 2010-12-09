@@ -6,6 +6,8 @@
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/features/rsd.h"
 
+typedef pcl::KdTree<pcl::PointNormal>::Ptr KdTreePtr;
+
 //* time
 double t1,t2;
 double my_clock()
@@ -21,9 +23,11 @@ int main( int argc, char** argv ){
     return(-1);
   }
 
+  double fixed_radius_search = 0.03;
   // read input cloud
   pcl::PointCloud<pcl::PointNormal> input_cloud;
   pcl::PCDReader reader;
+  pcl::PCDWriter writer;
   reader.read ( argv[1], input_cloud);
 
   // Create the voxel grid
@@ -37,10 +41,21 @@ int main( int argc, char** argv ){
   grid.filter (cloud_downsampled);
   pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud_downsampled_ptr;
   cloud_downsampled_ptr.reset (new pcl::PointCloud<pcl::PointNormal> (cloud_downsampled));
-
+  
 
   // Compute RSD
-  pcl::RadiusSurfaceDescriptor <pcl::PointXYZ, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RadiusSurfaceDescriptor <pcl::PointNormal, pcl::PointNormal, pcl::PrincipalRadiiRSD> rsd;
+  rsd.setInputCloud(cloud_downsampled_ptr);
+  rsd.setSearchSurface(cloud);
+  rsd.setInputNormals(cloud);
+  ROS_INFO("radius search: %f", max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
+  rsd.setRadiusSearch(max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
+  pcl::KdTree<pcl::PointNormal>::Ptr tree2 = boost::make_shared<pcl::KdTreeANN<pcl::PointNormal> > ();
+  tree2->setInputCloud (cloud);
+  rsd.setSearchMethod(tree2);
+  pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
+  rsd.compute(radii);
+  writer.write("radii.pcd", radii, false);
 //   set input cloud - downsampled
 //     set surface - original cloud
 // set normal - set normals
@@ -48,8 +63,5 @@ int main( int argc, char** argv ){
 // computeRSD
   
   // Get rmin/rmax for adjacent 27 voxel
-  
-  
-  // Calculate transition matrix
   return(0);
 }
