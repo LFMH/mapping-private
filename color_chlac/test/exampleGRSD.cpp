@@ -63,5 +63,6 @@ int main( int argc, char** argv ){
 // computeRSD
   
   // Get rmin/rmax for adjacent 27 voxel
+  // Get transition matrix
   return(0);
 }
