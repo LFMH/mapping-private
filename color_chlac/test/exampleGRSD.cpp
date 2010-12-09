@@ -56,13 +56,10 @@ int main( int argc, char** argv ){
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
   rsd.compute(radii);
   writer.write("radii.pcd", radii, false);
-//   set input cloud - downsampled
-//     set surface - original cloud
-// set normal - set normals
-// set k search (to get all points in voxel)
-// computeRSD
   
   // Get rmin/rmax for adjacent 27 voxel
+
+
   // Get transition matrix
   return(0);
 }
