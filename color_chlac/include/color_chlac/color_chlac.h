@@ -5,6 +5,14 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 
+const int DIM_COLOR_1_3 = 495;        // Dimension of feature vector (without RGB binalize)
+const int DIM_COLOR_BIN_1_3 = 486;    // Dimension of feature vector (with RGB binalize)
+const int DIM_COLOR_1_3_ALL = 981;    // = DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3
+const float NORMALIZE_0 = 1/765.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float NORMALIZE_1 = 1/585225.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float NORMALIZE_0_BIN = 1/3.0;  // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+
 namespace pcl
 {
   class ColorCHLACEstimation: public Feature<PointXYZRGB, ColorCHLACSignature981>
@@ -33,28 +41,40 @@ namespace pcl
       ColorCHLACEstimation () : color_thR (-1), color_thG (-1), color_thB (-1)
       {
         feature_name_ = "ColorCHLACEstimation";
-	relative_coordinates.resize( 13 );
+#if 0
+	// 0 - 8
+	for( int i=-1; i<2; i++ )
+	  for( int j=-1; j<2; j++ )
+	    relative_coordinates.push_back (Eigen3::Vector3i (i, j, -1)); 
+	// 9 - 11
+	for( int i=-1; i<2; i++ )
+	  relative_coordinates.push_back (Eigen3::Vector3i (i, -1, 0)); 
+	// 12
+	relative_coordinates.push_back (Eigen3::Vector3i (-1, 0, 0)); 
+#else
+	relative_coordinates.resize(3, 13);
 	int idx = 0;
 	// 0 - 8
 	for( int i=-1; i<2; i++ ){
 	  for( int j=-1; j<2; j++ ){
-	    relative_coordinates[ idx ]( 0 ) = i;
-	    relative_coordinates[ idx ]( 1 ) = j;
-	    relative_coordinates[ idx ]( 2 ) = -1;
+	    relative_coordinates( 0, idx ) = i;
+	    relative_coordinates( 1, idx ) = j;
+	    relative_coordinates( 2, idx ) = -1;
 	    idx++;
 	  }
 	}
 	// 9 - 11
 	for( int i=-1; i<2; i++ ){
-	  relative_coordinates[ idx ]( 0 ) = i;
-	  relative_coordinates[ idx ]( 1 ) = -1;
-	  relative_coordinates[ idx ]( 2 ) = 0;
+	  relative_coordinates( 0, idx ) = i;
+	  relative_coordinates( 1, idx ) = -1;
+	  relative_coordinates( 2, idx ) = 0;
 	  idx++;
 	}
 	// 12
-	relative_coordinates[ idx ]( 0 ) = -1;
-	relative_coordinates[ idx ]( 1 ) = 0;
-	relative_coordinates[ idx ]( 2 ) = 0;
+	relative_coordinates( 0, idx ) = -1;
+	relative_coordinates( 1, idx ) = 0;
+	relative_coordinates( 2, idx ) = 0;
+#endif
       };
 
     protected:
@@ -80,7 +100,7 @@ namespace pcl
 
     private:
       pcl::VoxelGrid<PointXYZRGB> grid;
-      std::vector<Eigen3::Vector3i> relative_coordinates;
+      Eigen3::MatrixXi relative_coordinates;
       int color;
       int center_r;
       int center_g;
@@ -94,10 +114,6 @@ namespace pcl
       int color_thR;
       int color_thG;
       int color_thB;
-
-      //float voxel_size;
-/*       /\** \brief 16-bytes aligned placeholder for the XYZ centroid of a surface patch. *\/ */
-/*       Eigen3::Vector4f xyz_centroid_; */
   };
 }
 

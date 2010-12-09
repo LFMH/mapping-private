@@ -623,7 +623,6 @@ pcl::ColorCHLACEstimation::addColorCHLAC_1 ( PointCloudOut &output, int neighbor
 inline void 
 pcl::ColorCHLACEstimation::addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b )
 {
-  const int shift_dim = 495;
   const int r_ = 1 - r;
   const int g_ = 1 - g;
   const int b_ = 1 - b;
@@ -631,653 +630,653 @@ pcl::ColorCHLACEstimation::addColorCHLAC_1_bin ( PointCloudOut &output, int neig
   switch( neighbor_idx ){
   case 0:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +   6 ] += r;
-      output.points[0].histogram[ shift_dim +  15 ] += r_;
-      output.points[0].histogram[ shift_dim +  24 ] += g;
-      output.points[0].histogram[ shift_dim +  33 ] += g_;
-      output.points[0].histogram[ shift_dim +  42 ] += b;
-      output.points[0].histogram[ shift_dim +  51 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +   6 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  15 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  24 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  33 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  42 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  51 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  84 ] += r;
-      output.points[0].histogram[ shift_dim +  93 ] += r_;
-      output.points[0].histogram[ shift_dim + 102 ] += g;
-      output.points[0].histogram[ shift_dim + 111 ] += g_;
-      output.points[0].histogram[ shift_dim + 120 ] += b;
-      output.points[0].histogram[ shift_dim + 129 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  84 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  93 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 102 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 111 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 120 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 129 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 162 ] += r;
-      output.points[0].histogram[ shift_dim + 171 ] += r_;
-      output.points[0].histogram[ shift_dim + 180 ] += g;
-      output.points[0].histogram[ shift_dim + 189 ] += g_;
-      output.points[0].histogram[ shift_dim + 198 ] += b;
-      output.points[0].histogram[ shift_dim + 207 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 162 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 171 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 180 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 189 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 198 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 207 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 240 ] += r;
-      output.points[0].histogram[ shift_dim + 249 ] += r_;
-      output.points[0].histogram[ shift_dim + 258 ] += g;
-      output.points[0].histogram[ shift_dim + 267 ] += g_;
-      output.points[0].histogram[ shift_dim + 276 ] += b;
-      output.points[0].histogram[ shift_dim + 285 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 240 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 249 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 258 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 267 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 276 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 285 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 318 ] += r;
-      output.points[0].histogram[ shift_dim + 327 ] += r_;
-      output.points[0].histogram[ shift_dim + 336 ] += g;
-      output.points[0].histogram[ shift_dim + 345 ] += g_;
-      output.points[0].histogram[ shift_dim + 354 ] += b;
-      output.points[0].histogram[ shift_dim + 363 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 318 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 327 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 336 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 345 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 354 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 363 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 396 ] += r;
-      output.points[0].histogram[ shift_dim + 405 ] += r_;
-      output.points[0].histogram[ shift_dim + 414 ] += g;
-      output.points[0].histogram[ shift_dim + 423 ] += g_;
-      output.points[0].histogram[ shift_dim + 432 ] += b;
-      output.points[0].histogram[ shift_dim + 441 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 396 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 405 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 414 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 423 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 432 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 441 ] += b_;
     }
     break;
   case 1:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +   7 ] += r;
-      output.points[0].histogram[ shift_dim +  16 ] += r_;
-      output.points[0].histogram[ shift_dim +  25 ] += g;
-      output.points[0].histogram[ shift_dim +  34 ] += g_;
-      output.points[0].histogram[ shift_dim +  43 ] += b;
-      output.points[0].histogram[ shift_dim +  52 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +   7 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  16 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  25 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  34 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  43 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  52 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  85 ] += r;
-      output.points[0].histogram[ shift_dim +  94 ] += r_;
-      output.points[0].histogram[ shift_dim + 103 ] += g;
-      output.points[0].histogram[ shift_dim + 112 ] += g_;
-      output.points[0].histogram[ shift_dim + 121 ] += b;
-      output.points[0].histogram[ shift_dim + 130 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  85 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  94 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 103 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 112 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 121 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 130 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 163 ] += r;
-      output.points[0].histogram[ shift_dim + 172 ] += r_;
-      output.points[0].histogram[ shift_dim + 181 ] += g;
-      output.points[0].histogram[ shift_dim + 190 ] += g_;
-      output.points[0].histogram[ shift_dim + 199 ] += b;
-      output.points[0].histogram[ shift_dim + 208 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 163 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 172 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 181 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 190 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 199 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 208 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 241 ] += r;
-      output.points[0].histogram[ shift_dim + 250 ] += r_;
-      output.points[0].histogram[ shift_dim + 259 ] += g;
-      output.points[0].histogram[ shift_dim + 268 ] += g_;
-      output.points[0].histogram[ shift_dim + 277 ] += b;
-      output.points[0].histogram[ shift_dim + 286 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 241 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 250 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 259 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 268 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 277 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 286 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 319 ] += r;
-      output.points[0].histogram[ shift_dim + 328 ] += r_;
-      output.points[0].histogram[ shift_dim + 337 ] += g;
-      output.points[0].histogram[ shift_dim + 346 ] += g_;
-      output.points[0].histogram[ shift_dim + 355 ] += b;
-      output.points[0].histogram[ shift_dim + 364 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 319 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 328 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 337 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 346 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 355 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 364 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 397 ] += r;
-      output.points[0].histogram[ shift_dim + 406 ] += r_;
-      output.points[0].histogram[ shift_dim + 415 ] += g;
-      output.points[0].histogram[ shift_dim + 424 ] += g_;
-      output.points[0].histogram[ shift_dim + 433 ] += b;
-      output.points[0].histogram[ shift_dim + 442 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 397 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 406 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 415 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 424 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 433 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 442 ] += b_;
     }
     break;
   case 2:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +   8 ] += r;
-      output.points[0].histogram[ shift_dim +  17 ] += r_;
-      output.points[0].histogram[ shift_dim +  26 ] += g;
-      output.points[0].histogram[ shift_dim +  35 ] += g_;
-      output.points[0].histogram[ shift_dim +  44 ] += b;
-      output.points[0].histogram[ shift_dim +  53 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +   8 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  17 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  26 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  35 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  44 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  53 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  86 ] += r;
-      output.points[0].histogram[ shift_dim +  95 ] += r_;
-      output.points[0].histogram[ shift_dim + 104 ] += g;
-      output.points[0].histogram[ shift_dim + 113 ] += g_;
-      output.points[0].histogram[ shift_dim + 122 ] += b;
-      output.points[0].histogram[ shift_dim + 131 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  86 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  95 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 104 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 113 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 122 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 131 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 164 ] += r;
-      output.points[0].histogram[ shift_dim + 173 ] += r_;
-      output.points[0].histogram[ shift_dim + 182 ] += g;
-      output.points[0].histogram[ shift_dim + 191 ] += g_;
-      output.points[0].histogram[ shift_dim + 200 ] += b;
-      output.points[0].histogram[ shift_dim + 209 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 164 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 173 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 182 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 191 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 200 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 209 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 242 ] += r;
-      output.points[0].histogram[ shift_dim + 251 ] += r_;
-      output.points[0].histogram[ shift_dim + 260 ] += g;
-      output.points[0].histogram[ shift_dim + 269 ] += g_;
-      output.points[0].histogram[ shift_dim + 278 ] += b;
-      output.points[0].histogram[ shift_dim + 287 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 242 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 251 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 260 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 269 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 278 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 287 ] += b_;
     }
     if( center_bin_b){
-      output.points[0].histogram[ shift_dim + 320 ] += r;
-      output.points[0].histogram[ shift_dim + 329 ] += r_;
-      output.points[0].histogram[ shift_dim + 338 ] += g;
-      output.points[0].histogram[ shift_dim + 347 ] += g_;
-      output.points[0].histogram[ shift_dim + 356 ] += b;
-      output.points[0].histogram[ shift_dim + 365 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 320 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 329 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 338 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 347 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 356 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 365 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 398 ] += r;
-      output.points[0].histogram[ shift_dim + 407 ] += r_;
-      output.points[0].histogram[ shift_dim + 416 ] += g;
-      output.points[0].histogram[ shift_dim + 425 ] += g_;
-      output.points[0].histogram[ shift_dim + 434 ] += b;
-      output.points[0].histogram[ shift_dim + 443 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 398 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 407 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 416 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 425 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 434 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 443 ] += b_;
     }
 
     break;
   case 3:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +   9 ] += r;
-      output.points[0].histogram[ shift_dim +  18 ] += r_;
-      output.points[0].histogram[ shift_dim +  27 ] += g;
-      output.points[0].histogram[ shift_dim +  36 ] += g_;
-      output.points[0].histogram[ shift_dim +  45 ] += b;
-      output.points[0].histogram[ shift_dim +  54 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +   9 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  18 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  27 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  36 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  45 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  54 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  87 ] += r;
-      output.points[0].histogram[ shift_dim +  96 ] += r_;
-      output.points[0].histogram[ shift_dim + 105 ] += g;
-      output.points[0].histogram[ shift_dim + 114 ] += g_;
-      output.points[0].histogram[ shift_dim + 123 ] += b;
-      output.points[0].histogram[ shift_dim + 132 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  87 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  96 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 105 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 114 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 123 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 132 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 165 ] += r;
-      output.points[0].histogram[ shift_dim + 174 ] += r_;
-      output.points[0].histogram[ shift_dim + 183 ] += g;
-      output.points[0].histogram[ shift_dim + 192 ] += g_;
-      output.points[0].histogram[ shift_dim + 201 ] += b;
-      output.points[0].histogram[ shift_dim + 210 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 165 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 174 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 183 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 192 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 201 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 210 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 243 ] += r;
-      output.points[0].histogram[ shift_dim + 252 ] += r_;
-      output.points[0].histogram[ shift_dim + 261 ] += g;
-      output.points[0].histogram[ shift_dim + 270 ] += g_;
-      output.points[0].histogram[ shift_dim + 279 ] += b;
-      output.points[0].histogram[ shift_dim + 288 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 243 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 252 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 261 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 270 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 279 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 288 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 321 ] += r;
-      output.points[0].histogram[ shift_dim + 330 ] += r_;
-      output.points[0].histogram[ shift_dim + 339 ] += g;
-      output.points[0].histogram[ shift_dim + 348 ] += g_;
-      output.points[0].histogram[ shift_dim + 357 ] += b;
-      output.points[0].histogram[ shift_dim + 366 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 321 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 330 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 339 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 348 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 357 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 366 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 399 ] += r;
-      output.points[0].histogram[ shift_dim + 408 ] += r_;
-      output.points[0].histogram[ shift_dim + 417 ] += g;
-      output.points[0].histogram[ shift_dim + 426 ] += g_;
-      output.points[0].histogram[ shift_dim + 435 ] += b;
-      output.points[0].histogram[ shift_dim + 444 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 399 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 408 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 417 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 426 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 435 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 444 ] += b_;
     }
     break;
   case 4:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  10 ] += r;
-      output.points[0].histogram[ shift_dim +  19 ] += r_;
-      output.points[0].histogram[ shift_dim +  28 ] += g;
-      output.points[0].histogram[ shift_dim +  37 ] += g_;
-      output.points[0].histogram[ shift_dim +  46 ] += b;
-      output.points[0].histogram[ shift_dim +  55 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  10 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  19 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  28 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  37 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  46 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  55 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  88 ] += r;
-      output.points[0].histogram[ shift_dim +  97 ] += r_;
-      output.points[0].histogram[ shift_dim + 106 ] += g;
-      output.points[0].histogram[ shift_dim + 115 ] += g_;
-      output.points[0].histogram[ shift_dim + 124 ] += b;
-      output.points[0].histogram[ shift_dim + 133 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  88 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  97 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 106 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 115 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 124 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 133 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 166 ] += r;
-      output.points[0].histogram[ shift_dim + 175 ] += r_;
-      output.points[0].histogram[ shift_dim + 184 ] += g;
-      output.points[0].histogram[ shift_dim + 193 ] += g_;
-      output.points[0].histogram[ shift_dim + 202 ] += b;
-      output.points[0].histogram[ shift_dim + 211 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 166 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 175 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 184 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 193 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 202 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 211 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 244 ] += r;
-      output.points[0].histogram[ shift_dim + 253 ] += r_;
-      output.points[0].histogram[ shift_dim + 262 ] += g;
-      output.points[0].histogram[ shift_dim + 271 ] += g_;
-      output.points[0].histogram[ shift_dim + 280 ] += b;
-      output.points[0].histogram[ shift_dim + 289 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 244 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 253 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 262 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 271 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 280 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 289 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 322 ] += r;
-      output.points[0].histogram[ shift_dim + 331 ] += r_;
-      output.points[0].histogram[ shift_dim + 340 ] += g;
-      output.points[0].histogram[ shift_dim + 349 ] += g_;
-      output.points[0].histogram[ shift_dim + 358 ] += b;
-      output.points[0].histogram[ shift_dim + 367 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 322 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 331 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 340 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 349 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 358 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 367 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 400 ] += r;
-      output.points[0].histogram[ shift_dim + 409 ] += r_;
-      output.points[0].histogram[ shift_dim + 418 ] += g;
-      output.points[0].histogram[ shift_dim + 427 ] += g_;
-      output.points[0].histogram[ shift_dim + 436 ] += b;
-      output.points[0].histogram[ shift_dim + 445 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 400 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 409 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 418 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 427 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 436 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 445 ] += b_;
     }
     break;
   case 5:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  11 ] += r;
-      output.points[0].histogram[ shift_dim +  20 ] += r_;
-      output.points[0].histogram[ shift_dim +  29 ] += g;
-      output.points[0].histogram[ shift_dim +  38 ] += g_;
-      output.points[0].histogram[ shift_dim +  47 ] += b;
-      output.points[0].histogram[ shift_dim +  56 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  11 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  20 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  29 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  38 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  47 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  56 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  89 ] += r;
-      output.points[0].histogram[ shift_dim +  98 ] += r_;
-      output.points[0].histogram[ shift_dim + 107 ] += g;
-      output.points[0].histogram[ shift_dim + 116 ] += g_;
-      output.points[0].histogram[ shift_dim + 125 ] += b;
-      output.points[0].histogram[ shift_dim + 134 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  89 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  98 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 107 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 116 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 125 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 134 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 167 ] += r;
-      output.points[0].histogram[ shift_dim + 176 ] += r_;
-      output.points[0].histogram[ shift_dim + 185 ] += g;
-      output.points[0].histogram[ shift_dim + 194 ] += g_;
-      output.points[0].histogram[ shift_dim + 203 ] += b;
-      output.points[0].histogram[ shift_dim + 212 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 167 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 176 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 185 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 194 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 203 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 212 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 245 ] += r;
-      output.points[0].histogram[ shift_dim + 254 ] += r_;
-      output.points[0].histogram[ shift_dim + 263 ] += g;
-      output.points[0].histogram[ shift_dim + 272 ] += g_;
-      output.points[0].histogram[ shift_dim + 281 ] += b;
-      output.points[0].histogram[ shift_dim + 290 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 245 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 254 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 263 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 272 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 281 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 290 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 323 ] += r;
-      output.points[0].histogram[ shift_dim + 332 ] += r_;
-      output.points[0].histogram[ shift_dim + 341 ] += g;
-      output.points[0].histogram[ shift_dim + 350 ] += g_;
-      output.points[0].histogram[ shift_dim + 359 ] += b;
-      output.points[0].histogram[ shift_dim + 368 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 323 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 332 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 341 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 350 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 359 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 368 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 401 ] += r;
-      output.points[0].histogram[ shift_dim + 410 ] += r_;
-      output.points[0].histogram[ shift_dim + 419 ] += g;
-      output.points[0].histogram[ shift_dim + 428 ] += g_;
-      output.points[0].histogram[ shift_dim + 437 ] += b;
-      output.points[0].histogram[ shift_dim + 446 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 401 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 410 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 419 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 428 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 437 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 446 ] += b_;
     }
     break;
   case 6:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  12 ] += r;
-      output.points[0].histogram[ shift_dim +  21 ] += r_;
-      output.points[0].histogram[ shift_dim +  30 ] += g;
-      output.points[0].histogram[ shift_dim +  39 ] += g_;
-      output.points[0].histogram[ shift_dim +  48 ] += b;
-      output.points[0].histogram[ shift_dim +  57 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  12 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  21 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  30 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  39 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  48 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  57 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  90 ] += r;
-      output.points[0].histogram[ shift_dim +  99 ] += r_;
-      output.points[0].histogram[ shift_dim + 108 ] += g;
-      output.points[0].histogram[ shift_dim + 117 ] += g_;
-      output.points[0].histogram[ shift_dim + 126 ] += b;
-      output.points[0].histogram[ shift_dim + 135 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  90 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  99 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 108 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 117 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 126 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 135 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 168 ] += r;
-      output.points[0].histogram[ shift_dim + 177 ] += r_;
-      output.points[0].histogram[ shift_dim + 186 ] += g;
-      output.points[0].histogram[ shift_dim + 195 ] += g_;
-      output.points[0].histogram[ shift_dim + 204 ] += b;
-      output.points[0].histogram[ shift_dim + 213 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 168 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 177 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 186 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 195 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 204 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 213 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 246 ] += r;
-      output.points[0].histogram[ shift_dim + 255 ] += r_;
-      output.points[0].histogram[ shift_dim + 264 ] += g;
-      output.points[0].histogram[ shift_dim + 273 ] += g_;
-      output.points[0].histogram[ shift_dim + 282 ] += b;
-      output.points[0].histogram[ shift_dim + 291 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 246 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 255 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 264 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 273 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 282 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 291 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 324 ] += r;
-      output.points[0].histogram[ shift_dim + 333 ] += r_;
-      output.points[0].histogram[ shift_dim + 342 ] += g;
-      output.points[0].histogram[ shift_dim + 351 ] += g_;
-      output.points[0].histogram[ shift_dim + 360 ] += b;
-      output.points[0].histogram[ shift_dim + 369 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 324 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 333 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 342 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 351 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 360 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 369 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 402 ] += r;
-      output.points[0].histogram[ shift_dim + 411 ] += r_;
-      output.points[0].histogram[ shift_dim + 420 ] += g;
-      output.points[0].histogram[ shift_dim + 429 ] += g_;
-      output.points[0].histogram[ shift_dim + 438 ] += b;
-      output.points[0].histogram[ shift_dim + 447 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 402 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 411 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 420 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 429 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 438 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 447 ] += b_;
     }
     break;
   case 7:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  13 ] += r;
-      output.points[0].histogram[ shift_dim +  22 ] += r_;
-      output.points[0].histogram[ shift_dim +  31 ] += g;
-      output.points[0].histogram[ shift_dim +  40 ] += g_;
-      output.points[0].histogram[ shift_dim +  49 ] += b;
-      output.points[0].histogram[ shift_dim +  58 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  13 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  22 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  31 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  40 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  49 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  58 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  91 ] += r;
-      output.points[0].histogram[ shift_dim + 100 ] += r_;
-      output.points[0].histogram[ shift_dim + 109 ] += g;
-      output.points[0].histogram[ shift_dim + 118 ] += g_;
-      output.points[0].histogram[ shift_dim + 127 ] += b;
-      output.points[0].histogram[ shift_dim + 136 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  91 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 100 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 109 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 118 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 127 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 136 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 169 ] += r;
-      output.points[0].histogram[ shift_dim + 178 ] += r_;
-      output.points[0].histogram[ shift_dim + 187 ] += g;
-      output.points[0].histogram[ shift_dim + 196 ] += g_;
-      output.points[0].histogram[ shift_dim + 205 ] += b;
-      output.points[0].histogram[ shift_dim + 214 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 169 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 178 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 187 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 196 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 205 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 214 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 247 ] += r;
-      output.points[0].histogram[ shift_dim + 256 ] += r_;
-      output.points[0].histogram[ shift_dim + 265 ] += g;
-      output.points[0].histogram[ shift_dim + 274 ] += g_;
-      output.points[0].histogram[ shift_dim + 283 ] += b;
-      output.points[0].histogram[ shift_dim + 292 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 247 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 256 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 265 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 274 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 283 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 292 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 325 ] += r;
-      output.points[0].histogram[ shift_dim + 334 ] += r_;
-      output.points[0].histogram[ shift_dim + 343 ] += g;
-      output.points[0].histogram[ shift_dim + 352 ] += g_;
-      output.points[0].histogram[ shift_dim + 361 ] += b;
-      output.points[0].histogram[ shift_dim + 370 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 325 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 334 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 343 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 352 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 361 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 370 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 403 ] += r;
-      output.points[0].histogram[ shift_dim + 412 ] += r_;
-      output.points[0].histogram[ shift_dim + 421 ] += g;
-      output.points[0].histogram[ shift_dim + 430 ] += g_;
-      output.points[0].histogram[ shift_dim + 439 ] += b;
-      output.points[0].histogram[ shift_dim + 448 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 403 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 412 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 421 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 430 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 439 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 448 ] += b_;
     }
     break;
   case 8:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  14 ] += r;
-      output.points[0].histogram[ shift_dim +  23 ] += r_;
-      output.points[0].histogram[ shift_dim +  32 ] += g;
-      output.points[0].histogram[ shift_dim +  41 ] += g_;
-      output.points[0].histogram[ shift_dim +  50 ] += b;
-      output.points[0].histogram[ shift_dim +  59 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  14 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  23 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  32 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  41 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  50 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  59 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim +  92 ] += r;
-      output.points[0].histogram[ shift_dim + 101 ] += r_;
-      output.points[0].histogram[ shift_dim + 110 ] += g;
-      output.points[0].histogram[ shift_dim + 119 ] += g_;
-      output.points[0].histogram[ shift_dim + 128 ] += b;
-      output.points[0].histogram[ shift_dim + 137 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  92 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 101 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 110 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 119 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 128 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 137 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 170 ] += r;
-      output.points[0].histogram[ shift_dim + 179 ] += r_;
-      output.points[0].histogram[ shift_dim + 188 ] += g;
-      output.points[0].histogram[ shift_dim + 197 ] += g_;
-      output.points[0].histogram[ shift_dim + 206 ] += b;
-      output.points[0].histogram[ shift_dim + 215 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 170 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 179 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 188 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 197 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 206 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 215 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 248 ] += r;
-      output.points[0].histogram[ shift_dim + 257 ] += r_;
-      output.points[0].histogram[ shift_dim + 266 ] += g;
-      output.points[0].histogram[ shift_dim + 275 ] += g_;
-      output.points[0].histogram[ shift_dim + 284 ] += b;
-      output.points[0].histogram[ shift_dim + 293 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 248 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 257 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 266 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 275 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 284 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 293 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 326 ] += r;
-      output.points[0].histogram[ shift_dim + 335 ] += r_;
-      output.points[0].histogram[ shift_dim + 344 ] += g;
-      output.points[0].histogram[ shift_dim + 353 ] += g_;
-      output.points[0].histogram[ shift_dim + 362 ] += b;
-      output.points[0].histogram[ shift_dim + 371 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 326 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 335 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 344 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 353 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 362 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 371 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 404 ] += r;
-      output.points[0].histogram[ shift_dim + 413 ] += r_;
-      output.points[0].histogram[ shift_dim + 422 ] += g;
-      output.points[0].histogram[ shift_dim + 431 ] += g_;
-      output.points[0].histogram[ shift_dim + 440 ] += b;
-      output.points[0].histogram[ shift_dim + 449 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 404 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 413 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 422 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 431 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 440 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 449 ] += b_;
     }
     break;
   case 9:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  60 ] += r;
-      output.points[0].histogram[ shift_dim +  64 ] += r_;
-      output.points[0].histogram[ shift_dim +  68 ] += g;
-      output.points[0].histogram[ shift_dim +  72 ] += g_;
-      output.points[0].histogram[ shift_dim +  76 ] += b;
-      output.points[0].histogram[ shift_dim +  80 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  60 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  64 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  68 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  72 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  76 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  80 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 138 ] += r;
-      output.points[0].histogram[ shift_dim + 142 ] += r_;
-      output.points[0].histogram[ shift_dim + 146 ] += g;
-      output.points[0].histogram[ shift_dim + 150 ] += g_;
-      output.points[0].histogram[ shift_dim + 154 ] += b;
-      output.points[0].histogram[ shift_dim + 158 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 138 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 142 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 146 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 150 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 154 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 158 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 216 ] += r;
-      output.points[0].histogram[ shift_dim + 220 ] += r_;
-      output.points[0].histogram[ shift_dim + 224 ] += g;
-      output.points[0].histogram[ shift_dim + 228 ] += g_;
-      output.points[0].histogram[ shift_dim + 232 ] += b;
-      output.points[0].histogram[ shift_dim + 236 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 216 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 220 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 224 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 228 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 232 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 236 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 294 ] += r;
-      output.points[0].histogram[ shift_dim + 298 ] += r_;
-      output.points[0].histogram[ shift_dim + 302 ] += g;
-      output.points[0].histogram[ shift_dim + 306 ] += g_;
-      output.points[0].histogram[ shift_dim + 310 ] += b;
-      output.points[0].histogram[ shift_dim + 314 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 294 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 298 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 302 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 306 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 310 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 314 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 372 ] += r;
-      output.points[0].histogram[ shift_dim + 376 ] += r_;
-      output.points[0].histogram[ shift_dim + 380 ] += g;
-      output.points[0].histogram[ shift_dim + 384 ] += g_;
-      output.points[0].histogram[ shift_dim + 388 ] += b;
-      output.points[0].histogram[ shift_dim + 392 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 372 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 376 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 380 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 384 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 388 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 392 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 450 ] += r;
-      output.points[0].histogram[ shift_dim + 454 ] += r_;
-      output.points[0].histogram[ shift_dim + 458 ] += g;
-      output.points[0].histogram[ shift_dim + 462 ] += g_;
-      output.points[0].histogram[ shift_dim + 466 ] += b;
-      output.points[0].histogram[ shift_dim + 470 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 450 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 454 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 458 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 462 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 466 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 470 ] += b_;
     }
     break;
   case 10:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  61 ] += r;
-      output.points[0].histogram[ shift_dim +  65 ] += r_;
-      output.points[0].histogram[ shift_dim +  69 ] += g;
-      output.points[0].histogram[ shift_dim +  73 ] += g_;
-      output.points[0].histogram[ shift_dim +  77 ] += b;
-      output.points[0].histogram[ shift_dim +  81 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  61 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  65 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  69 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  73 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  77 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  81 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 139 ] += r;
-      output.points[0].histogram[ shift_dim + 143 ] += r_;
-      output.points[0].histogram[ shift_dim + 147 ] += g;
-      output.points[0].histogram[ shift_dim + 151 ] += g_;
-      output.points[0].histogram[ shift_dim + 155 ] += b;
-      output.points[0].histogram[ shift_dim + 159 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 139 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 143 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 147 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 151 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 155 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 159 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 217 ] += r;
-      output.points[0].histogram[ shift_dim + 221 ] += r_;
-      output.points[0].histogram[ shift_dim + 225 ] += g;
-      output.points[0].histogram[ shift_dim + 229 ] += g_;
-      output.points[0].histogram[ shift_dim + 233 ] += b;
-      output.points[0].histogram[ shift_dim + 237 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 217 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 221 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 225 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 229 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 233 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 237 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 295 ] += r;
-      output.points[0].histogram[ shift_dim + 299 ] += r_;
-      output.points[0].histogram[ shift_dim + 303 ] += g;
-      output.points[0].histogram[ shift_dim + 307 ] += g_;
-      output.points[0].histogram[ shift_dim + 311 ] += b;
-      output.points[0].histogram[ shift_dim + 315 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 295 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 299 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 303 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 307 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 311 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 315 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 373 ] += r;
-      output.points[0].histogram[ shift_dim + 377 ] += r_;
-      output.points[0].histogram[ shift_dim + 381 ] += g;
-      output.points[0].histogram[ shift_dim + 385 ] += g_;
-      output.points[0].histogram[ shift_dim + 389 ] += b;
-      output.points[0].histogram[ shift_dim + 393 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 373 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 377 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 381 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 385 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 389 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 393 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 451 ] += r;
-      output.points[0].histogram[ shift_dim + 455 ] += r_;
-      output.points[0].histogram[ shift_dim + 459 ] += g;
-      output.points[0].histogram[ shift_dim + 463 ] += g_;
-      output.points[0].histogram[ shift_dim + 467 ] += b;
-      output.points[0].histogram[ shift_dim + 471 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 451 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 455 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 459 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 463 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 467 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 471 ] += b_;
     }
     break;
   case 11:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  62 ] += r;
-      output.points[0].histogram[ shift_dim +  66 ] += r_;
-      output.points[0].histogram[ shift_dim +  70 ] += g;
-      output.points[0].histogram[ shift_dim +  74 ] += g_;
-      output.points[0].histogram[ shift_dim +  78 ] += b;
-      output.points[0].histogram[ shift_dim +  82 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  62 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  66 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  70 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  74 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  78 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  82 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 140 ] += r;
-      output.points[0].histogram[ shift_dim + 144 ] += r_;
-      output.points[0].histogram[ shift_dim + 148 ] += g;
-      output.points[0].histogram[ shift_dim + 152 ] += g_;
-      output.points[0].histogram[ shift_dim + 156 ] += b;
-      output.points[0].histogram[ shift_dim + 160 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 140 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 144 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 148 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 152 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 156 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 160 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 218 ] += r;
-      output.points[0].histogram[ shift_dim + 222 ] += r_;
-      output.points[0].histogram[ shift_dim + 226 ] += g;
-      output.points[0].histogram[ shift_dim + 230 ] += g_;
-      output.points[0].histogram[ shift_dim + 234 ] += b;
-      output.points[0].histogram[ shift_dim + 238 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 218 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 222 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 226 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 230 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 234 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 238 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 296 ] += r;
-      output.points[0].histogram[ shift_dim + 300 ] += r_;
-      output.points[0].histogram[ shift_dim + 304 ] += g;
-      output.points[0].histogram[ shift_dim + 308 ] += g_;
-      output.points[0].histogram[ shift_dim + 312 ] += b;
-      output.points[0].histogram[ shift_dim + 316 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 296 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 300 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 304 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 308 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 312 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 316 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 374 ] += r;
-      output.points[0].histogram[ shift_dim + 378 ] += r_;
-      output.points[0].histogram[ shift_dim + 382 ] += g;
-      output.points[0].histogram[ shift_dim + 386 ] += g_;
-      output.points[0].histogram[ shift_dim + 390 ] += b;
-      output.points[0].histogram[ shift_dim + 394 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 374 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 378 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 382 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 386 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 390 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 394 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 452 ] += r;
-      output.points[0].histogram[ shift_dim + 456 ] += r_;
-      output.points[0].histogram[ shift_dim + 460 ] += g;
-      output.points[0].histogram[ shift_dim + 464 ] += g_;
-      output.points[0].histogram[ shift_dim + 468 ] += b;
-      output.points[0].histogram[ shift_dim + 472 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 452 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 456 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 460 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 464 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 468 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 472 ] += b_;
     }
     break;
   case 12:
     if( center_bin_r ){
-      output.points[0].histogram[ shift_dim +  63 ] += r;
-      output.points[0].histogram[ shift_dim +  67 ] += r_;
-      output.points[0].histogram[ shift_dim +  71 ] += g;
-      output.points[0].histogram[ shift_dim +  75 ] += g_;
-      output.points[0].histogram[ shift_dim +  79 ] += b;
-      output.points[0].histogram[ shift_dim +  83 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  63 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  67 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  71 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  75 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  79 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 +  83 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 141 ] += r;
-      output.points[0].histogram[ shift_dim + 145 ] += r_;
-      output.points[0].histogram[ shift_dim + 149 ] += g;
-      output.points[0].histogram[ shift_dim + 153 ] += g_;
-      output.points[0].histogram[ shift_dim + 157 ] += b;
-      output.points[0].histogram[ shift_dim + 161 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 141 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 145 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 149 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 153 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 157 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 161 ] += b_;
     }
     if( center_bin_g ){
-      output.points[0].histogram[ shift_dim + 219 ] += r;
-      output.points[0].histogram[ shift_dim + 223 ] += r_;
-      output.points[0].histogram[ shift_dim + 227 ] += g;
-      output.points[0].histogram[ shift_dim + 231 ] += g_;
-      output.points[0].histogram[ shift_dim + 235 ] += b;
-      output.points[0].histogram[ shift_dim + 239 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 219 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 223 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 227 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 231 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 235 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 239 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 297 ] += r;
-      output.points[0].histogram[ shift_dim + 301 ] += r_;
-      output.points[0].histogram[ shift_dim + 305 ] += g;
-      output.points[0].histogram[ shift_dim + 309 ] += g_;
-      output.points[0].histogram[ shift_dim + 313 ] += b;
-      output.points[0].histogram[ shift_dim + 317 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 297 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 301 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 305 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 309 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 313 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 317 ] += b_;
     }
     if( center_bin_b ){
-      output.points[0].histogram[ shift_dim + 375 ] += r;
-      output.points[0].histogram[ shift_dim + 379 ] += r_;
-      output.points[0].histogram[ shift_dim + 383 ] += g;
-      output.points[0].histogram[ shift_dim + 387 ] += g_;
-      output.points[0].histogram[ shift_dim + 391 ] += b;
-      output.points[0].histogram[ shift_dim + 395 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 375 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 379 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 383 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 387 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 391 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 395 ] += b_;
     }
     else{
-      output.points[0].histogram[ shift_dim + 453 ] += r;
-      output.points[0].histogram[ shift_dim + 457 ] += r_;
-      output.points[0].histogram[ shift_dim + 461 ] += g;
-      output.points[0].histogram[ shift_dim + 465 ] += g_;
-      output.points[0].histogram[ shift_dim + 469 ] += b;
-      output.points[0].histogram[ shift_dim + 473 ] += b_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 453 ] += r;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 457 ] += r_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 461 ] += g;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 465 ] += g_;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 469 ] += b;
+      output.points[0].histogram[ DIM_COLOR_1_3 + 473 ] += b_;
     }
     break;
     //   case 13: // itself
@@ -1307,12 +1306,9 @@ pcl::ColorCHLACEstimation::computeColorCHLAC ( const pcl::PointCloud<PointXYZRGB
   addColorCHLAC_0( output );
   addColorCHLAC_0_bin( output );
 
-//   vector<Eigen3::Vector3i> directions;                                          
-//   directions.push_back (Eigen3::Vector3i (0, 0, 1)); 
-//   std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], directions);
-  std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
+  const std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
 
-  for (int i = 0; i < 12; ++i){
+  for (int i = 0; i < 13; ++i){
     // Check if the point is invalid
     if ( neighbors[i]!=-1 ){
       color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
@@ -1330,20 +1326,20 @@ inline void
 pcl::ColorCHLACEstimation::normalizeColorCHLAC ( PointCloudOut &output )
 {
   for(int i=0; i<6; ++i)
-    output.points[0].histogram[ i ] /= 765.0;
-  for(int i=6; i<495; ++i)
-    output.points[0].histogram[ i ] /= 585225.0;
-  for(int i=495; i<501; ++i)
-    output.points[0].histogram[ i ] /= 3.0;
-  for(int i=501; i<981; ++i)
-    output.points[0].histogram[ i ] /= 9.0;
+    output.points[0].histogram[ i ] *= NORMALIZE_0;
+  for(int i=6; i<DIM_COLOR_1_3; ++i)
+    output.points[0].histogram[ i ] *= NORMALIZE_1;
+  for(int i=DIM_COLOR_1_3; i<501; ++i)
+    output.points[0].histogram[ i ] *= NORMALIZE_0_BIN;
+  for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
+    output.points[0].histogram[ i ] *= NORMALIZE_1_BIN;
 }
 
 inline void
 pcl::ColorCHLACEstimation::computeFeature (PointCloudOut &output)
 {
   if( (color_thR<0)||(color_thG<0)||(color_thB<0) ){
-    std::cerr << "Invalid color_threshold: " << color_thR << " " << color_thG << " " << color_thB << endl;
+    std::cerr << "Invalid color_threshold: " << color_thR << " " << color_thG << " " << color_thB << std::endl;
     return;
   }
 
@@ -1353,7 +1349,7 @@ pcl::ColorCHLACEstimation::computeFeature (PointCloudOut &output)
   output.height = 1;
 
   // initialize histogram
-  for( int t=0; t<981; t++ )
+  for( int t=0; t<DIM_COLOR_1_3_ALL; t++ )
     output.points[0].histogram[t] = 0;
 
   // Iterating over the entire index vector
