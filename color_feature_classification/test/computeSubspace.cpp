@@ -7,6 +7,7 @@
 
 using namespace pcl;
 using namespace terminal_tools;
+using namespace std;
 using vfh_cluster_classifier::vfh_model;
 
 #define TEST_COLOR_CHLAC

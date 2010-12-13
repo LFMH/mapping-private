@@ -3,8 +3,13 @@
 #include <pcl/point_types.h>
 #include <pcl/features/feature.h>
 #include <pcl/io/pcd_io.h>
-#include "color_chlac/ColorCHLAC.hpp"
-#include "color_chlac/ColorVoxel.hpp"
+#include "pcl/features/normal_3d.h"
+#include "pcl/filters/voxel_grid.h"
+#include "pcl/filters/passthrough.h"
+#include "pcl/kdtree/kdtree.h"
+#include "pcl/kdtree/kdtree_ann.h"
+#include "pcl/kdtree/organized_data.h"
+#include "color_chlac/color_chlac.h"
 
 using namespace pcl;
 
@@ -15,6 +20,21 @@ double my_clock()
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return tv.tv_sec + (double)tv.tv_usec*1e-6;
+}
+
+inline void getVoxelGrid ( const pcl::PointCloud<PointXYZRGB> &cloud, pcl::PointCloud<PointXYZRGB> &voxel_grid, const float voxel_size )
+{
+  const float voxel_size_ = 1 / voxel_size;
+  voxel_grid.points.resize ( cloud.size() );
+  voxel_grid.width = cloud.width;
+  voxel_grid.height = cloud.height;
+
+  for (size_t i = 0; i < cloud.size (); ++i){
+    voxel_grid.points[ i ].x = (int)(floor (cloud.points[ i ].x * voxel_size_));
+    voxel_grid.points[ i ].y = (int)(floor (cloud.points[ i ].y * voxel_size_));
+    voxel_grid.points[ i ].z = (int)(floor (cloud.points[ i ].z * voxel_size_));
+    voxel_grid.points[ i ].rgb = cloud.points[ i ].rgb;
+  }
 }
 
 template <typename T>
@@ -28,25 +48,44 @@ bool readPoints( const char *name, T& cloud_object_cluster ){
 }
 
 bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster ){
-  // compute voxel
-  ColorVoxel voxel;
-  voxel.setVoxelSize( 0.01 );
-  //new
-  //  voxel.points2voxel( cloud_object_cluster, TRIGONOMETRIC );
-  //old
-  voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
+  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_ = boost::make_shared<const pcl::PointCloud<PointXYZRGB> > (cloud_object_cluster);
 
-  // compute colorCHLAC
-  pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
+  // ---[ Create the voxel grid
+  pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+  pcl::VoxelGrid<PointXYZRGB> grid_;
+  double downsample_leaf_ = 0.01;                          // 1cm voxel size by default
+  grid_.setLeafSize (downsample_leaf_, downsample_leaf_, downsample_leaf_);
+
+  grid_.setInputCloud (cloud_);
+  grid_.setSaveLeafLayout(true);
+  grid_.filter (cloud_downsampled);
+  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
+  cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
+  
+//   // Transform each point to the center of its nearest voxel
+//   pcl::PointCloud<PointXYZRGB> voxel_grid;
+//   getVoxelGrid( cloud_downsampled, voxel_grid, downsample_leaf_ );
+//   pcl::PointCloud<PointXYZRGB>::ConstPtr voxel_grid_;
+//   voxel_grid_.reset (new pcl::PointCloud<PointXYZRGB> (voxel_grid));
+
+  // ---[ Compute ColorCHLAC
+  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
+  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
+  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeANN<PointXYZRGB> > ();
+
+  colorCHLAC_.setRadiusSearch (1.8);
+  colorCHLAC_.setSearchMethod (normals_tree_);
+  colorCHLAC_.setColorThreshold( 127, 127, 127 );
+  //colorCHLAC_.setInputCloud (voxel_grid_);
+  colorCHLAC_.setVoxelFilter (grid_);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
   t1 = my_clock();
-  ColorCHLAC::extractColorCHLAC981( colorCHLAC_signature, voxel, 127, 127, 127 );
+  colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
-
-  // save colorCHLAC
   pcl::io::savePCDFile (name, colorCHLAC_signature);
-
   ROS_INFO("ColorCHLAC signatures written to %s", name);
+  
   return 1;
 }
 

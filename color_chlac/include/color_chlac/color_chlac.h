@@ -15,25 +15,26 @@ const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-C
 
 namespace pcl
 {
-  class ColorCHLACEstimation: public Feature<PointXYZRGB, ColorCHLACSignature981>
+  template <typename PointT>
+  class ColorCHLACEstimation: public Feature<PointT, ColorCHLACSignature981>
     {
     public:
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::feature_name_;
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::getClassName;
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::indices_;
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::surface_;
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::k_;
-      using Feature<PointXYZRGB, ColorCHLACSignature981>::search_parameter_;
+      using Feature<PointT, ColorCHLACSignature981>::feature_name_;
+      using Feature<PointT, ColorCHLACSignature981>::getClassName;
+      using Feature<PointT, ColorCHLACSignature981>::indices_;
+      using Feature<PointT, ColorCHLACSignature981>::surface_;
+      using Feature<PointT, ColorCHLACSignature981>::k_;
+      using Feature<PointT, ColorCHLACSignature981>::search_parameter_;
 
-      typedef Feature<PointXYZRGB, ColorCHLACSignature981>::PointCloudOut PointCloudOut;
+      typedef typename Feature<PointT, ColorCHLACSignature981>::PointCloudOut PointCloudOut;
 
       //inline void setVoxelSize( float val ){ voxel_size = val; setRadiusSearch (val*1.75); }
       
-/*       inline void getVoxelGrid ( const pcl::PointCloud<PointXYZRGB> &cloud, pcl::PointCloud<PointXYZRGB> &voxel_grid ); */
+/*       inline void getVoxelGrid ( const pcl::PointCloud<PointT> &cloud, pcl::PointCloud<PointT> &voxel_grid ); */
       
       inline void setColorThreshold ( int thR, int thG, int thB ){ color_thR = thR; color_thG = thG; color_thB = thB; }
 
-      inline void setVoxelFilter ( pcl::VoxelGrid<PointXYZRGB> grid_ ){ grid = grid_; }
+      inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ ){ grid = grid_; }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
@@ -78,7 +79,7 @@ namespace pcl
       };
 
     protected:
-      inline void computeColorCHLAC (const pcl::PointCloud<PointXYZRGB> &cloud, PointCloudOut &output, const int center_idx );
+      inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       inline int binarize_r ( int val );
       inline int binarize_g ( int val );
       inline int binarize_b ( int val );
@@ -99,7 +100,7 @@ namespace pcl
       void computeFeature (PointCloudOut &output);
 
     private:
-      pcl::VoxelGrid<PointXYZRGB> grid;
+      pcl::VoxelGrid<PointT> grid;
       Eigen3::MatrixXi relative_coordinates;
       int color;
       int center_r;

@@ -7,6 +7,7 @@
 #include "color_feature_classification/libPCA.hpp"
 
 using namespace pcl;
+using namespace std;
 using namespace terminal_tools;
 using vfh_cluster_classifier::vfh_model;
 
