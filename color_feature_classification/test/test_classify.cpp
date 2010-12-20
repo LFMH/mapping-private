@@ -4,10 +4,11 @@
 #include <pcl/features/feature.h>
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree.h>
 #include <pcl/io/pcd_io.h>
 #include <vfh_cluster_classifier/vfh_nearest_neighbors.h>
-#include <color_chlac/ColorCHLAC.hpp>
-#include <color_chlac/ColorVoxel.hpp>
+#include <color_chlac/color_chlac.h>
 #include "color_feature_classification/libPCA.hpp"
 
 using namespace pcl;
@@ -33,7 +34,7 @@ bool getVFHsignature(pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, std::v
   pcl::PointCloud<pcl::Normal>::Ptr normals = boost::make_shared<pcl::PointCloud<pcl::Normal> >();
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d;
   n3d.setKSearch (30); // have to use the same parameters as during training
-  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeANN<pcl::PointXYZ> > ();
+  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (tree);
   n3d.setInputCloud(cloud_object_cluster.makeShared ());
   n3d.compute(*normals);
@@ -56,29 +57,41 @@ bool getVFHsignature(pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, std::v
 //--------------------------------------------------------------------------------------------
 // function2
 bool getColorCHLAC(pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, std::vector<float> &colorCHLAC ){
-  // compute voxel
-  ColorVoxel voxel;
+  // ---[ Create the voxel grid
+  pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+  pcl::VoxelGrid<PointXYZRGB> grid_;
   float voxel_size;
   FILE *fp = fopen( "voxel_size.txt", "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
-  voxel.setVoxelSize( voxel_size );
-  voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
-  ColorVoxel voxel_bin;
-  voxel_bin = voxel;
+  grid_.setLeafSize (voxel_size, voxel_size, voxel_size);
+
+  grid_.setInputCloud (boost::make_shared<const pcl::PointCloud<PointXYZRGB> > (cloud_object_cluster));
+  grid_.setSaveLeafLayout(true);
+  grid_.filter (cloud_downsampled);
+  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
+  cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
+
+  // color threshold
   int thR, thG, thB;
   fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
-  voxel_bin.binarize( thR, thG, thB );
 
-  // compute colorCHLAC
-  ColorCHLAC::extractColorCHLAC( colorCHLAC, voxel );
-  colorCHLAC.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3 );
-  std::vector<float> tmp;
-  ColorCHLAC::extractColorCHLAC_bin( tmp, voxel_bin );
-  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-    colorCHLAC[ t+DIM_COLOR_1_3 ] = tmp[ t ];
+  // ---[ Compute ColorCHLAC
+  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
+  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
+  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
+  colorCHLAC_.setRadiusSearch (1.8);
+  colorCHLAC_.setSearchMethod (normals_tree_);
+  colorCHLAC_.setColorThreshold( thR, thG, thB );
+  colorCHLAC_.setVoxelFilter (grid_);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
+  colorCHLAC_.compute( colorCHLAC_signature );
+
+  colorCHLAC.resize( DIM_COLOR_1_3_ALL );
+  for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
+    colorCHLAC[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
 
   return 1;
 }
@@ -130,7 +143,7 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
   }
   else
   {
-    flann::Index< flann::L2<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
+    flann::Index<flann::ChiSquareDistance<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
     index.buildIndex ();
     nearestKSearch (index, feature, k, k_indices, k_distances);
   }
@@ -140,21 +153,21 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
   for (int i = 0; i < k; ++i)
     print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
   
-  // Visualize the results
-  if( feature_type == 'c' ){
-    for( int m = 0; m < (int)models.size(); m++ ){
-      int len = models[ m ].first.length();
-      models[ m ].first[ len - 14 ] = 'v';
-      models[ m ].first[ len - 13 ] = 'f';
-      models[ m ].first[ len - 12 ] = 'h';
-      models[ m ].first[ len - 11 ] = '.';
-      models[ m ].first[ len - 10 ] = 'p';
-      models[ m ].first[ len - 9 ] = 'c';
-      models[ m ].first[ len - 8 ] = 'd';
-      models[ m ].first[ len - 7 ] = '\0';
-    }
-  }
-  visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
+  // // Visualize the results
+  // if( feature_type == 'c' ){
+  //   for( int m = 0; m < (int)models.size(); m++ ){
+  //     int len = models[ m ].first.length();
+  //     models[ m ].first[ len - 14 ] = 'v';
+  //     models[ m ].first[ len - 13 ] = 'f';
+  //     models[ m ].first[ len - 12 ] = 'h';
+  //     models[ m ].first[ len - 11 ] = '.';
+  //     models[ m ].first[ len - 10 ] = 'p';
+  //     models[ m ].first[ len - 9 ] = 'c';
+  //     models[ m ].first[ len - 8 ] = 'd';
+  //     models[ m ].first[ len - 7 ] = '\0';
+  //   }
+  // }
+  // visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
 
   return(1);
 }

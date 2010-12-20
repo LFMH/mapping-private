@@ -15,6 +15,12 @@ const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-C
 
 namespace pcl
 {
+  //* Mode for 90 degrees rotation
+  enum RotateMode{ R_MODE_1, R_MODE_2, R_MODE_3, R_MODE_4 };
+
+  //* calculate a feature vector when the target voxel data is rotated by 90 degrees.
+  inline void rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode );
+
   template <typename PointT>
   class ColorCHLACEstimation: public Feature<PointT, ColorCHLACSignature981>
     {

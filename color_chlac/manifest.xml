@@ -12,7 +12,7 @@
   <depend package="pcl"/>
   <depend package="pcl_cloud_algos"/>
   <export>
-    <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_chlac"/>
+    <cpp cflags="-I${prefix}/include/"/>
   </export>
 
 </package>

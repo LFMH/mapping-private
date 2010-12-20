@@ -1,9 +1,11 @@
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree.h>
 #include <vfh_cluster_classifier/common_io.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
-#include <color_chlac/ColorCHLAC.hpp>
+#include <color_chlac/color_chlac.h>
 #include "color_feature_classification/libPCA.hpp"
 
 using namespace pcl;
@@ -84,7 +86,7 @@ bool computeVFHsignature( pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, v
   pcl::PointCloud<pcl::Normal>::Ptr normals = boost::make_shared<pcl::PointCloud<pcl::Normal> >();
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d;
   n3d.setKSearch (30); // have to use the same parameters as during training
-  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeANN<pcl::PointXYZ> > ();
+  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (tree);
   n3d.setInputCloud(cloud_object_cluster.makeShared ());
   n3d.compute(*normals);
@@ -106,30 +108,41 @@ bool computeVFHsignature( pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, v
 //--------------------------------------------------------------------------------------------
 // function2
 bool computeColorCHLAC( pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, vfh_model &m ){
-  // compute voxel
-  ColorVoxel voxel;
+  // ---[ Create the voxel grid
+  pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+  pcl::VoxelGrid<PointXYZRGB> grid_;
   float voxel_size;
   FILE *fp = fopen( "voxel_size.txt", "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
-  voxel.setVoxelSize( voxel_size );
-  voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
-  ColorVoxel voxel_bin;
-  voxel_bin = voxel;
+  grid_.setLeafSize (voxel_size, voxel_size, voxel_size);
 
+  grid_.setInputCloud (boost::make_shared<const pcl::PointCloud<PointXYZRGB> > (cloud_object_cluster));
+  grid_.setSaveLeafLayout(true);
+  grid_.filter (cloud_downsampled);
+  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
+  cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
+
+  // color threshold
   int thR, thG, thB;
   fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
-  voxel_bin.binarize( thR, thG, thB );
 
-  // compute colorCHLAC
-  ColorCHLAC::extractColorCHLAC( m.second, voxel );
-  m.second.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3 );
-  std::vector<float> tmp;
-  ColorCHLAC::extractColorCHLAC_bin( tmp, voxel_bin );
-  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-    m.second[ t+DIM_COLOR_1_3 ] = tmp[ t ];
+  // ---[ Compute ColorCHLAC
+  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
+  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
+  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
+  colorCHLAC_.setRadiusSearch (1.8);
+  colorCHLAC_.setSearchMethod (normals_tree_);
+  colorCHLAC_.setColorThreshold( thR, thG, thB );
+  colorCHLAC_.setVoxelFilter (grid_);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
+  colorCHLAC_.compute( colorCHLAC_signature );
+
+  m.second.resize( DIM_COLOR_1_3_ALL );
+  for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
+    m.second[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
 
   return 1;
 }
@@ -186,60 +199,60 @@ computeFeatureModels ( const char classifier_type, const int rotate_step_num, in
 	      vfh_model m_rotate_pre2; m_rotate_pre2.first = argv[i];
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 1 - 3
 		m_rotate_pre = m_rotate;
 	      }
 	      
-	      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_3);
+	      rotateFeature90( m_rotate.second,m.second,R_MODE_3);
 	      models.push_back ( m_rotate ); // 4
 	      m_rotate_pre  = m_rotate;
 	      m_rotate_pre2 = m_rotate;
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 5 - 7
 		m_rotate_pre = m_rotate;
 	      }
 	      
-	      ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
+	      rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
 	      models.push_back ( m_rotate ); // 8
 	      m_rotate_pre = m_rotate;
 	      m_rotate_pre2 = m_rotate;
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 9 - 11
 		m_rotate_pre = m_rotate;
 	      }
 	      
-	      ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
+	      rotateFeature90( m_rotate.second,m_rotate_pre2.second,R_MODE_3);
 	      models.push_back ( m_rotate ); // 12
 	      m_rotate_pre = m_rotate;
 	      //m_rotate_pre2 = m_rotate;
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 13 - 15
 		m_rotate_pre = m_rotate;
 	      }
 	      
-	      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_1);
+	      rotateFeature90( m_rotate.second,m.second,R_MODE_1);
 	      models.push_back ( m_rotate ); // 16
 	      m_rotate_pre = m_rotate;
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 17 - 19
 		m_rotate_pre = m_rotate;
 	      }
 	      
-	      ColorCHLAC::rotateFeature90( m_rotate.second,m.second,R_MODE_4);
+	      rotateFeature90( m_rotate.second,m.second,R_MODE_4);
 	      models.push_back ( m_rotate ); // 20
 	      m_rotate_pre = m_rotate;
 	      
 	      for(int t=0;t<3;t++){
-		ColorCHLAC::rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
+		rotateFeature90( m_rotate.second,m_rotate_pre.second,R_MODE_2);
 		models.push_back ( m_rotate ); // 21 - 23
 		m_rotate_pre = m_rotate;
 	      }

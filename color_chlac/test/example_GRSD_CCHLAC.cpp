@@ -17,12 +17,12 @@ using namespace pcl;
 
 //* GRSD type
 #define NR_CLASS 5 
-#define NOISE 0 
+#define EMPTY 0 
 #define PLANE 1 
 #define CYLINDER 2
 #define CIRCLE 3  
 #define EDGE 4 
-#define EMPTY 5 
+#define NOISE 5 
 
 //* const variables
 const double min_radius_plane_ = 0.066;
@@ -204,9 +204,9 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   pcl::PointCloud<pcl::GRSDSignature21> cloud_grsd;
   cloud_grsd.points.resize(1);
   
-  for (int i=0; i<NR_CLASS+1; i++)
+  for (int i=1; i<NR_CLASS+1; i++)
   {
-    for (int j=i; j<NR_CLASS+1; j++)
+    for (int j=0; j<=i; j++)
     {
       cloud_grsd.points[0].histogram[nrf++] = transition_matrix(i, j); //@TODO: resize point cloud
     }

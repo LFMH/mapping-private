@@ -4,6 +4,134 @@
 //   return 2;
 // }
 
+//*********************************************************************************
+//* calculate a feature vector when the target voxel data is rotated by 90 degrees.
+inline void 
+pcl::rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode ){
+  int dim = input.size();
+
+  switch( dim ){
+  case DIM_COLOR_BIN_1_3+DIM_COLOR_1_3:
+    {
+      if( output.size() != (std::vector<float>::size_type)dim )
+	output.resize( dim );
+      
+      std::vector<float> tmp_input(DIM_COLOR_1_3);
+      std::vector<float> tmp_output;
+      for(int i=0;i<DIM_COLOR_1_3;i++)
+	tmp_input[i] = input[i];
+      rotateFeature90( tmp_output, tmp_input, mode );
+      for(int i=0;i<DIM_COLOR_1_3;i++)
+	output[i] = tmp_output[i];
+      
+      tmp_input.resize( DIM_COLOR_BIN_1_3 );
+      for(int i=0;i<DIM_COLOR_BIN_1_3;i++)
+	tmp_input[i] = input[i+DIM_COLOR_1_3];
+      rotateFeature90( tmp_output, tmp_input, mode );
+      for(int i=0;i<DIM_COLOR_BIN_1_3;i++)
+	output[i+DIM_COLOR_1_3] = tmp_output[i];    
+      break;
+    }
+    
+  case DIM_COLOR_BIN_1_3:
+  case DIM_COLOR_1_3:
+    if( output.size() != (std::vector<float>::size_type)dim )
+      output.resize( dim );
+    for(int i=0;i<6;i++)
+      output[i]=input[i];
+    for(int i=474;i<dim;i++)
+      output[i]=input[i];
+    
+    switch( mode ){
+    case R_MODE_1:
+      for(int i=0;i<6;i++){
+	for(int j=0;j<6;j++){
+	  output[  8 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[  7 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 10 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[ 11 + i*9 + j*78 ];
+	  output[  6 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[  9 + i*9 + j*78 ] = input[ 13 + i*9 + j*78 ];
+	  output[ 12 + i*9 + j*78 ] = input[ 14 + i*9 + j*78 ];
+	  output[ 62 + i*4 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 63 + j*4 + i*78 ] = input[ 61 + i*4 + j*78 ]; // Swapping j for i
+	  output[ 60 + j*4 + i*78 ] = input[ 62 + i*4 + j*78 ]; // Swapping j for i
+	  output[ 61 + i*4 + j*78 ] = input[ 63 + i*4 + j*78 ];
+	}
+      }
+      break;
+    case R_MODE_2:
+      for(int i=0;i<6;i++){
+	for(int j=0;j<6;j++){
+	  output[  8 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 62 + i*4 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 12 + j*9 + i*78 ] = input[  8 + i*9 + j*78 ]; // Swapping j for i
+	  output[ 11 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 63 + j*4 + i*78 ] = input[ 10 + i*9 + j*78 ]; // Swapping j for i
+	  output[  9 + j*9 + i*78 ] = input[ 11 + i*9 + j*78 ]; // Swapping j for i
+	  output[ 14 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[ 60 + j*4 + i*78 ] = input[ 13 + i*9 + j*78 ]; // Swapping j for i
+	  output[  6 + j*9 + i*78 ] = input[ 14 + i*9 + j*78 ]; // Swapping j for i
+	  output[  7 + i*9 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 61 + i*4 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 13 + j*9 + i*78 ] = input[ 62 + i*4 + j*78 ]; // Swapping j for i
+	  output[ 10 + i*9 + j*78 ] = input[ 63 + i*4 + j*78 ];
+	}
+      }
+      break;
+    case R_MODE_3:
+      for(int i=0;i<6;i++){
+	for(int j=0;j<6;j++){
+	  output[ 12 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[ 62 + j*4 + i*78 ] = input[  9 + i*9 + j*78 ]; // Swapping j for i
+	  output[ 61 + j*4 + i*78 ] = input[ 10 + i*9 + j*78 ]; // Swapping j for i
+	  output[ 60 + j*4 + i*78 ] = input[ 11 + i*9 + j*78 ]; // Swapping j for i
+	  output[  8 + j*9 + i*78 ] = input[ 12 + i*9 + j*78 ]; // Swapping j for i
+	  output[  7 + j*9 + i*78 ] = input[ 13 + i*9 + j*78 ]; // Swapping j for i
+	  output[  6 + j*9 + i*78 ] = input[ 14 + i*9 + j*78 ]; // Swapping j for i
+	  output[  9 + i*9 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[ 62 + i*4 + j*78 ];
+	  output[ 63 + i*4 + j*78 ] = input[ 63 + i*4 + j*78 ];
+	}
+      }
+      break;
+    case R_MODE_4:
+      for(int i=0;i<6;i++){
+	for(int j=0;j<6;j++){
+	  output[ 12 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[  9 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[  6 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 10 + i*9 + j*78 ];
+	  output[  7 + i*9 + j*78 ] = input[ 11 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[ 13 + i*9 + j*78 ];
+	  output[  8 + i*9 + j*78 ] = input[ 14 + i*9 + j*78 ];
+	  output[ 62 + j*4 + i*78 ] = input[ 60 + i*4 + j*78 ]; // Swapping j for i
+	  output[ 63 + i*4 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 60 + i*4 + j*78 ] = input[ 62 + i*4 + j*78 ];
+	  output[ 61 + j*4 + i*78 ] = input[ 63 + i*4 + j*78 ]; // Swapping j for i
+	}
+      }
+      break;
+    default:
+      std::cerr << "ERR (in ColorCHLAC::rotateFeature90): unknown RotateMode." << std::endl;
+      exit( EXIT_FAILURE );
+      break;
+    }
+    break;
+  default:
+    std::cerr << "ERR (in ColorCHLAC::rotateFeature90): improper dimension: " << dim << std::endl;
+    exit( EXIT_FAILURE );
+    break;
+  }
+}
+
 inline int reverse( int val ){
   return 255 - val;
 }

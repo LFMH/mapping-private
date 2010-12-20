@@ -5,8 +5,9 @@
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/io/pcd_io.h>
-#include <color_chlac/ColorCHLAC.hpp>
-#include <color_chlac/ColorVoxel.hpp>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree.h>
+#include <color_chlac/color_chlac.h>
 
 using namespace pcl;
 
@@ -27,7 +28,7 @@ bool writeVFHsignature( const char *name, pcl::PointCloud<pcl::PointXYZ> cloud_o
   pcl::PointCloud<pcl::Normal>::Ptr normals = boost::make_shared<pcl::PointCloud<pcl::Normal> >();
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d;
   n3d.setKSearch (30); // have to use the same parameters as during training
-  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeANN<pcl::PointXYZ> > ();
+  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (tree);
   n3d.setInputCloud(cloud_object_cluster.makeShared ());
   n3d.compute(*normals);
@@ -49,40 +50,37 @@ bool writeVFHsignature( const char *name, pcl::PointCloud<pcl::PointXYZ> cloud_o
 //--------------------------------------------------------------------------------------------
 // function2
 bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster ){
-  // compute voxel
-  ColorVoxel voxel;
+  // ---[ Create the voxel grid
+  pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+  pcl::VoxelGrid<PointXYZRGB> grid_;
   float voxel_size;
   FILE *fp = fopen( "voxel_size.txt", "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
-  voxel.setVoxelSize( voxel_size );
-  voxel.points2voxel( cloud_object_cluster, SIMPLE_REVERSE );
-  ColorVoxel voxel_bin;
-  //cout << endl;
-  voxel_bin = voxel;
-  //for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
-  //cout << endl;
-  //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
-  //cout << endl;
+  grid_.setLeafSize (voxel_size, voxel_size, voxel_size);
 
+  grid_.setInputCloud (boost::make_shared<const pcl::PointCloud<PointXYZRGB> > (cloud_object_cluster));
+  grid_.setSaveLeafLayout(true);
+  grid_.filter (cloud_downsampled);
+  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
+  cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
+
+  // color threshold
   int thR, thG, thB;
   fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
-  voxel_bin.binarize( thR, thG, thB );
-  //for( int i=0; i<180; i++ ) printf("%d ",voxel.Vr()[i]);
-  //cout << endl;
-  //for( int i=0; i<180; i++ ) printf("%d ",voxel_bin.Vr()[i]);
-  //cout << endl;
 
-  // compute colorCHLAC
-  std::vector<float> colorCHLAC;
-  ColorCHLAC::extractColorCHLAC( colorCHLAC, voxel );
-  colorCHLAC.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3 );
-  std::vector<float> tmp;
-  ColorCHLAC::extractColorCHLAC_bin( tmp, voxel_bin );
-  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-    colorCHLAC[ t+DIM_COLOR_1_3 ] = tmp[ t ];
+  // ---[ Compute ColorCHLAC
+  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
+  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
+  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
+  colorCHLAC_.setRadiusSearch (1.8);
+  colorCHLAC_.setSearchMethod (normals_tree_);
+  colorCHLAC_.setColorThreshold( thR, thG, thB );
+  colorCHLAC_.setVoxelFilter (grid_);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
+  colorCHLAC_.compute( colorCHLAC_signature );
 
   // save colorCHLAC
   fp = fopen( name, "w" );
@@ -95,8 +93,8 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   fprintf(fp,"HEIGHT 1\n");
   fprintf(fp,"POINTS 1\n");
   fprintf(fp,"DATA ascii\n");
-  for(int t=0;t<DIM_COLOR_BIN_1_3+DIM_COLOR_1_3;t++)
-    fprintf(fp,"%f ",colorCHLAC[ t ]);
+  for( int t=0; t<DIM_COLOR_1_3_ALL; t++)
+    fprintf(fp,"%f ",colorCHLAC_signature.points[0].histogram[ t ]);
   fprintf(fp,"\n");
   fclose(fp);
 
