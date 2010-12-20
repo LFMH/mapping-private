@@ -84,7 +84,7 @@ int main( int argc, char** argv ){
   rsd.setInputNormals(cloud);
   ROS_INFO("radius search: %f", std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
   rsd.setRadiusSearch(std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
-  pcl::KdTree<pcl::PointNormal>::Ptr tree2 = boost::make_shared<pcl::KdTreeANN<pcl::PointNormal> > ();
+  pcl::KdTree<pcl::PointNormal>::Ptr tree2 = boost::make_shared<pcl::KdTreeFLANN<pcl::PointNormal> > ();
   tree2->setInputCloud (cloud);
   rsd.setSearchMethod(tree2);
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;

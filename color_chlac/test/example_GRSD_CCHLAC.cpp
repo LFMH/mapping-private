@@ -7,7 +7,7 @@
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/filters/passthrough.h"
 #include "pcl/kdtree/kdtree.h"
-#include "pcl/kdtree/kdtree_ann.h"
+//#include "pcl/kdtree/kdtree_ann.h"
 #include "pcl/kdtree/organized_data.h"
 #include "color_chlac/color_chlac.h"
 #include "pcl/features/rsd.h"
@@ -86,7 +86,7 @@ void computeNormal( pcl::PointCloud<T1> input_cloud, pcl::PointCloud<T2>& output
   }
   pcl::NormalEstimation<T1, T2> n3d_;
   n3d_.setKSearch (k_);
-  n3d_.setSearchMethod ( boost::make_shared<pcl::KdTreeANN<T1> > () );
+  n3d_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<T1> > () );
   n3d_.setInputCloud ( boost::make_shared<const pcl::PointCloud<T1> > (input_cloud) );
   n3d_.compute (output_cloud);
 
@@ -138,8 +138,8 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   ROS_INFO("radius search: %f", std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
   rsd.setRadiusSearch(std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
-  ( boost::make_shared<pcl::KdTreeANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
-  rsd.setSearchMethod( boost::make_shared<pcl::KdTreeANN<T> > () );
+  ( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+  rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
   rsd.compute(radii);
   
@@ -225,7 +225,7 @@ void computeColorCHLAC(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, std::ve
   pcl::ColorCHLACEstimation<T> colorCHLAC_;
 
   colorCHLAC_.setRadiusSearch (1.8);
-  colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeANN<T> > () );
+  colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<T> > () );
   colorCHLAC_.setColorThreshold( 127, 127, 127 );
   colorCHLAC_.setVoxelFilter (grid);
   colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
