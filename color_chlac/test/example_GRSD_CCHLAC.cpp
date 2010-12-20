@@ -132,7 +132,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   double fixed_radius_search = 0.03;
 
   // Compute RSD
-  pcl::RadiusSurfaceDescriptor <T, T, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation <T, T, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud( boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled) );
   rsd.setSearchSurface( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );

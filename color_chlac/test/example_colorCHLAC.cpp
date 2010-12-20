@@ -7,7 +7,7 @@
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/filters/passthrough.h"
 #include "pcl/kdtree/kdtree.h"
-#include "pcl/kdtree/kdtree_ann.h"
+//#include "pcl/kdtree/kdtree_ann.h"
 #include "pcl/kdtree/organized_data.h"
 #include "color_chlac/color_chlac.h"
 
@@ -71,7 +71,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   // ---[ Compute ColorCHLAC
   pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
   pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
-  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeANN<PointXYZRGB> > ();
+  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
 
   colorCHLAC_.setRadiusSearch (1.8);
   colorCHLAC_.setSearchMethod (normals_tree_);

@@ -78,7 +78,7 @@ int main( int argc, char** argv ){
   
 
   // Compute RSD
-  pcl::RadiusSurfaceDescriptor <pcl::PointNormal, pcl::PointNormal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation <pcl::PointNormal, pcl::PointNormal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud(cloud_downsampled_ptr);
   rsd.setSearchSurface(cloud);
   rsd.setInputNormals(cloud);
