@@ -48,6 +48,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ros/conversions.h>
+#include "pcl/sample_consensus/method_types.h"
+#include "pcl/sample_consensus/model_types.h"
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/project_inliers.h>
@@ -117,8 +119,8 @@ class PTUCalibrator
     void 
       init (double tolerance)  // tolerance: how close to (0,0) is good enough?
     {
-      std::string point_cloud_topic = nh_.resolveName ("cloud_in");
-      std::string pan_tilt_topic = nh_.resolveName ("pan_tilt_stamped");
+      std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2");
+      std::string pan_tilt_topic = nh_.resolveName ("/dp_ptu47/pan_tilt_status_stamped");
 
       // TODO?: Initialize the /ptu/base_link frame with a weak prior centered around a
       // PI/2 rotation about z relative to /base_link
@@ -133,8 +135,8 @@ class PTUCalibrator
 
       marker_publisher_ = nh_.advertise<visualization_msgs::Marker>("/ptu_calibration_table", 0);
 
-      ROS_INFO ("[%s] Creating tf timer", getName ().c_str ());
-      timer_  = nh_.createTimer (ros::Duration (0.1), boost::bind (&PTUCalibrator::timerCallback, this, _1));  // Call it every 0.1s after that
+//       ROS_INFO ("[%s] Creating tf timer", getName ().c_str ());
+//       timer_  = nh_.createTimer (ros::Duration (0.1), boost::bind (&PTUCalibrator::timerCallback, this, _1));  // Call it every 0.1s after that
     }
     
   private:
@@ -144,148 +146,148 @@ class PTUCalibrator
     {
       ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
 
-      // Transform the wall protection equation to narrow_stereo_optical_frame
-      tf::Stamped<tf::Vector3> wp_normal_optical (tf::Vector3 (0, 0, 0), cloud_in->header.stamp, "/base_link");
-      double wp_offset_optical (0);
-      if (!tf_listener_.waitForTransform ("/narrow_stereo_optical_frame", cloud_in->header.frame_id, cloud_in->header.stamp, ros::Duration (1.0)))
-        ROS_WARN ("[%s] Could not transform table/wall boundary equation to /narrow_stereo_optical_frame", getName ().c_str ());
-      else 
-      {
-        const tf::Stamped<tf::Vector3> wp_normal_base_link (wp_normal, cloud_in->header.stamp, "/base_link");
-        tf_listener_.transformVector ("/narrow_stereo_optical_frame", wp_normal_base_link, wp_normal_optical);
-        const tf::Stamped<tf::Point> base_link_origin_base_link (tf::Point (0, 0, 0), cloud_in->header.stamp, "/base_link");
-        tf::Stamped<tf::Point> base_link_origin_optical;
-        tf_listener_.transformPoint ("/narrow_stereo_optical_frame", base_link_origin_base_link, base_link_origin_optical);
-        wp_offset_optical = wp_offset - wp_normal_optical.dot (base_link_origin_optical);
-      }
+//       // Transform the wall protection equation to narrow_stereo_optical_frame
+//       tf::Stamped<tf::Vector3> wp_normal_optical (tf::Vector3 (0, 0, 0), cloud_in->header.stamp, "/base_link");
+//       double wp_offset_optical (0);
+//       if (!tf_listener_.waitForTransform ("/narrow_stereo_optical_frame", cloud_in->header.frame_id, cloud_in->header.stamp, ros::Duration (1.0)))
+//         ROS_WARN ("[%s] Could not transform table/wall boundary equation to /narrow_stereo_optical_frame", getName ().c_str ());
+//       else 
+//       {
+//         const tf::Stamped<tf::Vector3> wp_normal_base_link (wp_normal, cloud_in->header.stamp, "/base_link");
+//         tf_listener_.transformVector ("/narrow_stereo_optical_frame", wp_normal_base_link, wp_normal_optical);
+//         const tf::Stamped<tf::Point> base_link_origin_base_link (tf::Point (0, 0, 0), cloud_in->header.stamp, "/base_link");
+//         tf::Stamped<tf::Point> base_link_origin_optical;
+//         tf_listener_.transformPoint ("/narrow_stereo_optical_frame", base_link_origin_base_link, base_link_origin_optical);
+//         wp_offset_optical = wp_offset - wp_normal_optical.dot (base_link_origin_optical);
+//       }
 
-      // Downsample + filter the input dataser
-      PointCloud cloud_raw, cloud;
-      pcl::fromROSMsg (*cloud_in, cloud_raw);
-      vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
-      vgrid_.filter (cloud);
+//       // Downsample + filter the input dataser
+//       PointCloud cloud_raw, cloud;
+//       pcl::fromROSMsg (*cloud_in, cloud_raw);
+//       vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
+//       vgrid_.filter (cloud);
 
-      // Remove points from the wall (?)
-      pcl::PointIndices selection;
-      for (size_t i = 0; i < cloud.points.size (); ++i) 
-      {
-        const Point &p = cloud.points[i];
-        if (wp_offset_optical + wp_normal_optical.x () * p.x + wp_normal_optical.y () * p.y + wp_normal_optical.z () * p.z > 0) 
-          // This point is beyond the wall protection boundary, it probably does not belong to the table
-          continue;
-        selection.indices.push_back (i);
-      }
+//       // Remove points from the wall (?)
+//       pcl::PointIndices selection;
+//       for (size_t i = 0; i < cloud.points.size (); ++i) 
+//       {
+//         const Point &p = cloud.points[i];
+//         if (wp_offset_optical + wp_normal_optical.x () * p.x + wp_normal_optical.y () * p.y + wp_normal_optical.z () * p.z > 0) 
+//           // This point is beyond the wall protection boundary, it probably does not belong to the table
+//           continue;
+//         selection.indices.push_back (i);
+//       }
 
-      // Fit a plane (the table)
-      pcl::ModelCoefficients table_coeff;
-      pcl::PointIndices table_inliers;
-      seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-      seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
-      seg_.segment (table_inliers, table_coeff);
-      ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
-                table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
+//       // Fit a plane (the table)
+//       pcl::ModelCoefficients table_coeff;
+//       pcl::PointIndices table_inliers;
+//       seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+//       seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
+//       seg_.segment (table_inliers, table_coeff);
+//       ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
+//                 table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
 
-      // Project the table inliers using the planar model coefficients
-      PointCloud cloud_projected;
-      proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-      proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
-      proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
-      proj_.filter (cloud_projected);
-      cloud_pub_.publish (cloud_projected);
+//       // Project the table inliers using the planar model coefficients
+//       PointCloud cloud_projected;
+//       proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+//       proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
+//       proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
+//       proj_.filter (cloud_projected);
+//       cloud_pub_.publish (cloud_projected);
       
-      // Re-orient the plane towards up
-      //ROS_INFO("Reorienting plane");
-      const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
-      tf::Stamped<tf::Vector3> vertical_optical;
-      tf_listener_.transformVector ("/narrow_stereo_optical_frame", vertical_base_link, vertical_optical);
-      double cosToVertical = table_coeff.values[0] * vertical_optical.x () + table_coeff.values[1] * vertical_optical.y () + table_coeff.values[2] * vertical_optical.z ();
-      if (cosToVertical < 0)
-      {
-        for (int i = 0; i < 4; ++i)
-          table_coeff.values[i] *= -1;
-        cosToVertical = -cosToVertical;
-      }
-      double measured_tilt = acos (cosToVertical);
-      if ( (abs (measured_tilt - pan_tilt->tilt_angle * M_PI / 180.0) > (M_PI / 16.0)) &&
-           (abs (measured_tilt + pan_tilt->tilt_angle * M_PI / 180.0) > (M_PI / 16.0)) )
-      {
-        ROS_INFO_STREAM("Table plane (" << measured_tilt << ") not close enough to expected tilt (" << pan_tilt->tilt_angle * M_PI / 180.0 << "), discarded");
-        return;
-      }
+//       // Re-orient the plane towards up
+//       //ROS_INFO("Reorienting plane");
+//       const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
+//       tf::Stamped<tf::Vector3> vertical_optical;
+//       tf_listener_.transformVector ("/narrow_stereo_optical_frame", vertical_base_link, vertical_optical);
+//       double cosToVertical = table_coeff.values[0] * vertical_optical.x () + table_coeff.values[1] * vertical_optical.y () + table_coeff.values[2] * vertical_optical.z ();
+//       if (cosToVertical < 0)
+//       {
+//         for (int i = 0; i < 4; ++i)
+//           table_coeff.values[i] *= -1;
+//         cosToVertical = -cosToVertical;
+//       }
+//       double measured_tilt = acos (cosToVertical);
+//       if ( (abs (measured_tilt - pan_tilt->tilt_angle * M_PI / 180.0) > (M_PI / 16.0)) &&
+//            (abs (measured_tilt + pan_tilt->tilt_angle * M_PI / 180.0) > (M_PI / 16.0)) )
+//       {
+//         ROS_INFO_STREAM("Table plane (" << measured_tilt << ") not close enough to expected tilt (" << pan_tilt->tilt_angle * M_PI / 180.0 << "), discarded");
+//         return;
+//       }
 
-      // Is the plane oriented towards the camera?
-      if (table_coeff.values[2] >= 0) 
-      {
-        // Oriented away from the camera, its detection will be very unstable
-        ROS_INFO ("Table plane pointing away from the camera");
-        return;
-      }
+//       // Is the plane oriented towards the camera?
+//       if (table_coeff.values[2] >= 0) 
+//       {
+//         // Oriented away from the camera, its detection will be very unstable
+//         ROS_INFO ("Table plane pointing away from the camera");
+//         return;
+//       }
 
-      // Reconstruct the 2D Convex Hull of the table
-      PointCloud cloud_hull;
-      chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
-      chull_.reconstruct (cloud_hull);
+//       // Reconstruct the 2D Convex Hull of the table
+//       PointCloud cloud_hull;
+//       chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
+//       chull_.reconstruct (cloud_hull);
       
-      visualization_msgs::Marker marker;
-      marker.header = cloud.header;
-      //marker.header.stamp = ros::Time::now ();
-      marker.ns = "plane_detection";
-      marker.id = 1;
-      marker.type = visualization_msgs::Marker::LINE_STRIP;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.pose.position.x = 0;
-      marker.pose.position.y = 0;
-      marker.pose.position.z = 0;
-      marker.pose.orientation.x = 0.0;
-      marker.pose.orientation.y = 0.0;
-      marker.pose.orientation.z = 0.0;
-      marker.pose.orientation.w = 1.0;
-      marker.scale.x = 0.005;
-      marker.color.r = 1.0f;
-      marker.color.g = 1.0f;
-      marker.color.b = 0.0f;
-      marker.color.a = 1.0;
-      marker.lifetime = ros::Duration (10);
-      for (unsigned int i = 0; i < cloud_hull.points.size (); ++i) 
-      {
-        geometry_msgs::Point p;
-        p.x = cloud_hull.points[i].x;
-        p.y = cloud_hull.points[i].y;
-        p.z = cloud_hull.points[i].z;
-        marker.points.push_back (p);
-      }
-      marker_publisher_.publish(marker);
+//       visualization_msgs::Marker marker;
+//       marker.header = cloud.header;
+//       //marker.header.stamp = ros::Time::now ();
+//       marker.ns = "plane_detection";
+//       marker.id = 1;
+//       marker.type = visualization_msgs::Marker::LINE_STRIP;
+//       marker.action = visualization_msgs::Marker::ADD;
+//       marker.pose.position.x = 0;
+//       marker.pose.position.y = 0;
+//       marker.pose.position.z = 0;
+//       marker.pose.orientation.x = 0.0;
+//       marker.pose.orientation.y = 0.0;
+//       marker.pose.orientation.z = 0.0;
+//       marker.pose.orientation.w = 1.0;
+//       marker.scale.x = 0.005;
+//       marker.color.r = 1.0f;
+//       marker.color.g = 1.0f;
+//       marker.color.b = 0.0f;
+//       marker.color.a = 1.0;
+//       marker.lifetime = ros::Duration (10);
+//       for (unsigned int i = 0; i < cloud_hull.points.size (); ++i) 
+//       {
+//         geometry_msgs::Point p;
+//         p.x = cloud_hull.points[i].x;
+//         p.y = cloud_hull.points[i].y;
+//         p.z = cloud_hull.points[i].z;
+//         marker.points.push_back (p);
+//       }
+//       marker_publisher_.publish(marker);
           
-      // Transform the plane equation into the base_link frame
-      //ROS_INFO("Converting the plane to base_link");
-      const tf::Stamped<tf::Vector3> table_normal_optical (tf::Vector3 (table_coeff.values[0], table_coeff.values[1], table_coeff.values[2]),
-                                                           cloud.header.stamp, "/narrow_stereo_optical_frame");
-      tf::Stamped<tf::Vector3> table_normal_base_link;
-      tf_listener_.transformVector("/base_link", table_normal_optical, table_normal_base_link);
-      const tf::Stamped<tf::Point> optical_origin_optical (tf::Point (0, 0, 0), cloud.header.stamp, "/narrow_stereo_optical_frame");
-      tf::Stamped<tf::Point> optical_origin_base_link;
-      tf_listener_.transformPoint ("/base_link", optical_origin_optical, optical_origin_base_link);
-      double table_offset_base_link = table_coeff.values[3] - table_normal_base_link.dot (optical_origin_base_link);
+//       // Transform the plane equation into the base_link frame
+//       //ROS_INFO("Converting the plane to base_link");
+//       const tf::Stamped<tf::Vector3> table_normal_optical (tf::Vector3 (table_coeff.values[0], table_coeff.values[1], table_coeff.values[2]),
+//                                                            cloud.header.stamp, "/narrow_stereo_optical_frame");
+//       tf::Stamped<tf::Vector3> table_normal_base_link;
+//       tf_listener_.transformVector("/base_link", table_normal_optical, table_normal_base_link);
+//       const tf::Stamped<tf::Point> optical_origin_optical (tf::Point (0, 0, 0), cloud.header.stamp, "/narrow_stereo_optical_frame");
+//       tf::Stamped<tf::Point> optical_origin_base_link;
+//       tf_listener_.transformPoint ("/base_link", optical_origin_optical, optical_origin_base_link);
+//       double table_offset_base_link = table_coeff.values[3] - table_normal_base_link.dot (optical_origin_base_link);
 
-      // Store this data point
-      //ROS_INFO("Storing a data point");
-      table_coeffs_.push_back (new Eigen3::Vector4d (table_normal_base_link.x (), table_normal_base_link.y (), table_normal_base_link.z (), -table_offset_base_link));
-      pan_tilts_.push_back (pan_tilt);
+//       // Store this data point
+//       //ROS_INFO("Storing a data point");
+//       table_coeffs_.push_back (new Eigen3::Vector4d (table_normal_base_link.x (), table_normal_base_link.y (), table_normal_base_link.z (), -table_offset_base_link));
+//       pan_tilts_.push_back (pan_tilt);
 
-      updateCalibration();
+//       updateCalibration();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void 
-      timerCallback(const ros::TimerEvent &timer_event)
-    {
-      if (!head_to_ptu_valid_)
-        return;
-      // INVARIANT: The transform has been initialized
-      tf::StampedTransform head_to_ptu_stamped (head_to_ptu_, timer_event.current_expected, "/base_link", "/ptu/base_link");
-      transform_broadcaster_.sendTransform (head_to_ptu_stamped);
-      tf_listener_.setTransform (head_to_ptu_stamped, "Timer");  // Make it immediately available to the listener
-    }
+//     void 
+//       timerCallback(const ros::TimerEvent &timer_event)
+//     {
+//       if (!head_to_ptu_valid_)
+//         return;
+//       // INVARIANT: The transform has been initialized
+//       tf::StampedTransform head_to_ptu_stamped (head_to_ptu_, timer_event.current_expected, "/base_link", "/ptu/base_link");
+//       transform_broadcaster_.sendTransform (head_to_ptu_stamped);
+//       tf_listener_.setTransform (head_to_ptu_stamped, "Timer");  // Make it immediately available to the listener
+//     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void 
@@ -321,10 +323,11 @@ class PTUCalibrator
       }
 
       // Calibrate the /ptu/base_link center and the stem height
+      //TODO: I commented this out until we find an alternative for seemingly deprecated linearRegression function
       Eigen3::Vector4d x;
       Eigen3::Vector4d *x_ptr = &x;
       Eigen3::Vector4d **data_array = &(table_coeffs_[0]);
-      Eigen3::linearRegression((int) table_coeffs_.size (), data_array, x_ptr, 3);
+      //      Eigen3::linearRegression((int) table_coeffs_.size (), data_array, x_ptr, 3);
       // x[0,1,2] is now the center of rotation of the table
       // and x[3] is the distance stem height
       stem_height_ = x[3];
@@ -419,7 +422,7 @@ class PTUCalibrator
     pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
     pcl::SACSegmentation<Point> seg_;               // Planar segmentation object
     pcl::ProjectInliers<Point> proj_;               // Inlier projection object
-    pcl::ConvexHull2D<Point, Point> chull_;         // 2D convex hull estimation object
+  //    pcl::ConvexHull2D<Point, Point> chull_;         // 2D convex hull estimation object
     double sac_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
