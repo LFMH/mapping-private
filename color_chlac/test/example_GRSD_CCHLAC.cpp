@@ -30,7 +30,7 @@ const double min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
 const double max_min_radius_diff_ = 0.01;
 const double min_radius_edge_ = 0.030;
 const double downsample_leaf = 0.01; // 1cm voxel size by default
-const float NORMALIZE_GRSD = 26.0;
+const float NORMALIZE_GRSD = NR_CLASS / 52.0; // 52 = 2 * 26
 
 //-----------
 //* time
@@ -215,7 +215,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
 
   feature.resize( 21 );
   for( int i=0; i<21; i++)
-    feature[ i ] = cloud_grsd.points[ 0 ].histogram[ i ] / NORMALIZE_GRSD;
+    feature[ i ] = cloud_grsd.points[ 0 ].histogram[ i ] * NORMALIZE_GRSD;
 }
 
 //------------------------
