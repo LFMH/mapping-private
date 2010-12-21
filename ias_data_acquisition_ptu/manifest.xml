@@ -1,0 +1,24 @@
+<package>
+  <description brief="ias_data_acquisition_ptu">
+
+     ias_data_acquisition_ptu
+
+  </description>
+  <author>Dejan Pangercic</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ias_data_acquisition_ptu</url>
+  <depend package="rosbag" />
+  <depend package="dp_ptu47_pan_tilt_stage" />
+  <depend package="image_transport" />
+  <depend package="tf" />
+  <depend package="geometry_msgs" />
+  <depend package="eigen" />
+  <depend package="pcl" />
+  <depend package="pcl_ros" />
+  <depend package="pcl_tf" />
+  <depend package="eigen3" />
+
+</package>
+
+
