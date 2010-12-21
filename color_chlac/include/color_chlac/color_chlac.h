@@ -8,10 +8,10 @@
 const int DIM_COLOR_1_3 = 495;        // Dimension of feature vector (without RGB binalize)
 const int DIM_COLOR_BIN_1_3 = 486;    // Dimension of feature vector (with RGB binalize)
 const int DIM_COLOR_1_3_ALL = 981;    // = DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3
-const float NORMALIZE_0 = 1/765.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_1 = 1/585225.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_0_BIN = 1/3.0;  // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float NORMALIZE_1 = 1/65025.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+//const float NORMALIZE_0_BIN = 1/3.0;  // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+//const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
 
 namespace pcl
 {

@@ -1457,10 +1457,10 @@ pcl::ColorCHLACEstimation<PointT>::normalizeColorCHLAC ( PointCloudOut &output )
     output.points[0].histogram[ i ] *= NORMALIZE_0;
   for(int i=6; i<DIM_COLOR_1_3; ++i)
     output.points[0].histogram[ i ] *= NORMALIZE_1;
-  for(int i=DIM_COLOR_1_3; i<501; ++i)
-    output.points[0].histogram[ i ] *= NORMALIZE_0_BIN;
-  for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
-    output.points[0].histogram[ i ] *= NORMALIZE_1_BIN;
+  // for(int i=DIM_COLOR_1_3; i<501; ++i)
+  //   output.points[0].histogram[ i ] *= NORMALIZE_0_BIN;
+  // for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
+  //   output.points[0].histogram[ i ] *= NORMALIZE_1_BIN;
 }
 
 template <typename PointT> inline void

@@ -1,0 +1,16 @@
+<package>
+  <description brief="hlac">
+
+     hlac
+
+  </description>
+  <author>Kanezaki Asako</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hlac</url>
+  <depend package="roscpp"/>
+  <depend package="opencv2"/>
+
+</package>
+
+
