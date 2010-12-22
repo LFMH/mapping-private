@@ -13,7 +13,6 @@
   <depend package="image_transport" />
   <depend package="tf" />
   <depend package="geometry_msgs" />
-  <depend package="eigen" />
   <depend package="pcl" />
   <depend package="pcl_ros" />
   <depend package="pcl_tf" />
