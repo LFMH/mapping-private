@@ -2,103 +2,188 @@
 #include <pcl/point_types.h>
 #include <pcl/common/eigen.h>
 #include <pcl/features/feature.h>
-#include <pcl/features/vfh.h>
+//#include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/io/pcd_io.h>
-#include <vfh_cluster_classifier/vfh_nearest_neighbors.h>
-#include <color_chlac/color_chlac.h>
+#include <terminal_tools/parse.h>
+#include <terminal_tools/print.h>
+#include <color_chlac/grsd_colorCHLAC_tools.h>
 #include "color_feature_classification/libPCA.hpp"
 
 using namespace pcl;
+using namespace std;
+using namespace terminal_tools;
 
-// bool vfhExtraction(color_feature_classification::GetHoge::Request &req, color_feature_classification::GetHoge::Response &res){
-//   return(true);
-// }
-
-template <typename T>
-bool readPoints( const char *name, T& cloud_object_cluster ){
-  if (pcl::io::loadPCDFile (name, cloud_object_cluster) == -1){
-    ROS_ERROR ("Couldn't read file %s",name);
-    return (-1);
-  }
-  ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int)(cloud_object_cluster.width * cloud_object_cluster.height), name, pcl::getFieldsList (cloud_object_cluster).c_str ());
-  return(1);
-}
-
-//--------------------------------------------------------------------------------------------
-// function1
-bool getVFHsignature(pcl::PointCloud<pcl::PointXYZ> cloud_object_cluster, std::vector<float> &vfh_vector){
-  // compute normals
-  pcl::PointCloud<pcl::Normal>::Ptr normals = boost::make_shared<pcl::PointCloud<pcl::Normal> >();
-  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d;
-  n3d.setKSearch (30); // have to use the same parameters as during training
-  pcl::KdTree<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
-  n3d.setSearchMethod (tree);
-  n3d.setInputCloud(cloud_object_cluster.makeShared ());
-  n3d.compute(*normals);
-  
-  // compute vfh
-  pcl::VFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::VFHSignature308> vfh;
-  vfh.setSearchMethod (tree);
-  vfh.setInputCloud(cloud_object_cluster.makeShared ());
-  vfh.setInputNormals(normals);
-  pcl::PointCloud<pcl::VFHSignature308> vfh_signature;
-  vfh.compute(vfh_signature);
-  //vfh_vector = vfh_signature.points[0].histogram;
-  if( vfh_vector.size() != 308 ) vfh_vector.resize( 308 );
-  for( int i=0; i<308; i++ )
-    vfh_vector[i] = vfh_signature.points[0].histogram[i];
-
-  return(1);
-}
-
-//--------------------------------------------------------------------------------------------
-// function2
-bool getColorCHLAC(pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, std::vector<float> &colorCHLAC ){
-  // ---[ Create the voxel grid
-  pcl::PointCloud<PointXYZRGB> cloud_downsampled;
-  pcl::VoxelGrid<PointXYZRGB> grid_;
-  float voxel_size;
-  FILE *fp = fopen( "voxel_size.txt", "r" );
-  fscanf( fp, "%f\n", &voxel_size );
-  fclose(fp);
-  grid_.setLeafSize (voxel_size, voxel_size, voxel_size);
-
-  grid_.setInputCloud (boost::make_shared<const pcl::PointCloud<PointXYZRGB> > (cloud_object_cluster));
-  grid_.setSaveLeafLayout(true);
-  grid_.filter (cloud_downsampled);
-  pcl::PointCloud<PointXYZRGB>::ConstPtr cloud_downsampled_;
-  cloud_downsampled_.reset (new pcl::PointCloud<PointXYZRGB> (cloud_downsampled));
-
-  // color threshold
-  int thR, thG, thB;
-  fp = fopen( "color_threshold.txt", "r" );
-  fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
-  fclose(fp);
-
-  // ---[ Compute ColorCHLAC
-  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
-  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
-  KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
-  colorCHLAC_.setRadiusSearch (1.8);
-  colorCHLAC_.setSearchMethod (normals_tree_);
-  colorCHLAC_.setColorThreshold( thR, thG, thB );
-  colorCHLAC_.setVoxelFilter (grid_);
-  colorCHLAC_.setInputCloud (cloud_downsampled_);
-  colorCHLAC_.compute( colorCHLAC_signature );
-
-  colorCHLAC.resize( DIM_COLOR_1_3_ALL );
-  for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
-    colorCHLAC[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
-
+int classify_by_kNN( std::vector<float> feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
+  ROS_ERROR ("classify_by_kNN() cannot be used now.\n");
   return 1;
 }
 
-//--------------------------------------------------------------------------------------------
-// function3
+int classify_by_subspace( std::vector<float> feature, const char feature_type ){
+  char dirname[ 20 ];
+  char filename[ 300 ];
+  Map<VectorXf> vec( &(feature[0]), feature.size() );
 
+  sprintf( dirname, "pca_result_" );
+  dirname[ 11 ] = feature_type;
+  dirname[ 12 ] = '\0';
+
+  // read parameters
+  int obj_class_num, dim_subspace;
+  FILE *fp = fopen( "pca_parameters.txt", "r" );
+  if( fscanf( fp, "class_num: %d\n", &obj_class_num ) != 1 ) return -1;
+  if( fscanf( fp, "dim: %d\n", &dim_subspace ) != 1 ) return -1;
+  fclose( fp );
+  // calc similarity
+  PCA pca;
+  int class_num = -1;
+  float dot_max = 0;
+  float sum, dot;
+  for( int i=0; i<obj_class_num;i++ ){
+    sprintf( filename, "%s/%03d", dirname, i );
+    pca.read( filename, false );
+//     cout << pca.Axis() << endl;
+//     continue;
+//     for( int t=0; t<981;t++ )
+//       printf("%f ",vec[t]);
+    MatrixXf tmpMat = pca.Axis();
+    MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
+    VectorXf tmpVec;
+    if( pca.mean_flg ){
+      //cout << pca.Mean() << endl;
+      VectorXf tmpVec2 = vec-pca.Mean();
+      tmpVec = tmpMat2.transpose() * tmpVec2;
+      sum = tmpVec2.dot( tmpVec2 );
+      dot = tmpVec.dot( tmpVec ) / sum;
+    }
+    else{
+      tmpVec = tmpMat2.transpose() * vec;
+      dot = tmpVec.dot( tmpVec );
+    }
+    if( dot > dot_max ){
+      dot_max = dot;
+      class_num = i;
+    }
+  }
+  cout << class_num << " " << dot_max << endl;
+  return class_num;
+}
+
+void compressFeature( string filename, std::vector<float> &feature, const int dim, bool ascii ){
+  PCA pca;
+  pca.read( filename.c_str(), ascii );
+  MatrixXf tmpMat = pca.Axis();
+  MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
+  Map<VectorXf> vec( &(feature[0]), feature.size() );
+  //vec = tmpMat2.transpose() * vec;
+  VectorXf tmpvec = tmpMat2.transpose() * vec;
+  feature.resize( dim );
+  for( int t=0; t<dim; t++ )
+    feature[t] = tmpvec[t];
+}
+
+//--------------------------------------------------------------------------------------------
+int main( int argc, char** argv ){
+  //ros::init( argc, argv, "test" );
+  if( argc < 4 ){
+    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options]\n", argv[0]);
+    ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
+    ROS_INFO ("                          -comp filename = name of compress_axis file\n");
+    return(-1);
+  }
+  const char feature_type = argv[2][0];
+  const char classifier_type = argv[3][0];
+  std::vector<float> feature;
+
+  // color threshold
+  int thR, thG, thB;
+  FILE *fp = fopen( "color_threshold.txt", "r" );
+  fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
+  fclose(fp);
+
+  // read points
+  pcl::PointCloud<PointXYZRGB> cloud_object_cluster;
+  readPoints( argv[1], cloud_object_cluster );
+
+  //------------
+  //* features
+  if( feature_type == 'c' ){
+    //* voxelize
+    pcl::VoxelGrid<PointXYZRGB> grid;
+    pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+    getVoxelGrid( grid, cloud_object_cluster, cloud_downsampled );
+    
+    //* compute - ColorCHLAC -
+    computeColorCHLAC( grid, cloud_downsampled, feature, thR, thG, thB );
+  }
+  else if( ( feature_type == 'g' ) || ( feature_type == 'd' ) || ( feature_type == 'r' ) ){
+    //* compute normals
+    pcl::PointCloud<PointXYZRGBNormal> cloud;
+    computeNormal( cloud_object_cluster, cloud );
+    
+    //* voxelize
+    pcl::VoxelGrid<PointXYZRGBNormal> grid;
+    pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
+    getVoxelGrid( grid, cloud, cloud_downsampled );
+
+    if( feature_type == 'g' )
+      computeGRSD( grid, cloud, cloud_downsampled, feature );
+    else{    // TODO : implement 2 versions - d and r -
+      //* compute - GRSD -
+      std::vector<float> grsd;
+      computeGRSD( grid, cloud, cloud_downsampled, grsd );
+
+      //* compute - ColorCHLAC -
+      std::vector< float > colorCHLAC;
+      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
+      feature = conc_vector( grsd, colorCHLAC );
+    }
+  }
+  else{
+    ROS_ERROR ("Unknown feature type.\n");
+    return(-1);
+  }
+  ROS_INFO ("Input feature vector extracted.\n");
+
+  //--------------------------------------------------
+  //* Compress the dimension of the vector (if needed)
+  int dim = -1;
+  if( parse_argument (argc, argv, "-dim", dim) > 0 ){
+    if ((dim < 0)||(dim >= (int)feature.size())){
+      print_error ("Invalid dimension (%d)!\n", dim);
+      return (-1);
+    }
+    string filename;
+    parse_argument (argc, argv, "-comp", filename);
+    compressFeature( filename, feature, dim, false );
+  }
+
+  //--------------
+  //* classifier
+  if( classifier_type == 'k' ){
+    //* classifier - kNN -
+    classify_by_kNN( feature, feature_type, argc, argv );
+  }
+  else if( classifier_type == 's' ){
+    //* classifier - SubspaceMethod -
+    classify_by_subspace( feature, feature_type );
+  }
+  else{
+    ROS_ERROR ("Unknown classifier type.\n");
+    return(-1);
+  }
+
+  return(0);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//* This is old version (not used now.)
+//* To activate this function, this package needs the dependency of "vfh_cluster_classifier"
+//*   and also some proper changes.
+
+#if 0
 int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
   string kdtree_idx_file_name, training_data_h5_file_name, training_data_list_file_name;
 
@@ -171,156 +256,4 @@ int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char*
 
   return(1);
 }
-
-//--------------------------------------------------------------------------------------------
-// function4
-
-int classify_by_subspace( vfh_model feature, const char feature_type, int argc, char** argv, int dim_feature ){
-  char dirname[ 300 ];
-  char filename[ 300 ];
-  Map<VectorXf> vec( &(feature.second[0]), feature.second.size() );
-
-  if( feature_type == 'v' ){
-    if( dim_feature == -1 ) dim_feature = 308;
-    sprintf( dirname, "pca_result_vfh" );
-  }
-  else if( feature_type == 'c' ){
-    if( dim_feature == -1 ) dim_feature = 981;
-    sprintf( dirname, "pca_result_colorCHLAC" );
-  }
-  else{
-    ROS_ERROR ("Unknown feature type.\n");
-    return(-1);
-  }
-
-  // read parameters
-  int obj_class_num, dim_subspace;
-  FILE *fp = fopen( "pca_parameters.txt", "r" );
-  if( fscanf( fp, "class_num: %d\n", &obj_class_num ) != 1 ) return -1;
-  if( fscanf( fp, "dim: %d\n", &dim_subspace ) != 1 ) return -1;
-  fclose( fp );
-  // calc similarity
-  PCA pca;
-  int class_num = -1;
-  float dot_max = 0;
-  float sum, dot;
-  for( int i=0; i<obj_class_num;i++ ){
-    sprintf( filename, "%s/%03d", dirname, i );
-    pca.read( filename, false );
-//     cout << pca.Axis() << endl;
-//     continue;
-//     for( int t=0; t<981;t++ )
-//       printf("%f ",vec[t]);
-    MatrixXf tmpMat = pca.Axis();
-    MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
-    VectorXf tmpVec;
-    if( pca.mean_flg ){
-      //cout << pca.Mean() << endl;
-      VectorXf tmpVec2 = vec-pca.Mean();
-      tmpVec = tmpMat2.transpose() * tmpVec2;
-      sum = tmpVec2.dot( tmpVec2 );
-      dot = tmpVec.dot( tmpVec ) / sum;
-    }
-    else{
-      tmpVec = tmpMat2.transpose() * vec;
-      dot = tmpVec.dot( tmpVec );
-    }
-    if( dot > dot_max ){
-      dot_max = dot;
-      class_num = i;
-    }
-  }
-  cout << class_num << " " << dot_max << endl;
-  return class_num;
-}
-
-void compressFeature( string filename, vfh_model &feature, const int dim, bool ascii ){
-  PCA pca;
-  pca.read( filename.c_str(), ascii );
-  MatrixXf tmpMat = pca.Axis();
-  MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
-  Map<VectorXf> vec( &(feature.second[0]), feature.second.size() );
-  //vec = tmpMat2.transpose() * vec;
-  VectorXf tmpvec = tmpMat2.transpose() * vec;
-  feature.second.resize( dim );
-  for( int t=0; t<dim; t++ )
-    feature.second[t] = tmpvec[t];
-}
-
-//--------------------------------------------------------------------------------------------
-int main( int argc, char** argv ){
-  //ros::init( argc, argv, "test" );
-  if( argc < 4 ){
-    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(v or c)} {classifier_initial(k or s)} [options]\n", argv[0]);
-    ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
-    ROS_INFO ("                          -comp filename = name of compress_axis file\n");
-    return(-1);
-  }
-  const char feature_type = argv[2][0];
-  const char classifier_type = argv[3][0];
-  vfh_model feature;
-  char filename[ 300 ];
-  int length;
-
-  //------------
-  //* features
-  if( feature_type == 'v' ){
-    //* compute - VFH -
-    pcl::PointCloud<PointXYZ> cloud_object_cluster;
-    readPoints( argv[1], cloud_object_cluster );
-    std::vector<float> vfh_vector;
-    getVFHsignature( cloud_object_cluster, vfh_vector );
-    length = strlen( argv[1] );
-    argv[1][ length-4 ] = '\0';
-    sprintf(filename,"%s_vfh.pcd",argv[1]);
-    feature.first = filename;
-    feature.second = vfh_vector;
-  }
-  else if( feature_type == 'c' ){
-    //* compute - colorCHLAC -
-    pcl::PointCloud<PointXYZRGB> cloud_object_cluster2;
-    readPoints( argv[1], cloud_object_cluster2 );
-    std::vector<float> colorCHLAC;
-    getColorCHLAC( cloud_object_cluster2, colorCHLAC );
-    length = strlen( argv[1] );
-    argv[1][ length-4 ] = '\0';
-    sprintf(filename,"%s_colorCHLAC.pcd",argv[1]);
-    feature.first = filename;
-    feature.second = colorCHLAC;
-  }
-  else{
-    ROS_ERROR ("Unknown feature type.\n");
-    return(-1);
-  }
-  ROS_INFO ("Input feature vector extracted.\n");
-
-  //--------------------------------------------------
-  //* Compress the dimension of the vector (if needed)
-  int dim = -1;
-  if( parse_argument (argc, argv, "-dim", dim) > 0 ){
-    if ((dim < 0)||(dim >= (int)feature.second.size())){
-      print_error ("Invalid dimension (%d)!\n", dim);
-      return (-1);
-    }
-    string filename;
-    parse_argument (argc, argv, "-comp", filename);
-    compressFeature( filename, feature, dim, false );
-  }
-
-  //--------------
-  //* classifier
-  if( classifier_type == 'k' ){
-    //* classifier - kNN -
-    classify_by_kNN( feature, feature_type, argc, argv );
-  }
-  else if( classifier_type == 's' ){
-    //* classifier - SubspaceMethod -
-    classify_by_subspace( feature, feature_type, argc, argv, dim );
-  }
-  else{
-    ROS_ERROR ("Unknown classifier type.\n");
-    return(-1);
-  }
-
-  return(0);
-}
+#endif

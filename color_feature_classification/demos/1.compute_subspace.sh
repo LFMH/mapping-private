@@ -19,7 +19,7 @@ do
 	#rosrun color_feature_classification computeSubspace $files pca_result_vfh/$num
 	
 # colorCHLAC
-	rosrun color_feature_classification computeSubspace_with_rotate c $files -dim 600 -comp pca_result_colorCHLAC/compress_axis -rotate 1 pca_result_colorCHLAC/$num
+	rosrun color_feature_classification computeSubspace_with_rotate c $files -dim 600 -comp pca_result_c/compress_axis -rotate 1 pca_result_c/$num
 # 	files=`find $i -type f \( -iname "*_colorCHLAC.pcd" \) | sort -R`
 # 	rosrun color_feature_classification computeSubspace $files pca_result_colorCHLAC/$num
 	#rosrun color_feature_classification computeSubspace $files -dim 100 -comp pca_result_colorCHLAC/compress_axis pca_result_colorCHLAC/$num
