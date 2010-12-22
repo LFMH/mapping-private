@@ -57,8 +57,6 @@
 
 #include <pcl_ros/publisher.h>
 
-//#include <Eigen3/LeastSquares>
-//#include <Eigen3/Geometry/Hyperplane>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf/transform_broadcaster.h>
@@ -112,10 +110,10 @@ class PTUCalibrator
     virtual ~PTUCalibrator () 
     {
       for (size_t i = 0; i < table_coeffs_.size (); ++i) 
-        delete table_coeffs_[i];
+	delete table_coeffs_[i];
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
     void 
       init (double tolerance)  // tolerance: how close to (0,0) is good enough?
     {
@@ -324,10 +322,20 @@ class PTUCalibrator
 
       // Calibrate the /ptu/base_link center and the stem height
       //TODO: I commented this out until we find an alternative for seemingly deprecated linearRegression function
-      Eigen3::Vector4d x;
-      Eigen3::Vector4d *x_ptr = &x;
-      Eigen3::Vector4d **data_array = &(table_coeffs_[0]);
+      //      Eigen3::Vector4d x;
+      //Eigen3::Vector4d *x_ptr = &x;
+      //Eigen3::Vector4d **data_array = &(table_coeffs_[0]);
       //      Eigen3::linearRegression((int) table_coeffs_.size (), data_array, x_ptr, 3);
+      // std::vector<Eigen3::Vector4d *> table_coeffs_;
+      Eigen3::MatrixXd A (table_coeffs_.size(), 3);
+      Eigen3::MatrixXd B (table_coeffs_.size(), 1);
+      for (size_t i = 0; i < table_coeffs_.size(); i++)
+      {
+	A.row(i) = table_coeffs_[i]->head<3>();
+	B.row(i) = table_coeffs_[i]->tail<1>();
+      }
+      Eigen3::Vector4d x = A.ldlt().solve(B); 
+      //Eigen3::Vector4d x = table_coeffs_.block<table_coeffs_.rows(),3>(0,0).ldlt().solve(table_coeffs_.block<table_coeffs_.rows(),1>(0,3));
       // x[0,1,2] is now the center of rotation of the table
       // and x[3] is the distance stem height
       stem_height_ = x[3];
@@ -412,7 +420,8 @@ class PTUCalibrator
     message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
     message_filters::Synchronizer<SyncPolicy> cloud_pantilt_sync_;
 
-    std::vector<Eigen3::Vector4d *> table_coeffs_;
+  std::vector<Eigen3::Vector4d *> table_coeffs_;
+
     std::vector<dp_ptu47_pan_tilt_stage::PanTiltStampedConstPtr> pan_tilts_;
 
     ros::Publisher marker_publisher_;
