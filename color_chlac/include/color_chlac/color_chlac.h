@@ -8,10 +8,17 @@
 const int DIM_COLOR_1_3 = 495;        // Dimension of feature vector (without RGB binalize)
 const int DIM_COLOR_BIN_1_3 = 486;    // Dimension of feature vector (with RGB binalize)
 const int DIM_COLOR_1_3_ALL = 981;    // = DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3
+const int DIM_COLOR_RI_1_3 = 63;      // Dimension of feature vector (without RGB binalize) - rotation-invariant -
+const int DIM_COLOR_RI_BIN_1_3 = 54;  // Dimension of feature vector (with RGB binalize) - rotation-invariant -
+const int DIM_COLOR_RI_1_3_ALL = 117; // = DIM_COLOR_RI_1_3 + DIM_COLOR_RI_BIN_1_3
 const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_1 = 1/65025.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
-//const float NORMALIZE_0_BIN = 1/3.0;  // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-//const float NORMALIZE_1_BIN = 1/9.0;  // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+//const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+//const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_1 = 1/845325.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+//const float NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_1_BIN = 1/13.0; // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
 
 namespace pcl
 {
@@ -21,18 +28,18 @@ namespace pcl
   //* calculate a feature vector when the target voxel data is rotated by 90 degrees.
   inline void rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode );
 
-  template <typename PointT>
-  class ColorCHLACEstimation: public Feature<PointT, ColorCHLACSignature981>
+  template <typename PointT, typename PointOutT>
+  class ColorCHLACEstimation: public Feature<PointT, PointOutT>
     {
     public:
-      using Feature<PointT, ColorCHLACSignature981>::feature_name_;
-      using Feature<PointT, ColorCHLACSignature981>::getClassName;
-      using Feature<PointT, ColorCHLACSignature981>::indices_;
-      using Feature<PointT, ColorCHLACSignature981>::surface_;
-      using Feature<PointT, ColorCHLACSignature981>::k_;
-      using Feature<PointT, ColorCHLACSignature981>::search_parameter_;
+      using Feature<PointT, PointOutT>::feature_name_;
+      using Feature<PointT, PointOutT>::getClassName;
+      using Feature<PointT, PointOutT>::indices_;
+      using Feature<PointT, PointOutT>::surface_;
+      using Feature<PointT, PointOutT>::k_;
+      using Feature<PointT, PointOutT>::search_parameter_;
 
-      typedef typename Feature<PointT, ColorCHLACSignature981>::PointCloudOut PointCloudOut;
+      typedef typename Feature<PointT, PointOutT>::PointCloudOut PointCloudOut;
 
       //inline void setVoxelSize( float val ){ voxel_size = val; setRadiusSearch (val*1.75); }
       
@@ -48,17 +55,6 @@ namespace pcl
       ColorCHLACEstimation () : color_thR (-1), color_thG (-1), color_thB (-1)
       {
         feature_name_ = "ColorCHLACEstimation";
-#if 0
-	// 0 - 8
-	for( int i=-1; i<2; i++ )
-	  for( int j=-1; j<2; j++ )
-	    relative_coordinates.push_back (Eigen3::Vector3i (i, j, -1)); 
-	// 9 - 11
-	for( int i=-1; i<2; i++ )
-	  relative_coordinates.push_back (Eigen3::Vector3i (i, -1, 0)); 
-	// 12
-	relative_coordinates.push_back (Eigen3::Vector3i (-1, 0, 0)); 
-#else
 	relative_coordinates.resize(3, 13);
 	int idx = 0;
 	// 0 - 8
@@ -81,21 +77,20 @@ namespace pcl
 	relative_coordinates( 0, idx ) = -1;
 	relative_coordinates( 1, idx ) = 0;
 	relative_coordinates( 2, idx ) = 0;
-#endif
       };
 
     protected:
-      inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       inline int binarize_r ( int val );
       inline int binarize_g ( int val );
       inline int binarize_b ( int val );
 
-      inline void addColorCHLAC_0 ( PointCloudOut &output );
-      inline void addColorCHLAC_0_bin ( PointCloudOut &output );
-      inline void addColorCHLAC_1 ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      inline void addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-
-      inline void normalizeColorCHLAC ( PointCloudOut &output );
+      //* functions for ColorCHLACSignature981 (rotation-variant) *//
+      virtual inline void addColorCHLAC_0 ( PointCloudOut &output );
+      virtual inline void addColorCHLAC_0_bin ( PointCloudOut &output );
+      virtual inline void addColorCHLAC_1 ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      virtual inline void addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      virtual inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
+      virtual inline void normalizeColorCHLAC ( PointCloudOut &output );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Estimate normals for all points given in <setInputCloud (), setIndices ()> using the surface in
@@ -105,7 +100,7 @@ namespace pcl
         */
       void computeFeature (PointCloudOut &output);
 
-    private:
+    protected:
       pcl::VoxelGrid<PointT> grid;
       Eigen3::MatrixXi relative_coordinates;
       int color;
@@ -121,6 +116,69 @@ namespace pcl
       int color_thR;
       int color_thG;
       int color_thB;
+  };
+
+  template <typename PointT, typename PointOutT>
+  class ColorCHLAC_RI_Estimation: public ColorCHLACEstimation<PointT, PointOutT>
+    {
+    public:
+      using ColorCHLACEstimation<PointT, PointOutT>::feature_name_;
+      using ColorCHLACEstimation<PointT, PointOutT>::getClassName;
+      using ColorCHLACEstimation<PointT, PointOutT>::indices_;
+      using ColorCHLACEstimation<PointT, PointOutT>::surface_;
+      using ColorCHLACEstimation<PointT, PointOutT>::k_;
+      using ColorCHLACEstimation<PointT, PointOutT>::search_parameter_;
+
+      typedef typename ColorCHLACEstimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
+
+      //inline void setColorThreshold ( int thR, int thG, int thB );
+      //inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ );
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Empty constructor. */
+      //ColorCHLACEstimation () : voxel_size (0)
+      ColorCHLAC_RI_Estimation ()
+      {
+        feature_name_ = "ColorCHLAC_RI_Estimation";
+      };
+
+    protected:
+      inline int binarize_r ( int val );
+      inline int binarize_g ( int val );
+      inline int binarize_b ( int val );
+
+      //* functions for ColorCHLACSignature117 (rotation-invariant) *//
+      inline void addColorCHLAC_0 ( PointCloudOut &output );
+      inline void addColorCHLAC_0_bin ( PointCloudOut &output );
+      inline void addColorCHLAC_1 ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      inline void addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      //inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
+      inline void normalizeColorCHLAC ( PointCloudOut &output );
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Estimate normals for all points given in <setInputCloud (), setIndices ()> using the surface in
+        * setSearchSurface () and the spatial locator in setSearchMethod ()
+        * \note In situations where not enough neighbors are found, the normal and curvature values are set to -1.
+        * \param output the resultant point cloud model dataset that contains surface normals and curvatures
+        */
+      void computeFeature (PointCloudOut &output);
+
+    protected:
+      using ColorCHLACEstimation<PointT, PointOutT>::grid;
+      using ColorCHLACEstimation<PointT, PointOutT>::relative_coordinates;
+      using ColorCHLACEstimation<PointT, PointOutT>::color;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_r;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_g;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_b;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_r_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_g_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_r;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_g;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_b;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thR;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thG;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thB;
   };
 }
 

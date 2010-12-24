@@ -70,7 +70,7 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
 
   // ---[ Compute ColorCHLAC
   pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature;
-  pcl::ColorCHLACEstimation<PointXYZRGB> colorCHLAC_;
+  pcl::ColorCHLACEstimation<PointXYZRGB, ColorCHLACSignature981> colorCHLAC_;
   KdTree<PointXYZRGB>::Ptr normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<PointXYZRGB> > ();
 
   colorCHLAC_.setRadiusSearch (1.8);

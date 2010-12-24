@@ -9,8 +9,8 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
   }
-  char filename[ 300 ];
-  int length;
+  //* voxel size (downsample_leaf)
+  const double voxel_size = 0.01;
 
   //* read
   pcl::PointCloud<PointXYZRGB> input_cloud;
@@ -23,19 +23,21 @@ int main( int argc, char** argv ){
   //* voxelize
   pcl::VoxelGrid<PointXYZRGBNormal> grid;
   pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
-  getVoxelGrid( grid, cloud, cloud_downsampled );
+  getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 
   //* compute - GRSD -
   std::vector<float> grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd );
+  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size);
 
   //* compute - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
 
   //* write
-  length = strlen( argv[1] );
+  int length = strlen( argv[1] );
   argv[1][ length-4 ] = '\0';
+  char filename[ 300 ];
   sprintf(filename,"%s_GRSD_CCHLAC.pcd",argv[1]);
   writeFeature( filename, conc_vector( grsd, colorCHLAC ) );
 

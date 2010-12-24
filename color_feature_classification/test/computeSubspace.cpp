@@ -14,6 +14,7 @@ using namespace terminal_tools;
 
 // color threshold
 int thR, thG, thB;
+float voxel_size;
 
 void
 computeFeatureModels ( const char feature_type, int argc, char **argv, const std::string &extension, 
@@ -37,11 +38,11 @@ computeFeatureModels ( const char feature_type, int argc, char **argv, const std
       //* voxelize
       pcl::VoxelGrid<PointXYZRGBNormal> grid;
       pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
-      getVoxelGrid( grid, cloud, cloud_downsampled );
+      getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
       
       //* compute - GRSD -
       std::vector<float> grsd;
-      computeGRSD( grid, cloud, cloud_downsampled, grsd );
+      computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size );
 
       if( feature_type == 'g' ) models.push_back (grsd);
       else{
@@ -91,13 +92,18 @@ int main( int argc, char** argv ){
   // check feature_type
   const char feature_type = argv[1][0];
   if( (feature_type != 'g') && (feature_type != 'r') ){
-    ROS_ERROR ("Unknown feature type.\n");
+    ROS_ERROR ("Unknown feature type. %c \n",feature_type);
     return(-1);
   }
 
   // color threshold
   FILE *fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
+  fclose(fp);
+
+  // voxel size
+  fp = fopen( "voxel_size.txt", "r" );
+  fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
   // compute features

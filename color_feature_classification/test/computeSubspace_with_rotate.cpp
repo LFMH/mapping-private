@@ -14,6 +14,7 @@ using namespace terminal_tools;
 
 // color threshold
 int thR, thG, thB;
+float voxel_size;
 
 template <typename T>
 bool rotatePoints( const T& input_cloud, T& output_cloud, const double roll, const double pan, const double roll2 ){
@@ -76,10 +77,10 @@ computeFeatureModels ( const char feature_type, const int rotate_step_num, int a
 	//* voxelize
 	pcl::VoxelGrid<PointXYZRGBNormal> grid;
 	pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
-	getVoxelGrid( grid, cloud, cloud_downsampled );
+	getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 	
 	//* compute - GRSD -
-	computeGRSD( grid, cloud, cloud_downsampled, grsd );
+	computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size );
       }
 
       for(int r3=0; r3 < rotate_step_num; r3++){
@@ -93,7 +94,7 @@ computeFeatureModels ( const char feature_type, const int rotate_step_num, int a
 	    //* voxelize
 	    pcl::VoxelGrid<PointXYZRGB> grid_r;
 	    pcl::PointCloud<PointXYZRGB> cloud_downsampled_r;
-	    getVoxelGrid( grid_r, cloud_object_cluster_r, cloud_downsampled_r );
+	    getVoxelGrid( grid_r, cloud_object_cluster_r, cloud_downsampled_r, voxel_size );
 
 	    //* compute - ColorCHLAC -
 	    computeColorCHLAC( grid_r, cloud_downsampled_r, m, thR, thG, thB );
@@ -237,6 +238,11 @@ int main( int argc, char** argv ){
   // color threshold
   FILE *fp = fopen( "color_threshold.txt", "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
+  fclose(fp);
+
+  // voxel size
+  fp = fopen( "voxel_size.txt", "r" );
+  fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
   // compute features

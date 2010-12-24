@@ -103,6 +103,12 @@ int main( int argc, char** argv ){
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
 
+  // voxel size
+  float voxel_size;
+  fp = fopen( "voxel_size.txt", "r" );
+  fscanf( fp, "%f\n", &voxel_size );
+  fclose(fp);
+
   // read points
   pcl::PointCloud<PointXYZRGB> cloud_object_cluster;
   readPoints( argv[1], cloud_object_cluster );
@@ -113,7 +119,7 @@ int main( int argc, char** argv ){
     //* voxelize
     pcl::VoxelGrid<PointXYZRGB> grid;
     pcl::PointCloud<PointXYZRGB> cloud_downsampled;
-    getVoxelGrid( grid, cloud_object_cluster, cloud_downsampled );
+    getVoxelGrid( grid, cloud_object_cluster, cloud_downsampled, voxel_size );
     
     //* compute - ColorCHLAC -
     computeColorCHLAC( grid, cloud_downsampled, feature, thR, thG, thB );
@@ -126,14 +132,14 @@ int main( int argc, char** argv ){
     //* voxelize
     pcl::VoxelGrid<PointXYZRGBNormal> grid;
     pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
-    getVoxelGrid( grid, cloud, cloud_downsampled );
+    getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 
     if( feature_type == 'g' )
-      computeGRSD( grid, cloud, cloud_downsampled, feature );
+      computeGRSD( grid, cloud, cloud_downsampled, feature, voxel_size );
     else{    // TODO : implement 2 versions - d and r -
       //* compute - GRSD -
       std::vector<float> grsd;
-      computeGRSD( grid, cloud, cloud_downsampled, grsd );
+      computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size );
 
       //* compute - ColorCHLAC -
       std::vector< float > colorCHLAC;

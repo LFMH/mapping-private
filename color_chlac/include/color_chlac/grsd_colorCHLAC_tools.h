@@ -25,7 +25,6 @@ const double min_radius_plane_ = 0.066;
 const double min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
 const double max_min_radius_diff_ = 0.01;
 const double min_radius_edge_ = 0.030;
-const double downsample_leaf = 0.01; // 1cm voxel size by default
 const float NORMALIZE_GRSD = NR_CLASS / 52.0; // 52 = 2 * 26
 
 //-----------
@@ -99,8 +98,8 @@ void computeNormal( pcl::PointCloud<T1> input_cloud, pcl::PointCloud<T2>& output
 //-----------
 //* voxelize
 template <typename T>
-void getVoxelGrid( pcl::VoxelGrid<T> &grid, pcl::PointCloud<T> input_cloud, pcl::PointCloud<T>& output_cloud ){
-  grid.setLeafSize (downsample_leaf, downsample_leaf, downsample_leaf);
+void getVoxelGrid( pcl::VoxelGrid<T> &grid, pcl::PointCloud<T> input_cloud, pcl::PointCloud<T>& output_cloud, const double voxel_size ){
+  grid.setLeafSize (voxel_size, voxel_size, voxel_size);
   grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (input_cloud) );
   grid.setSaveLeafLayout(true);
   grid.filter (output_cloud);
@@ -125,7 +124,7 @@ int get_type (float min_radius, float max_radius)
 //--------------------
 //* compute - GRSD -
 template <typename T>
-void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature ){
+void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const double voxel_size ){
   double fixed_radius_search = 0.03;
 
   // Compute RSD
@@ -133,8 +132,8 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   rsd.setInputCloud( boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled) );
   rsd.setSearchSurface( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
-  ROS_INFO("radius search: %f", std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
-  rsd.setRadiusSearch(std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
+  ROS_INFO("radius search: %f", std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
+  rsd.setRadiusSearch(std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
   ( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
@@ -216,16 +215,16 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
 
 //------------------------
 //* compute - ColorCHLAC -
-template <typename T>
-void computeColorCHLAC(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
-  pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
-  pcl::ColorCHLACEstimation<T> colorCHLAC_;
+template <typename PointT>
+void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+    pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
+  pcl::ColorCHLACEstimation<PointT, pcl::ColorCHLACSignature981> colorCHLAC_;
 
   colorCHLAC_.setRadiusSearch (1.8);
-  colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<T> > () );
+  colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
   colorCHLAC_.setColorThreshold( thR, thG, thB );
   colorCHLAC_.setVoxelFilter (grid);
-  colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+  colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
@@ -233,6 +232,26 @@ void computeColorCHLAC(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, std::ve
 
   feature.resize( DIM_COLOR_1_3_ALL );
   for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
+    feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
+}
+
+template <typename PointT>
+void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+  pcl::PointCloud<pcl::ColorCHLACSignature117> colorCHLAC_signature;
+  pcl::ColorCHLAC_RI_Estimation<PointT, pcl::ColorCHLACSignature117> colorCHLAC_;
+
+  colorCHLAC_.setRadiusSearch (1.8);
+  colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
+  colorCHLAC_.setColorThreshold( thR, thG, thB );
+  colorCHLAC_.setVoxelFilter (grid);
+  colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
+  t1 = my_clock();
+  colorCHLAC_.compute( colorCHLAC_signature );
+  t2 = my_clock();
+  ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
+
+  feature.resize( DIM_COLOR_RI_1_3_ALL );
+  for( int i=0; i<DIM_COLOR_RI_1_3_ALL; i++)
     feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
 }
 

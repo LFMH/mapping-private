@@ -10,5 +10,4 @@ DATA=`pwd`/data
 # colorCHLAC
 files=`find $DATA -type f \( -iname "*.pcd" ! -iname "*vfh*" ! -iname "*colorCHLAC*" \)`
 rosrun color_feature_classification computeSubspace_with_rotate c $files -rotate 1 pca_result_c/compress_axis
-#files=`find $DATA -type f \( -iname "*_colorCHLAC.pcd" \)`
-#rosrun color_feature_classification computeSubspace $files pca_result_colorCHLAC/compress_axis
+#rosrun color_feature_classification computeSubspace g $files pca_result_g/compress_axis
