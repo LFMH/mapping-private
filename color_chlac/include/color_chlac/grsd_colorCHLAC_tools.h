@@ -45,7 +45,9 @@ bool readPoints( const char *name, pcl::PointCloud<T>& cloud ){
     ROS_ERROR ("Couldn't read file %s",name);
     return (-1);
   }
+#ifndef QUIET
   ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int)(cloud.width * cloud.height), name, pcl::getFieldsList (cloud).c_str ());
+#endif
   return(1);
 }
 
@@ -132,7 +134,9 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   rsd.setInputCloud( boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled) );
   rsd.setSearchSurface( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+#ifndef QUIET
   ROS_INFO("radius search: %f", std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
+#endif
   rsd.setRadiusSearch(std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
   ( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
@@ -228,8 +232,9 @@ void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> clou
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
+#ifndef QUIET
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
-
+#endif
   feature.resize( DIM_COLOR_1_3_ALL );
   for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
     feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
@@ -248,8 +253,9 @@ void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> c
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
+#ifndef QUIET
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
-
+#endif
   feature.resize( DIM_COLOR_RI_1_3_ALL );
   for( int i=0; i<DIM_COLOR_RI_1_3_ALL; i++)
     feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];

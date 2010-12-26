@@ -1,3 +1,5 @@
+#define QUIET
+
 #include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <pcl/common/eigen.h>
@@ -158,7 +160,7 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Unknown feature type.\n");
     return(-1);
   }
-  ROS_INFO ("Input feature vector extracted.\n");
+  //ROS_INFO ("Input feature vector extracted.");
 
   //--------------------------------------------------
   //* Compress the dimension of the vector (if needed)
