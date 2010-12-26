@@ -11,6 +11,8 @@
 #include <terminal_tools/print.h>
 #include <color_chlac/grsd_colorCHLAC_tools.h>
 #include "color_feature_classification/libPCA.hpp"
+#include <sys/stat.h>
+#include <dirent.h>
 
 using namespace pcl;
 using namespace std;
@@ -21,7 +23,7 @@ int classify_by_kNN( std::vector<float> feature, const char feature_type, int ar
   return 1;
 }
 
-int classify_by_subspace( std::vector<float> feature, const char feature_type ){
+int classify_by_subspace( std::vector<float> feature, const char feature_type, const int dim_subspace ){
   char dirname[ 20 ];
   char filename[ 300 ];
   Map<VectorXf> vec( &(feature[0]), feature.size() );
@@ -30,12 +32,16 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type ){
   dirname[ 11 ] = feature_type;
   dirname[ 12 ] = '\0';
 
-  // read parameters
-  int obj_class_num, dim_subspace;
-  FILE *fp = fopen( "pca_parameters.txt", "r" );
-  if( fscanf( fp, "class_num: %d\n", &obj_class_num ) != 1 ) return -1;
-  if( fscanf( fp, "dim: %d\n", &dim_subspace ) != 1 ) return -1;
-  fclose( fp );
+  // count obj class num
+  int obj_class_num = 0;
+  struct dirent *entry;
+  DIR *dp = opendir( "data" );
+  while( ( entry = readdir( dp ) ) != NULL ){
+    string tmpname = string (entry->d_name);
+    if( tmpname.compare (0, 3, "obj") == 0 )  obj_class_num ++;
+  }
+  //cout << "num " << obj_class_num << endl;
+
   // calc similarity
   PCA pca;
   int class_num = -1;
@@ -89,7 +95,8 @@ int main( int argc, char** argv ){
   //ros::init( argc, argv, "test" );
   if( argc < 4 ){
     ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options]\n", argv[0]);
-    ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
+    ROS_INFO ("    where [options] are:  -dim D = dimension of compressed feature vectors\n");
+    ROS_INFO ("    where [options] are:  -sub R = dimension of subspace\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
     return(-1);
   }
@@ -166,6 +173,20 @@ int main( int argc, char** argv ){
     compressFeature( filename, feature, dim, false );
   }
 
+  //-------------------------
+  //* dimension of subspace
+  int dim_subspace = -1;
+  if( parse_argument (argc, argv, "-sub", dim_subspace) > 0 ){
+    if ( (dim_subspace < 0) || ((dim_subspace >= (int)dim) && (dim>0)) ){
+      print_error ("Invalid subspace dimension (%d)! : larger than dim %d\n", dim_subspace, dim);
+      return (-1);
+    }
+  }
+  else{
+    print_error ("Please input subspace-dimension. \"-sub R\"\n");
+    return (-1);
+  }
+  
   //--------------
   //* classifier
   if( classifier_type == 'k' ){
@@ -174,7 +195,7 @@ int main( int argc, char** argv ){
   }
   else if( classifier_type == 's' ){
     //* classifier - SubspaceMethod -
-    classify_by_subspace( feature, feature_type );
+    classify_by_subspace( feature, feature_type, dim_subspace );
   }
   else{
     ROS_ERROR ("Unknown classifier type.\n");
@@ -189,77 +210,75 @@ int main( int argc, char** argv ){
 //* To activate this function, this package needs the dependency of "vfh_cluster_classifier"
 //*   and also some proper changes.
 
-#if 0
-int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
-  string kdtree_idx_file_name, training_data_h5_file_name, training_data_list_file_name;
+// int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
+//   string kdtree_idx_file_name, training_data_h5_file_name, training_data_list_file_name;
 
-  if( feature_type == 'v' ){
-    kdtree_idx_file_name = "kdtree_vfh.idx";
-    training_data_h5_file_name = "training_data_vfh.h5";
-    training_data_list_file_name = "training_data_vfh.list";
-  }
-  else if( feature_type == 'c' ){
-    kdtree_idx_file_name = "kdtree_colorCHLAC.idx";
-    training_data_h5_file_name = "training_data_colorCHLAC.h5";
-    training_data_list_file_name = "training_data_colorCHLAC.list";
-  }
-  else{
-    ROS_ERROR ("Unknown feature type.\n");
-    return(-1);
-  }
+//   if( feature_type == 'v' ){
+//     kdtree_idx_file_name = "kdtree_vfh.idx";
+//     training_data_h5_file_name = "training_data_vfh.h5";
+//     training_data_list_file_name = "training_data_vfh.list";
+//   }
+//   else if( feature_type == 'c' ){
+//     kdtree_idx_file_name = "kdtree_colorCHLAC.idx";
+//     training_data_h5_file_name = "training_data_colorCHLAC.h5";
+//     training_data_list_file_name = "training_data_colorCHLAC.list";
+//   }
+//   else{
+//     ROS_ERROR ("Unknown feature type.\n");
+//     return(-1);
+//   }
 
-  vector<vfh_model> models;
-  flann::Matrix<int> k_indices;
-  flann::Matrix<float> k_distances;
-  flann::Matrix<float> data;
+//   vector<vfh_model> models;
+//   flann::Matrix<int> k_indices;
+//   flann::Matrix<float> k_distances;
+//   flann::Matrix<float> data;
 
-  // Check if the data has already been saved to disk
-  if (!boost::filesystem::exists (training_data_h5_file_name) || !boost::filesystem::exists (training_data_list_file_name))
-  {
-    print_error ("Could not find training data models files %s and %s!\n", training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
-    return (-1);
-  }
-  else
-  {
-    loadFileList (models, training_data_list_file_name);
-    flann::load_from_file (data, training_data_h5_file_name, "training_data");
-    print_highlight ("Training data found. Loaded %d VFH models from %s/%s.\n", (int)data.rows, training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
-  }
+//   // Check if the data has already been saved to disk
+//   if (!boost::filesystem::exists (training_data_h5_file_name) || !boost::filesystem::exists (training_data_list_file_name))
+//   {
+//     print_error ("Could not find training data models files %s and %s!\n", training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
+//     return (-1);
+//   }
+//   else
+//   {
+//     loadFileList (models, training_data_list_file_name);
+//     flann::load_from_file (data, training_data_h5_file_name, "training_data");
+//     print_highlight ("Training data found. Loaded %d VFH models from %s/%s.\n", (int)data.rows, training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
+//   }
 
-  // Check if the tree index has already been saved to disk
-  if (!boost::filesystem::exists (kdtree_idx_file_name))
-  {
-    print_error ("Could not find kd-tree index in file %s!", kdtree_idx_file_name.c_str ());
-    return (-1);
-  }
-  else
-  {
-    flann::Index<flann::ChiSquareDistance<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
-    index.buildIndex ();
-    nearestKSearch (index, feature, k, k_indices, k_distances);
-  }
+//   // Check if the tree index has already been saved to disk
+//   if (!boost::filesystem::exists (kdtree_idx_file_name))
+//   {
+//     print_error ("Could not find kd-tree index in file %s!", kdtree_idx_file_name.c_str ());
+//     return (-1);
+//   }
+//   else
+//   {
+//     flann::Index<flann::ChiSquareDistance<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
+//     index.buildIndex ();
+//     nearestKSearch (index, feature, k, k_indices, k_distances);
+//   }
 
-  // Output the results on screen
-  print_highlight ("The closest %d neighbors for %s are:\n", k, feature.first.c_str() );
-  for (int i = 0; i < k; ++i)
-    print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
+//   // Output the results on screen
+//   print_highlight ("The closest %d neighbors for %s are:\n", k, feature.first.c_str() );
+//   for (int i = 0; i < k; ++i)
+//     print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
   
-  // // Visualize the results
-  // if( feature_type == 'c' ){
-  //   for( int m = 0; m < (int)models.size(); m++ ){
-  //     int len = models[ m ].first.length();
-  //     models[ m ].first[ len - 14 ] = 'v';
-  //     models[ m ].first[ len - 13 ] = 'f';
-  //     models[ m ].first[ len - 12 ] = 'h';
-  //     models[ m ].first[ len - 11 ] = '.';
-  //     models[ m ].first[ len - 10 ] = 'p';
-  //     models[ m ].first[ len - 9 ] = 'c';
-  //     models[ m ].first[ len - 8 ] = 'd';
-  //     models[ m ].first[ len - 7 ] = '\0';
-  //   }
-  // }
-  // visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
+//   // // Visualize the results
+//   // if( feature_type == 'c' ){
+//   //   for( int m = 0; m < (int)models.size(); m++ ){
+//   //     int len = models[ m ].first.length();
+//   //     models[ m ].first[ len - 14 ] = 'v';
+//   //     models[ m ].first[ len - 13 ] = 'f';
+//   //     models[ m ].first[ len - 12 ] = 'h';
+//   //     models[ m ].first[ len - 11 ] = '.';
+//   //     models[ m ].first[ len - 10 ] = 'p';
+//   //     models[ m ].first[ len - 9 ] = 'c';
+//   //     models[ m ].first[ len - 8 ] = 'd';
+//   //     models[ m ].first[ len - 7 ] = '\0';
+//   //   }
+//   // }
+//   // visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
 
-  return(1);
-}
-#endif
+//   return(1);
+// }

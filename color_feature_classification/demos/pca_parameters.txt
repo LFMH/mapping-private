@@ -1,2 +1,0 @@
-class_num: 4
-dim: 100

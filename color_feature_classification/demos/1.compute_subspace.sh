@@ -11,19 +11,12 @@ do
 	echo $i
 	num=$(printf "%03d" $n)
 	files=`find $i -type f \( -iname "*.pcd" ! -iname "*vfh*" ! -iname "*colorCHLAC*" \) | sort -R`
-# VFH
-	#rosrun color_feature_classification computeSubspace_with_rotate v $files pca_result_vfh/$num
-# 	files=`find $i -type f \( -iname "*_vfh.pcd" \) | sort -R`
-# 	rosrun color_feature_classification computeSubspace $files pca_result_vfh/$num
-	#rosrun color_feature_classification computeSubspace $files -dim 100 -comp pca_result_vfh/compress_axis pca_result_vfh/$num
-	#rosrun color_feature_classification computeSubspace $files pca_result_vfh/$num
-	
-# colorCHLAC
-	rosrun color_feature_classification computeSubspace_with_rotate c $files -dim 600 -comp pca_result_c/compress_axis -rotate 1 pca_result_c/$num
-# 	files=`find $i -type f \( -iname "*_colorCHLAC.pcd" \) | sort -R`
-# 	rosrun color_feature_classification computeSubspace $files pca_result_colorCHLAC/$num
-	#rosrun color_feature_classification computeSubspace $files -dim 100 -comp pca_result_colorCHLAC/compress_axis pca_result_colorCHLAC/$num
-	#rosrun color_feature_classification computeSubspace $files pca_result_colorCHLAC/$num
+
+	rosrun color_feature_classification computeSubspace_with_rotate c $files -dim 800 -comp pca_result_c/compress_axis -rotate 1 pca_result_c/$num
+	rosrun color_feature_classification computeSubspace_with_rotate d $files -dim 800 -comp pca_result_d/compress_axis -rotate 1 pca_result_d/$num
+	rosrun color_feature_classification computeSubspace g $files pca_result_g/$num
+	rosrun color_feature_classification computeSubspace r $files pca_result_r/$num
+	#rosrun color_feature_classification computeSubspace r $files -dim 50 -comp pca_result_r/compress_axis pca_result_r/$num
 	
 	n=`expr $n + 1`
     fi
