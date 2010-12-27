@@ -2,6 +2,8 @@
 
 using namespace pcl;
 
+//#define DIVID_TEST
+
 //-------
 //* main
 int main( int argc, char** argv ){
@@ -25,6 +27,36 @@ int main( int argc, char** argv ){
   pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
   getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 
+#ifdef DIVID_TEST
+  //* compute - GRSD -
+  std::vector< std::vector<float> > grsd;
+  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, 10 );
+
+  //* compute - ColorCHLAC -
+  std::vector< std::vector<float> > colorCHLAC;
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
+
+  //* concatenate
+  std::vector< std::vector<float> > feature;
+  std::vector<float> debug( 137 );
+  for( int i=0; i<137; i++ ) debug[ i ] = 0;
+  const int hist_num = grsd.size();
+  for( int h=0; h<hist_num; h++ ){
+    feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+    for( int i=0; i<137; i++ )
+      debug[ i ] += (conc_vector( grsd[ h ], colorCHLAC[ h ] ))[ i ];
+  }
+
+  //* write
+  int length = strlen( argv[1] );
+  argv[1][ length-4 ] = '\0';
+  char filename[ 300 ];
+  sprintf(filename,"%s_GRSD_CCHLAC.pcd",argv[1]);
+  writeFeature( filename, feature );
+  writeFeature( "debug.pcd", debug );
+
+#else
   //* compute - GRSD -
   std::vector<float> grsd;
   computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size);
@@ -40,6 +72,7 @@ int main( int argc, char** argv ){
   char filename[ 300 ];
   sprintf(filename,"%s_GRSD_CCHLAC.pcd",argv[1]);
   writeFeature( filename, conc_vector( grsd, colorCHLAC ) );
+#endif
 
   return(0);
 }

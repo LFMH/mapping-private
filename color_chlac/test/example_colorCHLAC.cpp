@@ -13,6 +13,8 @@
 
 using namespace pcl;
 
+//#define DIVID_TEST
+
 //* time
 double t1,t2;
 double my_clock()
@@ -77,11 +79,32 @@ bool writeColorCHLAC(const char *name, pcl::PointCloud<pcl::PointXYZRGB> cloud_o
   colorCHLAC_.setSearchMethod (normals_tree_);
   colorCHLAC_.setColorThreshold( 127, 127, 127 );
   //colorCHLAC_.setInputCloud (voxel_grid_);
+
+#ifdef DIVID_TEST
+  colorCHLAC_.setVoxelFilter (grid_, 10);
+  colorCHLAC_.setInputCloud (cloud_downsampled_);
+  t1 = my_clock();
+  colorCHLAC_.compute( colorCHLAC_signature );
+  t2 = my_clock();
+  // for debug
+  pcl::PointCloud<ColorCHLACSignature981> colorCHLAC_signature_all;
+  colorCHLAC_signature_all.points.resize (1);
+  colorCHLAC_signature_all.width = 1;
+  colorCHLAC_signature_all.height = 1;
+  for( int t=0; t<DIM_COLOR_1_3_ALL; t++ )
+    colorCHLAC_signature_all.points[0].histogram[t] = 0;
+  const int num = colorCHLAC_signature.points.size();
+  for( int i=0; i<num; i++ )
+    for( int t=0; t<DIM_COLOR_1_3_ALL; t++ )
+      colorCHLAC_signature_all.points[0].histogram[t] += colorCHLAC_signature.points[i].histogram[t];
+  pcl::io::savePCDFile ("debug.pcd", colorCHLAC_signature_all);
+#else
   colorCHLAC_.setVoxelFilter (grid_);
   colorCHLAC_.setInputCloud (cloud_downsampled_);
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
   t2 = my_clock();
+#endif
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
   pcl::io::savePCDFile (name, colorCHLAC_signature);
   ROS_INFO("ColorCHLAC signatures written to %s", name);

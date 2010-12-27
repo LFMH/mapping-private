@@ -53,22 +53,30 @@ bool readPoints( const char *name, pcl::PointCloud<T>& cloud ){
 
 //-----------
 //* write
-void writeFeature(const char *name, const std::vector<float> feature){
-  const int feature_size = feature.size();
+void writeFeature(const char *name, const std::vector< std::vector<float> > feature){
+  const int hist_num = feature.size();
+  const int feature_size = feature[ 0 ].size();
   FILE *fp = fopen( name, "w" );
   fprintf(fp,"# .PCD v.7 - Point Cloud Data file format\n");
   fprintf(fp,"FIELDS vfh\n");
   fprintf(fp,"SIZE 4\n");
   fprintf(fp,"TYPE F\n");
   fprintf(fp,"COUNT %d\n",feature_size);
-  fprintf(fp,"WIDTH 1\n");
+  fprintf(fp,"WIDTH %d\n", hist_num);
   fprintf(fp,"HEIGHT 1\n");
-  fprintf(fp,"POINTS 1\n");
+  fprintf(fp,"POINTS %d\n", hist_num);
   fprintf(fp,"DATA ascii\n");
-  for(int t=0;t<feature_size;t++)
-    fprintf(fp,"%f ",feature[ t ]);
-  fprintf(fp,"\n");
+  for( int h=0; h<hist_num; h++ ){
+    for(int t=0;t<feature_size;t++)
+      fprintf(fp,"%f ",feature[ h ][ t ]);
+    fprintf(fp,"\n");
+  }
   fclose(fp);
+}
+void writeFeature(const char *name, const std::vector<float> feature){
+  std::vector< std::vector<float> > tmp( 1 );
+  tmp[ 0 ] = feature;
+  writeFeature( name, tmp );
 }
 
 //------------------
@@ -126,8 +134,26 @@ int get_type (float min_radius, float max_radius)
 //--------------------
 //* compute - GRSD -
 template <typename T>
-void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const double voxel_size ){
+void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, int subdivision_size = 0 ){
   double fixed_radius_search = 0.03;
+
+  //* for computing multiple GRSD with subdivisions
+  int hist_num = 1;
+  float inverse_subdivision_size;
+  Eigen3::Vector3i div_b_;
+  Eigen3::Vector3i subdiv_b_;
+  Eigen3::Vector3i subdivb_mul_;
+  if( subdivision_size > 0 ){
+    inverse_subdivision_size = 1.0 / subdivision_size;
+    div_b_ = grid.getNrDivisions();
+    subdiv_b_ = Eigen3::Vector3i ( ceil( div_b_[0]*inverse_subdivision_size ), ceil( div_b_[1]*inverse_subdivision_size ), ceil( div_b_[2]*inverse_subdivision_size ) );
+    subdivb_mul_ = Eigen3::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
+    hist_num = subdiv_b_[0] * subdiv_b_[1] * subdiv_b_[2];
+  }
+  else if( subdivision_size < 0 ){
+    std::cerr << "(In computeGRSD) Invalid subdivision size: " << subdivision_size << std::endl;
+    return;
+  }
 
   // Compute RSD
   pcl::RSDEstimation <T, T, pcl::PrincipalRadiiRSD> rsd;
@@ -146,7 +172,10 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   // Get rmin/rmax for adjacent 27 voxel
   Eigen3::MatrixXi relative_coordinates (3, 13);
 
-  Eigen3::MatrixXi transition_matrix =  Eigen3::MatrixXi::Zero(6, 6);
+  //Eigen3::MatrixXi transition_matrix =  Eigen3::MatrixXi::Zero(6, 6);
+  std::vector< Eigen3::MatrixXi > transition_matrix( hist_num );
+  for( int i=0; i<hist_num; i++ )
+    transition_matrix[ i ] =  Eigen3::MatrixXi::Zero(6, 6);
 
   int idx = 0;
   
@@ -186,6 +215,18 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   
   for (size_t idx = 0; idx < (boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled))->points.size (); ++idx)
   {
+    // calc hist_idx
+    int hist_idx;
+    if( hist_num == 1 ) hist_idx = 0;
+    else{
+      const int x_mul_y = div_b_[0] * div_b_[1];
+      const int tmp_z = idx / x_mul_y;
+      const int tmp_y = ( idx % x_mul_y ) / div_b_[0];
+      const int tmp_x = idx % div_b_[0];
+      Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
+      hist_idx = ijk.dot (subdivb_mul_);
+    }
+
     int source_type = types[idx];
     std::vector<int> neighbors = grid.getNeighborCentroidIndices ((boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled))->points[idx], relative_coordinates);
     for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
@@ -196,38 +237,46 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
       else
         neighbor_type = types[neighbors[id_n]];
 
-      transition_matrix(source_type, neighbor_type)++;
+      transition_matrix[ hist_idx ](source_type, neighbor_type)++;
     }
   }
 
-  int nrf = 0;
   pcl::PointCloud<pcl::GRSDSignature21> cloud_grsd;
-  cloud_grsd.points.resize(1);
+  cloud_grsd.points.resize(hist_num);
   
-  for (int i=1; i<NR_CLASS+1; i++)
-  {
-    for (int j=0; j<=i; j++)
-    {
-      cloud_grsd.points[0].histogram[nrf++] = transition_matrix(i, j); //@TODO: resize point cloud
-    }
+  for( int h=0; h<hist_num; h++ ){
+    int nrf = 0;
+    for (int i=1; i<NR_CLASS+1; i++)
+      for (int j=0; j<=i; j++)
+	cloud_grsd.points[ h ].histogram[nrf++] = transition_matrix[ h ](i, j); //@TODO: resize point cloud
   }
 
-  feature.resize( 20 );
-  for( int i=0; i<20; i++)
-    feature[ i ] = cloud_grsd.points[ 0 ].histogram[ i ] * NORMALIZE_GRSD;
+  feature.resize( hist_num );
+  for( int h=0; h<hist_num; h++ ){
+    feature[ h ].resize( 20 );
+    for( int i=0; i<20; i++)
+      feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
+  }
+}
+
+template <typename T>
+void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const double voxel_size ){
+  std::vector< std::vector<float> > tmp( 1 );
+  computeGRSD( grid, cloud, cloud_downsampled, tmp, voxel_size, 0 ); // for one signature
+  feature = tmp[ 0 ];
 }
 
 //------------------------
 //* compute - ColorCHLAC -
 template <typename PointT>
-void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, int subdivision_size = 0 ){
     pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
   pcl::ColorCHLACEstimation<PointT, pcl::ColorCHLACSignature981> colorCHLAC_;
 
   colorCHLAC_.setRadiusSearch (1.8);
   colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
   colorCHLAC_.setColorThreshold( thR, thG, thB );
-  colorCHLAC_.setVoxelFilter (grid);
+  colorCHLAC_.setVoxelFilter (grid, subdivision_size);
   colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
@@ -235,20 +284,31 @@ void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> clou
 #ifndef QUIET
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
 #endif
-  feature.resize( DIM_COLOR_1_3_ALL );
-  for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
-    feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
+  const int hist_num = colorCHLAC_signature.points.size();
+  feature.resize( hist_num );
+  for( int h=0; h<hist_num; h++ ){
+    feature[ h ].resize( DIM_COLOR_1_3_ALL );
+    for( int i=0; i<DIM_COLOR_1_3_ALL; i++)
+      feature[ h ][ i ] = colorCHLAC_signature.points[ h ].histogram[ i ];
+  }
 }
 
 template <typename PointT>
-void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+  std::vector< std::vector<float> > tmp( 1 );
+  computeColorCHLAC( grid, cloud, tmp, thR, thG, thB ); // for one signature
+  feature = tmp[ 0 ];
+}
+
+template <typename PointT>
+void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, int subdivision_size = 0 ){
   pcl::PointCloud<pcl::ColorCHLACSignature117> colorCHLAC_signature;
   pcl::ColorCHLAC_RI_Estimation<PointT, pcl::ColorCHLACSignature117> colorCHLAC_;
 
   colorCHLAC_.setRadiusSearch (1.8);
   colorCHLAC_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
   colorCHLAC_.setColorThreshold( thR, thG, thB );
-  colorCHLAC_.setVoxelFilter (grid);
+  colorCHLAC_.setVoxelFilter (grid, subdivision_size);
   colorCHLAC_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
   t1 = my_clock();
   colorCHLAC_.compute( colorCHLAC_signature );
@@ -256,9 +316,20 @@ void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> c
 #ifndef QUIET
   ROS_INFO (" %d colorCHLAC estimated. (%f sec)", (int)colorCHLAC_signature.points.size (), t2-t1);
 #endif
-  feature.resize( DIM_COLOR_RI_1_3_ALL );
-  for( int i=0; i<DIM_COLOR_RI_1_3_ALL; i++)
-    feature[ i ] = colorCHLAC_signature.points[ 0 ].histogram[ i ];
+  const int hist_num = colorCHLAC_signature.points.size();
+  feature.resize( hist_num );
+  for( int h=0; h<hist_num; h++ ){
+    feature[ h ].resize( DIM_COLOR_RI_1_3_ALL );
+    for( int i=0; i<DIM_COLOR_RI_1_3_ALL; i++)
+      feature[ h ][ i ] = colorCHLAC_signature.points[ h ].histogram[ i ];
+  }
+}
+
+template <typename PointT>
+void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB ){
+  std::vector< std::vector<float> > tmp( 1 );
+  computeColorCHLAC_RI( grid, cloud, tmp, thR, thG, thB ); // for one signature
+  feature = tmp[ 0 ];
 }
 
 //--------------

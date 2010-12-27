@@ -47,12 +47,12 @@ namespace pcl
       
       inline void setColorThreshold ( int thR, int thG, int thB ){ color_thR = thR; color_thG = thG; color_thB = thB; }
 
-      inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ ){ grid = grid_; }
+      inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
       //ColorCHLACEstimation () : voxel_size (0)
-      ColorCHLACEstimation () : color_thR (-1), color_thG (-1), color_thB (-1)
+      ColorCHLACEstimation () : hist_num (1), color_thR (-1), color_thG (-1), color_thB (-1)
       {
         feature_name_ = "ColorCHLACEstimation";
 	relative_coordinates.resize(3, 13);
@@ -85,11 +85,11 @@ namespace pcl
       inline int binarize_b ( int val );
 
       //* functions for ColorCHLACSignature981 (rotation-variant) *//
-      virtual inline void addColorCHLAC_0 ( PointCloudOut &output );
-      virtual inline void addColorCHLAC_0_bin ( PointCloudOut &output );
-      virtual inline void addColorCHLAC_1 ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      virtual inline void addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      virtual inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
+      virtual inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
+      virtual inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
+      virtual inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      virtual inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      virtual inline void computeColorCHLAC ( const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       virtual inline void normalizeColorCHLAC ( PointCloudOut &output );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,6 +103,11 @@ namespace pcl
     protected:
       pcl::VoxelGrid<PointT> grid;
       Eigen3::MatrixXi relative_coordinates;
+      int hist_num;
+      float inverse_subdivision_size;
+      Eigen3::Vector3i div_b_;
+      Eigen3::Vector3i subdiv_b_;
+      Eigen3::Vector3i subdivb_mul_;
       int color;
       int center_r;
       int center_g;
@@ -148,10 +153,10 @@ namespace pcl
       inline int binarize_b ( int val );
 
       //* functions for ColorCHLACSignature117 (rotation-invariant) *//
-      inline void addColorCHLAC_0 ( PointCloudOut &output );
-      inline void addColorCHLAC_0_bin ( PointCloudOut &output );
-      inline void addColorCHLAC_1 ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      inline void addColorCHLAC_1_bin ( PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
+      inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
+      inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
       //inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       inline void normalizeColorCHLAC ( PointCloudOut &output );
 
@@ -166,6 +171,11 @@ namespace pcl
     protected:
       using ColorCHLACEstimation<PointT, PointOutT>::grid;
       using ColorCHLACEstimation<PointT, PointOutT>::relative_coordinates;
+      using ColorCHLACEstimation<PointT, PointOutT>::hist_num;
+      using ColorCHLACEstimation<PointT, PointOutT>::inverse_subdivision_size;
+      using ColorCHLACEstimation<PointT, PointOutT>::div_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::subdiv_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::subdivb_mul_;
       using ColorCHLACEstimation<PointT, PointOutT>::color;
       using ColorCHLACEstimation<PointT, PointOutT>::center_r;
       using ColorCHLACEstimation<PointT, PointOutT>::center_g;
