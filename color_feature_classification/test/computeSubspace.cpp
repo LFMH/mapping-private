@@ -1,3 +1,5 @@
+#define QUIET
+
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
@@ -18,7 +20,7 @@ float voxel_size;
 
 void
 computeFeatureModels ( const char feature_type, int argc, char **argv, const std::string &extension, 
-		       std::vector< std::vector<float> > &models)
+		       std::vector< std::vector<float> > &models, const int subdivision_size)
 {  
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
@@ -41,15 +43,20 @@ computeFeatureModels ( const char feature_type, int argc, char **argv, const std
       getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
       
       //* compute - GRSD -
-      std::vector<float> grsd;
-      computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size );
+      std::vector< std::vector<float> > grsd;
+      computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+      const int hist_num = grsd.size(); // number of subdivisions
 
-      if( feature_type == 'g' ) models.push_back (grsd);
+      if( feature_type == 'g' ){
+	for( int h=0; h<hist_num; h++ )
+	  models.push_back ( grsd[ h ] );
+      }
       else{
-	//* compute - ColorCHLAC -
-	std::vector< float > colorCHLAC;
-	computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
-	models.push_back ( conc_vector( grsd, colorCHLAC ) );
+	//* compute - ColorCHLAC - rotation-invariant
+	std::vector< std::vector<float> > colorCHLAC;
+	computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
+	for( int h=0; h<hist_num; h++ )
+	  models.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
       }
     }
   }
@@ -86,6 +93,7 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Need at least three parameters! Syntax is: %s {feature_initial(g or r)} [model_directory] [options] [output_pca_name]\n", argv[0]);
     ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
+    ROS_INFO ("                          -subdiv N = subdivision size (e.g. 10 voxels)\n");
     return(-1);
   }
 
@@ -106,11 +114,20 @@ int main( int argc, char** argv ){
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
+  // subdivision size
+  int subdivision_size = 0;
+  if( parse_argument (argc, argv, "-subdiv", subdivision_size) > 0 ){
+    if ( subdivision_size < 0 ){
+      print_error ("Invalid subdivision size (%d)! \n", subdivision_size);
+      return (-1);
+    }
+  }
+
   // compute features
   std::string extension (".pcd");
   transform (extension.begin (), extension.end (), extension.begin (), (int(*)(int))tolower);
   std::vector< std::vector<float> > models;
-  computeFeatureModels (feature_type, argc, argv, extension, models);
+  computeFeatureModels (feature_type, argc, argv, extension, models, subdivision_size);
 
   // compress the dimension of the vector (if needed)
   int dim;

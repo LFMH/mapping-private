@@ -152,7 +152,10 @@ int main( int argc, char** argv ){
 
       //* compute - ColorCHLAC -
       std::vector< float > colorCHLAC;
-      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
+      if( feature_type == 'd' )
+	computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
+      else
+	computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
       feature = conc_vector( grsd, colorCHLAC );
     }
   }

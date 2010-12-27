@@ -1,3 +1,5 @@
+#define QUIET
+
 #include <pcl/features/vfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
@@ -16,8 +18,7 @@ using namespace terminal_tools;
 int thR, thG, thB;
 float voxel_size;
 
-template <typename T>
-bool rotatePoints( const T& input_cloud, T& output_cloud, const double roll, const double pan, const double roll2 ){
+bool rotatePoints( const pcl::PointCloud<PointXYZRGB> &input_cloud, pcl::PointCloud<PointXYZRGB> &output_cloud, const double roll, const double pan, const double roll2 ){
   output_cloud = input_cloud;
   double R1[9];
   R1[0]=cos(roll);  R1[1]=-sin(roll);  R1[2]=0;
@@ -51,10 +52,62 @@ bool rotatePoints( const T& input_cloud, T& output_cloud, const double roll, con
   return(1);
 }
 
+bool rotatePoints( const pcl::PointCloud<PointXYZRGBNormal> &input_cloud, pcl::PointCloud<PointXYZRGBNormal> &output_cloud, const double roll, const double pan, const double roll2 ){
+  output_cloud = input_cloud;
+  double R1[9];
+  R1[0]=cos(roll);  R1[1]=-sin(roll);  R1[2]=0;
+  R1[3]=sin(roll);  R1[4]=cos(roll);   R1[5]=0;
+  R1[6]=0;          R1[7]=0;           R1[8]=1;
+  double R2[9];
+  R2[0]=cos(pan);   R2[1]=0;  R2[2]=sin(pan);
+  R2[3]=0;          R2[4]=1;  R2[5]=0;
+  R2[6]=-sin(pan);  R2[7]=0;  R2[8]=cos(pan);
+  double R3[9];
+  R3[0]=cos(roll2); R3[1]=-sin(roll2); R3[2]=0;
+  R3[3]=sin(roll2); R3[4]=cos(roll2);  R3[5]=0;
+  R3[6]=0;          R3[7]=0;           R3[8]=1;
+
+  float x1, y1, z1, x2, y2, z2;
+  float nx1, ny1, nz1, nx2, ny2, nz2;
+  const int v_num = input_cloud.points.size();
+  for( int i=0; i<v_num; i++ ){
+    x1 = R1[0] * input_cloud.points[ i ].x + R1[1] * input_cloud.points[ i ].y + R1[2] * input_cloud.points[ i ].z;
+    y1 = R1[3] * input_cloud.points[ i ].x + R1[4] * input_cloud.points[ i ].y + R1[5] * input_cloud.points[ i ].z;
+    z1 = R1[6] * input_cloud.points[ i ].x + R1[7] * input_cloud.points[ i ].y + R1[8] * input_cloud.points[ i ].z;
+    nx1 = R1[0] * input_cloud.points[ i ].normal_x + R1[1] * input_cloud.points[ i ].normal_y + R1[2] * input_cloud.points[ i ].normal_z;
+    ny1 = R1[3] * input_cloud.points[ i ].normal_x + R1[4] * input_cloud.points[ i ].normal_y + R1[5] * input_cloud.points[ i ].normal_z;
+    nz1 = R1[6] * input_cloud.points[ i ].normal_x + R1[7] * input_cloud.points[ i ].normal_y + R1[8] * input_cloud.points[ i ].normal_z;
+    
+    x2 = R2[0]*x1 + R2[1]*y1 + R2[2]*z1;
+    y2 = R2[3]*x1 + R2[4]*y1 + R2[5]*z1;
+    z2 = R2[6]*x1 + R2[7]*y1 + R2[8]*z1;
+    nx2 = R2[0]*nx1 + R2[1]*ny1 + R2[2]*nz1;
+    ny2 = R2[3]*nx1 + R2[4]*ny1 + R2[5]*nz1;
+    nz2 = R2[6]*nx1 + R2[7]*ny1 + R2[8]*nz1;
+	    
+    output_cloud.points[ i ].x = R3[0]*x2 + R3[1]*y2 + R3[2]*z2;
+    output_cloud.points[ i ].y = R3[3]*x2 + R3[4]*y2 + R3[5]*z2;
+    output_cloud.points[ i ].z = R3[6]*x2 + R3[7]*y2 + R3[8]*z2;
+    output_cloud.points[ i ].normal_x = R3[0]*nx2 + R3[1]*ny2 + R3[2]*nz2;
+    output_cloud.points[ i ].normal_y = R3[3]*nx2 + R3[4]*ny2 + R3[5]*nz2;
+    output_cloud.points[ i ].normal_z = R3[6]*nx2 + R3[7]*ny2 + R3[8]*nz2;
+  }
+
+  return(1);
+}
+
 void
 computeFeatureModels ( const char feature_type, const int rotate_step_num, int argc, char **argv, const std::string &extension, 
-		       std::vector< std::vector<float> > &models)
+		       std::vector< std::vector<float> > &models, const int subdivision_size)
 {  
+ // necessary if feature_type == 'd'
+  pcl::PointCloud<PointXYZRGBNormal> cloud_normal;
+  pcl::PointCloud<PointXYZRGBNormal> cloud_normal_r;
+
+ // necessary if feature_type == 'c'
+  pcl::PointCloud<PointXYZRGB> cloud_object_cluster;
+  pcl::PointCloud<PointXYZRGB> cloud_object_cluster_r; // rotate
+
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
     // Needs to have the right size
@@ -63,117 +116,126 @@ computeFeatureModels ( const char feature_type, const int rotate_step_num, int a
     transform (fname.begin (), fname.end (), fname.begin (), (int(*)(int))tolower);
     if (fname.compare (fname.size () - extension.size (), extension.size (), extension) == 0){
 
-      std::vector< float > m;
-      pcl::PointCloud<PointXYZRGB> cloud_object_cluster;
-      pcl::PointCloud<PointXYZRGB> cloud_object_cluster_r; // rotate
       readPoints( argv[i], cloud_object_cluster );
 
-      std::vector<float> grsd;
+      std::vector< std::vector<float> > grsd;
+      std::vector< std::vector<float> > colorCHLAC;
       if( feature_type == 'd' ){
 	//* compute normals
-	pcl::PointCloud<PointXYZRGBNormal> cloud;
-	computeNormal( cloud_object_cluster, cloud );
-	
-	//* voxelize
-	pcl::VoxelGrid<PointXYZRGBNormal> grid;
-	pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
-	getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
-	
-	//* compute - GRSD -
-	computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size );
-      }
-
+	computeNormal( cloud_object_cluster, cloud_normal );
+      }	
+      
       for(int r3=0; r3 < rotate_step_num; r3++){
 	for(int r2=0; r2 < rotate_step_num; r2++){
 	  for(int r1=0; r1 < rotate_step_num; r1++){
 	    const double roll  = r3 * M_PI / (2*rotate_step_num);
 	    const double pan   = r2 * M_PI / (2*rotate_step_num);
 	    const double roll2 = r1 * M_PI / (2*rotate_step_num);
-	    rotatePoints( cloud_object_cluster, cloud_object_cluster_r, roll, pan, roll2 );
-
-	    //* voxelize
-	    pcl::VoxelGrid<PointXYZRGB> grid_r;
-	    pcl::PointCloud<PointXYZRGB> cloud_downsampled_r;
-	    getVoxelGrid( grid_r, cloud_object_cluster_r, cloud_downsampled_r, voxel_size );
-
-	    //* compute - ColorCHLAC -
-	    computeColorCHLAC( grid_r, cloud_downsampled_r, m, thR, thG, thB );
-
-	    if( feature_type == 'c' ) models.push_back (m);
-	    else models.push_back ( conc_vector( grsd, m ) );
-
-	    std::vector<float> m_rotate;
-	    std::vector<float> m_rotate_pre = m;
-	    std::vector<float> m_rotate_pre2;
 	    
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 1 - 3
-	      m_rotate_pre = m_rotate;
+	    if( feature_type == 'd' ){
+	      rotatePoints( cloud_normal, cloud_normal_r, roll, pan, roll2 );
+
+	      //* voxelize
+	      pcl::VoxelGrid<PointXYZRGBNormal> grid;
+	      pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
+	      getVoxelGrid( grid, cloud_normal_r, cloud_downsampled, voxel_size );
+	      
+	      //* compute - GRSD -
+	      computeGRSD( grid, cloud_normal_r, cloud_downsampled, grsd, voxel_size, subdivision_size );
+
+	      //* compute - ColorCHLAC -
+	      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
 	    }
-	      
-	    rotateFeature90( m_rotate,m,R_MODE_3);
-	    if( feature_type == 'c' ) models.push_back (m_rotate);
-	    else models.push_back ( conc_vector( grsd, m_rotate ) ); // 4
-	    m_rotate_pre  = m_rotate;
-	    m_rotate_pre2 = m_rotate;
-	      
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 5 - 7
-	      m_rotate_pre = m_rotate;
+	    else{
+	      rotatePoints( cloud_object_cluster, cloud_object_cluster_r, roll, pan, roll2 );
+
+	      //* voxelize
+	      pcl::VoxelGrid<PointXYZRGB> grid;
+	      pcl::PointCloud<PointXYZRGB> cloud_downsampled;
+	      getVoxelGrid( grid, cloud_object_cluster_r, cloud_downsampled, voxel_size );
+
+	      //* compute - ColorCHLAC -
+	      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
 	    }
+	    const int hist_num = colorCHLAC.size();
+
+	    for( int h=0; h<hist_num; h++ ){
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC[ h ]);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
 	      
-	    rotateFeature90( m_rotate,m_rotate_pre2,R_MODE_3);
-	    if( feature_type == 'c' ) models.push_back (m_rotate);
-	    else models.push_back ( conc_vector( grsd, m_rotate ) ); // 8
-	    m_rotate_pre = m_rotate;
-	    m_rotate_pre2 = m_rotate;
+	      std::vector<float> colorCHLAC_rotate;
+	      std::vector<float> colorCHLAC_rotate_pre = colorCHLAC[ h ];
+	      std::vector<float> colorCHLAC_rotate_pre2;
 	      
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 9 - 11
-	      m_rotate_pre = m_rotate;
-	    }
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 1 - 3
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
 	      
-	    rotateFeature90( m_rotate,m_rotate_pre2,R_MODE_3);
-	    if( feature_type == 'c' ) models.push_back (m_rotate);
-	    else models.push_back ( conc_vector( grsd, m_rotate ) ); // 12
-	    m_rotate_pre = m_rotate;
-	    //m_rotate_pre2 = m_rotate;
+	      rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_3);
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 4
+	      colorCHLAC_rotate_pre  = colorCHLAC_rotate;
+	      colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
 	      
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 13 - 15
-	      m_rotate_pre = m_rotate;
-	    }
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 5 - 7
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
 	      
-	    rotateFeature90( m_rotate,m,R_MODE_1);
-	    if( feature_type == 'c' ) models.push_back (m_rotate);
-	    else models.push_back ( conc_vector( grsd, m_rotate ) ); // 16
-	    m_rotate_pre = m_rotate;
+	      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 8
+	      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
 	      
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 17 - 19
-	      m_rotate_pre = m_rotate;
-	    }
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 9 - 11
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
 	      
-	    rotateFeature90( m_rotate,m,R_MODE_4);
-	    if( feature_type == 'c' ) models.push_back (m_rotate);
-	    else models.push_back ( conc_vector( grsd, m_rotate ) ); // 20
-	    m_rotate_pre = m_rotate;
-	    
-	    for(int t=0;t<3;t++){
-	      rotateFeature90( m_rotate,m_rotate_pre,R_MODE_2);
-	      if( feature_type == 'c' ) models.push_back (m_rotate);
-	      else models.push_back ( conc_vector( grsd, m_rotate ) ); // 21 - 23
-	      m_rotate_pre = m_rotate;
+	      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 12
+	      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      //colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
+	      
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 13 - 15
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
+	      
+	      rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_1);
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 16
+	      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 17 - 19
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
+	      
+	      rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_4);
+	      if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+	      else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 20
+	      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      
+	      for(int t=0;t<3;t++){
+		rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		if( feature_type == 'c' ) models.push_back (colorCHLAC_rotate);
+		else models.push_back ( conc_vector( grsd[ h ], colorCHLAC_rotate ) ); // 21 - 23
+		colorCHLAC_rotate_pre = colorCHLAC_rotate;
+	      }
 	    }
 
 	    if(r2==0) break;
@@ -216,6 +278,7 @@ int main( int argc, char** argv ){
     ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
     ROS_INFO ("                          -rotate rotate_step_num = e.g. 3 for 30 degrees rotation\n");
+    ROS_INFO ("                          -subdiv N = subdivision size (e.g. 10 voxels)\n");
     return(-1);
   }
 
@@ -245,11 +308,20 @@ int main( int argc, char** argv ){
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
+  // subdivision size
+  int subdivision_size = 0;
+  if( parse_argument (argc, argv, "-subdiv", subdivision_size) > 0 ){
+    if ( subdivision_size < 0 ){
+      print_error ("Invalid subdivision size (%d)! \n", subdivision_size);
+      return (-1);
+    }
+  }
+
   // compute features
   std::string extension (".pcd");
   transform (extension.begin (), extension.end (), extension.begin (), (int(*)(int))tolower);
   std::vector< std::vector<float> > models;
-  computeFeatureModels (feature_type, rotate_step_num, argc, argv, extension, models);
+  computeFeatureModels (feature_type, rotate_step_num, argc, argv, extension, models, subdivision_size);
 
   // compress the dimension of the vector (if needed)
   int dim;
