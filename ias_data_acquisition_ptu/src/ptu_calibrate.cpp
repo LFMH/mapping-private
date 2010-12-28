@@ -34,7 +34,8 @@
  */
 
 /**
-  * \author Romain Thibaux, Radu Bogdan Rusu 
+  * \author Romain Thibaux, Radu Bogdan Rusu
+  * \author modified: Dejan Pangercic
   *
   * @b ptu_calibrate attempts to estimate pan-tilt calibration values as ROS
   * parameters based on point cloud planar segmentation.
@@ -52,8 +53,10 @@
 #include "pcl/sample_consensus/model_types.h"
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
+#include "pcl/filters/extract_indices.h"
 
 #include <pcl_ros/publisher.h>
 
@@ -65,7 +68,7 @@
 #include <message_filters/subscriber.h>
 #include <dp_ptu47_pan_tilt_stage/PanTiltStamped.h>
 
-typedef pcl::PointXYZ Point;
+typedef pcl::PointXYZRGB Point;
 typedef pcl::PointCloud<Point> PointCloud;
 typedef PointCloud::Ptr PointCloudPtr;
 typedef PointCloud::ConstPtr PointCloudConstPtr;
@@ -91,13 +94,14 @@ public:
   {
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
+    cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
     //nh_.getParam("ptu/stem_height", stem_height_);  // Initial guess, which will be refined
     //nh_.getParam("ptu/table_size", table_size_);
     //printf("Read table size: %f\n", table_size_);
       
     vgrid_.setFilterFieldName ("z");
     vgrid_.setFilterLimits (0, 1.0);
-    vgrid_.setLeafSize (.01, .01, .01);
+    //vgrid_.setLeafSize (.01, .01, .01);
 
     seg_.setOptimizeCoefficients (true);
     seg_.setModelType (pcl::SACMODEL_PLANE);
@@ -121,7 +125,7 @@ public:
   void 
   init (double tolerance)  // tolerance: how close to (0,0) is good enough?
   {
-    std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2");
+    std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2_throttle");
     std::string pan_tilt_topic = nh_.resolveName ("/dp_ptu47/pan_tilt_status_stamped");
 
     // TODO?: Initialize the /ptu/base_link frame with a weak prior centered around a
@@ -148,83 +152,58 @@ private:
   {
     ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
 
-    //       // Transform the wall protection equation to narrow_stereo_optical_frame
-    //       tf::Stamped<tf::Vector3> wp_normal_optical (tf::Vector3 (0, 0, 0), cloud_in->header.stamp, "/base_link");
-    //       double wp_offset_optical (0);
-    //       if (!tf_listener_.waitForTransform ("/narrow_stereo_optical_frame", cloud_in->header.frame_id, cloud_in->header.stamp, ros::Duration (1.0)))
-    //         ROS_WARN ("[%s] Could not transform table/wall boundary equation to /narrow_stereo_optical_frame", getName ().c_str ());
-    //       else 
-    //       {
-    //         const tf::Stamped<tf::Vector3> wp_normal_base_link (wp_normal, cloud_in->header.stamp, "/base_link");
-    //         tf_listener_.transformVector ("/narrow_stereo_optical_frame", wp_normal_base_link, wp_normal_optical);
-    //         const tf::Stamped<tf::Point> base_link_origin_base_link (tf::Point (0, 0, 0), cloud_in->header.stamp, "/base_link");
-    //         tf::Stamped<tf::Point> base_link_origin_optical;
-    //         tf_listener_.transformPoint ("/narrow_stereo_optical_frame", base_link_origin_base_link, base_link_origin_optical);
-    //         wp_offset_optical = wp_offset - wp_normal_optical.dot (base_link_origin_optical);
-    //       }
-
     // Downsample + filter the input dataser
     PointCloud cloud_raw, cloud;
     pcl::fromROSMsg (*cloud_in, cloud_raw);
     vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
     vgrid_.filter (cloud);
-    cloud_downsampled_pub_.publish(cloud);
-    //       // Remove points from the wall (?)
-    //       pcl::PointIndices selection;
-    //       for (size_t i = 0; i < cloud.points.size (); ++i) 
-    //       {
-    //         const Point &p = cloud.points[i];
-    //         if (wp_offset_optical + wp_normal_optical.x () * p.x + wp_normal_optical.y () * p.y + wp_normal_optical.z () * p.z > 0) 
-    //           // This point is beyond the wall protection boundary, it probably does not belong to the table
-    //           continue;
-    //         selection.indices.push_back (i);
-    //       }
+    area_ = +DBL_MAX;
 
     // Fit a plane (the table)
     pcl::ModelCoefficients table_coeff;
     pcl::PointIndices table_inliers;
-    seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-    // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
-    seg_.segment (table_inliers, table_coeff);
-    ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
-	      table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
-
-    // Project the table inliers using the planar model coefficients
     PointCloud cloud_projected;
-    proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-    proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
-    proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
-    proj_.filter (cloud_projected);
-    //cloud_pub_.publish (cloud_projected);
-
-    //Estimate normals (not needed for now)
-    //       pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-    //       pcl::PointCloud<pcl::Normal> normals;
-    //       pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
-    //       // Estimate point normals 
-    //       ne.setSearchMethod(tree);
-    //       ne.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud_projected));
-    //       ne.setRadiusSearch(normal_search_radius_);
-    //       ne.compute(normals);
-    //       ROS_INFO("Normals Cloud Size %ld ", normals.points.size());
+    pcl::PointCloud<Point> cloud_hull;
+    while (area_ > (expected_table_area_ + 0.01))
+    {
+      seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+      // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
+      seg_.segment (table_inliers, table_coeff);
+      ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
+                table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
+      // Project the table inliers using the planar model coefficients    
+      proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+      proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
+      proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
+      proj_.filter (cloud_projected);
       
-
-    // Create a Convex Hull representation of the projected inliers                                                                             
-    pcl::PointCloud<pcl::PointXYZ> cloud_hull;
-    pcl::ConvexHull2D<pcl::PointXYZ> chull;
-    chull.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud_projected));
-    chull.reconstruct (cloud_hull);
-    ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
+      // Create a Convex Hull representation of the projected inliers
+      chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
+      chull_.reconstruct (cloud_hull);
+      //ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
+      //cloud_pub_.publish (cloud_hull);
+      
+      //Compute the area of the plane
+      std::vector<double> plane_normal(3);
+      plane_normal[0] = table_coeff.values[0];
+      plane_normal[1] = table_coeff.values[1];
+      plane_normal[2] = table_coeff.values[2];
+      area_ = compute2DPolygonalArea (cloud_hull, plane_normal);
+      ROS_INFO("Plane area: %f", area_);
+      if (area_ > (expected_table_area_ + 0.01))
+      {
+        extract_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+        extract_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
+        extract_.setNegative (true);
+        pcl::PointCloud<Point> cloud_extracted;
+        extract_.filter (cloud_extracted);
+        //cloud_extracted_pub_.publish (cloud_extracted);
+        cloud = cloud_extracted;
+      }
+    }//end while
+    ROS_INFO ("Publishing convex hull with: %d data points and area %lf.", (int)cloud_hull.points.size (), area_);
     cloud_pub_.publish (cloud_hull);
-
-    //Compute the area of the plane
-    std::vector<double> plane_normal(3);
-    plane_normal[0] = table_coeff.values[0];
-    plane_normal[1] = table_coeff.values[1];
-    plane_normal[2] = table_coeff.values[2];
-    double area = compute2DPolygonalArea (cloud_hull, plane_normal);
-    ROS_INFO("Plane area: %f", area);
-	
+    
     //       // Re-orient the plane towards up
     //       //ROS_INFO("Reorienting plane");
     //       const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
@@ -485,7 +464,7 @@ private:
     
   double normal_search_radius_;
   double expected_table_area_;
-   
+  double area_;
 
   message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
   message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
@@ -498,21 +477,22 @@ private:
   ros::Publisher marker_publisher_;
   pcl_ros::Publisher<Point> cloud_pub_;
   pcl_ros::Publisher<Point> cloud_downsampled_pub_;
+  pcl_ros::Publisher<Point> cloud_extracted_pub_;
 
   // PCL objects
-  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
+  //pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
+  pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
   pcl::SACSegmentation<Point> seg_;               // Planar segmentation object
   pcl::ProjectInliers<Point> proj_;               // Inlier projection object
-  //    pcl::ConvexHull2D<Point, Point> chull_;         // 2D convex hull estimation object
+  pcl::ExtractIndices<Point> extract_;            // Extract (too) big tables
+  pcl::ConvexHull2D<Point> chull_;  
+  
   double sac_distance_;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get a string representation of the name of this class. */
   std::string getName () const { return ("PTUCalibrator"); }
 };
-
-
-
 
 /* ---[ */
 int
