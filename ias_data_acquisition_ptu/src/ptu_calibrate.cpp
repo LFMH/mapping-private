@@ -57,6 +57,7 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include "pcl/filters/extract_indices.h"
+#include "pcl/common/common.h"
 
 #include <pcl_ros/publisher.h>
 
@@ -112,6 +113,7 @@ public:
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
     //what area size of the table are we looking for?
     nh_.param("expected_table_area", expected_table_area_, 0.042);
+    nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,6 +206,19 @@ private:
     ROS_INFO ("Publishing convex hull with: %d data points and area %lf.", (int)cloud_hull.points.size (), area_);
     cloud_pub_.publish (cloud_hull);
     
+    pcl::PointXYZRGB point_min;
+    pcl::PointXYZRGB point_max;
+    pcl::PointXYZ point_center;
+    pcl::getMinMax3D (cloud_hull, point_min, point_max);
+    //Calculate the centroid of the hull
+    point_center.x = (point_max.x + point_min.x)/2;
+    point_center.y = (point_max.y + point_min.y)/2;
+    point_center.z = (point_max.z + point_min.z)/2;
+
+    tf::Transform transform;
+    transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
+    transform.setRotation( tf::Quaternion(0, 0, 0) );
+    transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), cloud_raw.header.frame_id, rot_table_frame_));
     //       // Re-orient the plane towards up
     //       //ROS_INFO("Reorienting plane");
     //       const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
@@ -465,6 +480,7 @@ private:
   double normal_search_radius_;
   double expected_table_area_;
   double area_;
+  std::string rot_table_frame_;
 
   message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
   message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
