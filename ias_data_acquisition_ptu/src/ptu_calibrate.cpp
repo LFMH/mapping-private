@@ -59,6 +59,7 @@
 #include "pcl/filters/extract_indices.h"
 #include "pcl/segmentation/extract_polygonal_prism_data.h"
 #include "pcl/common/common.h"
+#include <pcl/io/pcd_io.h>
 
 #include <pcl_ros/publisher.h>
 
@@ -183,7 +184,6 @@ private:
           ROS_ERROR ("Failed to call service!");
           //return (-1);
         }
-        pan_angle_ += 15;
 
         // Downsample + filter the input dataser
         PointCloud cloud_raw, cloud;
@@ -272,6 +272,12 @@ private:
         //ROS_INFO ("[%s ] Publishing number of object point candidates: %d.", getName ().c_str (), 
         //        (int)cloud_objects.points.size ());
         cloud_objects_pub_.publish (cloud_objects);
+        //std::stringstream ss;
+        //ss << (pan_angle_ + 180);
+        char object_name_angle[100];
+        sprintf (object_name_angle, "%04d",  (int)(pan_angle_ + 180));
+        pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_objects, true);
+        pan_angle_ += 15;
       }
     //       // Re-orient the plane towards up
     //       //ROS_INFO("Reorienting plane");
@@ -559,6 +565,7 @@ private:
   pcl::ConvexHull2D<Point> chull_;  
   pcl::ExtractPolygonalPrismData<Point> prism_;
   pcl::PointCloud<Point> cloud_objects_;
+  pcl::PCDWriter pcd_writer_;
   double sac_distance_;
 
 
@@ -578,7 +585,7 @@ main (int argc, char** argv)
   ros::NodeHandle nh;
   if (argc < 2)
   {
-    ROS_ERROR ("usage %s object_name", argv[0]);
+    ROS_ERROR ("usage %s <object_name>", argv[0]);
     exit(2);
   }
   std::string object_name = argv[1];
