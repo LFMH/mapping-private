@@ -17,7 +17,7 @@
   <depend package="pcl_ros" />
   <depend package="pcl_tf" />
   <depend package="eigen3" />
-
+  <depend package="dp_ptu47_pan_tilt_stage" />
 </package>
 
 

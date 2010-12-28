@@ -70,11 +70,17 @@
 #include <message_filters/subscriber.h>
 #include <dp_ptu47_pan_tilt_stage/PanTiltStamped.h>
 
+#include "dp_ptu47_pan_tilt_stage/SendCommand.h"
+#include "dp_ptu47_pan_tilt_stage/SendTrajectory.h"
+#include "dp_ptu47_pan_tilt_stage/GetLimits.h"
+
+
 typedef pcl::PointXYZRGB Point;
 typedef pcl::PointCloud<Point> PointCloud;
 typedef PointCloud::Ptr PointCloudPtr;
 typedef PointCloud::ConstPtr PointCloudConstPtr;
 
+using namespace dp_ptu47_pan_tilt_stage;
 // TODO: in the future we should auto-detect the wall, or detect the location of the only
 //       moving object, the table
 // Equation of a boundary between the table and the wall, in base_link frame
@@ -98,6 +104,9 @@ public:
     cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
     cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
+    client_sc = nh_.serviceClient<SendCommand>("/dp_ptu47/control");
+    client_st = nh_.serviceClient<SendTrajectory>("/dp_ptu47/control_trajectory");
+
     //nh_.getParam("ptu/stem_height", stem_height_);  // Initial guess, which will be refined
     //nh_.getParam("ptu/table_size", table_size_);
     //printf("Read table size: %f\n", table_size_);
@@ -116,6 +125,7 @@ public:
     //what area size of the table are we looking for?
     nh_.param("expected_table_area", expected_table_area_, 0.042);
     nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
+    nh_.param("pan_angle", pan_angle_, -180.00);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +137,7 @@ public:
 
     
   void 
-  init (double tolerance)  // tolerance: how close to (0,0) is good enough?
+  init (double tolerance, std::string object_name)  // tolerance: how close to (0,0) is good enough?
   {
     std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2_throttle");
     std::string pan_tilt_topic = nh_.resolveName ("/dp_ptu47/pan_tilt_status_stamped");
@@ -147,103 +157,122 @@ public:
 
     //       ROS_INFO ("[%s] Creating tf timer", getName ().c_str ());
     //       timer_  = nh_.createTimer (ros::Duration (0.1), boost::bind (&PTUCalibrator::timerCallback, this, _1));  // Call it every 0.1s after that
+    object_name_ = object_name;
   }
     
 private:
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   void 
   ptuFinderCallback (const sensor_msgs::PointCloud2ConstPtr &cloud_in, const dp_ptu47_pan_tilt_stage::PanTiltStampedConstPtr &pan_tilt)
-  {
-    ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
-
-    // Downsample + filter the input dataser
-    PointCloud cloud_raw, cloud;
-    pcl::fromROSMsg (*cloud_in, cloud_raw);
-    vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
-    vgrid_.filter (cloud);
-    area_ = +DBL_MAX;
-
-    // Fit a plane (the table)
-    pcl::ModelCoefficients table_coeff;
-    pcl::PointIndices table_inliers;
-    PointCloud cloud_projected;
-    pcl::PointCloud<Point> cloud_hull;
-    while (area_ > (expected_table_area_ + 0.01))
     {
-      seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-      // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
-      seg_.segment (table_inliers, table_coeff);
-      ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
-                table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
-      // Project the table inliers using the planar model coefficients    
-      proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-      proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
-      proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
-      proj_.filter (cloud_projected);
-      
-      // Create a Convex Hull representation of the projected inliers
-      chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
-      chull_.reconstruct (cloud_hull);
-      //ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
-      //cloud_pub_.publish (cloud_hull);
-      
-      //Compute the area of the plane
-      std::vector<double> plane_normal(3);
-      plane_normal[0] = table_coeff.values[0];
-      plane_normal[1] = table_coeff.values[1];
-      plane_normal[2] = table_coeff.values[2];
-      area_ = compute2DPolygonalArea (cloud_hull, plane_normal);
-      ROS_INFO("[%s] Plane area: %f", getName ().c_str (), area_);
-      if (area_ > (expected_table_area_ + 0.01))
+      //ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
+
+      if (pan_angle_ < 175.00)
       {
-        extract_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-        extract_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
-        extract_.setNegative (true);
-        pcl::PointCloud<Point> cloud_extracted;
-        extract_.filter (cloud_extracted);
-        //cloud_extracted_pub_.publish (cloud_extracted);
-        cloud = cloud_extracted;
-      }
-    }//end while
-    ROS_INFO ("[%s] Publishing convex hull with: %d data points and area %lf.", getName ().c_str (), (int)cloud_hull.points.size (), area_);
-    cloud_pub_.publish (cloud_hull);
+        SendCommand srv_sc;
+        ROS_INFO ("[%s]: New pan_angle_ %f.", getName ().c_str (), pan_angle_);
+        srv_sc.request.pan_angle = pan_angle_;
+        srv_sc.request.tilt_angle = 0;
+        srv_sc.request.wait_finished = true;
+        if (client_sc.call (srv_sc))
+        {
+          ROS_INFO ("Service call successful. New pan/tilt positions are: %f/%f.", srv_sc.response.pan_angle, srv_sc.response.tilt_angle);
+        }
+        else
+        {
+          ROS_ERROR ("Failed to call service!");
+          //return (-1);
+        }
+        pan_angle_ += 15;
+
+        // Downsample + filter the input dataser
+        PointCloud cloud_raw, cloud;
+        pcl::fromROSMsg (*cloud_in, cloud_raw);
+        vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
+        vgrid_.filter (cloud);
+        area_ = +DBL_MAX;
+
+        // Fit a plane (the table)
+        pcl::ModelCoefficients table_coeff;
+        pcl::PointIndices table_inliers;
+        PointCloud cloud_projected;
+        pcl::PointCloud<Point> cloud_hull;
+        while (area_ > (expected_table_area_ + 0.01))
+        {
+          seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+          // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
+          seg_.segment (table_inliers, table_coeff);
+          //ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
+          //table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
+          // Project the table inliers using the planar model coefficients    
+          proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+          proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
+          proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
+          proj_.filter (cloud_projected);
+      
+          // Create a Convex Hull representation of the projected inliers
+          chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
+          chull_.reconstruct (cloud_hull);
+          //ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
+          //cloud_pub_.publish (cloud_hull);
+      
+          //Compute the area of the plane
+          std::vector<double> plane_normal(3);
+          plane_normal[0] = table_coeff.values[0];
+          plane_normal[1] = table_coeff.values[1];
+          plane_normal[2] = table_coeff.values[2];
+          area_ = compute2DPolygonalArea (cloud_hull, plane_normal);
+          //ROS_INFO("[%s] Plane area: %f", getName ().c_str (), area_);
+          if (area_ > (expected_table_area_ + 0.01))
+          {
+            extract_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+            extract_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
+            extract_.setNegative (true);
+            pcl::PointCloud<Point> cloud_extracted;
+            extract_.filter (cloud_extracted);
+            //cloud_extracted_pub_.publish (cloud_extracted);
+            cloud = cloud_extracted;
+          }
+        } //end while
+        //ROS_INFO ("[%s] Publishing convex hull with: %d data points and area %lf.", getName ().c_str (), (int)cloud_hull.points.size (), area_);
+        cloud_pub_.publish (cloud_hull);
     
-    pcl::PointXYZRGB point_min;
-    pcl::PointXYZRGB point_max;
-    pcl::PointXYZ point_center;
-    pcl::getMinMax3D (cloud_hull, point_min, point_max);
-    //Calculate the centroid of the hull
-    point_center.x = (point_max.x + point_min.x)/2;
-    point_center.y = (point_max.y + point_min.y)/2;
-    point_center.z = (point_max.z + point_min.z)/2;
+        pcl::PointXYZRGB point_min;
+        pcl::PointXYZRGB point_max;
+        pcl::PointXYZ point_center;
+        pcl::getMinMax3D (cloud_hull, point_min, point_max);
+        //Calculate the centroid of the hull
+        point_center.x = (point_max.x + point_min.x)/2;
+        point_center.y = (point_max.y + point_min.y)/2;
+        point_center.z = (point_max.z + point_min.z)/2;
 
-    tf::Transform transform;
-    transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
-    transform.setRotation( tf::Quaternion(0, 0, 0) );
-    transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
-                                                              cloud_raw.header.frame_id, rot_table_frame_));
+        tf::Transform transform;
+        transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
+        transform.setRotation( tf::Quaternion(0, 0, 0) );
+        transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
+                                                                  cloud_raw.header.frame_id, rot_table_frame_));
 
-    // ---[ Get the objects on top of the table
-    pcl::PointIndices cloud_object_indices;
-    //prism_.setInputCloud (cloud_all_minus_table_ptr);
-    prism_.setHeightLimits (0.005, 0.3);
-    prism_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+        // ---[ Get the objects on top of the table
+        pcl::PointIndices cloud_object_indices;
+        //prism_.setInputCloud (cloud_all_minus_table_ptr);
+        prism_.setHeightLimits (0.005, 0.3);
+        prism_.setInputCloud (boost::make_shared<PointCloud> (cloud));
 //      prism_.setInputCloud (cloud_downsampled_);
-    prism_.setInputPlanarHull (boost::make_shared<PointCloud>(cloud_hull));
-    prism_.segment (cloud_object_indices);
-    ROS_INFO ("[%s] Number of object point indices: %d.", getName ().c_str (), (int)cloud_object_indices.indices.size ());
+        prism_.setInputPlanarHull (boost::make_shared<PointCloud>(cloud_hull));
+        prism_.segment (cloud_object_indices);
+        //ROS_INFO ("[%s] Number of object point indices: %d.", getName ().c_str (), (int)cloud_object_indices.indices.size ());
     
-    pcl::PointCloud<Point> cloud_objects;
-    pcl::ExtractIndices<Point> extract_object_indices;
-    //extract_object_indices.setInputCloud (cloud_all_minus_table_ptr);
-    extract_object_indices.setInputCloud (boost::make_shared<PointCloud> (cloud));
+        pcl::PointCloud<Point> cloud_objects;
+        pcl::ExtractIndices<Point> extract_object_indices;
+        //extract_object_indices.setInputCloud (cloud_all_minus_table_ptr);
+        extract_object_indices.setInputCloud (boost::make_shared<PointCloud> (cloud));
 //      extract_object_indices.setInputCloud (cloud_downsampled_);
-    extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
-    extract_object_indices.filter (cloud_objects);
-    ROS_INFO ("[%s ] Publishing number of object point candidates: %d.", getName ().c_str (), 
-              (int)cloud_objects.points.size ());
-    cloud_objects_pub_.publish (cloud_objects);
-
+        extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+        extract_object_indices.filter (cloud_objects);
+        //ROS_INFO ("[%s ] Publishing number of object point candidates: %d.", getName ().c_str (), 
+        //        (int)cloud_objects.points.size ());
+        cloud_objects_pub_.publish (cloud_objects);
+      }
     //       // Re-orient the plane towards up
     //       //ROS_INFO("Reorienting plane");
     //       const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
@@ -504,8 +533,8 @@ private:
     
   double normal_search_radius_;
   double expected_table_area_;
-  double area_;
-  std::string rot_table_frame_;
+  double area_, pan_angle_;
+  std::string rot_table_frame_, object_name_;
 
   message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
   message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
@@ -532,6 +561,10 @@ private:
   pcl::PointCloud<Point> cloud_objects_;
   double sac_distance_;
 
+
+  ros::ServiceClient client_sc;
+  ros::ServiceClient client_st;
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get a string representation of the name of this class. */
   std::string getName () const { return ("PTUCalibrator"); }
@@ -543,8 +576,14 @@ main (int argc, char** argv)
 {
   ros::init (argc, argv, "extract_single_object_cluster");
   ros::NodeHandle nh;
+  if (argc < 2)
+  {
+    ROS_ERROR ("usage %s object_name", argv[0]);
+    exit(2);
+  }
+  std::string object_name = argv[1];
   PTUCalibrator ptu_calibrator (nh);
-  ptu_calibrator.init (5);  // 5 degrees tolerance
+  ptu_calibrator.init (5, object_name);  // 5 degrees tolerance
   ros::spin ();
 }
 /* ]--- */
