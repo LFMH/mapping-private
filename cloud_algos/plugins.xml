@@ -6,12 +6,6 @@
     </description>
   </class>
 
-  <class name="cloud_algos/MovingLeastSquares" type="cloud_algos::MovingLeastSquares" base_class_type="cloud_algos::CloudAlgo">
-    <description>
-      This plugin does mls to resample and update normals.
-    </description>
-  </class>
-
   <class name="cloud_algos/PlanarEstimation" type="cloud_algos::PlanarEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin estimates planar surfaces.
@@ -24,39 +18,15 @@
     </description>
   </class>
 
-  <class name="cloud_algos/DepthImageTriangulation" type="cloud_algos::DepthImageTriangulation" base_class_type="cloud_algos::CloudAlgo">
-    <description>
-      This plugin triangulates a given PointCloud cluster.
-    </description>
-  </class>
-
-  <class name="cloud_algos/RobustBoxEstimation" type="cloud_algos::RobustBoxEstimation" base_class_type="cloud_algos::CloudAlgo">
-    <description>
-      This plugin fits a cuboid/box to a given PointCloud cluster.
-    </description>
-  </class>
-  
   <class name="cloud_algos/CylinderEstimation" type="cloud_algos::CylinderEstimation" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin fits a cylinder to a given PointCloud cluster.
     </description>
   </class>
 
-  <class name="cloud_algos/BoxEstimation" type="cloud_algos::BoxEstimation" base_class_type="cloud_algos::CloudAlgo">
-    <description>
-      This plugin fits a cuboid/box to a given PointCloud cluster.
-    </description>
-  </class>
-
   <class name="cloud_algos/SVMClassification" type="cloud_algos::SVMClassification" base_class_type="cloud_algos::CloudAlgo">
     <description>
       This plugin does SVM classification using a given model and scaling parameters on the feature channels of a given PointCloud cluster.
-    </description>
-  </class>
-
-  <class name="cloud_algos/GlobalRSD" type="cloud_algos::GlobalRSD" base_class_type="cloud_algos::CloudAlgo">
-    <description>
-      This plugin computes the Global Radius-based Surface Descriptor of a given PointCloud cluster.
     </description>
   </class>
 
