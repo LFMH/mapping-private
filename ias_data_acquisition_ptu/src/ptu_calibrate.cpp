@@ -57,6 +57,7 @@
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/convex_hull.h>
 #include "pcl/filters/extract_indices.h"
+#include "pcl/segmentation/extract_polygonal_prism_data.h"
 #include "pcl/common/common.h"
 
 #include <pcl_ros/publisher.h>
@@ -96,6 +97,7 @@ public:
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
+    cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
     //nh_.getParam("ptu/stem_height", stem_height_);  // Initial guess, which will be refined
     //nh_.getParam("ptu/table_size", table_size_);
     //printf("Read table size: %f\n", table_size_);
@@ -191,7 +193,7 @@ private:
       plane_normal[1] = table_coeff.values[1];
       plane_normal[2] = table_coeff.values[2];
       area_ = compute2DPolygonalArea (cloud_hull, plane_normal);
-      ROS_INFO("Plane area: %f", area_);
+      ROS_INFO("[%s] Plane area: %f", getName ().c_str (), area_);
       if (area_ > (expected_table_area_ + 0.01))
       {
         extract_.setInputCloud (boost::make_shared<PointCloud> (cloud));
@@ -203,7 +205,7 @@ private:
         cloud = cloud_extracted;
       }
     }//end while
-    ROS_INFO ("Publishing convex hull with: %d data points and area %lf.", (int)cloud_hull.points.size (), area_);
+    ROS_INFO ("[%s] Publishing convex hull with: %d data points and area %lf.", getName ().c_str (), (int)cloud_hull.points.size (), area_);
     cloud_pub_.publish (cloud_hull);
     
     pcl::PointXYZRGB point_min;
@@ -218,7 +220,30 @@ private:
     tf::Transform transform;
     transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
     transform.setRotation( tf::Quaternion(0, 0, 0) );
-    transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), cloud_raw.header.frame_id, rot_table_frame_));
+    transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
+                                                              cloud_raw.header.frame_id, rot_table_frame_));
+
+    // ---[ Get the objects on top of the table
+    pcl::PointIndices cloud_object_indices;
+    //prism_.setInputCloud (cloud_all_minus_table_ptr);
+    prism_.setHeightLimits (0.005, 0.3);
+    prism_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+//      prism_.setInputCloud (cloud_downsampled_);
+    prism_.setInputPlanarHull (boost::make_shared<PointCloud>(cloud_hull));
+    prism_.segment (cloud_object_indices);
+    ROS_INFO ("[%s] Number of object point indices: %d.", getName ().c_str (), (int)cloud_object_indices.indices.size ());
+    
+    pcl::PointCloud<Point> cloud_objects;
+    pcl::ExtractIndices<Point> extract_object_indices;
+    //extract_object_indices.setInputCloud (cloud_all_minus_table_ptr);
+    extract_object_indices.setInputCloud (boost::make_shared<PointCloud> (cloud));
+//      extract_object_indices.setInputCloud (cloud_downsampled_);
+    extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+    extract_object_indices.filter (cloud_objects);
+    ROS_INFO ("[%s ] Publishing number of object point candidates: %d.", getName ().c_str (), 
+              (int)cloud_objects.points.size ());
+    cloud_objects_pub_.publish (cloud_objects);
+
     //       // Re-orient the plane towards up
     //       //ROS_INFO("Reorienting plane");
     //       const tf::Stamped<tf::Vector3> vertical_base_link (tf::Vector3 (0, 0, 1), cloud.header.stamp, "/base_link");
@@ -494,6 +519,7 @@ private:
   pcl_ros::Publisher<Point> cloud_pub_;
   pcl_ros::Publisher<Point> cloud_downsampled_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
+  pcl_ros::Publisher<Point> cloud_objects_pub_;
 
   // PCL objects
   //pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
@@ -502,7 +528,8 @@ private:
   pcl::ProjectInliers<Point> proj_;               // Inlier projection object
   pcl::ExtractIndices<Point> extract_;            // Extract (too) big tables
   pcl::ConvexHull2D<Point> chull_;  
-  
+  pcl::ExtractPolygonalPrismData<Point> prism_;
+  pcl::PointCloud<Point> cloud_objects_;
   double sac_distance_;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
