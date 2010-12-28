@@ -60,6 +60,7 @@
 #include "pcl/segmentation/extract_polygonal_prism_data.h"
 #include "pcl/common/common.h"
 #include <pcl/io/pcd_io.h>
+#include "pcl/segmentation/extract_clusters.h"
 
 #include <pcl_ros/publisher.h>
 
@@ -80,6 +81,7 @@ typedef pcl::PointXYZRGB Point;
 typedef pcl::PointCloud<Point> PointCloud;
 typedef PointCloud::Ptr PointCloudPtr;
 typedef PointCloud::ConstPtr PointCloudConstPtr;
+typedef pcl::KdTree<Point>::Ptr KdTreePtr;
 
 using namespace dp_ptu47_pan_tilt_stage;
 // TODO: in the future we should auto-detect the wall, or detect the location of the only
@@ -127,6 +129,11 @@ public:
     nh_.param("expected_table_area", expected_table_area_, 0.042);
     nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
     nh_.param("pan_angle", pan_angle_, -180.00);
+    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.05);
+    //min 100 points
+    nh_.param("object_cluster_min_size", object_cluster_min_size_, 100);
+    clusters_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+    clusters_tree_->setEpsilon (1);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,7 +221,7 @@ private:
           chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
           chull_.reconstruct (cloud_hull);
           //ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
-          //cloud_pub_.publish (cloud_hull);
+          cloud_pub_.publish (cloud_hull);
       
           //Compute the area of the plane
           std::vector<double> plane_normal(3);
@@ -262,21 +269,40 @@ private:
         prism_.segment (cloud_object_indices);
         //ROS_INFO ("[%s] Number of object point indices: %d.", getName ().c_str (), (int)cloud_object_indices.indices.size ());
     
-        pcl::PointCloud<Point> cloud_objects;
+        pcl::PointCloud<Point> cloud_object;
         pcl::ExtractIndices<Point> extract_object_indices;
         //extract_object_indices.setInputCloud (cloud_all_minus_table_ptr);
         extract_object_indices.setInputCloud (boost::make_shared<PointCloud> (cloud));
 //      extract_object_indices.setInputCloud (cloud_downsampled_);
         extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
-        extract_object_indices.filter (cloud_objects);
+        extract_object_indices.filter (cloud_object);
         //ROS_INFO ("[%s ] Publishing number of object point candidates: %d.", getName ().c_str (), 
         //        (int)cloud_objects.points.size ());
-        cloud_objects_pub_.publish (cloud_objects);
+
+
+        std::vector<pcl::PointIndices> clusters;
+        cluster_.setInputCloud (boost::make_shared<PointCloud>(cloud_object));
+        cluster_.setClusterTolerance (object_cluster_tolerance_);
+        cluster_.setMinClusterSize (object_cluster_min_size_);
+        //    cluster_.setMaxClusterSize (object_cluster_max_size_);
+        cluster_.setSearchMethod (clusters_tree_);
+        cluster_.extract (clusters);
+
+        pcl::PointCloud<Point> cloud_object_clustered;
+        if (clusters.size() >= 1)
+        {
+          pcl::copyPointCloud (cloud_object, clusters[0], cloud_object_clustered);
+        }
+        else
+        {
+          ROS_ERROR("No cluster found with min size %d points", object_cluster_min_size_);
+               }
+        cloud_objects_pub_.publish (cloud_object_clustered);
         //std::stringstream ss;
         //ss << (pan_angle_ + 180);
         char object_name_angle[100];
         sprintf (object_name_angle, "%04d",  (int)(pan_angle_ + 180));
-        pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_objects, true);
+        pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_object_clustered, true);
         pan_angle_ += 15;
       }
     //       // Re-orient the plane towards up
@@ -565,6 +591,11 @@ private:
   pcl::ConvexHull2D<Point> chull_;  
   pcl::ExtractPolygonalPrismData<Point> prism_;
   pcl::PointCloud<Point> cloud_objects_;
+  pcl::EuclideanClusterExtraction<Point> cluster_;
+  KdTreePtr clusters_tree_;
+  double object_cluster_tolerance_;
+  int object_cluster_min_size_, object_cluster_max_size_;
+
   pcl::PCDWriter pcd_writer_;
   double sac_distance_;
 
