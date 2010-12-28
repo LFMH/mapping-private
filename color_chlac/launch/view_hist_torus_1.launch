@@ -1,0 +1,10 @@
+<launch>
+   <node name="pcd_viewer1" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_red_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer2" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_green_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer3" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_blue_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer4" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_black_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer5" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_red.pcd -bc 255,255,255 -ps 2" />
+   <node name="pcd_viewer6" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_green.pcd -bc 255,255,255 -ps 2" />
+   <node name="pcd_viewer7" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_blue.pcd -bc 255,255,255 -ps 2" />
+   <node name="pcd_viewer8" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_torus_black.pcd -bc 255,255,255 -ps 2" />
+</launch>

@@ -1,0 +1,7 @@
+<launch>
+   <node name="pcd_viewer1" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_cone_black_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer2" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_cone_blue_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer3" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_cone_green_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer4" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_cone_orange_GRSD_CCHLAC.pcd" />
+   <node name="pcd_viewer5" pkg="pcl_visualization" type="pcd_viewer" args="$(find color_chlac)/demos/shape_data/noiseless_cone_black.pcd -bc 255,255,255 -ps 2" />
+</launch>
