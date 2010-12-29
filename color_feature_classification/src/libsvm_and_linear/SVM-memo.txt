@@ -1,0 +1,106 @@
+■ coolVisiの新しいクラス SVM について ■
+
+＊＊＊ 目次 ＊＊＊
+  0. はじめに
+  1. 実装のこと
+  2. 使用説明
+  3. その他、細かい注意点
+
+
+＊＊＊ 0. はじめに ＊＊＊
+  libsvm-2.9というとても有名なSVMのフリーソースをcoolVisiに移植しました
+  libsvm: http://www.csie.ntu.edu.tw/~cjlin/libsvm/
+  判別分析（DA）クラスと同じ感覚で使えます
+  クロスバリデーションもできるから活用してね
+
+
+＊＊＊ 1. 実装のこと ＊＊＊
+  coolVisiに以下のファイルを追加。
+  - coolVisi/stat/libSVM.hpp
+  - src/libSVM.cpp
+  - coolVisi/stat/SVM.hpp
+  - src/SVM.cpp
+  - example/SVM-test.cpp
+  - example/data/heart_scale ← libsvmをダウンロードすると入ってるサンプル特徴
+
+  libSVM.hppはlibsvmのsvm.hを、
+  libSVM.cppはlibsvmのsvm.cppをそれぞれコピーしただけ。
+  2箇所の変更点あり
+  (1) 構造体 struct svm_modelの定義が.cpp内であったが、.hpp内に移動させた
+  (2) static void print_string_stdout(const char *s){} の定義を
+      SVM.cppに移動、svm_print_string_stdout(const char *s){}に改名
+
+  SVM.hppとSVM.cppは、
+  libsvmのsvm-scale.c、svm-train.c、svm-predict.cの中身を切り貼りして作成。
+
+
+＊＊＊ 2. 使用説明 ＊＊＊
+  example/SVM-test.cppを見れば最も簡単な使い方は分かるでしょう
+  学習データは、ファイルから読み込む形式と、
+  （DA同様）DataMatrixに格納して渡す形式の2つが可能。
+  パラメタ設定、クロスバリデーション、学習＆保存、読み込み＆識別について以下説明
+
+  2.1 パラメタ設定
+      set_xx()関数でもろもろの設定を変えられます
+      setParam( 記号，値 )関数を使ってもOK。
+      引数の記号はlibsvmのコマンドライン引数と同じもの。
+      詳しくはSVM-parameters.txtを見てね
+
+  2.2 クロスバリデーション
+      crossValidation( DataMatrix *, クラス数, n ) または
+      crossValidation( ファイル名, n ) で
+      n-fold クロスバリデーションをし、識別率をprintfする
+
+      ※1 学習したパラメタをprintfしたくないときは、インスタンス作成時に
+          SVM svm( false ); などとする
+      ※2 現在の仕様では、同じインスタンスでクロスバリデーションと学習をするとエラー
+
+  2.3 学習＆保存
+      solve( DataMatrix *, クラス数 ) または
+      solve( ファイル名 ) で
+      モデルを学習する
+
+      ※1 学習したパラメタをprintfしたくないときは、インスタンス作成時に
+          SVM svm( false ); などとする
+      ※2 現在の仕様では、同じインスタンスでクロスバリデーションと学習をするとエラー
+
+      結果を write( "hoge" )とすると，モデルとスケーリングパラメタがそれぞれ
+      hoge.model と hoge.scale という名で保存される。
+
+      同じインスタンスで識別（ recognize() ）もできます
+
+  2.4 読み込み＆識別
+      read( "hoge" )でモデルとスケーリングパラメタを読み込む。
+      recognize( 特徴ベクトル ) で推定ラベルに近い値(?)が返ってくる
+      ラベルは、2クラスなら 1か-1、 多クラスなら 1,2,3,...
+
+      ※↑この辺については金崎がlibsvmの中身をちゃんと把握していないので、
+       おいおいちゃんとします
+
+      各クラスである確率の配列を得ることもできます
+      recognize( 特徴ベクトル )した後にget_prob_estimates()で得てください
+      ただし、学習時にset_probability( 1 )をすること。
+      example/SVM-test.cppでは#define PROBABILITYをして試せます
+
+  例えば人検出などの1クラス問題をやるとき，
+  ポジティブサンプル群をDataMatrix配列の 0番めに，
+  ネガティブサンプル群をDataMatrix配列の 1番めに入れて学習し，
+  if( recognize( ColumnVector v ) > 0 ) then 人
+  みたくすればよし
+
+
+＊＊＊ 3. その他、細かい注意点 ＊＊＊
+  3.1 スケーリングについて
+      スケーリングをした結果，特徴ベクトルの中で値が0の次元の総数が
+      スケーリング前よりも減るのはよろしくないらしく，
+      libsvmでは警告が表示されたが，
+      coolVisiバージョンではそれはないので、各自で注意してください。
+
+      警告の内容＞
+     "初期の特徴ベクトルの値に0が多い場合は，パラメタ lower の値を 0 にしてください"
+
+
+  以上です。
+  ご不明な点は、coolVisi@isi.imi.i.u-tokyo.ac.jp まで。
+
+  2009/11/15 金崎朝子 執筆

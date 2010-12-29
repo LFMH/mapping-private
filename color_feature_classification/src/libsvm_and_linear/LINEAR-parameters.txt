@@ -1,0 +1,40 @@
+■ LINEARのパラメタの説明 ■
+
+(1)  solver_type：扱う線形手法の種類 (default 1)
+      0 -- L2-regularized logistic regression
+      1 -- L2-regularized L2-loss support vector classification (dual)
+      2 -- L2-regularized L2-loss support vector classification (primal)
+      3 -- L2-regularized L1-loss support vector classification (dual)
+      4 -- multi-class support vector classification by Crammer and Singer
+      5 -- L1-regularized L2-loss support vector classification
+      6 -- L1-regularized logistic regression
+     <セット関数> set_solver_type()かsetParamで's'
+
+(6)  C：SVMタイプが 0,3,4 のとき使用する(constraints violationの)値 (default 1)
+     <セット関数> set_cost()かsetParamで'c'
+
+(10) eps：停止基準 (default 0.001)
+     <セット関数> set_epsilon()かsetParamで'e'
+
+  strcat( *err_message, "-B bias : if bias >= 0, instance x becomes [x; bias]; if < 0, no bias term added (default -1)\n" );
+    void set_bias( double val ){      prob.bias = val; }
+-B
+
+(12) probability：モデルと可能性の情報を得るなら1、得ないなら0 (default 0)
+     <セット関数> set_probability()かsetParamで'b'
+
+(13) weight：SVMタイプが 0 のときに使用する値 (default 1)
+     <セット関数> set_weight( クラス番号, weight )
+     n番めのクラスのパラメタ C を weight*C にする
+
+(14) lower： x scaling の下限値 (default -1)
+     <セット関数> set_lower()かsetParamで'l'
+
+(15) upper： x scaling の上限値 (default +1)
+     <セット関数> set_upper()かsetParamで'u'
+
+(16) y： y scaling の境界値（上限と下限を同時に指定。） (default: y scalingしない)
+     <セット関数> set_y( y_lowerの値, y_upperの値 )
+
+
+2009/11/15 金崎朝子 執筆
