@@ -78,12 +78,20 @@ void compressFeature( string filename, std::vector< std::vector<float> > &models
   }
 }
 
+bool if_zero_vec( const std::vector<float> vec ){
+  const int vec_size = vec.size();
+  for( int i=0; i<vec_size; i++ )
+    if( vec[ i ] != 0 ) return false;
+  return true;
+}
+
 void computeSubspace( std::vector< std::vector<float> > models, const char* filename, bool ascii ){
   cout << models[0].size() << endl;
   PCA pca( false );
   const int num = (int)models.size();
   for( int i=0; i<num; i++ )
-    pca.addData( models[ i ] );
+    if( !if_zero_vec( models[ i ] ) )
+      pca.addData( models[ i ] );
   pca.solve();
   pca.write( filename, ascii );
 }

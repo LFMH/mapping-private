@@ -1,0 +1,5 @@
+resize_rate: 0.900000
+aspect_rate: 0.890000
+shiftX: 47
+shiftY: 36
+dis_1_pixel: 9

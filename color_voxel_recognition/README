@@ -1,0 +1,19 @@
+# Library for detecting objects by ColorCHLAC and subspace method.
+# needs Octave, freeglut
+# works with Kinect
+
+# DEMO
+1. connect Kinect and "roslaunch openni_camera openni_kinect.launch" -- terminal 1
+2. "rosrun topic_tools throttle messages /camera/depth/points2 5" -- terminal 2
+3. roscd color_voxel_recognition; cd demos -- terminal 3
+
+     3.1 learn the environment  (necessary for only once)
+         "./SH/learn_env.sh"
+         Enter for saving data, and "q" for quit
+
+     3.2 learn objects (once for each object)
+         "./SH/learn_obj.sh <object_name>"
+         Enter for saving data, and "q" for quit
+
+     3.3 detect one object
+         "./SH/detect_test.sh <object_name> <similarity_threshold>"
