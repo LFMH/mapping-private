@@ -1,0 +1,2 @@
+$ rosrun hlac exampleHLAC `rospack find hlac`/test_image/lena.png
+And you will get glayscale- and color- HLAC values for the image.
