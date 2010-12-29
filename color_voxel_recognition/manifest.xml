@@ -12,11 +12,13 @@
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
   <depend package="opencv2"/>
-  <cpp lflags="-lglut"/>
+  <!-- <cpp lflags="-lglut"/> -->
   <export>
-    <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,-lglut,${prefix}/lib -L${prefix}/lib -lcolor_voxel_recognition"/>
+    <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_voxel_recognition"/>
   </export>
-
+  
+  <rosdep name="freeglut3-dev"/>
+  <rosdep name="octave"/>
 </package>
 
 

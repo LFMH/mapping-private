@@ -1,0 +1,6 @@
+freeglut3-dev:
+  ubuntu: freeglut3-dev
+
+octave:
+  ubuntu: octave3.0-headers
+
