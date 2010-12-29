@@ -42,7 +42,11 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     string tmpname = string (entry->d_name);
     if( tmpname.compare (0, 3, "obj") == 0 )  obj_class_num ++;
   }
-  //cout << "num " << obj_class_num << endl;
+  if( obj_class_num == 0 ){
+    ROS_ERROR ("Please name \"objXXX\". ( obj_class_num == 0 )");
+    exit(1);
+  }
+  //cout << obj_class_num << endl;
 
   // calc similarity
   PCA pca;
@@ -56,6 +60,9 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
 //     continue;
 //     for( int t=0; t<981;t++ )
 //       printf("%f ",vec[t]);
+    // VectorXf var = pca.Variance();
+    // cout << var << endl;
+    // exit(1);
     MatrixXf tmpMat = pca.Axis();
     MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
     VectorXf tmpVec;

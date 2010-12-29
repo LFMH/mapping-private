@@ -1,0 +1,20 @@
+1. data
+   voxel size: 0.01
+   rotate: 1
+   subdivision size: 10 (20 for 0.compute*** )
+   dim: 800
+   sub: 100
+
+2. data_4_objects
+   voxel size: 0.05
+   rotate: 1
+   subdivision size: 2
+   dim: 800
+   sub: 100
+
+3. artificial data
+   voxel size: 0.01
+   rotate: 1
+   subdivision size: 5
+   dim: 800
+   sub: 100
