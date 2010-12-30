@@ -1,5 +1,4 @@
 # Library for detecting objects by ColorCHLAC and subspace method.
-# needs Octave, freeglut
 # works with Kinect
 
 # DEMO
