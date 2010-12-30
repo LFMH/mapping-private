@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Example directory containing .pcd files
-DATA=`pwd`/hist_data/obj004/1
+DATA=`pwd`/data/obj008/1
 
 #for i in `find $DATA -type d -name "*"`
 #do
