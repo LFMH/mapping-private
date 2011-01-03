@@ -1719,12 +1719,16 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::normalizeColorCHLAC ( PointClo
   for( int h=0; h<hist_num; h++ ){
     for(int i=0; i<6; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_0;
-    for(int i=6; i<DIM_COLOR_RI_1_3; ++i)
+    for(int i=6; i<42; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_1;
-    // for(int i=DIM_COLOR_RI_1_3; i<501; ++i)
-    //   output.points[h].histogram[ i ] *= NORMALIZE_RI_0_BIN;
-    for(int i=69; i<DIM_COLOR_RI_1_3_ALL; ++i)
+    for(int i=42; i<DIM_COLOR_RI_1_3; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_1; // don't be divided by 13.
+    for(int i=DIM_COLOR_RI_1_3; i<69; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_RI_0_BIN;
+    for(int i=69; i<105; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_1_BIN;
+    // for(int i=105; i<DIM_COLOR_RI_1_3_ALL; ++i)
+    //   output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
   }
 }
 
