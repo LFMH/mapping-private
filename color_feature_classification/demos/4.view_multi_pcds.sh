@@ -2,8 +2,21 @@
 
 # Example directory containing .pcd files
 DATA=`pwd`/data/obj008/1
+HIST_DATA=`pwd`/hist_data/obj008/1
 
 files=`find $DATA -type f \( -iname "*.pcd" \)`
-files1=`echo $files | tr " " "\n" | sort`
-echo "files1: " $files1
-rosrun pcl_visualization pcd_viewer $files1 -multiview 1 -fpc 1 -ps 5 -ps 5 -ps 5 -ps 5 -ps 5 -ps 5 -cam 0.174981,0.483448/-0.0265333,-0.182824,0.7945/0.0167812,-0.120643,0.497866/-0.0353321,-0.977068,-0.209975/1432,822/8,73
+hist_files=`find $HIST_DATA -type f \( -iname "*.pcd" \)`
+files_sorted=`echo $files | tr " " "\n" | sort`
+hist_files_sorted=`echo $hist_files | tr " " "\n" | sort`
+echo "files_sorted: " $files_sorted
+rosrun pcl_visualization pcd_viewer $hist_files_sorted &
+HEIGHT=0
+WIN_HEIGHT=200
+for j in $files_sorted
+do
+#    echo "j: " $j
+    rosrun pcl_visualization pcd_viewer $j -fpc 1 -ps 5 -cam 0.124713,0.422811/-0.0301714,-0.183418,0.7935/-0.00515188,-0.0965969,0.553536/-0.0144605,-0.939763,-0.341522/284,200/648,$HEIGHT &
+    HEIGHT=$(( $HEIGHT + $WIN_HEIGHT))
+    echo "HEIGHT: " $HEIGHT
+    sleep 0.2
+done
