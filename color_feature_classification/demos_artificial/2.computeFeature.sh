@@ -10,9 +10,9 @@ do
     num=$(printf "%03d" $n)
     dir_name=$(printf "obj%03d" $n)
     #echo $dir_name
-    rosrun color_feature_classification computeFeature_tmp $i c test_features_c/$num.pcd
-    rosrun color_feature_classification computeFeature_tmp $i d test_features_d/$num.pcd
-    rosrun color_feature_classification computeFeature_tmp $i g test_features_g/$num.pcd
-    rosrun color_feature_classification computeFeature_tmp $i r test_features_r/$num.pcd
+    rosrun color_feature_classification computeFeature $i c test_features_c/$num.pcd
+    rosrun color_feature_classification computeFeature $i d test_features_d/$num.pcd
+    rosrun color_feature_classification computeFeature $i g test_features_g/$num.pcd
+    rosrun color_feature_classification computeFeature $i r test_features_r/$num.pcd
     n=`expr $n + 1`
 done

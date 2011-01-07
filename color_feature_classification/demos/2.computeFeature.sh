@@ -17,10 +17,10 @@ do
     do
 	echo "Processing $j"
 	num=$(printf "%03d" $n)
-	rosrun color_feature_classification computeFeature_tmp $j c test_features_c/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature_tmp $j d test_features_d/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature_tmp $j g test_features_g/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature_tmp $j r test_features_r/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j c test_features_c/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j d test_features_d/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j g test_features_g/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j r test_features_r/$dir_name/$num.pcd	
 	n=`expr $n + 1`	
     done
 done
@@ -33,6 +33,6 @@ done
 #     num=$(printf "%03d" $n)
 #     dir_name=$(printf "obj%03d" $n)
 #     #echo $dir_name
-#     rosrun color_feature_classification computeFeature_tmp $i c test_features_c/$num.pcd
+#     rosrun color_feature_classification computeFeature $i c test_features_c/$num.pcd
 #     n=`expr $n + 1`
 # done

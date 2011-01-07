@@ -17,13 +17,14 @@ using namespace terminal_tools;
 // color threshold
 int thR, thG, thB;
 float voxel_size;
-const int offset_step = 5;//2; // the step size of offset voxel number for subdivisions
+int offset_step = 1; // the step size of offset voxel number for subdivisions
 
 void
 computeFeatureModels ( const char feature_type, int argc, char **argv, const std::string &extension, 
 		       std::vector< std::vector<float> > &models, const int subdivision_size)
 {  
-  const int repeat_num_offset = ceil(subdivision_size / offset_step);
+  int repeat_num_offset = ceil(subdivision_size / offset_step);
+  if( subdivision_size == 0 ) repeat_num_offset = 1;
 
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
@@ -112,6 +113,7 @@ int main( int argc, char** argv ){
     ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
     ROS_INFO ("                          -subdiv N = subdivision size (e.g. 10 voxels)\n");
+    ROS_INFO ("                          -offset n = offset step for subdivisions (e.g. 5 voxels)\n");
     return(-1);
   }
 
@@ -137,6 +139,14 @@ int main( int argc, char** argv ){
   if( parse_argument (argc, argv, "-subdiv", subdivision_size) > 0 ){
     if ( subdivision_size < 0 ){
       print_error ("Invalid subdivision size (%d)! \n", subdivision_size);
+      return (-1);
+    }
+  }
+
+  // offset step
+  if( parse_argument (argc, argv, "-offset", offset_step) > 0 ){
+    if ( ( offset_step < 1 ) || ( offset_step >= subdivision_size ) ){
+      print_error ("Invalid offset step (%d)! (while subdivision size is %d.)\n", offset_step, subdivision_size);
       return (-1);
     }
   }

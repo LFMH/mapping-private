@@ -12,7 +12,7 @@ int rotate_step_num = 0;
 int thR, thG, thB;
 float voxel_size;
 int subdivision_size = 0;
-const int offset_step = 2; // the step size of offset voxel number for subdivisions
+int offset_step = 1; // the step size of offset voxel number for subdivisions
 
 void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std::vector<float> > &feature, const char feature_type )
 {
@@ -231,6 +231,7 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Need at least three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} [options] {output_histogram_filename.pcd}\n", argv[0]);
     ROS_INFO ("                          -rotate rotate_step_num = e.g. 3 for 30 degrees rotation\n");
     ROS_INFO ("                          -subdiv N = subdivision size (e.g. 10 voxels)\n");
+    ROS_INFO ("                          -offset n = offset step for subdivisions (e.g. 5 voxels)\n");
     return(-1);
   }
 
@@ -263,6 +264,14 @@ int main( int argc, char** argv ){
   if( parse_argument (argc, argv, "-subdiv", subdivision_size) > 0 ){
     if ( subdivision_size < 0 ){
       print_error ("Invalid subdivision size (%d)! \n", subdivision_size);
+      return (-1);
+    }
+  }
+
+  // offset step
+  if( parse_argument (argc, argv, "-offset", offset_step) > 0 ){
+    if ( ( offset_step < 1 ) || ( offset_step >= subdivision_size ) ){
+      print_error ("Invalid offset step (%d)! (while subdivision size is %d.)\n", offset_step, subdivision_size);
       return (-1);
     }
   }
