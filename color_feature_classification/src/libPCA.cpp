@@ -67,8 +67,9 @@ void PCA::solve( bool regularization_flg, float regularization_nolm ){
 
   //* solve eigen problem
   SelfAdjointEigenSolver< MatrixXf > pca ( correlation );
-  axis = pca.eigenvectors();
-  variance = pca.eigenvalues();
+  MatrixXf tmp_axis = pca.eigenvectors();
+  VectorXf tmp_variance = pca.eigenvalues();
+  sortVecAndVal( tmp_axis, tmp_variance );  
 }
 
 //*****************************************
@@ -204,4 +205,34 @@ void PCA::write( const char *filename, bool ascii )
   }
   
   fclose( fp );
+}
+
+//* private function
+void PCA::sortVecAndVal( MatrixXf &vecs, VectorXf &vals ){
+  int *index = new int[ dim ];
+  for( int i = 0; i < dim; i++ )
+    index[ i ] = i;
+
+  //* sort
+  int tmpIndex;
+  for( int i = 0; i < dim; i++ ){
+    for( int j = 1; j < dim - i; j++ ){
+      if( vals( index[ j - 1 ] ) < vals( index[ j ] ) ){
+	tmpIndex       = index[ j ];
+	index[ j ]     = index[ j - 1 ];
+	index[ j - 1 ] = tmpIndex;
+      }
+    }
+  }
+  
+  //* copy
+  axis.resize( dim, dim );
+  variance.resize( dim );
+  for( int i = 0; i < dim; i++ ){
+    variance( i ) = vals( index[ i ] );
+    for( int j = 0; j < dim; j++ )
+      axis( j, i ) = vecs( j, index[ i ] );
+  }
+
+  delete[] index;  
 }

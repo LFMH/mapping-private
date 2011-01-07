@@ -149,22 +149,31 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::binarize_b ( int val )
   return 0;
 }
 
-template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLACEstimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0 )
+template <typename PointT, typename PointOutT> inline bool
+pcl::ColorCHLACEstimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0 )
 { 
   grid = grid_;
 
   if( subdivision_size_ > 0 ){
     inverse_subdivision_size = 1.0 / subdivision_size_;
+    offset_x = offset_x_;
+    offset_y = offset_y_;
+    offset_z = offset_z_;
     div_b_ = grid.getNrDivisions();
-    subdiv_b_ = Eigen3::Vector3i ( ceil( div_b_[0]*inverse_subdivision_size ), ceil( div_b_[1]*inverse_subdivision_size ), ceil( div_b_[2]*inverse_subdivision_size ) );
+    if( ( div_b_[0] <= offset_x ) || ( div_b_[1] <= offset_y ) || ( div_b_[2] <= offset_z ) ){
+      std::cerr << "(In setVoxelFilter) offset values (" << offset_x << "," << offset_y << "," << offset_z << ") exceed voxel grid size (" << div_b_[0] << "," << div_b_[1] << "," << div_b_[2] << ")."<< std::endl;
+      return false;
+    }
+
+    subdiv_b_ = Eigen3::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
     subdivb_mul_ = Eigen3::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
     hist_num = subdiv_b_[0] * subdiv_b_[1] * subdiv_b_[2];
   }
   else if( subdivision_size_ < 0 ){
     std::cerr << "(In setVoxelFilter) Invalid subdivision size: " << subdivision_size_ << std::endl;
-    return;
+    return false;
   }
+  return true;
 }
 
 //***********************************************************//
@@ -1441,9 +1450,11 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::computeColorCHLAC ( const pcl::Poi
   if( hist_num == 1 ) hist_idx = 0;
   else{
     const int x_mul_y = div_b_[0] * div_b_[1];
-    const int tmp_z = center_idx / x_mul_y;
-    const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0];
-    const int tmp_x = center_idx % div_b_[0];
+    const int tmp_z = center_idx / x_mul_y - offset_z;
+    const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0] - offset_y;
+    const int tmp_x = center_idx % div_b_[0] - offset_x;
+    if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ) return; // ignore idx smaller than offset.
+    
     Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
     hist_idx = ijk.dot (subdivb_mul_);
   }
@@ -1485,8 +1496,8 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOu
       output.points[h].histogram[ i ] *= NORMALIZE_0;
     for(int i=6; i<DIM_COLOR_1_3; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_1;
-    // for(int i=DIM_COLOR_1_3; i<501; ++i)
-    //   output.points[h].histogram[ i ] *= NORMALIZE_0_BIN;
+    for(int i=DIM_COLOR_1_3; i<501; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_0_BIN;
     // for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
     //   output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
   }

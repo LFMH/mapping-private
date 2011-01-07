@@ -15,6 +15,7 @@ const int DIM_COLOR_RI_1_3_ALL = 117; // = DIM_COLOR_RI_1_3 + DIM_COLOR_RI_BIN_1
 const float NORMALIZE_0 = 1/510.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
 const float NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
 //const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_0_BIN = 1; //1/2.0;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
 //const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
 //const float NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
 const float NORMALIZE_RI_0 = 1/510.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
@@ -44,13 +45,11 @@ namespace pcl
 
       typedef typename Feature<PointT, PointOutT>::PointCloudOut PointCloudOut;
 
-      //inline void setVoxelSize( float val ){ voxel_size = val; setRadiusSearch (val*1.75); }
-      
 /*       inline void getVoxelGrid ( const pcl::PointCloud<PointT> &cloud, pcl::PointCloud<PointT> &voxel_grid ); */
       
       inline void setColorThreshold ( int thR, int thG, int thB ){ color_thR = thR; color_thG = thG; color_thB = thB; }
 
-      inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ );
+      inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_ );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
@@ -108,6 +107,9 @@ namespace pcl
       Eigen3::MatrixXi relative_coordinates;
       int hist_num;
       float inverse_subdivision_size;
+      int offset_x;
+      int offset_y;
+      int offset_z;
       Eigen3::Vector3i div_b_;
       Eigen3::Vector3i subdiv_b_;
       Eigen3::Vector3i subdivb_mul_;
@@ -140,7 +142,7 @@ namespace pcl
       typedef typename ColorCHLACEstimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
 
       //inline void setColorThreshold ( int thR, int thG, int thB );
-      //inline void setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ );
+      //inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
@@ -176,6 +178,9 @@ namespace pcl
       using ColorCHLACEstimation<PointT, PointOutT>::relative_coordinates;
       using ColorCHLACEstimation<PointT, PointOutT>::hist_num;
       using ColorCHLACEstimation<PointT, PointOutT>::inverse_subdivision_size;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_x;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_y;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_z;
       using ColorCHLACEstimation<PointT, PointOutT>::div_b_;
       using ColorCHLACEstimation<PointT, PointOutT>::subdiv_b_;
       using ColorCHLACEstimation<PointT, PointOutT>::subdivb_mul_;

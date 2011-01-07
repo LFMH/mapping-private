@@ -7,10 +7,12 @@ do
 	for color in black blue green orange purple red yellow
 	do
 	    #rosrun color_chlac convertOld2NewPCD demos/shape_data/${noise}_${shape}_${color}.pcd demos/shape_data/${noise}_${shape}_${color}.pcd
-	    rosrun color_chlac test_GRSD_CCHLAC demos/shape_data/${noise}_${shape}_${color}.pcd
+	    #rosrun color_chlac test_GRSD_CCHLAC demos/shape_data/${noise}_${shape}_${color}.pcd
 
 	    #git add demos/shape_data/${noise}_${shape}_${color}.pcd
 	    #git add demos/shape_data/${noise}_${shape}_${color}_GRSD_CCHLAC.pcd
+
+	    rosrun pcl_visualization pcd_viewer demos/shape_data/${noise}_${shape}_${color}.pcd
 	done
     done
 done

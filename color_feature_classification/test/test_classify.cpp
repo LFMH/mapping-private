@@ -52,7 +52,8 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
   PCA pca;
   int class_num = -1;
   float dot_max = 0;
-  float sum, dot;
+  float dot;
+  float sum = vec.dot( vec );
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
@@ -71,12 +72,11 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
       VectorXf tmpVec2 = vec-pca.Mean();
       tmpVec = tmpMat2.transpose() * tmpVec2;
       sum = tmpVec2.dot( tmpVec2 );
-      dot = tmpVec.dot( tmpVec ) / sum;
     }
-    else{
+    else
       tmpVec = tmpMat2.transpose() * vec;
-      dot = tmpVec.dot( tmpVec );
-    }
+
+    dot = tmpVec.dot( tmpVec ) / sum;
     if( dot > dot_max ){
       dot_max = dot;
       class_num = i;
@@ -103,7 +103,7 @@ void compressFeature( string filename, std::vector<float> &feature, const int di
 int main( int argc, char** argv ){
   //ros::init( argc, argv, "test" );
   if( argc < 4 ){
-    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options]\n", argv[0]);
+    ROS_ERROR ("Need at least three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options]\n", argv[0]);
     ROS_INFO ("    where [options] are:  -dim D = dimension of compressed feature vectors\n");
     ROS_INFO ("    where [options] are:  -sub R = dimension of subspace\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");

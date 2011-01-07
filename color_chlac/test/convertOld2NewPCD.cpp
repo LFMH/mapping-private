@@ -13,7 +13,7 @@ const float setPointRGB( const int r, const int g, const int b ){
 
 int main( int argc, char** argv ){
   if( argc != 3 ){
-    ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd} {output_pointcloud_filename.pcd}\n", argv[0]);
+    ROS_ERROR ("Need two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
   }
   char line[ 300 ];

@@ -46,6 +46,9 @@ private:
   MatrixXf correlation; // self correlation matrix
   MatrixXf axis;        // eigen vectors
   VectorXf variance;    // eigen values
+
+  void sortVecAndVal( MatrixXf &vecs, VectorXf &vals );
+
 };
 
 #endif

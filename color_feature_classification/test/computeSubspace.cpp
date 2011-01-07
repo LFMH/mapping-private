@@ -17,11 +17,14 @@ using namespace terminal_tools;
 // color threshold
 int thR, thG, thB;
 float voxel_size;
+const int offset_step = 5;//2; // the step size of offset voxel number for subdivisions
 
 void
 computeFeatureModels ( const char feature_type, int argc, char **argv, const std::string &extension, 
 		       std::vector< std::vector<float> > &models, const int subdivision_size)
 {  
+  const int repeat_num_offset = ceil(subdivision_size / offset_step);
+
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
     // Needs to have the right size
@@ -41,22 +44,29 @@ computeFeatureModels ( const char feature_type, int argc, char **argv, const std
       pcl::VoxelGrid<PointXYZRGBNormal> grid;
       pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled;
       getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
-      
-      //* compute - GRSD -
-      std::vector< std::vector<float> > grsd;
-      computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-      const int hist_num = grsd.size(); // number of subdivisions
 
-      if( feature_type == 'g' ){
-	for( int h=0; h<hist_num; h++ )
-	  models.push_back ( grsd[ h ] );
-      }
-      else{
-	//* compute - ColorCHLAC - rotation-invariant
-	std::vector< std::vector<float> > colorCHLAC;
-	computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
-	for( int h=0; h<hist_num; h++ )
-	  models.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+      // repeat with changing offset values for subdivisions
+      for( int ox = 0; ox < repeat_num_offset; ox++ ){
+	for( int oy = 0; oy < repeat_num_offset; oy++ ){
+	  for( int oz = 0; oz < repeat_num_offset; oz++ ){
+	    //* compute - GRSD -
+	    std::vector< std::vector<float> > grsd;
+	    computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	    const int hist_num = grsd.size(); // number of subdivisions
+	    
+	    if( feature_type == 'g' ){
+	      for( int h=0; h<hist_num; h++ )
+		models.push_back ( grsd[ h ] );
+	    }
+	    else{
+	      //* compute - ColorCHLAC - rotation-invariant
+	      std::vector< std::vector<float> > colorCHLAC;
+	      computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	      for( int h=0; h<hist_num; h++ )
+		models.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+	    }
+	  }
+	}
       }
     }
   }
@@ -78,12 +88,12 @@ void compressFeature( string filename, std::vector< std::vector<float> > &models
   }
 }
 
-bool if_zero_vec( const std::vector<float> vec ){
-  const int vec_size = vec.size();
-  for( int i=0; i<vec_size; i++ )
-    if( vec[ i ] != 0 ) return false;
-  return true;
-}
+// bool if_zero_vec( const std::vector<float> vec ){
+//   const int vec_size = vec.size();
+//   for( int i=0; i<vec_size; i++ )
+//     if( vec[ i ] != 0 ) return false;
+//   return true;
+// }
 
 void computeSubspace( std::vector< std::vector<float> > models, const char* filename, bool ascii ){
   cout << models[0].size() << endl;
