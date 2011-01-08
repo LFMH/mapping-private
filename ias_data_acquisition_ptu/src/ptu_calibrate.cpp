@@ -132,21 +132,21 @@ public:
     // nh_.getParam ("normal_distance_weight", normal_distance_weight_);
     seg_.setNormalDistanceWeight (normal_distance_weight_);
     seg_.setOptimizeCoefficients (true);
-    //seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-    seg_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
-    seg_.setAxis (Eigen3::Vector3f(0.0, 0.0, 1.0));
-    seg_.setEpsAngle(pcl::deg2rad(5.0));
+    seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+//    seg_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
+    seg_.setEpsAngle(pcl::deg2rad(15.0));
     seg_.setMethodType (pcl::SAC_RANSAC);
     seg_.setProbability (0.99);
 
 
-    proj_.setModelType (pcl::SACMODEL_PLANE);
+//    proj_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
+    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
     //what area size of the table are we looking for?
     nh_.param("expected_table_area", expected_table_area_, 0.042);
     nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
     nh_.param("pan_angle", pan_angle_, -180.00);
-    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.05);
+    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.02);
     //min 100 points
     nh_.param("object_cluster_min_size", object_cluster_min_size_, 100);
     clusters_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
@@ -197,7 +197,7 @@ private:
   void 
   ptuFinderCallback (const sensor_msgs::PointCloud2ConstPtr &cloud_in, const dp_ptu47_pan_tilt_stage::PanTiltStampedConstPtr &pan_tilt)
     {
-      //ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
+      ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
 
       if (pan_angle_ < 175.00)
       {
@@ -221,6 +221,8 @@ private:
         pcl::fromROSMsg (*cloud_in, cloud_raw);
         vgrid_.setInputCloud (boost::make_shared<PointCloud> (cloud_raw));
         vgrid_.filter (cloud);
+        //cloud_pub_.publish(cloud);
+        //return;
         area_ = +DBL_MAX;
 
         // Fit a plane (the table)
@@ -234,25 +236,37 @@ private:
           pcl::PointCloud<pcl::Normal> cloud_normals;
           n3d_.setInputCloud (boost::make_shared<PointCloud> (cloud));
           n3d_.compute (cloud_normals);
+          //cloud_pub_.publish(cloud_normals);
+          //return;
           cloud_normals_.reset (new pcl::PointCloud<pcl::Normal> (cloud_normals));
 
           seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
           seg_.setInputNormals (cloud_normals_);
+          btVector3 axis(0.0, 0.0, 1.0);
+          btVector3 axis2 = axis.rotate(btVector3(1.0, 0.0, 0.0), btScalar(0.981 + pcl::deg2rad(90.0)));
+          std::cerr << "axis: " << fabs(axis2.getX()) << " " << fabs(axis2.getY()) << " " << fabs(axis2.getZ()) << std::endl;
+          seg_.setAxis (Eigen3::Vector3f(fabs(axis2.getX()), fabs(axis2.getY()), fabs(axis2.getZ())));
           // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
           seg_.segment (table_inliers, table_coeff);
-          //ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
-          //table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
+          ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
+          table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
+          if ((int)table_inliers.indices.size () <= 100)
+          {
+            ROS_ERROR ("table has to few inliers");
+            return;
+          }
           // Project the table inliers using the planar model coefficients    
           proj_.setInputCloud (boost::make_shared<PointCloud> (cloud));
           proj_.setIndices (boost::make_shared<pcl::PointIndices> (table_inliers));
           proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> (table_coeff));
           proj_.filter (cloud_projected);
-      
+          //cloud_pub_.publish (cloud_projected);
+
           // Create a Convex Hull representation of the projected inliers
           chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
           chull_.reconstruct (cloud_hull);
           //ROS_INFO ("Convex hull has: %d data points.", (int)cloud_hull.points.size ());
-          cloud_pub_.publish (cloud_hull);
+          //cloud_pub_.publish (cloud_hull);
       
           //Compute the area of the plane
           std::vector<double> plane_normal(3);
@@ -271,7 +285,8 @@ private:
             //cloud_extracted_pub_.publish (cloud_extracted);
             cloud = cloud_extracted;
           }
-        } //end while
+        } 
+          //end while
         //ROS_INFO ("[%s] Publishing convex hull with: %d data points and area %lf.", getName ().c_str (), (int)cloud_hull.points.size (), area_);
         cloud_pub_.publish (cloud_hull);
     
@@ -609,6 +624,7 @@ private:
 
   ros::Publisher marker_publisher_;
   pcl_ros::Publisher<Point> cloud_pub_;
+  //pcl_ros::Publisher<pcl::Normal> cloud_pub_;
   pcl_ros::Publisher<Point> cloud_downsampled_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
   pcl_ros::Publisher<Point> cloud_objects_pub_;
