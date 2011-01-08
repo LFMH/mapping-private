@@ -61,6 +61,8 @@
 #include "pcl/common/common.h"
 #include <pcl/io/pcd_io.h>
 #include "pcl/segmentation/extract_clusters.h"
+#include <pcl/features/normal_3d.h>
+#include <pcl/common/angles.h>
 
 #include <pcl_ros/publisher.h>
 
@@ -118,10 +120,25 @@ public:
     vgrid_.setFilterLimits (0, 1.0);
     //vgrid_.setLeafSize (.01, .01, .01);
 
-    seg_.setOptimizeCoefficients (true);
-    seg_.setModelType (pcl::SACMODEL_PLANE);
-    seg_.setMethodType (pcl::SAC_RANSAC);
+    // seg_.setOptimizeCoefficients (true);
+    // seg_.setModelType (pcl::SACMODEL_PLANE);
+    // seg_.setMethodType (pcl::SAC_RANSAC);
+    // seg_.setDistanceThreshold (sac_distance_);
+
     seg_.setDistanceThreshold (sac_distance_);
+    seg_.setMaxIterations (10000);
+      
+    normal_distance_weight_ = 0.1;
+    // nh_.getParam ("normal_distance_weight", normal_distance_weight_);
+    seg_.setNormalDistanceWeight (normal_distance_weight_);
+    seg_.setOptimizeCoefficients (true);
+    //seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+    seg_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
+    seg_.setAxis (Eigen3::Vector3f(0.0, 0.0, 1.0));
+    seg_.setEpsAngle(pcl::deg2rad(5.0));
+    seg_.setMethodType (pcl::SAC_RANSAC);
+    seg_.setProbability (0.99);
+
 
     proj_.setModelType (pcl::SACMODEL_PLANE);
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
@@ -134,6 +151,13 @@ public:
     nh_.param("object_cluster_min_size", object_cluster_min_size_, 100);
     clusters_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
     clusters_tree_->setEpsilon (1);
+    normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+
+    k_ = 10;
+    // nh_.getParam ("search_k_closest", k_);
+    n3d_.setKSearch (k_);
+    n3d_.setSearchMethod (normals_tree_);
+
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -206,7 +230,14 @@ private:
         pcl::PointCloud<Point> cloud_hull;
         while (area_ > (expected_table_area_ + 0.01))
         {
+          // ---[ Estimate the point normals
+          pcl::PointCloud<pcl::Normal> cloud_normals;
+          n3d_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+          n3d_.compute (cloud_normals);
+          cloud_normals_.reset (new pcl::PointCloud<pcl::Normal> (cloud_normals));
+
           seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
+          seg_.setInputNormals (cloud_normals_);
           // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
           seg_.segment (table_inliers, table_coeff);
           //ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
@@ -585,19 +616,23 @@ private:
   // PCL objects
   //pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
   pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
-  pcl::SACSegmentation<Point> seg_;               // Planar segmentation object
+  pcl::NormalEstimation<Point, pcl::Normal> n3d_;   //Normal estimation
+  // The resultant estimated point cloud normals for \a cloud_filtered_
+  pcl::PointCloud<pcl::Normal>::ConstPtr cloud_normals_;
+  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;               // Planar segmentation object
   pcl::ProjectInliers<Point> proj_;               // Inlier projection object
   pcl::ExtractIndices<Point> extract_;            // Extract (too) big tables
   pcl::ConvexHull2D<Point> chull_;  
   pcl::ExtractPolygonalPrismData<Point> prism_;
   pcl::PointCloud<Point> cloud_objects_;
   pcl::EuclideanClusterExtraction<Point> cluster_;
-  KdTreePtr clusters_tree_;
+  KdTreePtr clusters_tree_, normals_tree_;
   double object_cluster_tolerance_;
   int object_cluster_min_size_, object_cluster_max_size_;
 
   pcl::PCDWriter pcd_writer_;
-  double sac_distance_;
+  double sac_distance_, normal_distance_weight_;
+  int k_;
 
 
   ros::ServiceClient client_sc;
