@@ -106,7 +106,7 @@ public:
 					      cloud_pantilt_sync_ (SyncPolicy (20)), sac_distance_ (0.03)
   {
     cloud_pub_.advertise (nh_, "table_inliers", 1);
-    cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
+//    cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
     cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
     client_sc = nh_.serviceClient<SendCommand>("/dp_ptu47/control");
@@ -126,7 +126,7 @@ public:
     // seg_.setDistanceThreshold (sac_distance_);
 
     seg_.setDistanceThreshold (sac_distance_);
-    seg_.setMaxIterations (10000);
+    seg_.setMaxIterations (500);
       
     normal_distance_weight_ = 0.1;
     // nh_.getParam ("normal_distance_weight", normal_distance_weight_);
@@ -243,8 +243,9 @@ private:
           seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
           seg_.setInputNormals (cloud_normals_);
           btVector3 axis(0.0, 0.0, 1.0);
+          //todo: get angle automatically
           btVector3 axis2 = axis.rotate(btVector3(1.0, 0.0, 0.0), btScalar(0.981 + pcl::deg2rad(90.0)));
-          std::cerr << "axis: " << fabs(axis2.getX()) << " " << fabs(axis2.getY()) << " " << fabs(axis2.getZ()) << std::endl;
+          //std::cerr << "axis: " << fabs(axis2.getX()) << " " << fabs(axis2.getY()) << " " << fabs(axis2.getZ()) << std::endl;
           seg_.setAxis (Eigen3::Vector3f(fabs(axis2.getX()), fabs(axis2.getY()), fabs(axis2.getZ())));
           // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
           seg_.segment (table_inliers, table_coeff);
@@ -348,6 +349,7 @@ private:
         //ss << (pan_angle_ + 180);
         char object_name_angle[100];
         sprintf (object_name_angle, "%04d",  (int)(pan_angle_ + 180));
+        ROS_INFO("Cluster saved to: %s_%s.pcd", object_name_.c_str(), std::string(object_name_angle).c_str());
         pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_object_clustered, true);
         pan_angle_ += 15;
       }
@@ -625,7 +627,7 @@ private:
   ros::Publisher marker_publisher_;
   pcl_ros::Publisher<Point> cloud_pub_;
   //pcl_ros::Publisher<pcl::Normal> cloud_pub_;
-  pcl_ros::Publisher<Point> cloud_downsampled_pub_;
+//  pcl_ros::Publisher<Point> cloud_downsampled_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
   pcl_ros::Publisher<Point> cloud_objects_pub_;
 
