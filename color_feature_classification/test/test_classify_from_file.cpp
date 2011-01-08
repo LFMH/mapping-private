@@ -15,6 +15,7 @@
 #include "color_feature_classification/libPCA.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
+#include "FILE_MODE"
 
 using namespace pcl;
 using namespace std;
@@ -65,6 +66,7 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     // cout << var << endl;
     // exit(1);
     MatrixXf tmpMat = pca.Axis();
+    VectorXf variance = pca.Variance();
     MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
     VectorXf tmpVec;
     if( pca.mean_flg ){
@@ -75,6 +77,10 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     }
     else
       tmpVec = tmpMat2.transpose() * vec;
+
+    if( MULTIPLE_SIMILARITY )
+      for( int j=0; j<dim_subspace; j++ )
+	tmpVec( j ) *= sqrt( variance( j ) );
 
     dot = tmpVec.dot( tmpVec ) / sum;
     if( dot > dot_max ){
@@ -89,14 +95,21 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
 void compressFeature( string filename, std::vector<float> &feature, const int dim, bool ascii ){
   PCA pca;
   pca.read( filename.c_str(), ascii );
+  VectorXf variance = pca.Variance();
   MatrixXf tmpMat = pca.Axis();
   MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
   Map<VectorXf> vec( &(feature[0]), feature.size() );
   //vec = tmpMat2.transpose() * vec;
   VectorXf tmpvec = tmpMat2.transpose() * vec;
   feature.resize( dim );
-  for( int t=0; t<dim; t++ )
-    feature[t] = tmpvec[t];
+  if( WHITENING ){
+    for( int t=0; t<dim; t++ )
+      feature[t] = tmpvec[t] / sqrt( variance( t ) );
+  }
+  else{
+    for( int t=0; t<dim; t++ )
+	feature[t] = tmpvec[t];
+  }
 }
 
 //--------------------------------------------------------------------------------------------

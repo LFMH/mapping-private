@@ -58,7 +58,7 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
 	  std::vector< std::vector<float> > grsd;
 	  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 	  const int hist_num = grsd.size(); // number of subdivisions
-	  
+		
 	  if( feature_type == 'g' ){
 	    for( int h=0; h<hist_num; h++ )
 	      feature.push_back ( grsd[ h ] );

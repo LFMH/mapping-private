@@ -149,6 +149,7 @@ int get_type (float min_radius, float max_radius)
 //* compute - GRSD -
 template <typename T>
 void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
+  feature.resize( 0 );
   double fixed_radius_search = 0.03;
 
   //* for computing multiple GRSD with subdivisions
@@ -289,7 +290,8 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
 //* compute - ColorCHLAC -
 template <typename PointT>
 void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
-    pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
+  feature.resize( 0 );
+  pcl::PointCloud<pcl::ColorCHLACSignature981> colorCHLAC_signature;
   pcl::ColorCHLACEstimation<PointT, pcl::ColorCHLACSignature981> colorCHLAC_;
 
   colorCHLAC_.setRadiusSearch (1.8);
@@ -322,6 +324,7 @@ void computeColorCHLAC(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> clou
 
 template <typename PointT>
 void computeColorCHLAC_RI(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
+  feature.resize( 0 );
   pcl::PointCloud<pcl::ColorCHLACSignature117> colorCHLAC_signature;
   pcl::ColorCHLAC_RI_Estimation<PointT, pcl::ColorCHLACSignature117> colorCHLAC_;
 

@@ -9,6 +9,7 @@
 #include <terminal_tools/print.h>
 #include <color_chlac/grsd_colorCHLAC_tools.h>
 #include "color_feature_classification/libPCA.hpp"
+#include "FILE_MODE"
 
 using namespace pcl;
 using namespace std;
@@ -55,6 +56,7 @@ readFeatureModels ( int argc, char **argv, const std::string &extension,
 void compressFeature( string filename, std::vector< std::vector<float> > &models, const int dim, bool ascii ){
   PCA pca;
   pca.read( filename.c_str(), ascii );
+  VectorXf variance = pca.Variance();
   MatrixXf tmpMat = pca.Axis();
   MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
   const int num = (int)models.size();
@@ -63,8 +65,14 @@ void compressFeature( string filename, std::vector< std::vector<float> > &models
     //vec = tmpMat2.transpose() * vec;
     VectorXf tmpvec = tmpMat2.transpose() * vec;
     models[i].resize( dim );
-    for( int t=0; t<dim; t++ )
-      models[i][t] = tmpvec[t];
+    if( WHITENING ){
+      for( int t=0; t<dim; t++ )
+	models[i][t] = tmpvec[t] / sqrt( variance( t ) );
+    }
+    else{
+      for( int t=0; t<dim; t++ )
+	models[i][t] = tmpvec[t];
+    }
   }
 }
 

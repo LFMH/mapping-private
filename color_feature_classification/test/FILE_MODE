@@ -1,0 +1,2 @@
+#define WHITENING true
+#define MULTIPLE_SIMILARITY false//true
