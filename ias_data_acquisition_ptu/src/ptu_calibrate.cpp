@@ -102,62 +102,58 @@ class PTUCalibrator
 
 public:
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  PTUCalibrator (const ros::NodeHandle &nh) : nh_ (nh), stem_height_ (0), head_to_ptu_valid_ (false), 
-					      cloud_pantilt_sync_ (SyncPolicy (20)), sac_distance_ (0.03)
+  PTUCalibrator (const ros::NodeHandle &nh) : nh_ (nh), 
+                                              cloud_pantilt_sync_ (SyncPolicy (20)), sac_distance_(0.03)
   {
-    cloud_pub_.advertise (nh_, "table_inliers", 1);
-//    cloud_downsampled_pub_.advertise (nh_, "cloud_downsampled", 1);
-    cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
-    cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
-    client_sc = nh_.serviceClient<SendCommand>("/dp_ptu47/control");
-    client_st = nh_.serviceClient<SendTrajectory>("/dp_ptu47/control_trajectory");
-
-    //nh_.getParam("ptu/stem_height", stem_height_);  // Initial guess, which will be refined
-    //nh_.getParam("ptu/table_size", table_size_);
-    //printf("Read table size: %f\n", table_size_);
-      
-    vgrid_.setFilterFieldName ("z");
-    vgrid_.setFilterLimits (0, 1.0);
-    //vgrid_.setLeafSize (.01, .01, .01);
-
-    // seg_.setOptimizeCoefficients (true);
-    // seg_.setModelType (pcl::SACMODEL_PLANE);
-    // seg_.setMethodType (pcl::SAC_RANSAC);
-    // seg_.setDistanceThreshold (sac_distance_);
-
-    seg_.setDistanceThreshold (sac_distance_);
-    seg_.setMaxIterations (500);
-      
-    normal_distance_weight_ = 0.1;
-    // nh_.getParam ("normal_distance_weight", normal_distance_weight_);
-    seg_.setNormalDistanceWeight (normal_distance_weight_);
-    seg_.setOptimizeCoefficients (true);
-    seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-//    seg_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
-    seg_.setEpsAngle(pcl::deg2rad(15.0));
-    seg_.setMethodType (pcl::SAC_RANSAC);
-    seg_.setProbability (0.99);
-
-
-//    proj_.setModelType (pcl::SACMODEL_NORMAL_PARALLEL_PLANE);
-    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+    std::cerr << "setting params" << std::endl;
+    //    nh_.param("sac_distance", sac_distance_, 0.03);
+    nh_.param("z_min_limit", z_min_limit_, 0.0);
+    nh_.param("z_max_limit", z_max_limit_, 1.0);
+    nh_.param("max_iter", max_iter_, 500);
+    nh_.param("normal_distance_weight", normal_distance_weight_, 0.1);
+    nh_.param("eps_angle", eps_angle_, 15.0);
+    nh_.param("seg_prob", seg_prob_, 0.99);
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
     //what area size of the table are we looking for?
     nh_.param("expected_table_area", expected_table_area_, 0.042);
     nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
     nh_.param("pan_angle", pan_angle_, -180.00);
-    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.02);
+    nh_.param("max_pan_angle", max_pan_angle_, 175.00);
+    nh_.param("pan_angle_resolution", pan_angle_resolution_, 15.00);
+    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.03);
     //min 100 points
     nh_.param("object_cluster_min_size", object_cluster_min_size_, 100);
+    nh_.param("k", k_, 10);
+    nh_.param("base_link_head_tilt_link_angle", base_link_head_tilt_link_angle_, 0.981);
+    nh_.param("min_table_inliers", min_table_inliers_, 100);
+    nh_.param("cluster_min_height", cluster_min_height_, 0.005);
+    nh_.param("cluster_max_height", cluster_max_height_, 0.4);
+
+    cloud_pub_.advertise (nh_, "table_inliers", 1);
+    cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
+    cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
+    client_sc = nh_.serviceClient<SendCommand>("/dp_ptu47/control");
+    client_st = nh_.serviceClient<SendTrajectory>("/dp_ptu47/control_trajectory");
+
+    vgrid_.setFilterFieldName ("z");
+    vgrid_.setFilterLimits (z_min_limit_, z_max_limit_);
+
+    seg_.setDistanceThreshold (sac_distance_);
+    seg_.setMaxIterations (max_iter_);
+    seg_.setNormalDistanceWeight (normal_distance_weight_);
+    seg_.setOptimizeCoefficients (true);
+    seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+    seg_.setEpsAngle(pcl::deg2rad(eps_angle_));
+    seg_.setMethodType (pcl::SAC_RANSAC);
+    seg_.setProbability (seg_prob_);
+
+    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
     clusters_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
     clusters_tree_->setEpsilon (1);
     normals_tree_ = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
 
-    k_ = 10;
-    // nh_.getParam ("search_k_closest", k_);
     n3d_.setKSearch (k_);
     n3d_.setSearchMethod (normals_tree_);
-
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,10 +181,6 @@ public:
     cloud_pantilt_sync_.connectInput (point_cloud_sub_, pan_tilt_sub_);
     cloud_pantilt_sync_.registerCallback (boost::bind (&PTUCalibrator::ptuFinderCallback, this, _1, _2));
 
-    marker_publisher_ = nh_.advertise<visualization_msgs::Marker>("/ptu_calibration_table", 0);
-
-    //       ROS_INFO ("[%s] Creating tf timer", getName ().c_str ());
-    //       timer_  = nh_.createTimer (ros::Duration (0.1), boost::bind (&PTUCalibrator::timerCallback, this, _1));  // Call it every 0.1s after that
     object_name_ = object_name;
   }
     
@@ -199,7 +191,7 @@ private:
     {
       ROS_INFO_STREAM ("[" << getName ().c_str () << "] Received pair: cloud time " << cloud_in->header.stamp << ", pan-tilt " << pan_tilt->pan_angle << "/" << pan_tilt->tilt_angle << " time " << pan_tilt->header.stamp);
 
-      if (pan_angle_ < 175.00)
+      if (pan_angle_ < max_pan_angle_)
       {
         SendCommand srv_sc;
         ROS_INFO ("[%s]: New pan_angle_ %f.", getName ().c_str (), pan_angle_);
@@ -242,16 +234,18 @@ private:
 
           seg_.setInputCloud (boost::make_shared<PointCloud> (cloud));
           seg_.setInputNormals (cloud_normals_);
+          //z axis in Kinect frame
           btVector3 axis(0.0, 0.0, 1.0);
+          //rotate axis around x in Kinect frame for an angle between base_link and head_tilt_link + 90deg
           //todo: get angle automatically
-          btVector3 axis2 = axis.rotate(btVector3(1.0, 0.0, 0.0), btScalar(0.981 + pcl::deg2rad(90.0)));
+          btVector3 axis2 = axis.rotate(btVector3(1.0, 0.0, 0.0), btScalar(base_link_head_tilt_link_angle_ + pcl::deg2rad(90.0)));
           //std::cerr << "axis: " << fabs(axis2.getX()) << " " << fabs(axis2.getY()) << " " << fabs(axis2.getZ()) << std::endl;
           seg_.setAxis (Eigen3::Vector3f(fabs(axis2.getX()), fabs(axis2.getY()), fabs(axis2.getZ())));
           // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
           seg_.segment (table_inliers, table_coeff);
           ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
           table_coeff.values[0], table_coeff.values[1], table_coeff.values[2], table_coeff.values[3], (int)table_inliers.indices.size ());
-          if ((int)table_inliers.indices.size () <= 100)
+          if ((int)table_inliers.indices.size () <= min_table_inliers_)
           {
             ROS_ERROR ("table has to few inliers");
             return;
@@ -308,10 +302,8 @@ private:
 
         // ---[ Get the objects on top of the table
         pcl::PointIndices cloud_object_indices;
-        //prism_.setInputCloud (cloud_all_minus_table_ptr);
-        prism_.setHeightLimits (0.005, 0.3);
+        prism_.setHeightLimits (cluster_min_height_, cluster_max_height_);
         prism_.setInputCloud (boost::make_shared<PointCloud> (cloud));
-//      prism_.setInputCloud (cloud_downsampled_);
         prism_.setInputPlanarHull (boost::make_shared<PointCloud>(cloud_hull));
         prism_.segment (cloud_object_indices);
         //ROS_INFO ("[%s] Number of object point indices: %d.", getName ().c_str (), (int)cloud_object_indices.indices.size ());
@@ -351,7 +343,7 @@ private:
         sprintf (object_name_angle, "%04d",  (int)(pan_angle_ + 180));
         ROS_INFO("Cluster saved to: %s_%s.pcd", object_name_.c_str(), std::string(object_name_angle).c_str());
         pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_object_clustered, true);
-        pan_angle_ += 15;
+        pan_angle_ += pan_angle_resolution_;
       }
   }
 
@@ -393,34 +385,32 @@ private:
   ros::NodeHandle nh_;  // Do we need to keep it?
   tf::TransformBroadcaster transform_broadcaster_;
   tf::TransformListener tf_listener_;
-  double stem_height_;  // Distance from the center of rotation to the center of the table
-  //double table_size_;  // Size of one side of the table (the table is square)
   bool save_to_files_;
 
   // Parameters related to the location of the pan tilt unit base
   ros::Timer timer_;
   double real_part_;
   double imaginary_part_;
-  tf::Transform head_to_ptu_;
-  bool head_to_ptu_valid_;
     
   double normal_search_radius_;
   double expected_table_area_;
-  double area_, pan_angle_;
+  double area_, pan_angle_, max_pan_angle_, pan_angle_resolution_;
   std::string rot_table_frame_, object_name_;
+  double object_cluster_tolerance_,  cluster_min_height_, cluster_max_height_;
+  int object_cluster_min_size_, object_cluster_max_size_;
 
+  pcl::PCDWriter pcd_writer_;
+  double sac_distance_, normal_distance_weight_, z_min_limit_, z_max_limit_;
+  double eps_angle_, seg_prob_, base_link_head_tilt_link_angle_;
+  int k_, max_iter_, min_table_inliers_;
+  
   message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
   message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
   message_filters::Synchronizer<SyncPolicy> cloud_pantilt_sync_;
 
   std::vector<Eigen3::Vector4d *> table_coeffs_;
 
-  std::vector<dp_ptu47_pan_tilt_stage::PanTiltStampedConstPtr> pan_tilts_;
-
-  ros::Publisher marker_publisher_;
   pcl_ros::Publisher<Point> cloud_pub_;
-  //pcl_ros::Publisher<pcl::Normal> cloud_pub_;
-//  pcl_ros::Publisher<Point> cloud_downsampled_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
   pcl_ros::Publisher<Point> cloud_objects_pub_;
 
@@ -438,14 +428,8 @@ private:
   pcl::PointCloud<Point> cloud_objects_;
   pcl::EuclideanClusterExtraction<Point> cluster_;
   KdTreePtr clusters_tree_, normals_tree_;
-  double object_cluster_tolerance_;
-  int object_cluster_min_size_, object_cluster_max_size_;
 
-  pcl::PCDWriter pcd_writer_;
-  double sac_distance_, normal_distance_weight_;
-  int k_;
-
-
+  //service clients
   ros::ServiceClient client_sc;
   ros::ServiceClient client_st;
 
