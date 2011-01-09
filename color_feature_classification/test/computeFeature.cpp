@@ -1,5 +1,9 @@
 #define QUIET
 
+//* NOTICE
+//  Rotation is possible also when feature_type is 'g' or 'r'.
+//  (It's different from computeSubspace.cpp and computeSubspace_with_rotation.cpp)
+
 #include <color_feature_classification/points_tools.hpp>
 #include "color_chlac/grsd_colorCHLAC_tools.h"
 #include <terminal_tools/parse.h>
@@ -39,7 +43,7 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
       }
     }
   }
-  else{
+  else{ // feature_type == 'g' or 'r' or 'd'
 
     //* compute normals
     pcl::PointCloud<PointXYZRGBNormal> cloud;
@@ -63,8 +67,8 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
 	    for( int h=0; h<hist_num; h++ )
 	      feature.push_back ( grsd[ h ] );
 	  }
-	  else{
-	    //* compute - ColorCHLAC - rotation-invariant
+	  else{ // feature_type == 'r' or 'd'
+	    //* compute - ColorCHLAC
 	    std::vector< std::vector<float> > colorCHLAC;
 	    if( feature_type == 'r' )
 	      computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
@@ -88,47 +92,7 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
   std::vector< std::vector<float> > grsd;
   std::vector< std::vector<float> > colorCHLAC;
     
-  if( feature_type == 'd' ){
-    pcl::PointCloud<PointXYZRGBNormal> cloud_normal;
-    pcl::PointCloud<PointXYZRGBNormal> cloud_normal_r;
-    pcl::VoxelGrid<PointXYZRGBNormal> grid_normal;
-    pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled_normal;
-	
-    //* compute normals
-    computeNormal( input_cloud, cloud_normal );
-    
-    for(int r3=0; r3 < rotate_step_num; r3++){
-      for(int r2=0; r2 < rotate_step_num; r2++){
-	for(int r1=0; r1 < rotate_step_num; r1++){
-	  const double roll  = r3 * M_PI / (2*rotate_step_num);
-	  const double pan   = r2 * M_PI / (2*rotate_step_num);
-	  const double roll2 = r1 * M_PI / (2*rotate_step_num);
-	  
-	  //* voxelize
-	  rotatePoints( cloud_normal, cloud_normal_r, roll, pan, roll2 );
-	  getVoxelGrid( grid_normal, cloud_normal_r, cloud_downsampled_normal, voxel_size );	      
-	  
-	  // repeat with changing offset values for subdivisions
-	  for( int ox = 0; ox < repeat_num_offset; ox++ ){
-	    for( int oy = 0; oy < repeat_num_offset; oy++ ){
-	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
-		//* compute features
-		computeGRSD( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
-		computeColorCHLAC( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );		  
-		const int hist_num = colorCHLAC.size();
-		
-		for( int h=0; h<hist_num; h++ )
-		  feature.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
-	      }
-	    }
-	  }
-	  
-	  if(r2==0) break;
-	}
-      }
-    }
-  }
-  else{ // == 'c'
+  if( feature_type == 'c' ){
     pcl::PointCloud<PointXYZRGB> input_cloud_r; // rotate
     pcl::VoxelGrid<PointXYZRGB> grid;
     pcl::PointCloud<PointXYZRGB> cloud_downsampled;
@@ -226,6 +190,57 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
       }
     }
   }
+  else{  // feature_type == 'g' or 'r' or 'd'
+    pcl::PointCloud<PointXYZRGBNormal> cloud_normal;
+    pcl::PointCloud<PointXYZRGBNormal> cloud_normal_r;
+    pcl::VoxelGrid<PointXYZRGBNormal> grid_normal;
+    pcl::PointCloud<PointXYZRGBNormal> cloud_downsampled_normal;
+	
+    //* compute normals
+    computeNormal( input_cloud, cloud_normal );
+    
+    for(int r3=0; r3 < rotate_step_num; r3++){
+      for(int r2=0; r2 < rotate_step_num; r2++){
+	for(int r1=0; r1 < rotate_step_num; r1++){
+	  const double roll  = r3 * M_PI / (2*rotate_step_num);
+	  const double pan   = r2 * M_PI / (2*rotate_step_num);
+	  const double roll2 = r1 * M_PI / (2*rotate_step_num);
+	  
+	  //* voxelize
+	  rotatePoints( cloud_normal, cloud_normal_r, roll, pan, roll2 );
+	  getVoxelGrid( grid_normal, cloud_normal_r, cloud_downsampled_normal, voxel_size );	      
+	  
+	  // repeat with changing offset values for subdivisions
+	  for( int ox = 0; ox < repeat_num_offset; ox++ ){
+	    for( int oy = 0; oy < repeat_num_offset; oy++ ){
+	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
+		//* compute - GRSD -
+		computeGRSD( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+		const int hist_num = grsd.size();
+
+		if( feature_type == 'g' ){
+		  for( int h=0; h<hist_num; h++ )
+		    feature.push_back ( grsd[ h ] );
+		}
+		else{ // feature_type == 'r' or 'd'
+		  //* compute - ColorCHLAC
+		  if( feature_type == 'r' )
+		    computeColorCHLAC_RI( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+		  else
+		    computeColorCHLAC( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+		  
+		  for( int h=0; h<hist_num; h++ )
+		    feature.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+		}
+	      }
+	    }
+	  }
+	  
+	  if(r2==0) break;
+	}
+      }
+    }
+  }
 }
 
 //-------
@@ -286,15 +301,13 @@ int main( int argc, char** argv ){
 
   //* compute feature
   std::vector< std::vector<float> > feature;
-  if( (feature_type == 'g') || (feature_type == 'r') )
-    computeFeature( input_cloud, feature, feature_type );
-  else if( rotate_step_num == 0 )
+  if( rotate_step_num == 0 )
     computeFeature( input_cloud, feature, feature_type );
   else
     computeFeature_with_rotate( input_cloud, feature, feature_type );
-
+  
   //* write
   writeFeature( argv[ argc - 1 ], feature );
-
+  
   return(0);
 }

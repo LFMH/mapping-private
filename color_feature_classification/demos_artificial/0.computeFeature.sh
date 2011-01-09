@@ -8,8 +8,8 @@ do
     echo "Processing $i"
     num=$(printf "%03d" $n)
     rosrun color_feature_classification computeFeature $i c -rotate 1 -subdiv 5 -offset 2 features_c/$num.pcd	
-    rosrun color_feature_classification computeFeature $i d -rotate 1 -subdiv 5 -offset 2 features_d/$num.pcd	
-    rosrun color_feature_classification computeFeature $i g -subdiv 5 -offset 2 features_g/$num.pcd	
-    rosrun color_feature_classification computeFeature $i r -subdiv 5 -offset 2 features_r/$num.pcd	
+    rosrun color_feature_classification computeFeature $i d -rotate 2 -subdiv 5 -offset 2 features_d/$num.pcd	
+    #rosrun color_feature_classification computeFeature $i g -subdiv 5 -offset 2 features_g/$num.pcd	
+    rosrun color_feature_classification computeFeature $i r -rotate 2 -subdiv 5 -offset 2 features_r/$num.pcd	
     n=`expr $n + 1`	
 done

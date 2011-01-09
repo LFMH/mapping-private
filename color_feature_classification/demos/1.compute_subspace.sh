@@ -41,7 +41,7 @@ do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     files=`find features_r/$dir_name -type f -iname "*.pcd" | sort -d`
-    rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp pca_result_r/compress_axis pca_result_r/$num
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 80 -comp pca_result_r/compress_axis pca_result_r/$num
 done
 
 ##############################################
