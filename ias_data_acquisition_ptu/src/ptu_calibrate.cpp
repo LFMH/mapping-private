@@ -103,10 +103,10 @@ class PTUCalibrator
 public:
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   PTUCalibrator (const ros::NodeHandle &nh) : nh_ (nh), 
-                                              cloud_pantilt_sync_ (SyncPolicy (20)), sac_distance_(0.03)
+                                              cloud_pantilt_sync_ (SyncPolicy (20))
   {
-    std::cerr << "setting params" << std::endl;
-    //    nh_.param("sac_distance", sac_distance_, 0.03);
+
+    nh_.param("sac_distance", sac_distance_, 0.03);
     nh_.param("z_min_limit", z_min_limit_, 0.0);
     nh_.param("z_max_limit", z_max_limit_, 1.0);
     nh_.param("max_iter", max_iter_, 500);
@@ -167,7 +167,7 @@ public:
   void 
   init (double tolerance, std::string object_name)  // tolerance: how close to (0,0) is good enough?
   {
-    std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2_throttle");
+    std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2");
     std::string pan_tilt_topic = nh_.resolveName ("/dp_ptu47/pan_tilt_status_stamped");
 
     // TODO?: Initialize the /ptu/base_link frame with a weak prior centered around a
@@ -341,7 +341,7 @@ private:
         //ss << (pan_angle_ + 180);
         char object_name_angle[100];
         sprintf (object_name_angle, "%04d",  (int)(pan_angle_ + 180));
-        ROS_INFO("Cluster saved to: %s_%s.pcd", object_name_.c_str(), std::string(object_name_angle).c_str());
+        ROS_INFO("Saving cluster to: %s_%s.pcd", object_name_.c_str(), std::string(object_name_angle).c_str());
         pcd_writer_.write (object_name_ + "_" + std::string(object_name_angle) + ".pcd", cloud_object_clustered, true);
         pan_angle_ += pan_angle_resolution_;
       }
