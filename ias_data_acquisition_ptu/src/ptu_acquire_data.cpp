@@ -442,7 +442,7 @@ private:
 int
 main (int argc, char** argv)
 {
-  ros::init (argc, argv, "extract_single_object_cluster");
+  ros::init (argc, argv, "ptu_acquire_data_node");
   ros::NodeHandle nh("~");
   if (argc < 2)
   {
