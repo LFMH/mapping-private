@@ -443,7 +443,7 @@ int
 main (int argc, char** argv)
 {
   ros::init (argc, argv, "extract_single_object_cluster");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   if (argc < 2)
   {
     ROS_ERROR ("usage %s <object_name>", argv[0]);

@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="ias_data_acquisition_ptu" type="ptu_acquire_data_node" name="ptu_acquire_data_node" output="screen" respawn="false" args="test">
+    <!-- Parameters --> 
+    <param name="expected_table_area" value="0.062"/>
+    <param name="cluster_min_height" value="-0.02"/>
+ </node>
+</launch>
