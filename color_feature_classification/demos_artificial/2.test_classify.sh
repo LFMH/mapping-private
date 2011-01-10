@@ -11,7 +11,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i c s -sub 5 -dim 70 -comp pca_result_c/compress_axis
+    rosrun color_feature_classification test_classify_from_file $i c s -sub 5 -dim 100 -comp pca_result_c/compress_axis
     n=`expr $n + 1`
 done
 #
@@ -24,7 +24,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i d s -sub 5 -dim 70 -comp pca_result_d/compress_axis
+    rosrun color_feature_classification test_classify_from_file $i d s -sub 5 -dim 100 -comp pca_result_d/compress_axis
     n=`expr $n + 1`
 done
 #

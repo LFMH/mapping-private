@@ -2,45 +2,41 @@
 
 flag=-1
 count=0
+dir_num=-1
+dir_name=$(printf "obj%03d" `expr $dir_num + 1`)
 
 text=(`cat $1`)
 num=`echo ${#text[@]}`
 for((i=0;i<$num;i++))
 do
-    if [ ${text[$i]} = 0 ]
+    if [ ${text[$i]} = $dir_name ]
     then
  	flag=1
-    fi
-    if [ $flag = 1 ]
-    then
- 	ans=${text[$i]}
+	dir_num=`expr $dir_num + 1`
+	dir_name=$(printf "obj%03d" `expr $dir_num + 1`)
 	i=`expr $i + 1`
- 	result=${text[$i]}
-	if [ ${text[`expr $i - 1`]} = ${text[$i]} ]
-	then
-	    count=`expr $count + 1`
-	fi
-	i=`expr $i + 1`
-	if [ ${text[`expr $i - 2`]} = 48 ]
-	then
- 	    flag=-1
-	    echo $count
-	    count=0
-	fi
+
+               # read 24 test samples' results
+	for((j=0;j<24;j++))
+	do
+	    i=`expr $i + 1`
+ 	    result=${text[$i]}
+	    if [ $result = $dir_num ]
+	    then
+		count=`expr $count + 1`
+	    fi
+	    i=`expr $i + 1`
+	done
     else
+	if [ $flag = 1 ]
+	then
+	    echo correct_num: $count
+	    flag=-1
+	fi
+	count=0	
 	echo ${text[$i]}
+	dir_num=-1
+	dir_name=$(printf "obj%03d" `expr $dir_num + 1`)
     fi
 done
-
-# for i in `cat $1`
-# do
-#     echo $i
-#     if [ $i = 0 ]
-#     then
-# 	num=0
-#     fi
-#     if [ $num != -1 ]
-#     then
-# 	num=$i
-#     fi
-# done
+echo correct_num: $count

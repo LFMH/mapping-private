@@ -6,7 +6,7 @@ for i in `find features_c -type f -iname "*.pcd" | sort -d`
 do
     echo $i
     num=$(printf "%03d" $n)
-    rosrun color_feature_classification computeSubspace_from_file $i -dim 70 -comp pca_result_c/compress_axis pca_result_c/$num
+    rosrun color_feature_classification computeSubspace_from_file $i -dim 100 -comp pca_result_c/compress_axis pca_result_c/$num
     n=`expr $n + 1`
 done
 #
@@ -15,7 +15,7 @@ for i in `find features_d -type f -iname "*.pcd" | sort -d`
 do
     echo $i
     num=$(printf "%03d" $n)
-    rosrun color_feature_classification computeSubspace_from_file $i -dim 70 -comp pca_result_d/compress_axis pca_result_d/$num
+    rosrun color_feature_classification computeSubspace_from_file $i -dim 100 -comp pca_result_d/compress_axis pca_result_d/$num
     n=`expr $n + 1`
 done
 #
