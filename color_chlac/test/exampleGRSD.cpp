@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 #include <pcl/features/normal_3d.h>
+#include <terminal_tools/print.h>
+#include <terminal_tools/time.h>
+
 
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 
@@ -104,11 +107,17 @@ int main( int argc, char** argv ){
   tree2->setInputCloud (cloud);
   rsd.setSearchMethod(tree2);
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
+  terminal_tools::TicToc tictoc;
+  tictoc.tic();
   rsd.compute(radii);
+  terminal_tools::print_info("RSD compute done in ");
+  terminal_tools::print_value("%g", tictoc.toc());
+  terminal_tools::print_info("s\n");
   ROS_INFO("radii size %ld", radii.points.size());
   if (save_to_disk)
     writer.write("radii.pcd", radii, false);
   
+  tictoc.tic();
   // Get rmin/rmax for adjacent 27 voxel
   Eigen3::MatrixXi relative_coordinates (3, 13);
 
@@ -180,5 +189,9 @@ int main( int argc, char** argv ){
   if (save_to_disk)
     writer.write("grsd.pcd", cloud_grsd, false);
   std::cerr << "transition matrix" << std::endl << transition_matrix << std::endl;
+  terminal_tools::print_info("GRSD compute done in ");
+  terminal_tools::print_value("%g", tictoc.toc());
+  terminal_tools::print_info("s\n");
+  
   return(0);
 }
