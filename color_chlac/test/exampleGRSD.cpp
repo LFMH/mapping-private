@@ -56,7 +56,7 @@ int main( int argc, char** argv ){
   min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
   max_min_radius_diff_ = 0.01;
   min_radius_edge_ = 0.030;
-
+  bool save_to_disk = false;
 
   double fixed_radius_search = 0.03;
   // read input cloud
@@ -66,18 +66,22 @@ int main( int argc, char** argv ){
   reader.read ( argv[1], input_cloud);
   
   //Normal estimation
-  pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> n3d; 
-  pcl::PointCloud<pcl::PointNormal> cloud_normals;
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d; 
+  pcl::PointCloud<pcl::Normal> cloud_normals;
   n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (input_cloud));
   n3d.setKSearch (10);
   KdTreePtr normals_tree;
   normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (normals_tree);
-    
   n3d.compute (cloud_normals);
 
-  // Create the voxel grid
-  pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (cloud_normals);
+  pcl::PointCloud<pcl::PointNormal> cloud_xyz_normals;
+  pcl::concatenateFields (input_cloud, cloud_normals, cloud_xyz_normals);
+  if (save_to_disk)
+    writer.write("normals.pcd", cloud_xyz_normals, false);
+
+  // create the voxel grid
+  pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (cloud_xyz_normals);
   pcl::PointCloud<pcl::PointNormal> cloud_downsampled;
   pcl::VoxelGrid<pcl::PointNormal> grid;
   double downsample_leaf = 0.01;                          // 1cm voxel size by default
@@ -101,7 +105,9 @@ int main( int argc, char** argv ){
   rsd.setSearchMethod(tree2);
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
   rsd.compute(radii);
-  writer.write("radii.pcd", radii, false);
+  ROS_INFO("radii size %ld", radii.points.size());
+  if (save_to_disk)
+    writer.write("radii.pcd", radii, false);
   
   // Get rmin/rmax for adjacent 27 voxel
   Eigen3::MatrixXi relative_coordinates (3, 13);
@@ -171,7 +177,8 @@ int main( int argc, char** argv ){
       cloud_grsd.points[0].histogram[nrf++] = transition_matrix(i, j); //@TODO: resize point cloud
     }
   }
-  writer.write("grsd.pcd", cloud_grsd, false);
+  if (save_to_disk)
+    writer.write("grsd.pcd", cloud_grsd, false);
   std::cerr << "transition matrix" << std::endl << transition_matrix << std::endl;
   return(0);
 }
