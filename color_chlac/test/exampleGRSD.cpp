@@ -7,8 +7,9 @@
 #include "pcl/features/rsd.h"
 #include <algorithm>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
+#include <pcl/features/normal_3d.h>
 
-typedef pcl::KdTree<pcl::PointNormal>::Ptr KdTreePtr;
+typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 
 //* time
 double t1,t2;
@@ -59,13 +60,24 @@ int main( int argc, char** argv ){
 
   double fixed_radius_search = 0.03;
   // read input cloud
-  pcl::PointCloud<pcl::PointNormal> input_cloud;
+  pcl::PointCloud<pcl::PointXYZ> input_cloud;
   pcl::PCDReader reader;
   pcl::PCDWriter writer;
   reader.read ( argv[1], input_cloud);
+  
+  //Normal estimation
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> n3d; 
+  pcl::PointCloud<pcl::PointNormal> cloud_normals;
+  n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (input_cloud));
+  n3d.setKSearch (10);
+  KdTreePtr normals_tree;
+  normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
+  n3d.setSearchMethod (normals_tree);
+    
+  n3d.compute (cloud_normals);
 
   // Create the voxel grid
-  pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (input_cloud);
+  pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (cloud_normals);
   pcl::PointCloud<pcl::PointNormal> cloud_downsampled;
   pcl::VoxelGrid<pcl::PointNormal> grid;
   double downsample_leaf = 0.01;                          // 1cm voxel size by default
