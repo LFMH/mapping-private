@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 #include <pcl/features/normal_3d.h>
-#include <terminal_tools/print.h>
-#include <terminal_tools/time.h>
+#include <terminal_tools/parse.h>
 
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
+using namespace terminal_tools;
 
 //* time
 double t1,t2;
@@ -51,7 +51,7 @@ int get_type (float min_radius, float max_radius)
 
 int main( int argc, char** argv )
 {
-  if( argc != 2 ){
+  if( argc < 2 ){
     ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
   }
@@ -60,8 +60,17 @@ int main( int argc, char** argv )
   max_min_radius_diff_ = 0.01;
   min_radius_edge_ = 0.030;
   bool save_to_disk = true;
-  double downsample_leaf = 0.01;                          // 1cm voxel size by default
-  double fixed_radius_search = 0.03;
+  
+  double rsd_radius_search = 0.01;
+  parse_argument (argc, argv, "-rsd", rsd_radius_search);
+  
+  double normals_radius_search = 0.02;
+  parse_argument (argc, argv, "-normals", normals_radius_search);
+  
+  // 1cm voxel size by default
+  double downsample_leaf = 0.01;                          
+  parse_argument (argc, argv, "-leaf", downsample_leaf);
+  ROS_INFO("rsd %f, normals %f, leaf %f", rsd_radius_search, normals_radius_search, downsample_leaf);
 
   // read input cloud
   pcl::PointCloud<pcl::PointXYZ> input_cloud;
@@ -73,7 +82,8 @@ int main( int argc, char** argv )
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d; 
   pcl::PointCloud<pcl::Normal> cloud_normals;
   n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (input_cloud));
-  n3d.setKSearch (10);
+  //n3d.setKSearch (10);
+  n3d.setRadiusSearch (normals_radius_search);
   KdTreePtr normals_tree;
   normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (normals_tree);
@@ -101,19 +111,15 @@ int main( int argc, char** argv )
   rsd.setInputCloud(cloud_downsampled_ptr);
   rsd.setSearchSurface(cloud);
   rsd.setInputNormals(cloud);
-  ROS_INFO("radius search: %f", std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
-  rsd.setRadiusSearch(std::max(fixed_radius_search, downsample_leaf/2 * sqrt(3)));
+  ROS_INFO("radius search: %f", std::max(rsd_radius_search, downsample_leaf/2 * sqrt(3)));
+  rsd.setRadiusSearch(std::max(rsd_radius_search, downsample_leaf/2 * sqrt(3)));
   pcl::KdTree<pcl::PointNormal>::Ptr tree2 = boost::make_shared<pcl::KdTreeFLANN<pcl::PointNormal> > ();
   tree2->setInputCloud (cloud);
   rsd.setSearchMethod(tree2);
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
-  terminal_tools::TicToc tictoc;
-  tictoc.tic();
+  t1 = my_clock();
   rsd.compute(radii);
-  terminal_tools::print_info("RSD compute done in ");
-  terminal_tools::print_value("%g", tictoc.toc());
-  terminal_tools::print_info("s\n");
-  ROS_INFO("radii size %ld", radii.points.size());
+  ROS_INFO("RSD compute done in %f seconds.", my_clock()-t1);
 
   pcl::PointCloud<pcl::PointNormalRADII> cloud_downsampled_radii;
   pcl::concatenateFields (cloud_downsampled, radii, cloud_downsampled_radii);
@@ -121,7 +127,7 @@ int main( int argc, char** argv )
   if (save_to_disk)
     writer.write("radii.pcd", cloud_downsampled_radii, false);
   
-  tictoc.tic();
+  t1 = my_clock();
   // Get rmin/rmax for adjacent 27 voxel
   Eigen3::MatrixXi relative_coordinates (3, 13);
 
@@ -193,9 +199,6 @@ int main( int argc, char** argv )
   if (save_to_disk)
     writer.write("grsd.pcd", cloud_grsd, false);
   std::cerr << "transition matrix" << std::endl << transition_matrix << std::endl;
-  terminal_tools::print_info("GRSD compute done in ");
-  terminal_tools::print_value("%g", tictoc.toc());
-  terminal_tools::print_info("s\n");
-  
+  ROS_INFO("GRSD compute done in %f seconds.", my_clock()-t1);
   return(0);
 }
