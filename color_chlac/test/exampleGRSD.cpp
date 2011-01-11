@@ -11,7 +11,6 @@
 #include <terminal_tools/print.h>
 #include <terminal_tools/time.h>
 
-
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 
 //* time
@@ -50,7 +49,8 @@ int get_type (float min_radius, float max_radius)
     return CYLINDER; // cylinder (rim)
 }
 
-int main( int argc, char** argv ){
+int main( int argc, char** argv )
+{
   if( argc != 2 ){
     ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
@@ -60,8 +60,9 @@ int main( int argc, char** argv ){
   max_min_radius_diff_ = 0.01;
   min_radius_edge_ = 0.030;
   bool save_to_disk = false;
-
+  double downsample_leaf = 0.01;                          // 1cm voxel size by default
   double fixed_radius_search = 0.03;
+
   // read input cloud
   pcl::PointCloud<pcl::PointXYZ> input_cloud;
   pcl::PCDReader reader;
@@ -87,7 +88,6 @@ int main( int argc, char** argv ){
   pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (cloud_xyz_normals);
   pcl::PointCloud<pcl::PointNormal> cloud_downsampled;
   pcl::VoxelGrid<pcl::PointNormal> grid;
-  double downsample_leaf = 0.01;                          // 1cm voxel size by default
   grid.setLeafSize (downsample_leaf, downsample_leaf, downsample_leaf);
   grid.setInputCloud (cloud);
   grid.setSaveLeafLayout(true);
