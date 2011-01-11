@@ -1,6 +1,6 @@
 #!/bin/bash
 # Example directory containing .pcd files
-DATA=`pwd`/data
+DATA=`rospack find color_feature_classification`/demos/data
 
 # compute a subspace
 files=`find $DATA/* -type f -iname "*.pcd" | sort -d`

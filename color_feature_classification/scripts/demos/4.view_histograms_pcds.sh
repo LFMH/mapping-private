@@ -3,8 +3,8 @@
 ######################################################################
 ## Modify only these 5 lines
 ######################################################################
-DATA=`pwd`/data/obj008
-HIST_DATA=`pwd`/hist_data/obj008
+DATA=`rospack find color_feature_classification`/demos/data/obj008
+HIST_DATA=`rospack find color_feature_classification`/demos/hist_data/obj008
 HEIGHT=0
 CAM="0.124713,0.422811/-0.0301714,-0.183418,0.7935/-0.00515188,-0.0965969,0.553536/-0.0144605,-0.939763,-0.341522/284,200/648,"
 WIN_HEIGHT=200

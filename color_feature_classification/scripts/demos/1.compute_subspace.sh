@@ -1,47 +1,47 @@
 #!/bin/bash
 # Example directory containing _vfh.pcd files
-#DATA=`pwd`/data
+DATA=`rospack find color_feature_classification`/demos
 #n=0
 
 # compute a subspace
-dirNum=`ls features_c/* -d | wc -l`
+dirNum=`ls $DATA/features_c/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
-    files=`find features_c/$dir_name -type f -iname "*.pcd" | sort -d`
-    rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp pca_result_c/compress_axis pca_result_c/$num
+    files=`find $DATA/features_c/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp $DATA/pca_result_c/compress_axis $DATA/pca_result_c/$num
 done
 #
-dirNum=`ls features_d/* -d | wc -l`
+dirNum=`ls $DATA/features_d/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
-    files=`find features_d/$dir_name -type f -iname "*.pcd" | sort -d`
-    rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp pca_result_d/compress_axis pca_result_d/$num
+    files=`find $DATA/features_d/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp $DATA/pca_result_d/compress_axis $DATA/pca_result_d/$num
 done
 #
-dirNum=`ls features_g/* -d | wc -l`
+dirNum=`ls $DATA/features_g/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
-    files=`find features_g/$dir_name -type f -iname "*.pcd" | sort -d`
-    rosrun color_feature_classification computeSubspace_from_file $files pca_result_g/$num
+    files=`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files $DATA/pca_result_g/$num
 done
 #
-dirNum=`ls features_r/* -d | wc -l`
+dirNum=`ls $DATA/features_r/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
-    files=`find features_r/$dir_name -type f -iname "*.pcd" | sort -d`
-    rosrun color_feature_classification computeSubspace_from_file $files -dim 80 -comp pca_result_r/compress_axis pca_result_r/$num
+    files=`find $DATA/features_r/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 80 -comp $DATA/pca_result_r/compress_axis $DATA/pca_result_r/$num
 done
 
 ##############################################
