@@ -62,7 +62,8 @@ int main( int argc, char** argv ){
     // fwrite( &rgb, sizeof(float), 1, fpW );
   }
   fclose(fpR);
-  pcl::io::savePCDFile (argv[2], cloud, true);
+  ROS_INFO("Saving to: %s", argv[2]);
+  pcl::io::savePCDFile (argv[2], cloud, false);
 
   //fclose(fpW);
 
