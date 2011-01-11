@@ -9,6 +9,7 @@
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 #include <pcl/features/normal_3d.h>
 #include <terminal_tools/parse.h>
+#include <pcl/surface/mls.h>
 
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 using namespace terminal_tools;
@@ -26,7 +27,7 @@ double my_clock()
 #define NOISE 0 
 #define PLANE 1 
 #define CYLINDER 2
-#define CIRCLE 3  
+#define SPHERE 3  
 #define EDGE 4 
 #define EMPTY 5 
 
@@ -41,8 +42,8 @@ int get_type (float min_radius, float max_radius)
     return PLANE; // plane
   else if ((min_radius < min_radius_noise_) && (max_radius < max_radius_noise_))
     return NOISE; // noise/corner
-  else if (max_radius - min_radius < max_min_radius_diff_) // 0.0075
-    return CIRCLE; // circle (corner?)
+  else if (max_radius - min_radius < max_min_radius_diff_) // 0.0075 //check if we need to set this difference to 0.02
+    return SPHERE; // sphere (corner?)
   else if (min_radius < min_radius_edge_) /// considering small cylinders to be edges
     return EDGE; // edge
   else
@@ -89,10 +90,24 @@ int main( int argc, char** argv )
   n3d.setSearchMethod (normals_tree);
   n3d.compute (cloud_normals);
 
+    // mls (for testing)
+//   pcl::PointCloud<pcl::PointNormal> cloud_normals;
+//   pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+//   mls.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (input_cloud));
+// //  mls.setIndices (boost::make_shared <vector<int> > (indices));
+//   mls.setPolynomialFit (false);
+//   KdTreePtr normals_tree;
+//   normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
+//   mls.setSearchMethod (normals_tree);
+//   mls.setSearchRadius (normals_radius_search);
+//   mls.reconstruct (cloud_normals);
+
+
+
   pcl::PointCloud<pcl::PointNormal> cloud_xyz_normals;
   pcl::concatenateFields (input_cloud, cloud_normals, cloud_xyz_normals);
   if (save_to_disk)
-    writer.write("normals.pcd", cloud_xyz_normals, false);
+    writer.write("normals.pcd", cloud_xyz_normals, true);
 
   // create the voxel grid
   pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud = boost::make_shared<const pcl::PointCloud<pcl::PointNormal> > (cloud_xyz_normals);
