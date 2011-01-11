@@ -131,26 +131,26 @@ inline int reverse( int val ){
 }
 
 template <typename PointT, typename PointOutT> inline int
-pcl::ColorCHLACEstimation<PointT, PointOutT>::binarize_r ( int val )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_r ( int val )
 {
   if( val > color_thR ) return 1;
   return 0;
 }
 template <typename PointT, typename PointOutT> inline int
-pcl::ColorCHLACEstimation<PointT, PointOutT>::binarize_g ( int val )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_g ( int val )
 {
   if( val > color_thG ) return 1;
   return 0;
 }
 template <typename PointT, typename PointOutT> inline int
-pcl::ColorCHLACEstimation<PointT, PointOutT>::binarize_b ( int val )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_b ( int val )
 {
   if( val > color_thB ) return 1;
   return 0;
 }
 
 template <typename PointT, typename PointOutT> inline bool
-pcl::ColorCHLACEstimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0 )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0 )
 { 
   grid = grid_;
 
@@ -1442,7 +1442,7 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const int id
 }
 
 template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLACEstimation<PointT, PointOutT>::computeColorCHLAC ( const pcl::PointCloud<PointT> &cloud,
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl::PointCloud<PointT> &cloud,
 					       PointCloudOut &output, const int center_idx )
 {
   // calc hist_idx

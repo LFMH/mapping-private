@@ -33,15 +33,15 @@ namespace pcl
   inline void rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode );
 
   template <typename PointT, typename PointOutT>
-  class ColorCHLACEstimation: public Feature<PointT, PointOutT>
+  class ColorCHLAC_RI_Estimation: public Feature<PointT, PointOutT>
     {
     public:
       using Feature<PointT, PointOutT>::feature_name_;
-      using Feature<PointT, PointOutT>::getClassName;
+      //using Feature<PointT, PointOutT>::getClassName;
       using Feature<PointT, PointOutT>::indices_;
       using Feature<PointT, PointOutT>::surface_;
-      using Feature<PointT, PointOutT>::k_;
-      using Feature<PointT, PointOutT>::search_parameter_;
+      //using Feature<PointT, PointOutT>::k_;
+      //using Feature<PointT, PointOutT>::search_parameter_;
 
       typedef typename Feature<PointT, PointOutT>::PointCloudOut PointCloudOut;
 
@@ -53,10 +53,10 @@ namespace pcl
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
-      //ColorCHLACEstimation () : voxel_size (0)
-      ColorCHLACEstimation () : hist_num (1), color_thR (-1), color_thG (-1), color_thB (-1)
+      //ColorCHLAC_RI_Estimation () : voxel_size (0)
+      ColorCHLAC_RI_Estimation () : hist_num (1), color_thR (-1), color_thG (-1), color_thB (-1)
       {
-        feature_name_ = "ColorCHLACEstimation";
+        feature_name_ = "ColorCHLAC_RI_Estimation";
 	relative_coordinates.resize(3, 13);
 	int idx = 0;
 	// 0 - 8
@@ -129,17 +129,17 @@ namespace pcl
   };
 
   template <typename PointT, typename PointOutT>
-  class ColorCHLAC_RI_Estimation: public ColorCHLACEstimation<PointT, PointOutT>
+  class ColorCHLACEstimation: public ColorCHLAC_RI_Estimation<PointT, PointOutT>
     {
     public:
-      using ColorCHLACEstimation<PointT, PointOutT>::feature_name_;
-      using ColorCHLACEstimation<PointT, PointOutT>::getClassName;
-      using ColorCHLACEstimation<PointT, PointOutT>::indices_;
-      using ColorCHLACEstimation<PointT, PointOutT>::surface_;
-      using ColorCHLACEstimation<PointT, PointOutT>::k_;
-      using ColorCHLACEstimation<PointT, PointOutT>::search_parameter_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::feature_name_;
+      //using ColorCHLAC_RI_Estimation<PointT, PointOutT>::getClassName;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::indices_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::surface_;
+      //using ColorCHLAC_RI_Estimation<PointT, PointOutT>::k_;
+      //using ColorCHLAC_RI_Estimation<PointT, PointOutT>::search_parameter_;
 
-      typedef typename ColorCHLACEstimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
+      typedef typename ColorCHLAC_RI_Estimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
 
       //inline void setColorThreshold ( int thR, int thG, int thB );
       //inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_ );
@@ -147,9 +147,9 @@ namespace pcl
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
       //ColorCHLACEstimation () : voxel_size (0)
-      ColorCHLAC_RI_Estimation ()
+      ColorCHLACEstimation ()
       {
-        feature_name_ = "ColorCHLAC_RI_Estimation";
+        feature_name_ = "ColorCHLACEstimation";
       };
 
     protected:
@@ -174,29 +174,29 @@ namespace pcl
       void computeFeature (PointCloudOut &output);
 
     protected:
-      using ColorCHLACEstimation<PointT, PointOutT>::grid;
-      using ColorCHLACEstimation<PointT, PointOutT>::relative_coordinates;
-      using ColorCHLACEstimation<PointT, PointOutT>::hist_num;
-      using ColorCHLACEstimation<PointT, PointOutT>::inverse_subdivision_size;
-      using ColorCHLACEstimation<PointT, PointOutT>::offset_x;
-      using ColorCHLACEstimation<PointT, PointOutT>::offset_y;
-      using ColorCHLACEstimation<PointT, PointOutT>::offset_z;
-      using ColorCHLACEstimation<PointT, PointOutT>::div_b_;
-      using ColorCHLACEstimation<PointT, PointOutT>::subdiv_b_;
-      using ColorCHLACEstimation<PointT, PointOutT>::subdivb_mul_;
-      using ColorCHLACEstimation<PointT, PointOutT>::color;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_r;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_g;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_b;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_r_;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_g_;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_b_;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_r;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_g;
-      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_b;
-      using ColorCHLACEstimation<PointT, PointOutT>::color_thR;
-      using ColorCHLACEstimation<PointT, PointOutT>::color_thG;
-      using ColorCHLACEstimation<PointT, PointOutT>::color_thB;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::grid;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::relative_coordinates;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::hist_num;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::inverse_subdivision_size;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_x;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_y;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_z;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::div_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdiv_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdivb_mul_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_r;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_g;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_b;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_r_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_g_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_r;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_g;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_b;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thR;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thG;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thB;
   };
 }
 
