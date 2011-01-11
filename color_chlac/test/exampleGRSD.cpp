@@ -59,7 +59,7 @@ int main( int argc, char** argv )
   min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
   max_min_radius_diff_ = 0.01;
   min_radius_edge_ = 0.030;
-  bool save_to_disk = false;
+  bool save_to_disk = true;
   double downsample_leaf = 0.01;                          // 1cm voxel size by default
   double fixed_radius_search = 0.03;
 
@@ -114,8 +114,12 @@ int main( int argc, char** argv )
   terminal_tools::print_value("%g", tictoc.toc());
   terminal_tools::print_info("s\n");
   ROS_INFO("radii size %ld", radii.points.size());
+
+  pcl::PointCloud<pcl::PointNormalRADII> cloud_downsampled_radii;
+  pcl::concatenateFields (cloud_downsampled, radii, cloud_downsampled_radii);
+
   if (save_to_disk)
-    writer.write("radii.pcd", radii, false);
+    writer.write("radii.pcd", cloud_downsampled_radii, false);
   
   tictoc.tic();
   // Get rmin/rmax for adjacent 27 voxel
