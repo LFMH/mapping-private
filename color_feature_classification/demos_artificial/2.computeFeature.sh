@@ -10,9 +10,14 @@ do
     num=$(printf "%03d" $n)
     dir_name=$(printf "obj%03d" $n)
     #echo $dir_name
-    rosrun color_feature_classification computeFeature $i c test_features_c/$num.pcd
-    rosrun color_feature_classification computeFeature $i d test_features_d/$num.pcd
-    rosrun color_feature_classification computeFeature $i g test_features_g/$num.pcd
-    rosrun color_feature_classification computeFeature $i r test_features_r/$num.pcd
+
+    # for srand
+    rm -f time_for_srand.txt
+    date +%s >time_for_srand.txt
+
+    rosrun color_feature_classification computeFeature $i c -test 1 test_features_c/$num.pcd
+    rosrun color_feature_classification computeFeature $i d -test 1 test_features_d/$num.pcd
+    rosrun color_feature_classification computeFeature $i g -test 1 test_features_g/$num.pcd
+    rosrun color_feature_classification computeFeature $i r -test 1 test_features_r/$num.pcd
     n=`expr $n + 1`
 done

@@ -8,6 +8,10 @@ mkdir hist_data_forSVM/train_features_c
 mkdir hist_data_forSVM/train_features_d
 mkdir hist_data_forSVM/train_features_g
 mkdir hist_data_forSVM/train_features_r
+mkdir hist_data_forSVM/test_features_c
+mkdir hist_data_forSVM/test_features_d
+mkdir hist_data_forSVM/test_features_g
+mkdir hist_data_forSVM/test_features_r
 
 for i in `find $DATA -type f \( -iname "obj_*.pcd" ! -iname "*GRSD_CCHLAC.pcd" ! -iname "*colorCHLAC.pcd" \) | sort -d`
 do
@@ -24,7 +28,7 @@ do
     n=`expr $n + 1`
 done
 
-#cp -r test_features_c hist_data_forSVM
-#cp -r test_features_d hist_data_forSVM
-#cp -r test_features_g hist_data_forSVM
-#cp -r test_features_r hist_data_forSVM
+cp test_features_c/*.pcd hist_data_forSVM/test_features_c
+cp test_features_d/*.pcd hist_data_forSVM/test_features_d
+cp test_features_g/*.pcd hist_data_forSVM/test_features_g
+cp test_features_r/*.pcd hist_data_forSVM/test_features_r

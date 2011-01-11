@@ -261,6 +261,10 @@ int main( int argc, char** argv ){
     return(-1);
   }
 
+  // check test mode
+  int test_mode = 0;
+  parse_argument (argc, argv, "-test", test_mode);
+
   // rotate step num
   if( parse_argument (argc, argv, "-rotate", rotate_step_num) > 0 ){
     if ( rotate_step_num < 1 ){
@@ -297,7 +301,22 @@ int main( int argc, char** argv ){
 
   //* read
   pcl::PointCloud<PointXYZRGB> input_cloud;
-  readPoints( argv[1], input_cloud );
+  if( test_mode ){ // rotate points to a random posture
+    pcl::PointCloud<PointXYZRGB> original_cloud;
+    readPoints( argv[1], original_cloud );
+    unsigned int time_val;
+    fp = fopen( "time_for_srand.txt", "r" );
+    fscanf( fp, "%d", &time_val );
+    fclose( fp );
+    srand( time_val );
+    const double roll  = (rand()%360) * M_PI / 180.0;
+    const double pan   = (rand()%360) * M_PI / 180.0;
+    const double roll2 = (rand()%360) * M_PI / 180.0;
+    ROS_INFO ("Rotate test point cloud to a random posture. (%f %f %f)",roll,pan,roll2);
+    rotatePoints( original_cloud, input_cloud, roll, pan, roll2 );
+  }
+  else
+    readPoints( argv[1], input_cloud );
 
   //* compute feature
   std::vector< std::vector<float> > feature;
