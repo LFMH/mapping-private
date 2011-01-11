@@ -2,7 +2,7 @@
 
 DATA=`pwd`
 
-for noise in noiseless noisy
+for noise in noiseless
 do
     for shape in cone cube cylinder dice plane sphere torus
     do
