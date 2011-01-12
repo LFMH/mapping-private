@@ -16,7 +16,7 @@
 #define EMPTY 0 
 #define PLANE 1 
 #define CYLINDER 2
-#define CIRCLE 3  
+#define SPHERE 3  
 #define EDGE 4 
 #define NOISE 5 
 
@@ -141,7 +141,7 @@ int get_type (float min_radius, float max_radius)
   else if ((min_radius < min_radius_noise_) && (max_radius < max_radius_noise_))
     return NOISE; // noise/corner
   else if (max_radius - min_radius < max_min_radius_diff_) // 0.0075
-    return CIRCLE; // circle (corner?)
+    return SPHERE; // circle (corner?)
   else if (min_radius < min_radius_edge_) /// considering small cylinders to be edges
     return EDGE; // edge
   else
