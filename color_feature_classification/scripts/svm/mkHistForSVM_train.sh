@@ -1,6 +1,7 @@
 #!/bin/bash
 # Example directory containing .pcd files
-DATA=`pwd`/data/
+DEMO=`rospack find color_feature_classification`/demos_artificial
+DATA=${DEMO}/data/
 n=0
 
 mkdir hist_data_forSVM
@@ -17,9 +18,9 @@ do
     mkdir hist_data_forSVM/train_features_d/obj$num
     mkdir hist_data_forSVM/train_features_g/obj$num
     mkdir hist_data_forSVM/train_features_r/obj$num
-    rosrun color_feature_classification computeFeatureForSVM $i c -rotate 1 hist_data_forSVM/train_features_c/obj$num
-    rosrun color_feature_classification computeFeatureForSVM $i d -rotate 1 hist_data_forSVM/train_features_d/obj$num
-    rosrun color_feature_classification computeFeatureForSVM $i g -rotate 1 hist_data_forSVM/train_features_g/obj$num
-    rosrun color_feature_classification computeFeatureForSVM $i r -rotate 1 hist_data_forSVM/train_features_r/obj$num
+    rosrun color_feature_classification computeFeatureForSVM $i c -rotate 1 $DEMO hist_data_forSVM/train_features_c/obj$num
+    rosrun color_feature_classification computeFeatureForSVM $i d -rotate 1 $DEMO hist_data_forSVM/train_features_d/obj$num
+    rosrun color_feature_classification computeFeatureForSVM $i g -rotate 1 $DEMO hist_data_forSVM/train_features_g/obj$num
+    rosrun color_feature_classification computeFeatureForSVM $i r -rotate 1 $DEMO hist_data_forSVM/train_features_r/obj$num
     n=`expr $n + 1`
 done

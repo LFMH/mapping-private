@@ -250,7 +250,7 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 //* main
 int main( int argc, char** argv ){
   if( argc < 4 ){
-    ROS_ERROR ("Need at least three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} [options] {output_histogram_filename.pcd}\n", argv[0]);
+    ROS_ERROR ("Need at least three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} [options] {config_txt_path} {output_histogram_filename.pcd}\n", argv[0]);
     ROS_INFO ("                          -rotate rotate_step_num = e.g. 3 for 30 degrees rotation\n");
     ROS_INFO ("                          -subdiv N = subdivision size (e.g. 10 voxels)\n");
     ROS_INFO ("                          -offset n = offset step for subdivisions (e.g. 5 voxels)\n");
@@ -277,12 +277,16 @@ int main( int argc, char** argv ){
   }
 
   // color threshold
-  FILE *fp = fopen( "color_threshold.txt", "r" );
+  char color_threshold_file[1024];
+  sprintf(color_threshold_file, "%s/color_threshold.txt", argv[argc-2]);
+  FILE *fp = fopen( color_threshold_file, "r" );
   fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
   fclose(fp);
 
   //* voxel size (downsample_leaf)
-  fp = fopen( "voxel_size.txt", "r" );
+  char voxel_size_file[1024];
+  sprintf(voxel_size_file, "%s/color_threshold.txt", argv[argc-2]);
+  fp = fopen( voxel_size_file, "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
