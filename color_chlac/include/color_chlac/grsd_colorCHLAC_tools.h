@@ -152,7 +152,7 @@ int get_type (float min_radius, float max_radius)
 //--------------------
 //* compute - GRSD -
 template <typename T>
-void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
+void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0, const bool is_normalize = false ){
 #ifndef QUIET
   ROS_INFO("rsd %f, normals %f, leaf %f", rsd_radius_search, normals_radius_search, voxel_size);
 #endif
@@ -295,10 +295,19 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   }
 
   feature.resize( hist_num );
-  for( int h=0; h<hist_num; h++ ){
-    feature[ h ].resize( 20 );
-    for( int i=0; i<20; i++)
-      feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
+  if( is_normalize ){
+    for( int h=0; h<hist_num; h++ ){
+      feature[ h ].resize( 20 );
+      for( int i=0; i<20; i++)
+	feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
+    }
+  }
+  else{
+    for( int h=0; h<hist_num; h++ ){
+      feature[ h ].resize( 20 );
+      for( int i=0; i<20; i++)
+	feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ];
+    }
   }
 }
 
