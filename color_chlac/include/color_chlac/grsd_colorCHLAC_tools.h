@@ -265,7 +265,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
     }
 
     int source_type = types[idx];
-    std::vector<int> neighbors = grid.getNeighborCentroidIndices ( cloud_downsampled_ptr->points[idx], relative_coordinates);
+    std::vector<int> neighbors = grid.getNeighborCentroidIndices ( cloud_downsampled_ptr->points[idx], relative_coordinates_all);
     for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
     {
       int neighbor_type;
