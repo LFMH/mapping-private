@@ -13,18 +13,21 @@
 
 //* GRSD type
 #define NR_CLASS 5 
-#define EMPTY 0 
+#define NOISE 0 
 #define PLANE 1 
 #define CYLINDER 2
 #define SPHERE 3  
 #define EDGE 4 
-#define NOISE 5 
+#define EMPTY 5 
 
 //* const variables
 const double min_radius_plane_ = 0.066;
 const double min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
 const double max_min_radius_diff_ = 0.02;
 const double min_radius_edge_ = 0.030;
+const double rsd_radius_search = 0.01;
+const double normals_radius_search = 0.02;
+
 //const float NORMALIZE_GRSD = NR_CLASS / 52.0; // 52 = 2 * 26
 const float NORMALIZE_GRSD = NR_CLASS / 104.0; // 104 = 2 * 2 * 26
 
@@ -97,8 +100,6 @@ void writeFeature(const char *name, const std::vector<float> feature, bool remov
 //* compute normals
 template <typename T1, typename T2>
 void computeNormal( pcl::PointCloud<T1> input_cloud, pcl::PointCloud<T2>& output_cloud ){
-  //int k_ = 10;
-  double normals_radius_search = 0.02;
   // if ((int)input_cloud.points.size () < k_)
   // {
   //   ROS_WARN ("Filtering returned %d points! Continuing.", (int)input_cloud.points.size ());
@@ -152,8 +153,12 @@ int get_type (float min_radius, float max_radius)
 //* compute - GRSD -
 template <typename T>
 void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
+#ifndef QUIET
+  ROS_INFO("rsd %f, normals %f, leaf %f", rsd_radius_search, normals_radius_search, voxel_size);
+#endif
   feature.resize( 0 );
-  double rsd_radius_search = 0.01;
+  boost::shared_ptr< const pcl::PointCloud<T> > cloud_downsampled_ptr;
+  cloud_downsampled_ptr.reset (new pcl::PointCloud<T> (cloud_downsampled));
 
   //* for computing multiple GRSD with subdivisions
   int hist_num = 1;
@@ -179,19 +184,28 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
 
   // Compute RSD
   pcl::RSDEstimation <T, T, pcl::PrincipalRadiiRSD> rsd;
-  rsd.setInputCloud( boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled) );
-  rsd.setSearchSurface( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
-  rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+  rsd.setInputCloud( cloud_downsampled_ptr );
+  boost::shared_ptr< const pcl::PointCloud<T> > cloud_ptr = boost::make_shared<const pcl::PointCloud<T> > (cloud);
+  rsd.setSearchSurface( cloud_ptr );
+  rsd.setInputNormals( cloud_ptr );
 #ifndef QUIET
   ROS_INFO("radius search: %f", std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
 #endif
   rsd.setRadiusSearch(std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
-  ( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
-  rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
+  //( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+  //rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
+  boost::shared_ptr< pcl::KdTree<T> > tree2 = boost::make_shared<pcl::KdTreeFLANN<T> > ();
+  tree2->setInputCloud (boost::make_shared<const pcl::PointCloud<T> > (cloud));
+  rsd.setSearchMethod(tree2);
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
+  t1 = my_clock();
   rsd.compute(radii);
+#ifndef QUIET
+  ROS_INFO("RSD compute done in %f seconds.", my_clock()-t1);
+#endif
   
   // Get rmin/rmax for adjacent 27 voxel
+  t1 = my_clock();
   Eigen3::MatrixXi relative_coordinates (3, 13);
 
   //Eigen3::MatrixXi transition_matrix =  Eigen3::MatrixXi::Zero(6, 6);
@@ -235,7 +249,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   for (size_t idx = 0; idx < radii.points.size (); ++idx)
     types[idx] = get_type(radii.points[idx].r_min, radii.points[idx].r_max);
   
-  for (size_t idx = 0; idx < (boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled))->points.size (); ++idx)
+  for (size_t idx = 0; idx < cloud_downsampled_ptr->points.size (); ++idx)
   {
     // calc hist_idx
     int hist_idx;
@@ -251,7 +265,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
     }
 
     int source_type = types[idx];
-    std::vector<int> neighbors = grid.getNeighborCentroidIndices ((boost::make_shared<const pcl::PointCloud<T> > (cloud_downsampled))->points[idx], relative_coordinates);
+    std::vector<int> neighbors = grid.getNeighborCentroidIndices ( cloud_downsampled_ptr->points[idx], relative_coordinates);
     for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
     {
       int neighbor_type;
@@ -263,14 +277,20 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
       transition_matrix[ hist_idx ](source_type, neighbor_type)++;
     }
   }
+#ifndef QUIET
+  std::cerr << "transition matrix" << std::endl << transition_matrix[0] << std::endl;
+  ROS_INFO("GRSD compute done in %f seconds.", my_clock()-t1);
+#endif
 
   pcl::PointCloud<pcl::GRSDSignature21> cloud_grsd;
   cloud_grsd.points.resize(hist_num);
   
   for( int h=0; h<hist_num; h++ ){
     int nrf = 0;
-    for (int i=1; i<NR_CLASS+1; i++)
-      for (int j=0; j<=i; j++)
+    for (int i=0; i<NR_CLASS+1; i++)
+      for (int j=i; j<NR_CLASS+1; j++)
+	/* for (int i=1; i<NR_CLASS+1; i++) */
+	/*   for (int j=0; j<=i; j++) */
 	cloud_grsd.points[ h ].histogram[nrf++] = transition_matrix[ h ](i, j); //@TODO: resize point cloud
   }
 
