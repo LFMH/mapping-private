@@ -37,28 +37,33 @@ double min_radius_noise_, max_radius_noise_;
 double max_min_radius_diff_;
 
 int get_type (float min_radius, float max_radius)
-{
-  if (min_radius > min_radius_plane_) // 0.066
-    return PLANE; // plane
+{    
+  //               0.066
+  if (min_radius > min_radius_plane_) 
+    return PLANE; 
+  //                     0.030                               0.050
   else if ((min_radius < min_radius_noise_) && (max_radius < max_radius_noise_))
-    return NOISE; // noise/corner
-  else if (max_radius - min_radius < max_min_radius_diff_) // 0.0075 //check if we need to set this difference to 0.02
-    return SPHERE; // sphere (corner?)
-  else if (min_radius < min_radius_edge_) /// considering small cylinders to be edges
-    return EDGE; // edge
+    return NOISE; 
+  //                                 0.02
+  else if (max_radius - min_radius < max_min_radius_diff_) 
+    return SPHERE;
+  //                    0.030
+  else if (min_radius < min_radius_edge_) 
+    return EDGE;
   else
-    return CYLINDER; // cylinder (rim)
+    return CYLINDER;
 }
 
 int main( int argc, char** argv )
 {
-  if( argc < 2 ){
+  if( argc < 2 )
+  {
     ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
   }
   min_radius_plane_ = 0.066;
   min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
-  max_min_radius_diff_ = 0.01;
+  max_min_radius_diff_ = 0.02;
   min_radius_edge_ = 0.030;
   bool save_to_disk = true;
   
