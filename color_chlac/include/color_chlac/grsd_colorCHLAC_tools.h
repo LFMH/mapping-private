@@ -23,7 +23,7 @@
 //* const variables
 const double min_radius_plane_ = 0.066;
 const double min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
-const double max_min_radius_diff_ = 0.01;
+const double max_min_radius_diff_ = 0.02;
 const double min_radius_edge_ = 0.030;
 //const float NORMALIZE_GRSD = NR_CLASS / 52.0; // 52 = 2 * 26
 const float NORMALIZE_GRSD = NR_CLASS / 104.0; // 104 = 2 * 2 * 26
@@ -97,15 +97,18 @@ void writeFeature(const char *name, const std::vector<float> feature, bool remov
 //* compute normals
 template <typename T1, typename T2>
 void computeNormal( pcl::PointCloud<T1> input_cloud, pcl::PointCloud<T2>& output_cloud ){
-  int k_ = 10;
-  if ((int)input_cloud.points.size () < k_){
-    ROS_WARN ("Filtering returned %d points! Continuing.", (int)input_cloud.points.size ());
-    //pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_temp;
-    //pcl::concatenateFields <Point, pcl::Normal, pcl::PointXYZRGBNormal> (cloud_filtered, cloud_normals, cloud_temp);
-    //pcl::io::savePCDFile ("test.pcd", cloud, false);
-  }
+  //int k_ = 10;
+  double normals_radius_search = 0.02;
+  // if ((int)input_cloud.points.size () < k_)
+  // {
+  //   ROS_WARN ("Filtering returned %d points! Continuing.", (int)input_cloud.points.size ());
+  //   //pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_temp;
+  //   //pcl::concatenateFields <Point, pcl::Normal, pcl::PointXYZRGBNormal> (cloud_filtered, cloud_normals, cloud_temp);
+  //   //pcl::io::savePCDFile ("test.pcd", cloud, false);
+  // }
   pcl::NormalEstimation<T1, T2> n3d_;
-  n3d_.setKSearch (k_);
+  //n3d_.setKSearch (k_);
+  n3d_.setRadiusSearch (normals_radius_search);
   n3d_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<T1> > () );
   n3d_.setInputCloud ( boost::make_shared<const pcl::PointCloud<T1> > (input_cloud) );
   n3d_.compute (output_cloud);
@@ -150,7 +153,7 @@ int get_type (float min_radius, float max_radius)
 template <typename T>
 void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0 ){
   feature.resize( 0 );
-  double fixed_radius_search = 0.03;
+  double rsd_radius_search = 0.01;
 
   //* for computing multiple GRSD with subdivisions
   int hist_num = 1;
@@ -180,9 +183,9 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   rsd.setSearchSurface( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setInputNormals( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
 #ifndef QUIET
-  ROS_INFO("radius search: %f", std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
+  ROS_INFO("radius search: %f", std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
 #endif
-  rsd.setRadiusSearch(std::max(fixed_radius_search, voxel_size/2 * sqrt(3)));
+  rsd.setRadiusSearch(std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
   ( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
   rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
   pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
