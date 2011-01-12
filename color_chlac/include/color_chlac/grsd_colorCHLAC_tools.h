@@ -20,6 +20,8 @@
 #define EDGE 4 
 #define EMPTY 5 
 
+//#define QUIET 1
+
 //* const variables
 const double min_radius_plane_ = 0.066;
 const double min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
@@ -289,9 +291,9 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
     int nrf = 0;
     for (int i=0; i<NR_CLASS+1; i++)
       for (int j=i; j<NR_CLASS+1; j++)
-	/* for (int i=1; i<NR_CLASS+1; i++) */
-	/*   for (int j=0; j<=i; j++) */
-	cloud_grsd.points[ h ].histogram[nrf++] = transition_matrix[ h ](i, j); //@TODO: resize point cloud
+    /* for (int i=1; i<NR_CLASS+1; i++) */
+    /*   for (int j=0; j<=i; j++) */
+    cloud_grsd.points[ h ].histogram[nrf++] = transition_matrix[ h ](i, j); //@TODO: resize point cloud
   }
 
   feature.resize( hist_num );
@@ -299,14 +301,14 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
     for( int h=0; h<hist_num; h++ ){
       feature[ h ].resize( 20 );
       for( int i=0; i<20; i++)
-	feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
+        feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
     }
   }
   else{
     for( int h=0; h<hist_num; h++ ){
       feature[ h ].resize( 20 );
       for( int i=0; i<20; i++)
-	feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ];
+        feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ];
     }
   }
 }

@@ -1,7 +1,7 @@
 #include "color_chlac/grsd_colorCHLAC_tools.h"
 
 using namespace pcl;
-
+#define VERBOSE 1
 //#define DIVID_TEST
 
 //-------
@@ -17,7 +17,7 @@ int main( int argc, char** argv ){
   //* read
   pcl::PointCloud<PointXYZRGB> input_cloud;
   readPoints( argv[1], input_cloud );
-
+  double t1 = my_clock();
   //* compute normals
   pcl::PointCloud<PointXYZRGBNormal> cloud;
   computeNormal( input_cloud, cloud );
@@ -65,7 +65,10 @@ int main( int argc, char** argv ){
   std::vector<float> colorCHLAC;
   //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
   computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
-
+#ifdef VERBOSE
+  //  ROS_INFO("VOSCH %10f", (my_clock()-t1)/input_cloud.points.size());
+  ROS_INFO("VOSCH %ld", input_cloud.points.size());
+#endif
   //* write
   int length = strlen( argv[1] );
   argv[1][ length-4 ] = '\0';
