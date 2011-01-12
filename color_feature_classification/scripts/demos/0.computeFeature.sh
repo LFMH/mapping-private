@@ -17,8 +17,8 @@ do
     do
 	echo "Processing $j"
 	num=$(printf "%03d" $n)
-	rosrun color_feature_classification computeFeature $j c -rotate 1 -subdiv 10 -offset 5 $DATA/features_c/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j d -rotate 1 -subdiv 10 -offset 5 $DATA/features_d/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j c -rotate 2 -subdiv 10 -offset 5 $DATA/features_c/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j d -rotate 2 -subdiv 10 -offset 5 $DATA/features_d/$dir_name/$num.pcd	
 	rosrun color_feature_classification computeFeature $j g -subdiv 10 -offset 5 $DATA/features_g/$dir_name/$num.pcd	
 	rosrun color_feature_classification computeFeature $j r -subdiv 10 -offset 5 $DATA/features_r/$dir_name/$num.pcd	
 	n=`expr $n + 1`	

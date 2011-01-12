@@ -1,2 +1,3 @@
 #define WHITENING true
 #define MULTIPLE_SIMILARITY false//true
+#define TRAIN_90_ROTATION false

@@ -8,6 +8,7 @@
 #include "color_chlac/grsd_colorCHLAC_tools.h"
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
+#include "FILE_MODE"
 
 using namespace pcl;
 using namespace terminal_tools;
@@ -117,68 +118,70 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 	      
 		for( int h=0; h<hist_num; h++ ){
 		  feature.push_back (colorCHLAC[ h ]);
+
+		  if( TRAIN_90_ROTATION ){		
+		    std::vector<float> colorCHLAC_rotate;
+		    std::vector<float> colorCHLAC_rotate_pre = colorCHLAC[ h ];
+		    std::vector<float> colorCHLAC_rotate_pre2;
 		
-		  std::vector<float> colorCHLAC_rotate;
-		  std::vector<float> colorCHLAC_rotate_pre = colorCHLAC[ h ];
-		  std::vector<float> colorCHLAC_rotate_pre2;
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
 		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		    rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_3);
+		    feature.push_back (colorCHLAC_rotate);
+		    colorCHLAC_rotate_pre  = colorCHLAC_rotate;
+		    colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
+		
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
+		
+		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
 		    feature.push_back (colorCHLAC_rotate);
 		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  }
+		    colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
 		
-		  rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_3);
-		  feature.push_back (colorCHLAC_rotate);
-		  colorCHLAC_rotate_pre  = colorCHLAC_rotate;
-		  colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
 		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
 		    feature.push_back (colorCHLAC_rotate);
 		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  }
+		    //colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
 		
-		  rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
-		  feature.push_back (colorCHLAC_rotate);
-		  colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
 		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		    rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_1);
 		    feature.push_back (colorCHLAC_rotate);
 		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  }
 		
-		  rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre2,R_MODE_3);
-		  feature.push_back (colorCHLAC_rotate);
-		  colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  //colorCHLAC_rotate_pre2 = colorCHLAC_rotate;
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
 		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		    rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_4);
 		    feature.push_back (colorCHLAC_rotate);
 		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  }
 		
-		  rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_1);
-		  feature.push_back (colorCHLAC_rotate);
-		  colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
-		    feature.push_back (colorCHLAC_rotate);
-		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		  }
-		
-		  rotateFeature90( colorCHLAC_rotate,colorCHLAC[ h ],R_MODE_4);
-		  feature.push_back (colorCHLAC_rotate);
-		  colorCHLAC_rotate_pre = colorCHLAC_rotate;
-		
-		  for(int t=0;t<3;t++){
-		    rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
-		    feature.push_back (colorCHLAC_rotate);
-		    colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    for(int t=0;t<3;t++){
+		      rotateFeature90( colorCHLAC_rotate,colorCHLAC_rotate_pre,R_MODE_2);
+		      feature.push_back (colorCHLAC_rotate);
+		      colorCHLAC_rotate_pre = colorCHLAC_rotate;
+		    }
 		  }
 		}
 	      }
