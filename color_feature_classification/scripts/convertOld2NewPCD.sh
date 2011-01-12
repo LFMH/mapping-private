@@ -22,3 +22,13 @@ do
 	done
     done
 done
+
+##########################################################
+##for all files in the directory
+##########################################################
+# files=`find . -type f \( -iname "*.pcd" \)`
+
+# for j in $files
+# do
+#     rosrun color_chlac convertOld2NewPCD $j $j
+# done
