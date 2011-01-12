@@ -27,7 +27,7 @@ do
         # compute test histograms
 	bash `rospack find color_feature_classification`/scripts/demos_artificial/2.computeFeature.sh $rotate
 
-	mkdir hist_data_forSVM/test_features_${nlevel}${x}
+	mkdir hist_data_forSVM/test_features_${nlevel}${x}_$rotate
 	mv $DATA/test_features_c hist_data_forSVM/test_features_${nlevel}${x}_$rotate
 	mv $DATA/test_features_d hist_data_forSVM/test_features_${nlevel}${x}_$rotate
 	mv $DATA/test_features_g hist_data_forSVM/test_features_${nlevel}${x}_$rotate
