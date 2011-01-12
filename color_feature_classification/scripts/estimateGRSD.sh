@@ -6,8 +6,8 @@ radii=`echo _radii.pcd`
 
 for j in $files
 do
-    rosrun color_chlac exampleGRSD $j 
     newname=`basename $j .pcd`
-#    echo $newname
+    echo "Object: " $newname
+    rosrun color_chlac exampleGRSD $j 
     mv $DATA/radii.pcd $DATA/$newname$radii
 done
