@@ -285,7 +285,7 @@ int main( int argc, char** argv ){
 
   //* voxel size (downsample_leaf)
   char voxel_size_file[1024];
-  sprintf(voxel_size_file, "%s/color_threshold.txt", argv[argc-2]);
+  sprintf(voxel_size_file, "%s/voxel_size.txt", argv[argc-2]);
   fp = fopen( voxel_size_file, "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
