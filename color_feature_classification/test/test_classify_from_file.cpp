@@ -21,6 +21,16 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
+const float lower = -1;
+const float upper = 1;
+
+void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
+  if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
+  else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+  else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
+  else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+}
+
 int classify_by_kNN( std::vector<float> feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
   ROS_ERROR ("classify_by_kNN() cannot be used now.\n");
   return 1;
@@ -120,11 +130,15 @@ int main( int argc, char** argv ){
     ROS_INFO ("    where [options] are:  -dim D = dimension of compressed feature vectors\n");
     ROS_INFO ("    where [options] are:  -sub R = dimension of subspace\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
+    ROS_INFO ("                          -norm filename = name of bin_normalize file\n");
     return(-1);
   }
   const char feature_type = argv[2][0];
   const char classifier_type = argv[3][0];
   std::vector<float> feature;
+  std::vector<float> feature_min;
+  std::vector<float> feature_max;
+  bool is_normalize = false;
 
   // color threshold
   int thR, thG, thB;
@@ -137,6 +151,19 @@ int main( int argc, char** argv ){
   fp = fopen( "voxel_size.txt", "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
+
+  // bin normalization parameters
+  string filename;
+  if( parse_argument (argc, argv, "-norm", filename) > 0 ){
+    is_normalize = true;
+    fp = fopen( filename.c_str(), "r" );
+    float val1, val2;
+    while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
+      feature_min.push_back( val1 );
+      feature_max.push_back( val2 );
+    }
+    fclose( fp );
+  }
 
   //------------
   //* features
@@ -159,10 +186,17 @@ int main( int argc, char** argv ){
     return(-1);
   }
   feature.resize( dim );
-  for(int t=0;t<dim;t++)
-    fscanf(fp,"%f ",&(feature[ t ]) );
+  if( is_normalize ){
+    for(int t=0;t<dim;t++){
+      fscanf(fp,"%f ",&(feature[ t ]) );
+      scaling( t, feature, feature_min, feature_max );
+    }
+  }
+  else
+    for(int t=0;t<dim;t++)
+      fscanf(fp,"%f ",&(feature[ t ]) ); 
   fclose(fp);
-
+  
   //--------------------------------------------------
   //* Compress the dimension of the vector (if needed)
   dim = -1;

@@ -15,15 +15,40 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
+const float lower = -1;
+const float upper = 1;
+
+void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
+  if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
+  else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+  else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
+  else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+}
+
 void
 readFeatureModels ( int argc, char **argv, const std::string &extension, 
-		    std::vector< std::vector<float> > &models)
+		    std::vector< std::vector<float> > &models, const string minmax_filename = "" )
 {  
   char line[ 100 ];
   string tmpname;
   int dim, sample_num;
   std::vector<float> feature;
+  std::vector<float> feature_min;
+  std::vector<float> feature_max;
+  bool is_normalize = false;
 
+  //* bin normalization parameters
+  if( minmax_filename.size() != 0 ){
+    is_normalize = true;
+    FILE *fp = fopen( minmax_filename.c_str(), "r" );
+    float val1, val2;
+    while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
+      feature_min.push_back( val1 );
+      feature_max.push_back( val2 );
+    }
+    fclose( fp );
+  }
+  
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
     // Needs to have the right size
@@ -43,10 +68,21 @@ readFeatureModels ( int argc, char **argv, const std::string &extension,
 	  break;
       }
       feature.resize( dim );
-      for(int n=0;n<sample_num;n++){
-	for(int t=0;t<dim;t++)
-	  fscanf(fp,"%f ",&(feature[ t ]) );
-	models.push_back ( feature );
+      if( is_normalize ){
+	for(int n=0;n<sample_num;n++){
+	  for(int t=0;t<dim;t++){
+	    fscanf(fp,"%f ",&(feature[ t ]) );
+	    scaling( t, feature, feature_min, feature_max );
+	  }
+	  models.push_back ( feature );
+	}
+      }
+      else{
+	for(int n=0;n<sample_num;n++){
+	  for(int t=0;t<dim;t++)
+	    fscanf(fp,"%f ",&(feature[ t ]) );
+	  models.push_back ( feature );
+	}
       }
       fclose(fp);
     }
@@ -99,6 +135,7 @@ int main( int argc, char** argv ){
     ROS_ERROR ("Need at least two parameters! Syntax is: %s [model_directory] [options] [output_pca_name]\n", argv[0]);
     ROS_INFO ("    where [options] are:  -dim D = size of compressed feature vectors\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
+    ROS_INFO ("                          -norm filename = name of bin_normalize file\n");
     return(-1);
   }
 
@@ -106,7 +143,11 @@ int main( int argc, char** argv ){
   std::string extension (".pcd");
   transform (extension.begin (), extension.end (), extension.begin (), (int(*)(int))tolower);
   std::vector< std::vector<float> > models;
-  readFeatureModels (argc, argv, extension, models);
+  string filename;
+  if( parse_argument (argc, argv, "-norm", filename) > 0 )
+    readFeatureModels (argc, argv, extension, models, filename);
+  else
+    readFeatureModels (argc, argv, extension, models);
 
   // compress the dimension of the vector (if needed)
   int dim;
@@ -115,7 +156,6 @@ int main( int argc, char** argv ){
       print_error ("Invalid dimension (%d)!\n", dim);
       return (-1);
     }
-    string filename;
     parse_argument (argc, argv, "-comp", filename);
     compressFeature( filename, models, dim, false );
   }
