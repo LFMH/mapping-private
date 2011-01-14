@@ -15,7 +15,7 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
-const float lower = -1;
+const float lower = 0;//-1;
 const float upper = 1;
 
 void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {

@@ -2,6 +2,7 @@
 
 flag=-1
 count=0
+results=""
 
 text=(`cat $1`)
 num=`echo ${#text[@]}`
@@ -24,13 +25,16 @@ do
 	if [ ${text[`expr $i - 2`]} = 48 ]
 	then
  	    flag=-1
-	    echo $count
+	    #echo $count
+	    results="$results $count"
 	    count=0
 	fi
-    else
-	echo ${text[$i]}
+    #else
+	#echo ${text[$i]}
     fi
 done
+
+echo $results
 
 # for i in `cat $1`
 # do

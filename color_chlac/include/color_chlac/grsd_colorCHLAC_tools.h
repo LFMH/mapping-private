@@ -314,9 +314,9 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
 }
 
 template <typename T>
-void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const double voxel_size ){
+void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const double voxel_size, const bool is_normalize = false ){
   std::vector< std::vector<float> > tmp( 1 );
-  computeGRSD( grid, cloud, cloud_downsampled, tmp, voxel_size, 0 ); // for one signature
+  computeGRSD( grid, cloud, cloud_downsampled, tmp, voxel_size, 0, 0, 0, 0, is_normalize ); // for one signature
   feature = tmp[ 0 ];
 }
 

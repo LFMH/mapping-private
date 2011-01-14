@@ -12,12 +12,12 @@ echo "----------------------------------------------------------"
 echo "colorCHLAC - rotateion variant - (981)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_c -type f -iname "*.pcd" | sort -d`
+for i in `find $DATA/test_features_c/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i c s -sub 5 -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
+    rosrun color_feature_classification test_classify_from_file $i c s -sub 3 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
     n=`expr $n + 1`
 done
 #
@@ -25,12 +25,12 @@ echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation variant - (1001)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_d -type f -iname "*.pcd" | sort -d`
+for i in `find $DATA/test_features_d/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i d s -sub 5 -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
+    rosrun color_feature_classification test_classify_from_file $i d s -sub 3 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
     n=`expr $n + 1`
 done
 #
@@ -38,12 +38,12 @@ echo "----------------------------------------------------------"
 echo "GRSD (20)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_g -type f -iname "*.pcd" | sort -d`
+for i in `find $DATA/test_features_g/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i g s -sub 5 $norm_flag_g
+    rosrun color_feature_classification test_classify_from_file $i g s -sub 3 $norm_flag_g
     n=`expr $n + 1`
 done
 #
@@ -51,12 +51,12 @@ echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation invariant - (137)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_r -type f -iname "*.pcd" | sort -d`
+for i in `find $DATA/test_features_r/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i r s -sub 5 -dim 70 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
+    rosrun color_feature_classification test_classify_from_file $i r s -sub 3 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
     n=`expr $n + 1`
 done
 
