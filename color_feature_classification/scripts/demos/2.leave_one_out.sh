@@ -28,10 +28,10 @@ do
 	do
 	    train_models="$train_models ${files1[$k]}"
 	done
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_c/compress_axis $DATA/pca_result_c/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 5 -dim 100 -comp $DATA/pca_result_c/compress_axis
-               # revert
-	rosrun color_feature_classification computeSubspace_from_file ${files1[@]} -dim 100 -comp $DATA/pca_result_c/compress_axis $DATA/pca_result_c/$num 1>/dev/null
+	mv -f $DATA/pca_result_c/$num hogehoge
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_c/compress_axis $DATA/pca_result_c/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 5 -dim 50 -comp $DATA/pca_result_c/compress_axis
+	mv -f hogehoge $DATA/pca_result_c/$num
     done
 done
 #
@@ -62,10 +62,10 @@ do
 	do
 	    train_models="$train_models ${files1[$k]}"
 	done
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_d/compress_axis $DATA/pca_result_d/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 5 -dim 100 -comp $DATA/pca_result_d/compress_axis
-               # revert
-	rosrun color_feature_classification computeSubspace_from_file ${files1[@]} -dim 100 -comp $DATA/pca_result_d/compress_axis $DATA/pca_result_d/$num 1>/dev/null
+	mv -f $DATA/pca_result_d/$num hogehoge
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_d/compress_axis $DATA/pca_result_d/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 5 -dim 50 -comp $DATA/pca_result_d/compress_axis
+	mv -f hogehoge $DATA/pca_result_d/$num
     done
 done
 #
@@ -96,10 +96,10 @@ do
 	do
 	    train_models="$train_models ${files1[$k]}"
 	done
+	mv -f $DATA/pca_result_g/$num hogehoge
 	rosrun color_feature_classification computeSubspace_from_file $train_models $DATA/pca_result_g/$num 1>/dev/null
 	rosrun color_feature_classification test_classify_from_file ${files2[$j]} g s -sub 5
-               # revert
-	rosrun color_feature_classification computeSubspace_from_file ${files1[@]} $DATA/pca_result_g/$num 1>/dev/null
+	mv -f hogehoge $DATA/pca_result_g/$num
     done
 done
 #
@@ -130,9 +130,9 @@ do
 	do
 	    train_models="$train_models ${files1[$k]}"
 	done
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 80 -comp $DATA/pca_result_r/compress_axis $DATA/pca_result_r/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 5 -dim 80 -comp $DATA/pca_result_r/compress_axis
-               # revert
-	rosrun color_feature_classification computeSubspace_from_file ${files1[@]} -dim 80 -comp $DATA/pca_result_r/compress_axis $DATA/pca_result_r/$num 1>/dev/null
+	mv -f $DATA/pca_result_r/$num hogehoge
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_r/compress_axis $DATA/pca_result_r/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 5 -dim 50 -comp $DATA/pca_result_r/compress_axis
+	mv -f hogehoge $DATA/pca_result_r/$num
     done
 done
