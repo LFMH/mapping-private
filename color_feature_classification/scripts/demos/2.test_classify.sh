@@ -2,6 +2,12 @@
 # Example directory containing _vfh.pcd files
 DATA=`rospack find color_feature_classification`/demos
 
+# NOTE: comment-out the followings if you don't use normalization
+norm_flag_c="-norm $DATA/bin_normalization/minmax_c.txt"
+norm_flag_d="-norm $DATA/bin_normalization/minmax_d.txt"
+norm_flag_g="-norm $DATA/bin_normalization/minmax_g.txt"
+norm_flag_r="-norm $DATA/bin_normalization/minmax_r.txt"
+
 echo "----------------------------------------------------------"
 echo "colorCHLAC - rotation variant - (981)"
 echo "----------------------------------------------------------"
@@ -13,7 +19,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j c s -sub 5 -dim 100 -comp $DATA/pca_result_c/compress_axis
+	rosrun color_feature_classification test_classify_from_file $j c s -sub 3 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
     done
 done
 #
@@ -28,7 +34,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j d s -sub 5 -dim 100 -comp $DATA/pca_result_d/compress_axis
+	rosrun color_feature_classification test_classify_from_file $j d s -sub 3 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
     done
 done
 #
@@ -43,7 +49,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j g s -sub 5
+	rosrun color_feature_classification test_classify_from_file $j g s -sub 3 $norm_flag_g
     done
 done
 #
@@ -58,7 +64,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j r s -sub 5 -dim 80 -comp $DATA/pca_result_r/compress_axis
+	rosrun color_feature_classification test_classify_from_file $j r s -sub 3 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
     done
 done
 
