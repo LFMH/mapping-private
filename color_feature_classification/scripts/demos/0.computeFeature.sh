@@ -2,6 +2,9 @@
 # Example directory containing .pcd files
 DATA=`rospack find color_feature_classification`/demos
 
+subdiv=$1 #7 for classification experiment
+offset=$2 #2 for classification experiment
+
 dirNum=`ls $DATA/data/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
@@ -17,10 +20,10 @@ do
     do
 	echo "Processing $j"
 	num=$(printf "%03d" $n)
-	rosrun color_feature_classification computeFeature $j c -rotate 1 -subdiv 7 -offset 2 $DATA $DATA/features_c/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j d -rotate 1 -subdiv 7 -offset 2 $DATA $DATA/features_d/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j g -rotate 1 -subdiv 7 -offset 2 $DATA $DATA/features_g/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j r -rotate 1 -subdiv 7 -offset 2 $DATA $DATA/features_r/$dir_name/$num.pcd	
+	# rosrun color_feature_classification computeFeature $j c -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_c/$dir_name/$num.pcd	
+	# rosrun color_feature_classification computeFeature $j d -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_d/$dir_name/$num.pcd	
+	# rosrun color_feature_classification computeFeature $j g -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_g/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j r -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_r/$dir_name/$num.pcd	
 	n=`expr $n + 1`	
     done
 done

@@ -150,31 +150,36 @@ public:
       t2 = my_clock();
       cout << "Time for all processes: "<< t2 - t1 << endl;
 
-      //* publish marker
-      visualization_msgs::Marker marker_;
-      marker_.header.frame_id = "base_link";
-      marker_.header.stamp = ros::Time::now();
-      marker_.ns = "BoxEstimation";
-      marker_.id = 0;
-      marker_.type = visualization_msgs::Marker::CUBE;
-      marker_.action = visualization_msgs::Marker::ADD;
-      marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
-      marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
-      marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
-      marker_.pose.orientation.x = 0;
-      marker_.pose.orientation.y = 0;
-      marker_.pose.orientation.z = 0;
-      marker_.pose.orientation.w = 1;
-      marker_.scale.x = sliding_box_size;
-      marker_.scale.y = sliding_box_size;
-      marker_.scale.z = sliding_box_size;
-      marker_.color.a = 0.1;
-      marker_.color.r = 0.0;
-      marker_.color.g = 1.0;
-      marker_.color.b = 0.0;
-      std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
-      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
-      marker_pub_.publish (marker_);      
+      for( int q=0; q<rank_num; q++ ){
+	if( search_obj.maxDot( q ) < detect_th ) break;
+	if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
+	  //* publish marker
+	  visualization_msgs::Marker marker_;
+	  marker_.header.frame_id = "base_link";
+	  marker_.header.stamp = ros::Time::now();
+	  marker_.ns = "BoxEstimation";
+	  marker_.id = 0;
+	  marker_.type = visualization_msgs::Marker::CUBE;
+	  marker_.action = visualization_msgs::Marker::ADD;
+	  marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
+	  marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
+	  marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
+	  marker_.pose.orientation.x = 0;
+	  marker_.pose.orientation.y = 0;
+	  marker_.pose.orientation.z = 0;
+	  marker_.pose.orientation.w = 1;
+	  marker_.scale.x = sliding_box_size;
+	  marker_.scale.y = sliding_box_size;
+	  marker_.scale.z = sliding_box_size;
+	  marker_.color.a = 0.1;
+	  marker_.color.r = 0.0;
+	  marker_.color.g = 1.0;
+	  marker_.color.b = 0.0;
+	  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
+	  marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
+	  marker_pub_.publish (marker_);    
+	}
+      }  
   }
 
   void loop(){
