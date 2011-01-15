@@ -5,7 +5,7 @@ OUTDIR=`rospack find color_voxel_recognition`/demos_VOSCH
 # parameters
 voxel_size=`cat $INDIR/voxel_size.txt`
 dim_feature=50
-subdivision_size=5
+subdivision_size=10
 
 mkdir $OUTDIR/param
 cp $INDIR/color_threshold.txt $OUTDIR/param/

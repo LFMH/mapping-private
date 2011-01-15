@@ -13,6 +13,7 @@
   <depend package="pcl_ros"/>
   <depend package="opencv2"/>
   <depend package="color_chlac"/>
+  <depend package="visualization_msgs"/>
   <!-- <cpp lflags="-lglut"/> -->
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_voxel_recognition"/>

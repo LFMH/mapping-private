@@ -42,7 +42,47 @@ SearchObjVOSCH::~SearchObjVOSCH(){
   if( max_mode != NULL ) delete[] max_mode;
   if( max_dot  != NULL ) delete[] max_dot;
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete nFeatures;
+  if( nFeatures != NULL ) delete[] nFeatures;
+}
+
+SearchObjVOSCH_multi::SearchObjVOSCH_multi() :
+  model_num(0),
+  max_x(NULL),
+  max_y(NULL),
+  max_z(NULL),
+  max_mode(NULL),
+  max_dot (NULL),
+  axis_q (NULL) {
+}
+
+SearchObjVOSCH_multi::~SearchObjVOSCH_multi(){
+  if( max_x != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
+    delete max_x;
+    max_x = NULL;
+  }
+  if( max_y != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
+    delete max_y;
+    max_y = NULL;
+  }
+  if( max_z != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
+    delete max_z;
+    max_z = NULL;
+  }
+  if( max_mode != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
+    delete max_mode;
+    max_mode = NULL;
+  }
+  if( max_dot != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
+    delete max_dot;
+    max_dot = NULL;
+  }
+  if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
+  if( nFeatures != NULL ) delete[] nFeatures;
 }
 
 //**************//
@@ -661,4 +701,182 @@ void SearchObjVOSCH::setNormalizeVal( const char* filename ){
     feature_max.push_back( val2 );
   }
   fclose( fp );    
+}
+
+//*******************************//
+//*     SearchObjVOSCH_multi    *//
+//*******************************//
+
+void SearchObjVOSCH_multi::setRank( int _rank_num ){
+  rank_num = _rank_num;
+
+  if( max_x != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
+    delete max_x;
+  }
+  if( max_y != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
+    delete max_y;
+  }
+  if( max_z != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
+    delete max_z;
+  }
+  if( max_mode != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
+    delete max_mode;
+  }
+  if( max_dot != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
+    delete max_dot;
+  }
+  max_x = new int*[ model_num ];
+  max_y = new int*[ model_num ];
+  max_z = new int*[ model_num ];
+  max_mode = new SearchMode*[ model_num ];
+  max_dot = new double*[ model_num ];
+
+  for( int m=0; m<model_num; m++ ){
+    max_x[ m ] = new int[ rank_num ];
+    max_y[ m ] = new int[ rank_num ];
+    max_z[ m ] = new int[ rank_num ];
+    max_mode[ m ] = new SearchMode[ rank_num ];
+    max_dot[ m ] = new double[ rank_num ];
+    for( int i=0; i<rank_num; i++ )  max_dot[ m ][ i ] = 0;
+  }
+}
+
+void SearchObjVOSCH_multi::readAxis( const char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
+  if( axis_q != NULL ) delete[] axis_q;
+  axis_q = new Eigen3::MatrixXf [ model_num ];
+
+  PCA_eigen pca_each;
+  for( int m=0; m<model_num; m++ ){
+    pca_each.read( filename[ m ], ascii );
+    Eigen3::MatrixXf tmpaxis = pca_each.Axis();
+    Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+    axis_q[ m ] = tmpaxis2.transpose();
+    if( multiple_similarity ){
+      Eigen3::VectorXf variance = pca_each.Variance();
+      for( int i=0; i<dim_model; i++ )
+	for( int j=0; j<dim; j++ )
+	  axis_q[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q[ m ]( i, j );
+    }
+  }
+}
+
+void SearchObjVOSCH_multi::cleanMax(){
+  for( int m=0; m<model_num; m++ ){
+    for( int i=0; i<rank_num; i++ ){
+      max_x[ m ][ i ] = 0;
+      max_y[ m ][ i ] = 0;
+      max_z[ m ][ i ] = 0;
+      max_dot[ m ][ i ] = 0;
+    }
+  }
+}
+
+const int SearchObjVOSCH_multi::maxXrange( int m_num, int num ){ return xRange( max_mode[ m_num ][ num ] ); }
+const int SearchObjVOSCH_multi::maxYrange( int m_num, int num ){ return yRange( max_mode[ m_num ][ num ] ); }
+const int SearchObjVOSCH_multi::maxZrange( int m_num, int num ){ return zRange( max_mode[ m_num ][ num ] ); }
+
+inline int SearchObjVOSCH_multi::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
+  int num;
+  int xrange = 0, yrange = 0, zrange = 0;
+  int val1, val2, val3;
+  getRange( xrange, yrange, zrange, mode );
+
+  for( num = 0; num < rank_num-1; num++ ){
+    val1 = max_x[ m_num ][ num ] - x;
+    if( val1 < 0 )
+      val1 = - val1 - xRange( max_mode[ m_num ][ num ] );
+    else
+      val1 -= xrange;
+
+    val2 = max_y[ m_num ][ num ] - y;
+    if( val2 < 0 )
+      val2 = - val2 - yRange( max_mode[ m_num ][ num ] );
+    else
+      val2 -= yrange;
+
+    val3 = max_z[ m_num ][ num ] - z;
+    if( val3 < 0 )
+      val3 = - val3 - zRange( max_mode[ m_num ][ num ] );
+    else
+      val3 -= zrange;
+
+    if( ( val1 <= 0 ) && ( val2 <= 0 ) && ( val3 <= 0 ) )
+      return num;
+  }
+  return num;
+}
+
+inline void SearchObjVOSCH_multi::max_cpy( int m_num, int src_num, int dest_num ){
+  max_dot[ m_num ][ dest_num ] = max_dot[ m_num ][ src_num ];
+  max_x[ m_num ][ dest_num ] = max_x[ m_num ][ src_num ];
+  max_y[ m_num ][ dest_num ] = max_y[ m_num ][ src_num ];
+  max_z[ m_num ][ dest_num ] = max_z[ m_num ][ src_num ];
+  max_mode[ m_num ][ dest_num ] = max_mode[ m_num ][ src_num ];
+}
+
+inline void SearchObjVOSCH_multi::max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
+  max_dot[ m_num ][ dest_num ] = dot;
+  max_x[ m_num ][ dest_num ] = x;
+  max_y[ m_num ][ dest_num ] = y;
+  max_z[ m_num ][ dest_num ] = z;
+  max_mode[ m_num ][ dest_num ] = mode;
+}
+
+void SearchObjVOSCH_multi::search_part( SearchMode mode ){
+  int xrange = 0, yrange = 0, zrange = 0;
+  getRange( xrange, yrange, zrange, mode );
+
+  const int x_end = x_num - xrange + 1;
+  const int y_end = y_num - yrange + 1;
+  const int z_end = z_num - zrange + 1;
+  
+  Eigen3::VectorXf feature_tmp;
+  Eigen3::VectorXf tmpVector;
+  double dot,sum;
+  int overlap_num;
+  int exist_num;
+  if((x_end>0)&&(y_end>0)&&(z_end>0)){    
+    for(int z=0;z<z_end;z++){	      
+      for(int y=0;y<y_end;y++){
+	for(int x=0;x<x_end;x++){
+
+	  //* 領域内にボクセルが存在するか否かをチェック
+	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
+	  if(exist_num > exist_voxel_num_threshold){ // 領域内にボクセルが一定数以上あれば
+
+	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
+	    
+	    //* 類似度計算
+	    sum = feature_tmp.dot( feature_tmp );
+	    sum = sqrt(sum);
+
+	    for( int m=0; m<model_num; m++ ){
+	      tmpVector = axis_q[ m ] * feature_tmp;
+	      dot = tmpVector.dot( tmpVector );
+	      dot = sqrt( dot );
+	      dot /= sum ;
+	      //* 類似度が高ければ保存
+	      for( int i=0; i<rank_num; i++ ){
+		if(dot>max_dot[ m ][ i ]){
+		  overlap_num = checkOverlap( m, x, y, z, mode );
+		  for( int j=0; j<overlap_num-i; j++ )
+		    max_cpy( m, overlap_num-1-j, overlap_num-j );		  
+		  
+		  if( i<=overlap_num )
+		    max_assign( m, i, dot, x, y, z, mode );
+		  break;
+		}
+	      }
+	    }
+
+	  }
+	}
+      }
+    }
+  }
 }

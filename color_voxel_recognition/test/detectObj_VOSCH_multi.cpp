@@ -18,7 +18,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include "visualization_msgs/Marker.h"
 
 /****************************************************************************************************************************/
 /* 物体検出を行い、類似度が閾値以上の領域を表示する                                                                                  */
@@ -35,9 +34,11 @@ float DISTANCE_TH = 1.0;
 
 //************************
 //* その他のグローバル変数など
+enum V_STATE { DISP, CREATE } v_state;
+static int GLUTwindow = 0;
 Voxel voxel;
 
-SearchObjVOSCH search_obj;
+SearchObjVOSCH_multi search_obj;
 int color_threshold_r, color_threshold_g, color_threshold_b;
 int dim;
 int box_size;
@@ -46,6 +47,7 @@ bool exit_flg = false;
 bool start_flg = true;
 float detect_th = 0;
 int rank_num;
+int model_num;
 
 //* Note that x and y values are inverted.
 template <typename T>
@@ -68,6 +70,87 @@ void limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &outpu
   output_cloud.height = 1;
   output_cloud.points.resize( idx );
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//* プレビューのためのクラス
+class TestView : public GlView {
+public:
+  bool attention_mode; // 検出された領域のみを表示するモード
+  TestView() : attention_mode(false) { me = this; }
+  ~TestView(){ if( me!=NULL ) delete[] me; }
+  void initView( Voxel &voxel );
+
+private:
+  void display( void );
+  void keyboard (unsigned char key, int x, int y);
+};
+
+//* ボクセルを表示する場合
+void TestView::initView( Voxel &voxel ){
+  int x_min,x_max,y_min,y_max,z_min,z_max;
+  voxel.getMinMax( x_min, x_max, y_min, y_max, z_min, z_max );
+  viewpoint_init( x_min, x_max, y_min, y_max, z_min, z_max );
+}
+
+void TestView::display(void)
+{
+  if( v_state == DISP ){
+    cout << "DISP" << endl;
+    display_init( 2 );
+    initView( voxel );
+
+    // TODO change box color
+    //* 類似度が閾値以上の領域をすべて表示する（赤いボックスで囲む）
+    for( int m=0; m<model_num; m++ ){
+      for( int q=0; q<rank_num; q++ ){
+	if( search_obj.maxDot( m, q ) < detect_th ) break;
+	if( (search_obj.maxX( m, q )!=0)||(search_obj.maxY( m, q )!=0)||(search_obj.maxZ( m, q )!=0) ){
+	  const float sx = search_obj.maxX( m, q ) * box_size;
+	  const float sy = search_obj.maxY( m, q ) * box_size;
+	  const float sz = search_obj.maxZ( m, q ) * box_size;
+	  const float gx = sx + search_obj.maxXrange( m, q ) * box_size;
+	  const float gy = sy + search_obj.maxYrange( m, q ) * box_size;
+	  const float gz = sz + search_obj.maxZrange( m, q ) * box_size;
+	  cout << "dot " << search_obj.maxDot( m, q ) << endl;	
+	  dispBox( -gx, -sx, sy, gy, -gz, -sz, 3 );
+	  if( attention_mode )
+	    dispVoxel( voxel, -gx, -sx, sy, gy, -gz, -sz );
+	}
+      }
+    }
+    cout << "drawing..." << endl;
+    if(!attention_mode)
+      dispVoxel( voxel );
+
+    v_state = CREATE;
+    glutSwapBuffers();
+    cout << "       ...done" << endl;
+  }
+  else usleep(100000);
+}    
+
+void TestView::keyboard(unsigned char key, int x, int y)
+{
+  switch (key) {
+  case ' ':
+  case 0x0D : // Enter
+    if( attention_mode ) attention_mode = false;
+    else attention_mode = true;
+    break;
+
+  case 'Q':
+  case 'q':
+  case 27: // ESCAPE
+    glutDestroyWindow(GLUTwindow);
+    exit(0);
+    break;
+
+  case 'p':
+    capture("gomi/tmp.png");
+    break;
+  }
+}
+///////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////
 //* ボクセル化、データの保存のためのクラス
@@ -94,6 +177,8 @@ public:
   //*******************************
   //* ボクセル化、データの保存
   void vad_cb(const sensor_msgs::PointCloud2ConstPtr& cloud) {
+    if( v_state == DISP ) usleep( 100000 );
+    else{
       cout << "CREATE" << endl;
       t1 = my_clock();
 
@@ -125,14 +210,6 @@ public:
       getVoxelGrid( grid, cloud_normal, cloud_downsampled, voxel_size );
       voxel.points2voxel( cloud_downsampled, SIMPLE_REVERSE );
     
-      int pnum = cloud_downsampled.points.size();
-      float x_min = 10000000, y_min = 10000000, z_min = 10000000;
-      for( int p=0; p<pnum; p++ ){
-      	if( cloud_downsampled.points[ p ].x < x_min ) x_min = cloud_downsampled.points[ p ].x;
-      	if( cloud_downsampled.points[ p ].y < y_min ) y_min = cloud_downsampled.points[ p ].y;
-      	if( cloud_downsampled.points[ p ].z < z_min ) z_min = cloud_downsampled.points[ p ].z;
-      }
-
       //****************************************
       //* 物体検出
       search_obj.cleanData();
@@ -147,34 +224,9 @@ public:
       // 	v_state = DISP;
       t2 = my_clock();
       cout << "Time for all processes: "<< t2 - t1 << endl;
-
-      //* publish marker
-      visualization_msgs::Marker marker_;
-      marker_.header.frame_id = "openni_depth_optical_frame";
-      marker_.header.stamp = ros::Time::now();
-      marker_.ns = "BoxEstimation";
-      marker_.id = 0;
-      marker_.type = visualization_msgs::Marker::CUBE;
-      marker_.action = visualization_msgs::Marker::ADD;
-      marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
-      marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
-      marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
-      marker_.pose.orientation.x = 0;
-      marker_.pose.orientation.y = 0;
-      marker_.pose.orientation.z = 0;
-      marker_.pose.orientation.w = 1;
-      marker_.scale.x = sliding_box_size;
-      marker_.scale.y = sliding_box_size;
-      marker_.scale.z = sliding_box_size;
-      marker_.color.a = 0.1;
-      marker_.color.r = 0.0;
-      marker_.color.g = 1.0;
-      marker_.color.b = 0.0;
-      std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
-      
-      ros::Publisher marker_pub_;
-      marker_pub_.publish (marker_);
-      
+    
+      v_state = DISP;
+    }
   }
 
   void loop(){
@@ -187,16 +239,22 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
   if( argc != 10 ){
-    cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_pca_filename] <dim_model> <size1> <size2> <size3> <detect_th> /input:=/camera/depth/points2" << endl;
+    cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_pca_dir] <dim_model> <size1> <size2> <size3> <detect_th> /input:=/camera/depth/points2" << endl;
     exit( EXIT_FAILURE );
   }
   ros::init (argc, argv, "detectObj", ros::init_options::AnonymousName);
+
+  //***************************
+  //* read trained models 
+  const char** model_filenames;
+  // TODO model_num, read
 
   voxel_size = Param::readVoxelSize();  //* ボクセルの一辺の長さ（mm）の読み込み
   voxel.setVoxelSize( voxel_size );
 
   detect_th = atof( argv[8] );
   rank_num = atoi( argv[1] );
+  v_state = CREATE;
 
   //****************************************
   //* 物体検出のための準備
@@ -222,11 +280,12 @@ int main(int argc, char* argv[]) {
   if( ( ( tmp_val - size3 ) >= 0.5 ) || ( size3 == 0 ) ) size3++; // 四捨五入
 
   //* 変数をセット
+  search_obj.setModelNum( model_num );
   search_obj.setNormalizeVal( "param/minmax_r.txt" );
   search_obj.setRange( size1, size2, size3 );
   search_obj.setRank( rank_num );
   search_obj.setThreshold( atoi(argv[2]) );
-  search_obj.readAxis( argv[3], dim, dim_model, ASCII_MODE_P, false );  //* 検出対象物体の部分空間の基底軸の読み込み
+  search_obj.readAxis( model_filenames, dim, dim_model, ASCII_MODE_P, false );  //* 検出対象物体の部分空間の基底軸の読み込み
 
   //* RGB二値化の閾値の読み込み
   Param::readColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
@@ -250,9 +309,19 @@ int main(int argc, char* argv[]) {
   // ボクセル（かメッシュ）のプレビューとデータ取得の準備
   ViewAndDetect vad;
 
+  // OpenGLによる描画
+  glutInit(&argc, argv);
+  TestView testView;
+  GLUTwindow = testView.createWindow( 640, 480, 400, 100, argv[0] );
+
   // ループのスタート
   vad.loop();
-  ros::spin();
+  ros::AsyncSpinner spinner(2); // Use 2 threads
+  spinner.start();
+  //ros::waitForShutdown();
+  // ros::MultiThreadedSpinner spinner(2);
+  // spinner.spin();
+  testView.start();
 
   return 0;
 }
