@@ -1,11 +1,12 @@
 <launch>
   <node pkg="ias_data_acquisition_ptu" type="extract_clusters_on_table_node" name="extract_clusters" output="screen" respawn="false" args="test">
     <!-- Parameters --> 
-    <param name="cluster_min_height" value="-0.02"/>
+    <param name="cluster_min_height" value="0.02"/>
     <param name="object_cluster_tolerance" value="0.05"/>
     <param name="object_cluster_min_size" value="50"/>
     <param name="nr_cluster" value="6"/>
     <param name="object_cluster_tolerance" value="0.05"/>
     <param name="downsample" value="1"/>
+    <param name="voxel_size" value="0.015"/>
  </node>
 </launch>

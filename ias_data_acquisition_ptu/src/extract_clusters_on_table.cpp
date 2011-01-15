@@ -102,7 +102,6 @@ public:
     nh_.param("seg_prob", seg_prob_, 0.99);
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
     //what area size of the table are we looking for?
-    nh_.param("expected_table_area", expected_table_area_, 0.042);
     nh_.param("rot_table_frame", rot_table_frame_, std::string("rotating_table"));
     nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.03);
     //min 100 points
@@ -114,6 +113,7 @@ public:
     nh_.param("cluster_max_height", cluster_max_height_, 0.4);
     nh_.param("nr_cluster", nr_cluster_, 4);
     nh_.param("downsample", downsample_, true);
+    nh_.param("voxel_size", voxel_size_, 0.01);
 
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
@@ -281,9 +281,8 @@ private:
       cluster_.extract (clusters);
       
       pcl::PointCloud<Point> cloud_object_clustered;
-      if (clusters.size() >= nr_cluster_)
+      if (int(clusters.size()) >= nr_cluster_)
       {
-        char object_name_angle[100];
         for (int i = 0; i < nr_cluster_; i++)
         {
           //sprintf (object_name_angle, "%04d",  i);
@@ -296,7 +295,7 @@ private:
       }
       else
       {
-        ROS_ERROR("No cluster found with min size %d points", object_cluster_min_size_);
+        ROS_ERROR("Only %ld clusters found with size > %d points", clusters.size(), object_cluster_min_size_);
       }
       //std::stringstream ss;
       //ss << (pan_angle_ + 180);
@@ -348,8 +347,8 @@ private:
   bool save_to_files_, downsample_;
 
   double normal_search_radius_;
-  double expected_table_area_;
-  double area_, pan_angle_, max_pan_angle_, pan_angle_resolution_;
+  double voxel_size_;
+
   std::string rot_table_frame_, object_name_;
   double object_cluster_tolerance_,  cluster_min_height_, cluster_max_height_;
   int object_cluster_min_size_, object_cluster_max_size_;
