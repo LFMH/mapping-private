@@ -113,13 +113,16 @@ public:
     nh_.param("cluster_min_height", cluster_min_height_, 0.01);
     nh_.param("cluster_max_height", cluster_max_height_, 0.4);
     nh_.param("nr_cluster", nr_cluster_, 4);
+    nh_.param("downsample", downsample_, true);
 
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
-    cloud_objects_pub_.advertise (nh_, "cloud_objects", 1);
+    cloud_objects_pub_.advertise (nh_, "cloud_objects", 10);
 
     vgrid_.setFilterFieldName ("z");
     vgrid_.setFilterLimits (z_min_limit_, z_max_limit_);
+    if (downsample_)
+      vgrid_.setLeafSize (0.015, 0.015, 0.015);
 
     seg_.setDistanceThreshold (sac_distance_);
     seg_.setMaxIterations (max_iter_);
