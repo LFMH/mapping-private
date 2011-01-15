@@ -86,7 +86,7 @@ public:
   void activateRelativeMode(){ relative_mode = true; }
     string cloud_topic_;
     pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
-
+    ros::Publisher marker_pub_;
   //***************
   //* コンストラクタ
   ViewAndDetect() :
@@ -152,29 +152,28 @@ public:
 
       //* publish marker
       visualization_msgs::Marker marker_;
-      marker_.header.frame_id = "openni_depth_optical_frame";
+      marker_.header.frame_id = "base_link";
       marker_.header.stamp = ros::Time::now();
       marker_.ns = "BoxEstimation";
       marker_.id = 0;
       marker_.type = visualization_msgs::Marker::CUBE;
       marker_.action = visualization_msgs::Marker::ADD;
-      //marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
-      //marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
-      //marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
+      marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
+      marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
+      marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
       marker_.pose.orientation.x = 0;
       marker_.pose.orientation.y = 0;
       marker_.pose.orientation.z = 0;
       marker_.pose.orientation.w = 1;
-      //marker_.scale.x = sliding_box_size;
-      //marker_.scale.y = sliding_box_size;
-      //marker_.scale.z = sliding_box_size;
+      marker_.scale.x = sliding_box_size;
+      marker_.scale.y = sliding_box_size;
+      marker_.scale.z = sliding_box_size;
       marker_.color.a = 0.1;
       marker_.color.r = 0.0;
       marker_.color.g = 1.0;
       marker_.color.b = 0.0;
       std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
-      
-      ros::Publisher marker_pub_;
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
       marker_pub_.publish (marker_);      
   }
 
@@ -222,7 +221,6 @@ int main(int argc, char* argv[]) {
   int size3 = (int)tmp_val;
   if( ( ( tmp_val - size3 ) >= 0.5 ) || ( size3 == 0 ) ) size3++; // 四捨五入
   sliding_box_size = size1 * region_size;
-
   //* 変数をセット
   search_obj.setNormalizeVal( "param/minmax_r.txt" );
   search_obj.setRange( size1, size2, size3 );
