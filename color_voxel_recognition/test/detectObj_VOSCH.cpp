@@ -1,3 +1,4 @@
+#include <visualization_msgs/Marker.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -18,7 +19,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include "visualization_msgs/Marker.h"
 
 /****************************************************************************************************************************/
 /* 物体検出を行い、類似度が閾値以上の領域を表示する                                                                                  */
@@ -156,16 +156,16 @@ public:
       marker_.id = 0;
       marker_.type = visualization_msgs::Marker::CUBE;
       marker_.action = visualization_msgs::Marker::ADD;
-      marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
-      marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
-      marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
+      //marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
+      //marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
+      //marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
       marker_.pose.orientation.x = 0;
       marker_.pose.orientation.y = 0;
       marker_.pose.orientation.z = 0;
       marker_.pose.orientation.w = 1;
-      marker_.scale.x = sliding_box_size;
-      marker_.scale.y = sliding_box_size;
-      marker_.scale.z = sliding_box_size;
+      //marker_.scale.x = sliding_box_size;
+      //marker_.scale.y = sliding_box_size;
+      //marker_.scale.z = sliding_box_size;
       marker_.color.a = 0.1;
       marker_.color.r = 0.0;
       marker_.color.g = 1.0;
@@ -173,8 +173,7 @@ public:
       std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
       
       ros::Publisher marker_pub_;
-      marker_pub_.publish (marker_);
-      
+      marker_pub_.publish (marker_);      
   }
 
   void loop(){
