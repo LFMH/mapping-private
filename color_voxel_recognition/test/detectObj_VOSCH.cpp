@@ -42,6 +42,8 @@ int color_threshold_r, color_threshold_g, color_threshold_b;
 int dim;
 int box_size;
 float voxel_size;
+float region_size;
+float sliding_box_size;
 bool exit_flg = false;
 bool start_flg = true;
 float detect_th = 0;
@@ -209,7 +211,7 @@ int main(int argc, char* argv[]) {
     exit( EXIT_FAILURE );
   }
   //* 検出ボックスの大きさを決定する
-  const float region_size = box_size * voxel_size;
+  region_size = box_size * voxel_size;
   float tmp_val = atof(argv[5]) / region_size;
   int size1 = (int)tmp_val;
   if( ( ( tmp_val - size1 ) >= 0.5 ) || ( size1 == 0 ) ) size1++; // 四捨五入
@@ -219,6 +221,7 @@ int main(int argc, char* argv[]) {
   tmp_val = atof(argv[7]) / region_size;
   int size3 = (int)tmp_val;
   if( ( ( tmp_val - size3 ) >= 0.5 ) || ( size3 == 0 ) ) size3++; // 四捨五入
+  sliding_box_size = size1 * region_size;
 
   //* 変数をセット
   search_obj.setNormalizeVal( "param/minmax_r.txt" );
