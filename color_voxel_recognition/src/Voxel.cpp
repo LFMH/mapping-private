@@ -6,6 +6,7 @@
 
 #include "color_voxel_recognition/Voxel.hpp"
 #include "color_voxel_recognition/ppmFile.hpp"
+#include "pcl/io/io.h"
 
 using namespace std;
 
@@ -393,6 +394,64 @@ void Voxel::writeVoxel(){
       }
     }
   }
+}
+
+void Voxel::points2voxel( pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_object_cluster, ReverseMode mode ){
+  // calculate the minimum and maximum xyz values of points.
+  x_min = FLT_MAX; y_min = FLT_MAX; z_min = FLT_MAX;
+  x_max = -FLT_MAX; y_max = -FLT_MAX; z_max = -FLT_MAX;
+  for(unsigned int i =0; i < cloud_object_cluster.points.size(); i++){
+    if( x_min > cloud_object_cluster.points[i].x )
+      x_min = cloud_object_cluster.points[i].x;
+    if( y_min > cloud_object_cluster.points[i].y )
+      y_min = cloud_object_cluster.points[i].y;
+    if( z_min > cloud_object_cluster.points[i].z )
+      z_min = cloud_object_cluster.points[i].z;
+    if( x_max < cloud_object_cluster.points[i].x )
+      x_max = cloud_object_cluster.points[i].x;
+    if( y_max < cloud_object_cluster.points[i].y )
+      y_max = cloud_object_cluster.points[i].y;
+    if( z_max < cloud_object_cluster.points[i].z )
+      z_max = cloud_object_cluster.points[i].z;
+  }
+  setMinMax();
+  createVoxelData();
+  cleanVoxelData();
+
+  float *red = new float[ xyzsize ];
+  float *green = new float[ xyzsize ];
+  float *blue = new float[ xyzsize ];
+  for( int i=0; i<xyzsize; i++ ){
+    red[ i ] = 0; green[ i ] = 0; blue[ i ] = 0;
+  }
+
+  for(unsigned int i =0; i < cloud_object_cluster.points.size(); i++){
+    const int idx = (int)((cloud_object_cluster.points[i].x-x_min)/voxel_size) + 1
+      + xsize * ((int)((cloud_object_cluster.points[i].y-y_min)/voxel_size) + 1)
+      + xysize * ((int)((cloud_object_cluster.points[i].z-z_min)/voxel_size) + 1);
+    exist_num[ idx ] ++;
+
+    //convert back to r, g and b channels
+    int color = *reinterpret_cast<const int*>(&(cloud_object_cluster.points[i].rgb));
+    int r = (0xff0000 & color) >> 16;
+    int g = (0x00ff00 & color) >> 8;
+    int b =  0x0000ff & color;
+
+    red[ idx ] += (float)r;  
+    green[ idx ] += (float)g;
+    blue[ idx ] += (float)b;
+  }
+
+  for( int i=0; i<xyzsize; i++ )
+    if( exist_num[ i ] != 0 )
+      setRGB( i, red[ i ]/exist_num[ i ], green[ i ]/exist_num[ i ], blue[ i ]/exist_num[ i ], mode );
+  
+  delete[] red;
+  delete[] green;
+  delete[] blue;
+
+  for( int i=0; i<xyzsize; i++ )
+    if( exist_num[ i ] > 0 ) exist_flag[ i ] = true;
 }
 #endif
 

@@ -65,6 +65,7 @@ public:
 
   //* transform point cloud into voxel data
   void points2voxel( pcl::PointCloud<pcl::PointXYZRGB> cloud_object_cluster, ReverseMode mode );
+  void points2voxel( pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_object_cluster, ReverseMode mode );
 
   //* ファイルに出力
   void writeVoxel();

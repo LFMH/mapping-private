@@ -154,7 +154,7 @@ int get_type (float min_radius, float max_radius)
 //--------------------
 //* compute - GRSD -
 template <typename T>
-void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0, const bool is_normalize = false ){
+Eigen3::Vector3i computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const double voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0, const bool is_normalize = false ){
 #ifndef QUIET
   ROS_INFO("rsd %f, normals %f, leaf %f", rsd_radius_search, normals_radius_search, voxel_size);
 #endif
@@ -173,7 +173,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
     div_b_ = grid.getNrDivisions();
     if( ( div_b_[0] <= offset_x ) || ( div_b_[1] <= offset_y ) || ( div_b_[2] <= offset_z ) ){
       std::cerr << "(In computeGRSD) offset values (" << offset_x << "," << offset_y << "," << offset_z << ") exceed voxel grid size (" << div_b_[0] << "," << div_b_[1] << "," << div_b_[2] << ")."<< std::endl;
-      return;
+      return Eigen3::Vector3i::Zero();
     }
     subdiv_b_ = Eigen3::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
     subdivb_mul_ = Eigen3::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
@@ -181,7 +181,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
   }
   else if( subdivision_size < 0 ){
     std::cerr << "(In computeGRSD) Invalid subdivision size: " << subdivision_size << std::endl;
-    return;
+    return Eigen3::Vector3i::Zero();
   }
 
   // Compute RSD
@@ -311,6 +311,7 @@ void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointClo
         feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ];
     }
   }
+  return subdiv_b_;
 }
 
 template <typename T>

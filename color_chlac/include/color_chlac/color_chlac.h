@@ -51,6 +51,8 @@ namespace pcl
 
       inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_ );
 
+      Eigen3::Vector3i getSubdivNum(){ return subdiv_b_; };
+
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
       //ColorCHLAC_RI_Estimation () : voxel_size (0)

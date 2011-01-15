@@ -18,6 +18,7 @@ int main( int argc, char** argv ){
   pcl::PointCloud<PointXYZRGB> input_cloud;
   readPoints( argv[1], input_cloud );
   double t1 = my_clock();
+
   //* compute normals
   pcl::PointCloud<PointXYZRGBNormal> cloud;
   computeNormal( input_cloud, cloud );

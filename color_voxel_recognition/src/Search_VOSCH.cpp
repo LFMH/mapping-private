@@ -1,3 +1,5 @@
+#define QUIET
+
 #include <iostream>
 #include <stdio.h>
 //#include <stdlib.h>
@@ -6,14 +8,13 @@
 #include <sys/time.h>
 //#include <math.h>
 //#include <fstream>
-#include <octave/config.h>
-#include <octave/Matrix.h>
-#include "color_voxel_recognition/libPCA.hpp"
-#include "color_voxel_recognition/CCHLAC.hpp"
-#include "color_voxel_recognition/Search.hpp"
+#include "color_voxel_recognition/libPCA_eigen.hpp"
+//#include "color_voxel_recognition/CCHLAC.hpp"
+#include "color_voxel_recognition/Search_VOSCH.hpp"
+#include "color_chlac/grsd_colorCHLAC_tools.h"
 
 //* 時間計測用
-double my_clock__()
+double my_clock_()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -24,7 +25,7 @@ double my_clock__()
 //* コンストラクタとデストラクタ *//
 //***************************//
 
-SearchObj::SearchObj() :
+SearchObjVOSCH::SearchObjVOSCH() :
   max_x(NULL),
   max_y(NULL),
   max_z(NULL),
@@ -34,14 +35,14 @@ SearchObj::SearchObj() :
   nFeatures(NULL) {
 }
 
-SearchObj::~SearchObj(){
+SearchObjVOSCH::~SearchObjVOSCH(){
   if( max_x != NULL ) delete[] max_x;
   if( max_y != NULL ) delete[] max_y;
   if( max_z != NULL ) delete[] max_z;
   if( max_mode != NULL ) delete[] max_mode;
   if( max_dot  != NULL ) delete[] max_dot;
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete[] nFeatures;
+  if( nFeatures != NULL ) delete nFeatures;
 }
 
 //**************//
@@ -50,7 +51,7 @@ SearchObj::~SearchObj(){
 
 //***************************
 //* 検出対象物体のサイズ情報をセット
-void SearchObj::setRange( int _range1, int _range2, int _range3 ){
+void SearchObjVOSCH::setRange( int _range1, int _range2, int _range3 ){
   range1 = _range1;
   range2 = _range2;
   range3 = _range3;
@@ -58,7 +59,7 @@ void SearchObj::setRange( int _range1, int _range2, int _range3 ){
 
 //************************************
 //* ランク何位までの領域を出力するか、をセット
-void SearchObj::setRank( int _rank_num ){
+void SearchObjVOSCH::setRank( int _rank_num ){
   rank_num = _rank_num;
   if( max_x != NULL ) delete[] max_x;
   if( max_y != NULL ) delete[] max_y;
@@ -75,21 +76,20 @@ void SearchObj::setRank( int _rank_num ){
 
 //***************************************************************
 //* 検出領域の中に含まれるボクセル数がいくつ未満だったら打ちきるかの閾値をセット
-void SearchObj::setThreshold( int _exist_voxel_num_threshold ){
+void SearchObjVOSCH::setThreshold( int _exist_voxel_num_threshold ){
   exist_voxel_num_threshold = _exist_voxel_num_threshold;
 }
 
 //**********************************
 //* 検出対象物体の部分空間の基底軸の読み込み
-void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
-  PCA pca_each;
+void SearchObjVOSCH::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
+  PCA_eigen pca_each;
   pca_each.read( filename, ascii );
-  Matrix tmpaxis = pca_each.Axis();
-  tmpaxis.resize( dim, dim_model );
-  //Matrix tmpaxis_t = tmpaxis.transpose();
-  axis_q = tmpaxis.transpose();
+  Eigen3::MatrixXf tmpaxis = pca_each.Axis();
+  Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+  axis_q = tmpaxis2.transpose();
   if( multiple_similarity ){
-    ColumnVector variance = pca_each.Variance();
+    Eigen3::VectorXf variance = pca_each.Variance();
     for( int i=0; i<dim_model; i++ )
       for( int j=0; j<dim; j++ )
 	axis_q( i, j ) = sqrt( variance( i ) ) * axis_q( i, j );
@@ -98,7 +98,7 @@ void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool asc
 
 //********************************************
 //* sceneの（分割領域毎の）特徴量とボクセル数の読み込み
-void SearchObj::readData( const char *filenameF, const char *filenameN, int dim, bool ascii ){
+void SearchObjVOSCH::readData( const char *filenameF, const char *filenameN, int dim, bool ascii ){
   double tmpval_d;
 
   FILE *fp, *fp2;
@@ -118,14 +118,14 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new ColumnVector[ xyz_num ];
+  nFeatures = new Eigen3::VectorXf [ xyz_num ];
   for(int n=0;n<xyz_num;n++){
     nFeatures[ n ].resize(dim);
     if( ascii ){
       int tmpval;
       for(int j=0;j<dim;j++){
 	fscanf(fp,"%d:%lf ",&tmpval,&tmpval_d);
-	nFeatures[ n ]( j ) = tmpval_d;
+	nFeatures[ n ][ j ] = tmpval_d;
       }
       fscanf(fp,"\n");
       fscanf(fp2,"%d\n",exist_voxel_num+n);
@@ -133,7 +133,7 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
     else{
       for(int j=0;j<dim;j++){
 	fread(&tmpval_d,sizeof(tmpval_d),1,fp);
-	nFeatures[ n ]( j ) = tmpval_d;
+	nFeatures[ n ][ j ] = tmpval_d;
       }
       fread(exist_voxel_num+n,sizeof(exist_voxel_num[n]),1,fp2);
     }
@@ -147,7 +147,7 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
 
 //*************************************************
 //* 引数の検出モードにおける検出ボックスのx,y,z辺の長さを取得
-inline void SearchObj::getRange( int &xrange, int &yrange, int &zrange, SearchMode mode ){
+inline void SearchObjVOSCH::getRange( int &xrange, int &yrange, int &zrange, SearchMode mode ){
   switch( mode ){
   case S_MODE_1:
     xrange = range1;
@@ -184,7 +184,7 @@ inline void SearchObj::getRange( int &xrange, int &yrange, int &zrange, SearchMo
 
 //*********************************************
 //* 引数の検出モードにおける検出ボックスのx辺の長さを返す
-inline int SearchObj::xRange( SearchMode mode ){
+inline int SearchObjVOSCH::xRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_1:
   case S_MODE_2:
@@ -206,7 +206,7 @@ inline int SearchObj::xRange( SearchMode mode ){
 
 //*********************************************
 //* 引数の検出モードにおける検出ボックスのy辺の長さを返す
-inline int SearchObj::yRange( SearchMode mode ){
+inline int SearchObjVOSCH::yRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_3:
   case S_MODE_5:
@@ -228,7 +228,7 @@ inline int SearchObj::yRange( SearchMode mode ){
 
 //*********************************************
 //* 引数の検出モードにおける検出ボックスのz辺の長さを返す
-inline int SearchObj::zRange( SearchMode mode ){
+inline int SearchObjVOSCH::zRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_4:
   case S_MODE_6:
@@ -255,7 +255,7 @@ inline int SearchObj::zRange( SearchMode mode ){
 //***********************************************************************
 //* 今までに発見した領域の中で、いま発見した領域とかぶる領域があれば、そのランク番号を返す
 //* かぶる領域がなければ最低ランクの番号を返す
-inline int SearchObj::checkOverlap( int x, int y, int z, SearchMode mode ){
+inline int SearchObjVOSCH::checkOverlap( int x, int y, int z, SearchMode mode ){
   int num;
   int xrange = 0, yrange = 0, zrange = 0;
   int val1, val2, val3;
@@ -289,7 +289,7 @@ inline int SearchObj::checkOverlap( int x, int y, int z, SearchMode mode ){
 //****************************
 //* 既に発見した領域のランクをずらす
 //* 例 src_num=2 dest_num=3: 3位の領域を4位に下げる
-inline void SearchObj::max_cpy( int src_num, int dest_num ){
+inline void SearchObjVOSCH::max_cpy( int src_num, int dest_num ){
   max_dot[ dest_num ] = max_dot[ src_num ];
   max_x[ dest_num ] = max_x[ src_num ];
   max_y[ dest_num ] = max_y[ src_num ];
@@ -299,7 +299,7 @@ inline void SearchObj::max_cpy( int src_num, int dest_num ){
 
 //*************************************
 //* 今発見した領域を既に発見した領域と置き換える
-inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ){
+inline void SearchObjVOSCH::max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ){
   max_dot[ dest_num ] = dot;
   max_x[ dest_num ] = x;
   max_y[ dest_num ] = y;
@@ -313,9 +313,9 @@ inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z
 
 //*************************
 //* 全ての検出モードでの物体検出
-void SearchObj::search(){
+void SearchObjVOSCH::search(){
   double t1,t2;//時間計測用の変数
-  t1 = my_clock__();
+  t1 = my_clock_();
   if( range1 == range2 ){
     if( range2 == range3 ){ // range1 = range2 = range3
       search_part( S_MODE_1 );
@@ -344,13 +344,13 @@ void SearchObj::search(){
     search_part( S_MODE_5 );
     search_part( S_MODE_6 );
   }
-  t2 = my_clock__();
+  t2 = my_clock_();
   search_time = t2 - t1;
 }
 
 //*************************
 //* 引数の検出モードでの物体検出
-void SearchObj::search_part( SearchMode mode ){
+void SearchObjVOSCH::search_part( SearchMode mode ){
   int xrange = 0, yrange = 0, zrange = 0;
   getRange( xrange, yrange, zrange, mode );
 
@@ -358,8 +358,8 @@ void SearchObj::search_part( SearchMode mode ){
   const int y_end = y_num - yrange + 1;
   const int z_end = z_num - zrange + 1;
   
-  ColumnVector feature_tmp;
-  ColumnVector tmpVector;
+  Eigen3::VectorXf feature_tmp;
+  Eigen3::VectorXf tmpVector;
   double dot,sum;
   int overlap_num;
   int exist_num;
@@ -375,17 +375,12 @@ void SearchObj::search_part( SearchMode mode ){
 	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
 	    
 	    //* 類似度計算
-	    sum = feature_tmp.transpose()*feature_tmp;
+	    sum = feature_tmp.dot( feature_tmp );
 	    tmpVector = axis_q * feature_tmp;
-#if 0
 	    sum = sqrt(sum);
-	    dot = tmpVector.transpose()*tmpVector;
+	    dot = tmpVector.dot( tmpVector );
 	    dot = sqrt( dot );
 	    dot /= sum ;
-#else // 少しでも高速化したいときはこちらでもよい
-	    dot = tmpVector.transpose()*tmpVector;
-	    dot /= sum ;
-#endif
 	    //* 類似度が高ければ保存
 	    for( int i=0; i<rank_num; i++ ){
 	      if(dot>max_dot[ i ]){
@@ -408,7 +403,7 @@ void SearchObj::search_part( SearchMode mode ){
 //**********************************************
 //* 順に値が積分された配列からその位置における値を取り出す
 template <typename T>
-T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int xrange, const int yrange, const int zrange ) {
+T SearchObjVOSCH::clipValue( T* ptr, const int x, const int y, const int z, const int xrange, const int yrange, const int zrange ) {
   T result;
   if(z==0){
     if(y==0){
@@ -462,7 +457,7 @@ T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int
 
 //*******************
 //* 結果をファイルに出力
-void SearchObj::writeResult( const char *filename, int box_size ){
+void SearchObjVOSCH::writeResult( const char *filename, int box_size ){
   FILE *fp = fopen(filename,"w");
   int xrange = 0, yrange = 0, zrange = 0;
   for( int r=0; r<rank_num; r++ ){
@@ -481,7 +476,7 @@ void SearchObj::writeResult( const char *filename, int box_size ){
   fclose(fp);
 }
 
-void SearchObj::cleanMax(){
+void SearchObjVOSCH::cleanMax(){
   for( int i=0; i<rank_num; i++ ){
     max_x[ i ] = 0;
     max_y[ i ] = 0;
@@ -494,13 +489,15 @@ void SearchObj::cleanMax(){
 ///    オンライン処理向け    ///
 ////////////////////////////
 
-void SearchObj::setSceneAxis( Matrix _axis ){
+void SearchObjVOSCH::setSceneAxis( Eigen3::MatrixXf _axis ){
   axis_p = _axis;
 }
 
-void SearchObj::setSceneAxis( Matrix _axis, ColumnVector var, int dim ){
-  for( int i=0; i<dim; i++ ){
-    for( int j=0; j<DIM_COLOR_1_3+DIM_COLOR_BIN_1_3; j++ ){
+void SearchObjVOSCH::setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ){
+  const int rows = _axis.rows();
+  const int cols = _axis.cols();
+  for( int i=0; i<rows; i++ ){
+    for( int j=0; j<cols; j++ ){
       const float tmpval = 1/ sqrt( var( i ) );
       _axis( i, j ) = tmpval * _axis( i, j ) ;
     }
@@ -508,7 +505,7 @@ void SearchObj::setSceneAxis( Matrix _axis, ColumnVector var, int dim ){
   axis_p = _axis;
 }
 
-void SearchObj::cleanData(){
+void SearchObjVOSCH::cleanData(){
   x_num = 0;
   y_num = 0;
   z_num = 0;
@@ -526,62 +523,50 @@ void SearchObj::cleanData(){
   nFeatures = NULL;
 }
 
-void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size ){
+void SearchObjVOSCH::setData( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+
+  //* compute - GRSD -
+  std::vector< std::vector<float> > grsd;
+  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  //* compute - ColorCHLAC -
+  std::vector< std::vector<float> > colorCHLAC;
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
+
   //* 分割領域の個数を調べる
-  const int xsize = voxel.Xsize();
-  const int ysize = voxel.Ysize();
-  const int zsize = voxel.Zsize();
-  x_num = xsize/box_size;
-  if(xsize%box_size > 0)   x_num++;
-  y_num = ysize/box_size;
-  if(ysize%box_size > 0)   y_num++;
-  z_num = zsize/box_size;
-  if(zsize%box_size > 0)   z_num++;
+  x_num = subdiv_b_[0];
+  y_num = subdiv_b_[1];
+  z_num = subdiv_b_[2];
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   if( xyz_num < 1 )
     return;
 
   exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new ColumnVector[ xyz_num ];
+  nFeatures = new Eigen3::VectorXf [ xyz_num ];
 
   //*********************************//
-  //* 全ての分割領域からのCCHLAC特徴抽出 *//
+  //* 全ての分割領域からの特徴抽出 *//
   //*********************************//
-      
-  ColumnVector feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
-  ColumnVector feature1;
-  ColumnVector feature2;
-            
-  int sx, sy, sz, gx, gy, gz;
+  int idx = 0;
+  std::vector<float> feature;
+  const int dim_feature = feature_min.size(); // = 137
+  const int lower = 0;
+  const int upper = 1;
   for(int z=0;z<z_num;z++){
     for(int y=0;y<y_num;y++){
       for(int x=0;x<x_num;x++){
-	sx = x*box_size+1;
-	sy = y*box_size+1;
-	sz = z*box_size+1;
-	gx = sx+box_size;
-	gy = sy+box_size;
-	gz = sz+box_size;
-	if(gx>xsize-1) gx = xsize-1;
-	if(gy>ysize-1) gy = ysize-1;
-	if(gz>zsize-1) gz = zsize-1;
-	    
-	//* CCHLAC特徴抽出
-	CCHLAC::extractColorCHLAC( feature1, voxel, sx, sy, sz, gx, gy, gz );
-	CCHLAC::extractColorCHLAC_bin( feature2, voxel_bin, sx, sy, sz, gx, gy, gz );
-	for(int t=0;t<DIM_COLOR_1_3;t++)
-	  feature(t) = feature1(t);
-	for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-	  feature(t+DIM_COLOR_1_3) = feature2(t);
-	exist_voxel_num[ x + y*x_num + z*xy_num ] = ( feature2(0) + feature2(1) ) * 3 + 0.001; // ボクセルの数
-	    
-	nFeatures[ x + y*x_num + z*xy_num ] = axis_p * feature;
-// 	if( whitening ){
-// 	  for(int t=0;t<dim;t++)
-// 	    nFeatures[ x + y*x_num + z*xy_num ](t) /= sqrt( var(t) );
-// 	}
-	    
+	exist_voxel_num[ idx ] = ( colorCHLAC[idx][0] + colorCHLAC[idx][1] ) * 3 + 0.001; // ボクセルの数      
+	feature = conc_vector( grsd[ idx ], colorCHLAC[ idx ] );
+	// histogram normalization
+	for( int t=0; t<dim_feature; t++ ){
+	  if( feature_min[ t ] == feature_max[ t ] ) feature[ t ] = 0;
+	  else if( feature[ t ] == feature_min[ t ] ) feature[ t ] = lower;
+	  else if( feature[ t ] == feature_max[ t ] ) feature[ t ] = upper;
+	  else feature[ t ] = lower + (upper-lower) * ( feature[ t ] - feature_min[ t ] ) / ( feature_max[ t ] - feature_min[ t ] );
+	}
+	Map<VectorXf> vec( &(feature[0]), feature.size() );
+	nFeatures[ idx ] = axis_p * vec;
+
 	//*************************************//
 	//* 積分する（viola-jones積分画像の特徴版） *//
 	//*************************************//
@@ -589,21 +574,21 @@ void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size )
 	if(z==0){
 	  if(y==0){
 	    if(x!=0){ // (1,0,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
+	      exist_voxel_num[ idx ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
+	      nFeatures[ idx ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
 	    }
 	  }
 	  else{
 	    if(x==0){ // (0,1,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
+	      exist_voxel_num[ idx ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
+	      nFeatures[ idx ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
 	    }
 	    else{ // (1,1,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
+	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
+	      nFeatures[ idx ]
 		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
 		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
@@ -613,15 +598,15 @@ void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size )
 	else{
 	  if(y==0){
 	    if(x==0){ // (0,0,1)	
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
+	      exist_voxel_num[ idx ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
+	      nFeatures[ idx ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
 	    }
 	    else {// (1,0,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
+	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
+	      nFeatures[ idx ]
 		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
@@ -629,17 +614,17 @@ void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size )
 	  }
 	  else{
 	    if(x==0){ // (0,1,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
+	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ x + ( y - 1 )*x_num + z *xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
+	      nFeatures[ idx ]
 		+= nFeatures[ x + ( y - 1 )*x_num + z *xy_num ]
 		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  nFeatures[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
 	    }
 	    else{ // (1,1,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
+	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
@@ -647,7 +632,7 @@ void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size )
 		-  exist_voxel_num[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
 		+  exist_voxel_num[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] 
+	      nFeatures[ idx ] 
 		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
 		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
@@ -658,11 +643,22 @@ void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size )
 	    }
 	  }
 	}
+	idx++;
       }
     }
   }
 }
 
-const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
-const int SearchObj::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
-const int SearchObj::maxZrange( int num ){ return zRange( max_mode[ num ] ); }
+const int SearchObjVOSCH::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
+const int SearchObjVOSCH::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
+const int SearchObjVOSCH::maxZrange( int num ){ return zRange( max_mode[ num ] ); }
+
+void SearchObjVOSCH::setNormalizeVal( const char* filename ){ 
+  FILE *fp = fopen( filename, "r" );
+  float val1, val2;
+  while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
+    feature_min.push_back( val1 );
+    feature_max.push_back( val2 );
+  }
+  fclose( fp );    
+}
