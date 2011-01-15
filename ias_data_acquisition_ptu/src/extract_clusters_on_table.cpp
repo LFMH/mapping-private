@@ -235,20 +235,20 @@ private:
       //ROS_INFO ("[%s] Publishing convex hull with: %d data points and area %lf.", getName ().c_str (), (int)cloud_hull.points.size (), area_);
       cloud_pub_.publish (cloud_hull);
       
-      pcl::PointXYZRGB point_min;
-      pcl::PointXYZRGB point_max;
-      pcl::PointXYZ point_center;
-      pcl::getMinMax3D (cloud_hull, point_min, point_max);
-      //Calculate the centroid of the hull
-      point_center.x = (point_max.x + point_min.x)/2;
-      point_center.y = (point_max.y + point_min.y)/2;
-      point_center.z = (point_max.z + point_min.z)/2;
+      // pcl::PointXYZRGB point_min;
+      // pcl::PointXYZRGB point_max;
+      // pcl::PointXYZ point_center;
+      // pcl::getMinMax3D (cloud_hull, point_min, point_max);
+      // //Calculate the centroid of the hull
+      // point_center.x = (point_max.x + point_min.x)/2;
+      // point_center.y = (point_max.y + point_min.y)/2;
+      // point_center.z = (point_max.z + point_min.z)/2;
       
-      tf::Transform transform;
-      transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
-      transform.setRotation( tf::Quaternion(0, 0, 0) );
-      transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
-                                                                cloud_raw.header.frame_id, rot_table_frame_));
+      // tf::Transform transform;
+      // transform.setOrigin( tf::Vector3(point_center.x, point_center.y, point_center.z));
+      // transform.setRotation( tf::Quaternion(0, 0, 0) );
+      // transform_broadcaster_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
+      //                                                           cloud_raw.header.frame_id, rot_table_frame_));
       
       // ---[ Get the objects on top of the table
       pcl::PointIndices cloud_object_indices;
@@ -283,24 +283,25 @@ private:
         char object_name_angle[100];
         for (int i = 0; i < nr_cluster_; i++)
         {
-          sprintf (object_name_angle, "%04d",  i);
+          //sprintf (object_name_angle, "%04d",  i);
           pcl::copyPointCloud (cloud_object, clusters[i], cloud_object_clustered);
-          ROS_INFO("Saving cluster to: %s_%s.pcd", object_name_.c_str(), object_name_angle);
-          pcd_writer_.write (object_name_ + "_" +  object_name_angle + ".pcd", cloud_object_clustered, true);
+          //ROS_INFO("Saving cluster to: %s_%s.pcd", object_name_.c_str(), object_name_angle);
+          //pcd_writer_.write (object_name_ + "_" +  object_name_angle + ".pcd", cloud_object_clustered, true);
+          cloud_objects_pub_.publish (cloud_object_clustered);
         }
+        ROS_INFO("Published %ld clusters.", clusters.size());
       }
       else
       {
         ROS_ERROR("No cluster found with min size %d points", object_cluster_min_size_);
       }
-      cloud_objects_pub_.publish (cloud_object_clustered);
       //std::stringstream ss;
       //ss << (pan_angle_ + 180);
       //    char object_name_angle[100];
 //      sprintf (object_name_angle, "%04d",  );
       //ROS_INFO("Saving cluster to: %s.pcd", object_name_.c_str());
 //      pcd_writer_.write (object_name_ + ".pcd", cloud_object_clustered, true);
-      exit(2);
+      //exit(2);
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -341,7 +342,7 @@ private:
   ros::NodeHandle nh_;  // Do we need to keep it?
   tf::TransformBroadcaster transform_broadcaster_;
   tf::TransformListener tf_listener_;
-  bool save_to_files_;
+  bool save_to_files_, downsample_;
 
   double normal_search_radius_;
   double expected_table_area_;
@@ -365,7 +366,7 @@ private:
 
   // PCL objects
   //pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
-  pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
+  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
   pcl::NormalEstimation<Point, pcl::Normal> n3d_;   //Normal estimation
   // The resultant estimated point cloud normals for \a cloud_filtered_
   pcl::PointCloud<pcl::Normal>::ConstPtr cloud_normals_;
