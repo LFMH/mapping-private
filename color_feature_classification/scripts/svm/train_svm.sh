@@ -35,7 +35,7 @@ echo "Total classes: "$class
 `rospack find libsvm`/build/libsvm-3.0/svm-scale -s $3_train.scale $3_train.svm > $3_train_scaled.svm
 
 # create model
-echo "`rospack find libsvm`/build/libsvm-3.0/svm-train -s 0 -c $cost -g $gamma $3_train_scaled.svm $3_train_scaled.model > $3_train_scaled.output"
+#echo "`rospack find libsvm`/build/libsvm-3.0/svm-train -s 0 -c $cost -g $gamma $3_train_scaled.svm $3_train_scaled.model > $3_train_scaled.output"
 `rospack find libsvm`/build/libsvm-3.0/svm-train -s 0 -c $cost -g $gamma $3_train_scaled.svm $3_train_scaled.model > $3_train_scaled.output
 echo "Output written to: $3_train_scaled.output"
 

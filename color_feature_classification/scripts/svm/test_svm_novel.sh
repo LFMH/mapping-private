@@ -26,11 +26,12 @@ do
 done
 #echo "Total classes: "$class
 
-# scale data
-`rospack find libsvm`/build/libsvm-3.0/svm-scale -r $3_train.scale $3_test_$4.svm > $3_test_$4_scaled.svm
+# scale data and test model
+rm classify.tmp
+echo "`rospack find libsvm`/build/libsvm-3.0/svm-scale -r $3_train.scale $3_test_$4.svm > $3_test_$4_scaled.svm" > classify.tmp
+echo "`rospack find libsvm`/build/libsvm-3.0/svm-predict $3_test_$4_scaled.svm $3_train_scaled.model $3_test_$4_scaled.result"  > classify.tmp
+time bash classify.tmp
 
-# test model
-`rospack find libsvm`/build/libsvm-3.0/svm-predict $3_test_$4_scaled.svm $3_train_scaled.model $3_test_$4_scaled.result
 #echo "Result written to: $3_test_$4_scaled.result"
 #cat $3_test_$4_scaled.result
 #echo "Number of predicted classes: "
