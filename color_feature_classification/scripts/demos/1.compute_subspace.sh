@@ -39,7 +39,7 @@ do
     files=`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g $DATA/pca_result_g/$num
 done
-#
+
 dirNum=`ls $DATA/features_r/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do

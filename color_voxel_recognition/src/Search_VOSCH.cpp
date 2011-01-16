@@ -421,6 +421,8 @@ void SearchObjVOSCH::search_part( SearchMode mode ){
 	    dot = tmpVector.dot( tmpVector );
 	    dot = sqrt( dot );
 	    dot /= sum ;
+	    //std::cout << x << " " << y << " " << z << " : " << dot << std::endl;
+		
 	    //* 類似度が高ければ保存
 	    for( int i=0; i<rank_num; i++ ){
 	      if(dot>max_dot[ i ]){
@@ -571,11 +573,13 @@ void SearchObjVOSCH::setData( int dim, int thR, int thG, int thB, pcl::VoxelGrid
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
   computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
+  writeFeature( "tmp.pcd", colorCHLAC, false );
 
   //* 分割領域の個数を調べる
   x_num = subdiv_b_[0];
   y_num = subdiv_b_[1];
   z_num = subdiv_b_[2];
+  std::cout << x_num << " " << y_num << " " << z_num << std::endl;
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   if( xyz_num < 1 )
@@ -595,7 +599,13 @@ void SearchObjVOSCH::setData( int dim, int thR, int thG, int thB, pcl::VoxelGrid
   for(int z=0;z<z_num;z++){
     for(int y=0;y<y_num;y++){
       for(int x=0;x<x_num;x++){
-	exist_voxel_num[ idx ] = ( colorCHLAC[idx][0] + colorCHLAC[idx][1] ) * 3 + 0.001; // ボクセルの数      
+	exist_voxel_num[ idx ] = ( colorCHLAC[idx][0] + colorCHLAC[idx][1] ) * 2 + 0.001; // ボクセルの数      
+	// if( exist_voxel_num[ idx ]!=0 ){
+	//   std::cout << x << " " << y << " " << z << " " << exist_voxel_num[ idx ] << std::endl;
+	// // for( int t=0; t<117; t++ )
+	// //   std::cout << colorCHLAC[idx][t] << " ";
+	// // std::cout<<std::endl;
+	// }
 	feature = conc_vector( grsd[ idx ], colorCHLAC[ idx ] );
 	// histogram normalization
 	for( int t=0; t<dim_feature; t++ ){

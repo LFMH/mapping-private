@@ -1,7 +1,7 @@
 # Library for detecting objects by ColorCHLAC and subspace method.
 # works with Kinect
 
-# DEMO
+# DEMO 1
 1. connect Kinect and "roslaunch openni_camera openni_kinect.launch" -- terminal 1
 2. "rosrun topic_tools throttle messages /camera/depth/points2 5" -- terminal 2
 3. roscd color_voxel_recognition; cd demos -- terminal 3
@@ -16,3 +16,15 @@
 
      3.3 detect one object
          "./SH/detect_test.sh <object_name> <similarity_threshold>"
+
+
+# DEMO 2 (trained from 63 objects)
+0. roscd color_feature_classification; cd demos
+   set 0.02 for voxel size (color_feature_classification/demos/voxel_size.txt)
+   "bash ../scripts/demos/train_models_all.sh"
+   bash `rospack find color_voxel_recognition`/scripts/copy_param_and_model.sh 
+
+1. connect Kinect and "roslaunch openni_camera openni_kinect.launch" -- terminal 1
+2. "rosrun topic_tools throttle messages /camera/depth/points2 5" -- terminal 2
+3. roscd color_voxel_recognition; cd demos_VOSCH -- terminal 3
+   bash ../scripts/detect_test.sh 10 0 // 0 for debug

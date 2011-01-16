@@ -166,11 +166,13 @@ Eigen3::Vector3i computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, p
   int hist_num = 1;
   float inverse_subdivision_size;
   Eigen3::Vector3i div_b_;
+  Eigen3::Vector3i min_b_;
   Eigen3::Vector3i subdiv_b_;
   Eigen3::Vector3i subdivb_mul_;
   if( subdivision_size > 0 ){
     inverse_subdivision_size = 1.0 / subdivision_size;
     div_b_ = grid.getNrDivisions();
+    min_b_ = grid.getMinBoxCoordinates();
     if( ( div_b_[0] <= offset_x ) || ( div_b_[1] <= offset_y ) || ( div_b_[2] <= offset_z ) ){
       std::cerr << "(In computeGRSD) offset values (" << offset_x << "," << offset_y << "," << offset_z << ") exceed voxel grid size (" << div_b_[0] << "," << div_b_[1] << "," << div_b_[2] << ")."<< std::endl;
       return Eigen3::Vector3i::Zero();
@@ -257,10 +259,13 @@ Eigen3::Vector3i computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, p
     int hist_idx;
     if( hist_num == 1 ) hist_idx = 0;
     else{
-      const int x_mul_y = div_b_[0] * div_b_[1];
-      const int tmp_z = idx / x_mul_y - offset_z;
-      const int tmp_y = ( idx % x_mul_y ) / div_b_[0] - offset_y;
-      const int tmp_x = idx % div_b_[0] - offset_x;
+      const int tmp_x = floor( cloud_downsampled_ptr->points[ idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
+      const int tmp_y = floor( cloud_downsampled_ptr->points[ idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
+      const int tmp_z = floor( cloud_downsampled_ptr->points[ idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;
+      /* const int x_mul_y = div_b_[0] * div_b_[1]; */
+      /* const int tmp_z = idx / x_mul_y - offset_z; */
+      /* const int tmp_y = ( idx % x_mul_y ) / div_b_[0] - offset_y; */
+      /* const int tmp_x = idx % div_b_[0] - offset_x; */
       if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ) continue; // ignore idx smaller than offset.
       Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
       hist_idx = ijk.dot (subdivb_mul_);

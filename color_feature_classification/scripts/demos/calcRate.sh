@@ -17,6 +17,7 @@ do
 	i=`expr $i + 1`
 
                # read 24 test samples' results
+               # read 3 test samples' results
 	for((j=0;j<24;j++))
 	do
 	    i=`expr $i + 1`

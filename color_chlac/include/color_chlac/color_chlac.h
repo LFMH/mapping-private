@@ -113,6 +113,7 @@ namespace pcl
       int offset_y;
       int offset_z;
       Eigen3::Vector3i div_b_;
+      Eigen3::Vector3i min_b_;
       Eigen3::Vector3i subdiv_b_;
       Eigen3::Vector3i subdivb_mul_;
       int color;
@@ -184,6 +185,7 @@ namespace pcl
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_y;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_z;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::div_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::min_b_;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdiv_b_;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdivb_mul_;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color;
