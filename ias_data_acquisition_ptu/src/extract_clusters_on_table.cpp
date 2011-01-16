@@ -114,6 +114,7 @@ public:
     nh_.param("nr_cluster", nr_cluster_, 4);
     nh_.param("downsample", downsample_, true);
     nh_.param("voxel_size", voxel_size_, 0.01);
+    nh_.param("save_to_files", save_to_files_, false);
 
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
@@ -121,8 +122,8 @@ public:
 
     vgrid_.setFilterFieldName ("z");
     vgrid_.setFilterLimits (z_min_limit_, z_max_limit_);
-    if (downsample_)
-      vgrid_.setLeafSize (0.015, 0.015, 0.015);
+    //if (downsample_)
+      //vgrid_.setLeafSize (0.015, 0.015, 0.015);
 
     seg_.setDistanceThreshold (sac_distance_);
     seg_.setMaxIterations (max_iter_);
@@ -285,10 +286,14 @@ private:
       {
         for (int i = 0; i < nr_cluster_; i++)
         {
-          //sprintf (object_name_angle, "%04d",  i);
           pcl::copyPointCloud (cloud_object, clusters[i], cloud_object_clustered);
-          //ROS_INFO("Saving cluster to: %s_%s.pcd", object_name_.c_str(), object_name_angle);
-          //pcd_writer_.write (object_name_ + "_" +  object_name_angle + ".pcd", cloud_object_clustered, true);
+          char object_name_angle[100];
+          if (save_to_files_)
+          {
+            sprintf (object_name_angle, "%04d",  i);
+            ROS_INFO("Saving cluster to: %s_%s.pcd", object_name_.c_str(), object_name_angle);
+            pcd_writer_.write (object_name_ + "_" +  object_name_angle + ".pcd", cloud_object_clustered, true);
+          }
           cloud_objects_pub_.publish (cloud_object_clustered);
         }
         ROS_INFO("Published %ld clusters.", clusters.size());
@@ -303,7 +308,10 @@ private:
 //      sprintf (object_name_angle, "%04d",  );
       //ROS_INFO("Saving cluster to: %s.pcd", object_name_.c_str());
 //      pcd_writer_.write (object_name_ + ".pcd", cloud_object_clustered, true);
-      //exit(2);
+      
+      //want to save only once
+      if (save_to_files_)
+        exit(2);
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,8 +375,8 @@ private:
   pcl_ros::Publisher<Point> cloud_objects_pub_;
 
   // PCL objects
-  //pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
-  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
+  pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
+//  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
   pcl::NormalEstimation<Point, pcl::Normal> n3d_;   //Normal estimation
   // The resultant estimated point cloud normals for \a cloud_filtered_
   pcl::PointCloud<pcl::Normal>::ConstPtr cloud_normals_;
