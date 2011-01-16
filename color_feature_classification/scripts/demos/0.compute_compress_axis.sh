@@ -9,12 +9,12 @@ norm_flag_g="-norm $DATA/bin_normalization/minmax_g.txt"
 norm_flag_r="-norm $DATA/bin_normalization/minmax_r.txt"
 
 # compute a subspace
-files=`find $DATA/features_c/* -type f -iname "*.pcd" | sort -d`
-rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_c pca_result_c/compress_axis
-files=`find $DATA/features_d/* -type f -iname "*.pcd" | sort -d`
-rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_d pca_result_d/compress_axis
-files=`find $DATA/features_g/* -type f -iname "*.pcd" | sort -d`
-rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g pca_result_g/compress_axis
+# files=`find $DATA/features_c/* -type f -iname "*.pcd" | sort -d`
+# rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_c pca_result_c/compress_axis
+# files=`find $DATA/features_d/* -type f -iname "*.pcd" | sort -d`
+# rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_d pca_result_d/compress_axis
+# files=`find $DATA/features_g/* -type f -iname "*.pcd" | sort -d`
+# rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g pca_result_g/compress_axis
 files=`find $DATA/features_r/* -type f -iname "*.pcd" | sort -d`
 rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_r pca_result_r/compress_axis
 

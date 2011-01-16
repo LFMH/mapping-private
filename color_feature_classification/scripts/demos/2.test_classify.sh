@@ -19,7 +19,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j c s -sub 3 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
+	rosrun color_feature_classification test_classify_from_file $j c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
     done
 done
 #
@@ -34,7 +34,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j d s -sub 3 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
+	rosrun color_feature_classification test_classify_from_file $j d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
     done
 done
 #
@@ -49,7 +49,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j g s -sub 3 $norm_flag_g
+	rosrun color_feature_classification test_classify_from_file $j g s -sub 15 $norm_flag_g
     done
 done
 #
@@ -64,7 +64,7 @@ do
     echo "---------------------------------------------------------"
     for j in `find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
     do
-	rosrun color_feature_classification test_classify_from_file $j r s -sub 3 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
+	rosrun color_feature_classification test_classify_from_file $j r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
     done
 done
 

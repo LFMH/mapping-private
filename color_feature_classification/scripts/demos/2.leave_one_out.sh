@@ -1,6 +1,12 @@
 #!/bin/bash
 DATA=`rospack find color_feature_classification`/demos
 
+# NOTE: comment-out the followings if you don't use normalization
+norm_flag_c="-norm $DATA/bin_normalization/minmax_c.txt"
+norm_flag_d="-norm $DATA/bin_normalization/minmax_d.txt"
+norm_flag_g="-norm $DATA/bin_normalization/minmax_g.txt"
+norm_flag_r="-norm $DATA/bin_normalization/minmax_r.txt"
+
 echo "----------------------------------------------------------"
 echo "colorCHLAC - rotation variant - (981)"
 echo "----------------------------------------------------------"
@@ -29,8 +35,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	mv -f $DATA/pca_result_c/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_c/compress_axis $DATA/pca_result_c/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 5 -dim 50 -comp $DATA/pca_result_c/compress_axis
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c 
 	mv -f hogehoge $DATA/pca_result_c/$num
     done
 done
@@ -63,8 +69,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	mv -f $DATA/pca_result_d/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_d/compress_axis $DATA/pca_result_d/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 5 -dim 50 -comp $DATA/pca_result_d/compress_axis
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
 	mv -f hogehoge $DATA/pca_result_d/$num
     done
 done
@@ -97,8 +103,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	mv -f $DATA/pca_result_g/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models $DATA/pca_result_g/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} g s -sub 5
+	rosrun color_feature_classification computeSubspace_from_file $train_models $norm_flag_g $DATA/pca_result_g/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} g s -sub 15 $norm_flag_g
 	mv -f hogehoge $DATA/pca_result_g/$num
     done
 done
@@ -131,8 +137,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	mv -f $DATA/pca_result_r/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_r/compress_axis $DATA/pca_result_r/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 5 -dim 50 -comp $DATA/pca_result_r/compress_axis
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA/pca_result_r/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
 	mv -f hogehoge $DATA/pca_result_r/$num
     done
 done
