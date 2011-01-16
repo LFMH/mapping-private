@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATA=`pwd`
-files=`find $DATA -type f \( -iname "*.pcd" \)`
+files=`find $DATA -type f \( -iname "$1*.pcd" \)`
 radii=`echo _radii.pcd`
 
 
