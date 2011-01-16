@@ -188,12 +188,12 @@ public:
 	  //marker_.pose.position.y = (y_max+y_min)/2 + search_obj.maxY( q ) * region_size;
 	  //marker_.pose.position.z = (z_max+z_min)/2 + search_obj.maxZ( q ) * region_size;
 
-	  // marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size/2 + x_min;
-	  // marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size/2 + y_min;
-	  // marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size/2 + z_min;
-	  marker_.pose.position.x = 17 * region_size + sliding_box_size/2 + x_min;
-	  marker_.pose.position.y = 13 * region_size + sliding_box_size/2 + y_min;
-	  marker_.pose.position.z = 0 * region_size + sliding_box_size/2 + z_min;
+	  marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size/2 + x_min;
+	  marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size/2 + y_min;
+	  marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size/2 + z_min;
+	  // marker_.pose.position.x = 17 * region_size + sliding_box_size/2 + x_min;
+	  // marker_.pose.position.y = 13 * region_size + sliding_box_size/2 + y_min;
+	  // marker_.pose.position.z = 0 * region_size + sliding_box_size/2 + z_min;
 
 	  // marker_.pose.position.x = search_obj.maxX( q ) * region_size - 1.45 + sliding_box_size/2;
 	  // marker_.pose.position.y = search_obj.maxY( q ) * region_size -1.1 + sliding_box_size/2;
