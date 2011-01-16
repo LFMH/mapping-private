@@ -5,7 +5,7 @@
 DIR=`rospack find color_voxel_recognition`/demos_VOSCH
 
 rank_num=1
-exist_voxel_num_threshold=10
+exist_voxel_num_threshold=80
 r_dim=5
 pca=$(echo $DIR/models/$(printf "%03d" $1))
 detection_box_size=0.20 # unit: meter

@@ -160,6 +160,7 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGri
     offset_y = offset_y_;
     offset_z = offset_z_;
     div_b_ = grid.getNrDivisions();
+    min_b_ = grid.getMinBoxCoordinates();
     if( ( div_b_[0] <= offset_x ) || ( div_b_[1] <= offset_y ) || ( div_b_[2] <= offset_z ) ){
       std::cerr << "(In setVoxelFilter) offset values (" << offset_x << "," << offset_y << "," << offset_z << ") exceed voxel grid size (" << div_b_[0] << "," << div_b_[1] << "," << div_b_[2] << ")."<< std::endl;
       return false;
@@ -1449,14 +1450,26 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl:
   int hist_idx;
   if( hist_num == 1 ) hist_idx = 0;
   else{
-    const int x_mul_y = div_b_[0] * div_b_[1];
-    const int tmp_z = center_idx / x_mul_y - offset_z;
-    const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0] - offset_y;
-    const int tmp_x = center_idx % div_b_[0] - offset_x;
-    if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ) return; // ignore idx smaller than offset.
-    
+    const float voxel_size = 0.01; // debug
+    const int tmp_x = floor( (*surface_).points[ center_idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
+    const int tmp_y = floor( (*surface_).points[ center_idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
+    const int tmp_z = floor( (*surface_).points[ center_idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;
+
+    // const int x_mul_y = div_b_[0] * div_b_[1];
+    // const int tmp_z = center_idx / x_mul_y - offset_z;
+    // const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0] - offset_y;
+    // const int tmp_x = center_idx % div_b_[0] - offset_x;
+    if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ){
+      return; // ignore idx smaller than offset.
+    }
+    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << std::endl;
+    // const int debug_val = tmp_x+tmp_y*div_b_[0]+tmp_z*div_b_[0]*div_b_[1];
+    // if( debug_val != center_idx )
+    //   std::cout << debug_val << " " << center_idx << std::endl;
+
     Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
     hist_idx = ijk.dot (subdivb_mul_);
+    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << " ||| " << ijk[ 0 ] << " " << ijk[ 1 ] << " " << ijk[ 2 ] << " : " << hist_idx << std::endl;
   }
 
   color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));

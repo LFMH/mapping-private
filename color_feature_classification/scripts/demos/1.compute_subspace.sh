@@ -10,36 +10,36 @@ norm_flag_g="-norm $DATA/bin_normalization/minmax_g.txt"
 norm_flag_r="-norm $DATA/bin_normalization/minmax_r.txt"
 
 # compute a subspace
-# dirNum=`ls $DATA/features_c/* -d | wc -l`
-# for((i=0;i<$dirNum;i++))
-# do
-#     num=$(printf "%03d" $i)
-#     dir_name=$(printf "obj%03d" $i)
-#     echo $dir_name
-#     files=`find $DATA/features_c/$dir_name -type f -iname "*.pcd" | sort -d`
-#     rosrun color_feature_classification computeSubspace_from_file $files -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num
-# done
-# #
-# dirNum=`ls $DATA/features_d/* -d | wc -l`
-# for((i=0;i<$dirNum;i++))
-# do
-#     num=$(printf "%03d" $i)
-#     dir_name=$(printf "obj%03d" $i)
-#     echo $dir_name
-#     files=`find $DATA/features_d/$dir_name -type f -iname "*.pcd" | sort -d`
-#     rosrun color_feature_classification computeSubspace_from_file $files -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num
-# done
-# #
-# dirNum=`ls $DATA/features_g/* -d | wc -l`
-# for((i=0;i<$dirNum;i++))
-# do
-#     num=$(printf "%03d" $i)
-#     dir_name=$(printf "obj%03d" $i)
-#     echo $dir_name
-#     files=`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`
-#     rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g $DATA/pca_result_g/$num
-# done
-# #
+dirNum=`ls $DATA/features_c/* -d | wc -l`
+for((i=0;i<$dirNum;i++))
+do
+    num=$(printf "%03d" $i)
+    dir_name=$(printf "obj%03d" $i)
+    echo $dir_name
+    files=`find $DATA/features_c/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num
+done
+#
+dirNum=`ls $DATA/features_d/* -d | wc -l`
+for((i=0;i<$dirNum;i++))
+do
+    num=$(printf "%03d" $i)
+    dir_name=$(printf "obj%03d" $i)
+    echo $dir_name
+    files=`find $DATA/features_d/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num
+done
+#
+dirNum=`ls $DATA/features_g/* -d | wc -l`
+for((i=0;i<$dirNum;i++))
+do
+    num=$(printf "%03d" $i)
+    dir_name=$(printf "obj%03d" $i)
+    echo $dir_name
+    files=`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`
+    rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g $DATA/pca_result_g/$num
+done
+
 dirNum=`ls $DATA/features_r/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do

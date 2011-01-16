@@ -35,7 +35,7 @@ float DISTANCE_TH = 1.0;
 
 //************************
 //* その他のグローバル変数など
-Voxel voxel;
+//Voxel voxel;
 
 SearchObjVOSCH search_obj;
 int color_threshold_r, color_threshold_g, color_threshold_b;
@@ -61,8 +61,8 @@ void limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &outpu
   for( int i=0; i<v_num; i++ ){
     if( input_cloud.points[ i ].z < dis_th ){
       output_cloud.points[ idx ] = input_cloud.points[ i ];
-      output_cloud.points[ idx ].x = - input_cloud.points[ i ].x; // inverted.
-      output_cloud.points[ idx ].y = - input_cloud.points[ i ].y; // inverted.
+      //output_cloud.points[ idx ].x = - input_cloud.points[ i ].x; // inverted.
+      //output_cloud.points[ idx ].y = - input_cloud.points[ i ].y; // inverted.
       idx++;
     }
   }
@@ -106,6 +106,20 @@ public:
       pcl::fromROSMsg (*cloud, cloud_xyzrgb_);
       //cout << "  fromROSMsg done." << endl;
 
+      float x_min = 10000000, y_min = 10000000, z_min = 10000000;
+      float x_max = -10000000, y_max = -10000000, z_max = -10000000;
+      int pnum = cloud_xyzrgb_.points.size();
+      for( int p=0; p<pnum; p++ ){
+      	if( cloud_xyzrgb_.points[ p ].x < x_min ) x_min = cloud_xyzrgb_.points[ p ].x;
+      	if( cloud_xyzrgb_.points[ p ].y < y_min ) y_min = cloud_xyzrgb_.points[ p ].y;
+      	if( cloud_xyzrgb_.points[ p ].z < z_min ) z_min = cloud_xyzrgb_.points[ p ].z;
+      	if( cloud_xyzrgb_.points[ p ].x > x_max ) x_max = cloud_xyzrgb_.points[ p ].x;
+      	if( cloud_xyzrgb_.points[ p ].y > y_max ) y_max = cloud_xyzrgb_.points[ p ].y;
+      	if( cloud_xyzrgb_.points[ p ].z > z_max ) z_max = cloud_xyzrgb_.points[ p ].z;
+      }
+      cout << x_min << " " << y_min << " " << z_min << endl;
+      cout << x_max << " " << y_max << " " << z_max << endl;
+
       //* limit distance
       //* Note that x and y values are inverted.
       if( relative_mode ){
@@ -121,19 +135,25 @@ public:
 
       //****************************************
       //* compute normals
-      computeNormal( cloud_xyzrgb, cloud_normal );
+      computeNormal( cloud_xyzrgb_, cloud_normal );
       
       //* voxelize
       getVoxelGrid( grid, cloud_normal, cloud_downsampled, voxel_size );
-      voxel.points2voxel( cloud_downsampled, SIMPLE_REVERSE );
+      //voxel.points2voxel( cloud_downsampled, SIMPLE_REVERSE );
     
-      int pnum = cloud_downsampled.points.size();
-      float x_min = 10000000, y_min = 10000000, z_min = 10000000;
+      pnum = cloud_downsampled.points.size();
       for( int p=0; p<pnum; p++ ){
       	if( cloud_downsampled.points[ p ].x < x_min ) x_min = cloud_downsampled.points[ p ].x;
       	if( cloud_downsampled.points[ p ].y < y_min ) y_min = cloud_downsampled.points[ p ].y;
       	if( cloud_downsampled.points[ p ].z < z_min ) z_min = cloud_downsampled.points[ p ].z;
+      	if( cloud_downsampled.points[ p ].x > x_max ) x_max = cloud_downsampled.points[ p ].x;
+      	if( cloud_downsampled.points[ p ].y > y_max ) y_max = cloud_downsampled.points[ p ].y;
+      	if( cloud_downsampled.points[ p ].z > z_max ) z_max = cloud_downsampled.points[ p ].z;
       }
+      cout << x_min << " " << y_min << " " << z_min << endl;
+      cout << x_max << " " << y_max << " " << z_max << endl;
+      cout << grid.getMinBoxCoordinates() << endl;
+
 
       //****************************************
       //* 物体検出
@@ -141,6 +161,7 @@ public:
       search_obj.setData( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_normal, cloud_downsampled, voxel_size, box_size, false );
       if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
 	search_obj.search();
+
       //* 物体検出 ここまで
       //****************************************
       cout << "  search done." << endl;
@@ -151,19 +172,34 @@ public:
       cout << "Time for all processes: "<< t2 - t1 << endl;
 
       for( int q=0; q<rank_num; q++ ){
-	if( search_obj.maxDot( q ) < detect_th ) break;
-	if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
-	  //* publish marker
-	  visualization_msgs::Marker marker_;
-	  marker_.header.frame_id = "base_link";
-	  marker_.header.stamp = ros::Time::now();
-	  marker_.ns = "BoxEstimation";
-	  marker_.id = 0;
-	  marker_.type = visualization_msgs::Marker::CUBE;
-	  marker_.action = visualization_msgs::Marker::ADD;
-	  marker_.pose.position.x = x_min + search_obj.maxX( q ) * region_size;
-	  marker_.pose.position.y = y_min + search_obj.maxY( q ) * region_size;
-	  marker_.pose.position.z = z_min + search_obj.maxZ( q ) * region_size;
+	cout << search_obj.maxX( q ) << " " << search_obj.maxY( q ) << " " << search_obj.maxZ( q ) << endl;
+      	cout << "dot " << search_obj.maxDot( q ) << endl;
+      	if( search_obj.maxDot( q ) < detect_th ) break;
+      	//if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
+      	  //* publish marker
+      	  visualization_msgs::Marker marker_;
+      	  marker_.header.frame_id = "base_link";
+      	  marker_.header.stamp = ros::Time::now();
+      	  marker_.ns = "BoxEstimation";
+      	  marker_.id = 0;
+      	  marker_.type = visualization_msgs::Marker::CUBE;
+      	  marker_.action = visualization_msgs::Marker::ADD;
+	  //marker_.pose.position.x = (x_max+x_min)/2 + search_obj.maxX( q ) * region_size;
+	  //marker_.pose.position.y = (y_max+y_min)/2 + search_obj.maxY( q ) * region_size;
+	  //marker_.pose.position.z = (z_max+z_min)/2 + search_obj.maxZ( q ) * region_size;
+
+	  // marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size/2 + x_min;
+	  // marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size/2 + y_min;
+	  // marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size/2 + z_min;
+	  marker_.pose.position.x = 17 * region_size + sliding_box_size/2 + x_min;
+	  marker_.pose.position.y = 13 * region_size + sliding_box_size/2 + y_min;
+	  marker_.pose.position.z = 0 * region_size + sliding_box_size/2 + z_min;
+
+	  // marker_.pose.position.x = search_obj.maxX( q ) * region_size - 1.45 + sliding_box_size/2;
+	  // marker_.pose.position.y = search_obj.maxY( q ) * region_size -1.1 + sliding_box_size/2;
+	  // //marker_.pose.position.y = -search_obj.maxY( q ) * region_size +0.73 + sliding_box_size/2;
+	  // //marker_.pose.position.y = search_obj.maxY( q ) * region_size - 1.1 + sliding_box_size/2;
+	  // marker_.pose.position.z = search_obj.maxZ( q ) * region_size +0.81 + sliding_box_size/2;
 	  marker_.pose.orientation.x = 0;
 	  marker_.pose.orientation.y = 0;
 	  marker_.pose.orientation.z = 0;
@@ -171,14 +207,14 @@ public:
 	  marker_.scale.x = sliding_box_size;
 	  marker_.scale.y = sliding_box_size;
 	  marker_.scale.z = sliding_box_size;
-	  marker_.color.a = 0.1;
-	  marker_.color.r = 0.0;
-	  marker_.color.g = 1.0;
-	  marker_.color.b = 0.0;
-	  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
-	  marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
-	  marker_pub_.publish (marker_);    
-	}
+      	  marker_.color.a = 0.5;
+      	  marker_.color.r = 0.0;
+      	  marker_.color.g = 1.0;
+      	  marker_.color.b = 0.0;
+      	  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
+      	  marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
+      	  marker_pub_.publish (marker_);    
+      	  //}
       }  
   }
 
@@ -198,7 +234,7 @@ int main(int argc, char* argv[]) {
   ros::init (argc, argv, "detectObj", ros::init_options::AnonymousName);
 
   voxel_size = Param::readVoxelSize();  //* ボクセルの一辺の長さ（mm）の読み込み
-  voxel.setVoxelSize( voxel_size );
+  //voxel.setVoxelSize( voxel_size );
 
   detect_th = atof( argv[8] );
   rank_num = atoi( argv[1] );
