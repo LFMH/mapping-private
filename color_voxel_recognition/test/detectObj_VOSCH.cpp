@@ -1,4 +1,5 @@
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -87,6 +88,7 @@ public:
     string cloud_topic_;
     pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
     ros::Publisher marker_pub_;
+    ros::Publisher marker_array_pub_;
   //***************
   //* コンストラクタ
   ViewAndDetect() :
@@ -170,52 +172,60 @@ public:
       // 	v_state = DISP;
       t2 = my_clock();
       cout << "Time for all processes: "<< t2 - t1 << endl;
-
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
+      marker_array_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
+      visualization_msgs::MarkerArray marker_array_msg_;
       for( int q=0; q<rank_num; q++ ){
 	cout << search_obj.maxX( q ) << " " << search_obj.maxY( q ) << " " << search_obj.maxZ( q ) << endl;
-      	cout << "dot " << search_obj.maxDot( q ) << endl;
-      	if( search_obj.maxDot( q ) < detect_th ) break;
-      	//if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
-      	  //* publish marker
-      	  visualization_msgs::Marker marker_;
-      	  marker_.header.frame_id = "base_link";
-      	  marker_.header.stamp = ros::Time::now();
-      	  marker_.ns = "BoxEstimation";
-      	  marker_.id = 0;
-      	  marker_.type = visualization_msgs::Marker::CUBE;
-      	  marker_.action = visualization_msgs::Marker::ADD;
-	  //marker_.pose.position.x = (x_max+x_min)/2 + search_obj.maxX( q ) * region_size;
-	  //marker_.pose.position.y = (y_max+y_min)/2 + search_obj.maxY( q ) * region_size;
-	  //marker_.pose.position.z = (z_max+z_min)/2 + search_obj.maxZ( q ) * region_size;
-
-	  marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size/2 + x_min;
-	  marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size/2 + y_min;
-	  marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size/2 + z_min;
-	  // marker_.pose.position.x = 17 * region_size + sliding_box_size/2 + x_min;
-	  // marker_.pose.position.y = 13 * region_size + sliding_box_size/2 + y_min;
-	  // marker_.pose.position.z = 0 * region_size + sliding_box_size/2 + z_min;
-
-	  // marker_.pose.position.x = search_obj.maxX( q ) * region_size - 1.45 + sliding_box_size/2;
-	  // marker_.pose.position.y = search_obj.maxY( q ) * region_size -1.1 + sliding_box_size/2;
-	  // //marker_.pose.position.y = -search_obj.maxY( q ) * region_size +0.73 + sliding_box_size/2;
-	  // //marker_.pose.position.y = search_obj.maxY( q ) * region_size - 1.1 + sliding_box_size/2;
-	  // marker_.pose.position.z = search_obj.maxZ( q ) * region_size +0.81 + sliding_box_size/2;
-	  marker_.pose.orientation.x = 0;
-	  marker_.pose.orientation.y = 0;
-	  marker_.pose.orientation.z = 0;
-	  marker_.pose.orientation.w = 1;
-	  marker_.scale.x = sliding_box_size;
-	  marker_.scale.y = sliding_box_size;
-	  marker_.scale.z = sliding_box_size;
-      	  marker_.color.a = 0.5;
-      	  marker_.color.r = 0.0;
-      	  marker_.color.g = 1.0;
-      	  marker_.color.b = 0.0;
-      	  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << std::endl;
-      	  marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
-      	  marker_pub_.publish (marker_);    
-      	  //}
-      }  
+  cout << "dot " << search_obj.maxDot( q ) << endl;
+  if( search_obj.maxDot( q ) < detect_th ) break;
+  //if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
+  //* publish marker
+  visualization_msgs::Marker marker_;
+  //marker_.header.frame_id = "base_link";
+  marker_.header.frame_id = "openni_depth_optical_frame";
+  marker_.header.stamp = ros::Time::now();
+  marker_.ns = "BoxEstimation";
+  marker_.id = q;
+  marker_.type = visualization_msgs::Marker::CUBE;
+  marker_.action = visualization_msgs::Marker::ADD;
+  //marker_.pose.position.x = (x_max+x_min)/2 + search_obj.maxX( q ) * region_size;
+  //marker_.pose.position.y = (y_max+y_min)/2 + search_obj.maxY( q ) * region_size;
+  //marker_.pose.position.z = (z_max+z_min)/2 + search_obj.maxZ( q ) * region_size;
+  
+  marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size/2 + x_min;
+  marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size/2 + y_min;
+  marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size/2 + z_min;
+  // marker_.pose.position.x = 17 * region_size + sliding_box_size/2 + x_min;
+  // marker_.pose.position.y = 13 * region_size + sliding_box_size/2 + y_min;
+  // marker_.pose.position.z = 0 * region_size + sliding_box_size/2 + z_min;
+  
+  // marker_.pose.position.x = search_obj.maxX( q ) * region_size - 1.45 + sliding_box_size/2;
+  // marker_.pose.position.y = search_obj.maxY( q ) * region_size -1.1 + sliding_box_size/2;
+  // //marker_.pose.position.y = -search_obj.maxY( q ) * region_size +0.73 + sliding_box_size/2;
+  // //marker_.pose.position.y = search_obj.maxY( q ) * region_size - 1.1 + sliding_box_size/2;
+  // marker_.pose.position.z = search_obj.maxZ( q ) * region_size +0.81 + sliding_box_size/2;
+  marker_.pose.orientation.x = 0;
+  marker_.pose.orientation.y = 0;
+  marker_.pose.orientation.z = 0;
+  marker_.pose.orientation.w = 1;
+  marker_.scale.x = sliding_box_size;
+  marker_.scale.y = sliding_box_size;
+  marker_.scale.z = sliding_box_size;
+  marker_.color.a = 1.0;
+  marker_.color.r = 0.0;
+  marker_.color.g = 1.0;
+  marker_.color.b = 0.0;
+  marker_.lifetime = ros::Duration();
+  std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << " POSITION: " 
+            << marker_.pose.position.x << " " << marker_.pose.position.y << " " 
+            << marker_.pose.position.z << std::endl;
+  //marker_pub_.publish (marker_);    
+  //}
+  marker_array_msg_.markers.push_back(marker_);
+      }
+      std::cerr << "MARKER ARRAY published with size: " << marker_array_msg_.markers.size() << std::endl; 
+      marker_array_pub_.publish(marker_array_msg_);
   }
 
   void loop(){
