@@ -43,8 +43,8 @@ int main( int argc, char** argv ){
 #ifdef DIVID_TEST
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
-  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
+  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* write
   writeFeature( "test_colorCHLAC_rand.pcd", colorCHLAC );
@@ -53,8 +53,8 @@ int main( int argc, char** argv ){
 #else
   //* compute - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
-  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
+  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 
   //* write
   writeFeature( "test_colorCHLAC_rand.pcd", colorCHLAC );

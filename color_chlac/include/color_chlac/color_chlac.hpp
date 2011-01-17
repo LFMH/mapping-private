@@ -150,9 +150,10 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_b ( int val )
 }
 
 template <typename PointT, typename PointOutT> inline bool
-pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0 )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0, const float voxel_size_ = 0.01 )
 { 
   grid = grid_;
+  voxel_size = voxel_size_;
 
   if( subdivision_size_ > 0 ){
     inverse_subdivision_size = 1.0 / subdivision_size_;
@@ -1450,7 +1451,6 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl:
   int hist_idx;
   if( hist_num == 1 ) hist_idx = 0;
   else{
-    const float voxel_size = 0.01; // debug
     const int tmp_x = floor( (*surface_).points[ center_idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
     const int tmp_y = floor( (*surface_).points[ center_idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
     const int tmp_z = floor( (*surface_).points[ center_idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;

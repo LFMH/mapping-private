@@ -151,7 +151,7 @@ int main( int argc, char** argv ){
     getVoxelGrid( grid, cloud_object_cluster, cloud_downsampled, voxel_size );
     
     //* compute - ColorCHLAC -
-    computeColorCHLAC( grid, cloud_downsampled, feature, thR, thG, thB );
+    computeColorCHLAC( grid, cloud_downsampled, feature, thR, thG, thB, voxel_size );
   }
   else if( ( feature_type == 'g' ) || ( feature_type == 'd' ) || ( feature_type == 'r' ) ){
     //* compute normals
@@ -173,9 +173,9 @@ int main( int argc, char** argv ){
       //* compute - ColorCHLAC -
       std::vector< float > colorCHLAC;
       if( feature_type == 'd' )
-	computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
+	computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size );
       else
-	computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB );
+	computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size );
       feature = conc_vector( grsd, colorCHLAC );
     }
   }

@@ -35,7 +35,7 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
       for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	  std::vector< std::vector<float> > colorCHLAC;
-	  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 	  const int hist_num = colorCHLAC.size(); // number of subdivisions
 	  
 	  for( int h=0; h<hist_num; h++ )
@@ -72,9 +72,9 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
 	    //* compute - ColorCHLAC
 	    std::vector< std::vector<float> > colorCHLAC;
 	    if( feature_type == 'r' )
-	      computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	      computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 	    else
-	      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	      computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 
 	    for( int h=0; h<hist_num; h++ )
 	      feature.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
@@ -113,7 +113,7 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 	    for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
 		//* compute features
-		computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );	      
+		computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );	      
 		const int hist_num = colorCHLAC.size();
 	      
 		for( int h=0; h<hist_num; h++ ){
@@ -228,9 +228,9 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 		else{ // feature_type == 'r' or 'd'
 		  //* compute - ColorCHLAC
 		  if( feature_type == 'r' )
-		    computeColorCHLAC_RI( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+		    computeColorCHLAC_RI( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 		  else
-		    computeColorCHLAC( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+		    computeColorCHLAC( grid_normal, cloud_downsampled_normal, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 		  
 		  for( int h=0; h<hist_num; h++ )
 		    feature.push_back ( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );

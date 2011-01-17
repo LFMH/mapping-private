@@ -49,14 +49,14 @@ namespace pcl
       
       inline void setColorThreshold ( int thR, int thG, int thB ){ color_thR = thR; color_thG = thG; color_thB = thB; }
 
-      inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_ );
+      inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_, const float voxel_size_ );
 
       Eigen3::Vector3i getSubdivNum(){ return subdiv_b_; };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
       //ColorCHLAC_RI_Estimation () : voxel_size (0)
-      ColorCHLAC_RI_Estimation () : hist_num (1), color_thR (-1), color_thG (-1), color_thB (-1)
+      ColorCHLAC_RI_Estimation () : voxel_size(0), hist_num (1), color_thR (-1), color_thG (-1), color_thB (-1)
       {
         feature_name_ = "ColorCHLAC_RI_Estimation";
 	relative_coordinates.resize(3, 13);
@@ -105,6 +105,7 @@ namespace pcl
       void computeFeature (PointCloudOut &output);
 
     protected:
+      float voxel_size;
       pcl::VoxelGrid<PointT> grid;
       Eigen3::MatrixXi relative_coordinates;
       int hist_num;
@@ -177,6 +178,7 @@ namespace pcl
       void computeFeature (PointCloudOut &output);
 
     protected:
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::voxel_size;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::grid;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::relative_coordinates;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::hist_num;

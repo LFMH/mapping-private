@@ -35,8 +35,8 @@ int main( int argc, char** argv ){
 
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* concatenate
   std::vector< std::vector<float> > feature;
@@ -64,8 +64,8 @@ int main( int argc, char** argv ){
 
   //* compute - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 #ifdef VERBOSE
   //  ROS_INFO("VOSCH %10f", (my_clock()-t1)/input_cloud.points.size());
   ROS_INFO("VOSCH %ld", input_cloud.points.size());

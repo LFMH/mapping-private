@@ -51,8 +51,8 @@ int main( int argc, char** argv ){
 
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, 10 );
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* concatenate
   std::vector< std::vector<float> > feature;
@@ -76,8 +76,8 @@ int main( int argc, char** argv ){
 
   //* compute - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127 );
+  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 
   //* write
   writeFeature( "test_GRSD_CCHLAC_rand.pcd", conc_vector( grsd, colorCHLAC ) );

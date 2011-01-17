@@ -572,7 +572,7 @@ void SearchObjVOSCH::setData( int dim, int thR, int thG, int thB, pcl::VoxelGrid
   Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, subdivision_size );
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
   writeFeature( "tmp.pcd", colorCHLAC, false );
 
   //* 分割領域の個数を調べる
