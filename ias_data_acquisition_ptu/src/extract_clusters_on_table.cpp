@@ -109,12 +109,13 @@ public:
     nh_.param("k", k_, 10);
     nh_.param("base_link_head_tilt_link_angle", base_link_head_tilt_link_angle_, 0.8);
     nh_.param("min_table_inliers", min_table_inliers_, 100);
-    nh_.param("cluster_min_height", cluster_min_height_, 0.01);
+    nh_.param("cluster_min_height", cluster_min_height_, 0.02);
     nh_.param("cluster_max_height", cluster_max_height_, 0.4);
     nh_.param("nr_cluster", nr_cluster_, 4);
     nh_.param("downsample", downsample_, true);
     nh_.param("voxel_size", voxel_size_, 0.01);
     nh_.param("save_to_files", save_to_files_, false);
+    nh_.param("point_cloud_topic", point_cloud_topic, std::string("/camera/depth/points2"));
 
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
@@ -154,7 +155,7 @@ public:
   void 
   init (double tolerance, std::string object_name)  // tolerance: how close to (0,0) is good enough?
   {
-    std::string point_cloud_topic = nh_.resolveName ("/camera/depth/points2");
+    ROS_INFO ("ExtractCluster:] Listening for incoming data on topic %s", nh_.resolveName (point_cloud_topic).c_str ());
     point_cloud_sub_ = nh_.subscribe (point_cloud_topic, 1,  &ExtractClusters::ptuFinderCallback, this);
     object_name_ = object_name;
   }
@@ -357,7 +358,7 @@ private:
   double normal_search_radius_;
   double voxel_size_;
 
-  std::string rot_table_frame_, object_name_;
+  std::string rot_table_frame_, object_name_, point_cloud_topic;
   double object_cluster_tolerance_,  cluster_min_height_, cluster_max_height_;
   int object_cluster_min_size_, object_cluster_max_size_;
 
