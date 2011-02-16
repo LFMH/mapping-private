@@ -1,0 +1,29 @@
+
+<package>
+
+  <description brief="hough_segmentation">
+    
+    WIP : Segmentation for clouds using RANSAC-based model fitting and Hough-based voting 
+    
+  </description>
+
+  <author>Lucian Cosmin Goron</author>
+
+  <license>BSD</license>
+
+  <review status="unreviewed" notes=""/>
+
+  <url>http://ros.org/wiki/hough_segmentation</url>
+
+  <depend package="tf"/>
+  <depend package="pcl"/>
+  <depend package="roscpp"/>
+  <depend package="terminal_tools"/>
+  <depend package="pcl_visualization"/>
+
+  <!--<export>-->
+  <!--<cpp cflags="-I${prefix}/include -I${prefix}/src"/>-->
+  <!--</export>-->
+
+</package>
+

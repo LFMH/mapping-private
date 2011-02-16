@@ -1,0 +1,11 @@
+
+<launch>
+
+  <node pkg="hough_segmentation" type="hough_segmentation_node" name="hough_segmentation_node" output="screen" respawn="true" args="$(find hough_segmentation)/data/a-1224512906-dsn-objects.pcd">
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz"> 
+  </node>
+
+</launch>
+
