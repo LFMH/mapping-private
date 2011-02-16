@@ -1,0 +1,9 @@
+<!-- PCL Features library component -->
+<library path="lib/libNextBestView">
+  <class name="NextBestView/Source" type="NextBestView::Source" base_class_type="nodelet::Nodelet">
+    <description>
+	none
+    </description>
+  </class>
+
+</library>
