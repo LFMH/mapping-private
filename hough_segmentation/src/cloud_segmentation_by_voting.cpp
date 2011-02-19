@@ -10,6 +10,15 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
+//#include "pcl/PointIndices.h"
+//#include "pcl/ModelCoefficients.h"
+//#include "pcl/segmentation/sac_segmentation.h"
+
+
+
+#include <pcl/features/normal_3d.h>
+
+
 #include "pcl/sample_consensus/method_types.h"
 #include "pcl/segmentation/sac_segmentation.h"
 #include <pcl/sample_consensus/sac_model_circle.h>
@@ -25,19 +34,19 @@
 #include <terminal_tools/print.h>
 #include <terminal_tools/parse.h>
 
-//#include "pcl/PointIndices.h"
-//#include "pcl/ModelCoefficients.h"
-//#include <pcl/segmentation/sac_segmentation.h>
 
 
+// Method's Constants 
+const double minimum_radius = 0.025; /// [m]
+const double maximum_radius = 0.100; /// [m] 
+
+const int minimum_inliers_line = 10; /// [points]
+const int minimum_inliers_circle = 50; /// [points]
 
 // Method's Parameters 
-double line_thresh = 0.0100; // [mm]
-double circle_thresh = 0.0100; // [mm]
-double voting_thresh = 0.10; // [%]
-
-int minimum_inliers_line = 10; /// [points]
-int minimum_inliers_circle = 50; /// [points]
+double line_thresh = 0.010; /// [m]
+double circle_thresh = 0.010; /// [m]
+double voting_thresh = 0.25; /// [%]
 
 
 
@@ -49,7 +58,7 @@ int main (int argc, char** argv)
   if (argc < 2)
   {
     std::cout << std::endl;
-    ROS_INFO ("Syntax is: %s <input>.pcd <options>",  argv[0]);
+    ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("where <options> are: -line_thresh X               = threshold for line inlier selection");
     ROS_INFO ("                     -circle_thresh X             = threshold for circle inlier selection");
     ROS_INFO ("                     -voting_thresh X             = threshold for Hough-based model voting");
@@ -70,14 +79,21 @@ int main (int argc, char** argv)
     return (-1);
   }
 
-  // Load point cloud data 
+  // Declare dataset for point cloud 
   pcl::PointCloud<pcl::PointXYZ> cloud;
+
+  // Load point cloud data 
   if (pcl::io::loadPCDFile (argv[pFileIndicesPCD[0]], cloud) == -1)
   {
     ROS_ERROR ("Couldn't read file %s", argv[pFileIndicesPCD[0]]);
     return (-1);
   }
   ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int)(cloud.width * cloud.height), argv[pFileIndicesPCD[0]], pcl::getFieldsList (cloud).c_str ());
+
+  // Pointer to dataset for point cloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZ> (cloud));
+
+ 
 
 /*
 
@@ -104,20 +120,38 @@ int main (int argc, char** argv)
 
 */
 
+
+
   //// -----------------------------------------
   //// ------ Work with pcl visualization ------
   //// -----------------------------------------
 
   // Open a 3D viewer 
   pcl_visualization::PCLVisualizer viewer ("3D Viewer");
+
   // Set the background of viewer 
-  //pcl_visualization::PCLVisualizer::setBackgroundColor (const double &r, const double &g, const double &b, int viewport);
   viewer.setBackgroundColor (0.0, 0.0, 0.0);
   // Add system coordiante to viewer 
-  viewer.addCoordinateSystem (2.0f);
+  viewer.addCoordinateSystem (1.0f);
   // Add the point cloud data 
-  viewer.addPointCloud (cloud, "Original Point Cloud Input");
-  // And wait until key is pressed 
+  //viewer.addPointCloud (cloud, "Original Point Cloud Input");
+  viewer.addPointCloud (cloud, "Input");
+
+  // Set default camera parameters
+  viewer.initCameraParameters ();
+  // And wait until Q key is pressed 
+  viewer.spin ();
+
+  // Set default camera parameters
+  viewer.resetCamera ();
+  // And wait until Q key is pressed 
+  viewer.spin ();
+
+  // Parse the camera settings and update the internal camera
+  viewer.getCameraParameters (argc, argv);
+  // Update camera parameters and render.
+  viewer.updateCamera ();
+  // And wait until Q key is pressed 
   viewer.spin ();
 
   //// TODO
@@ -125,47 +159,72 @@ int main (int argc, char** argv)
   //// And to certain points from clouds 
   //// Using pcl visualization 
 
-/*
 
-  // Filter point cloud data 
+
+  //// -------------------------------------
+  //// ------ Filter point cloud data ------ 
+  //// -------------------------------------
+
+  // Declare filtered point cloud
   pcl::PointCloud<pcl::PointXYZ> filtered_cloud;
+
   // Create the filtering object
   pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
   // Set which point cloud to filter 
-  sor.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud));
+  sor.setInputCloud (cloud_ptr);
   // Set number of points for mean distance estimation 
-  sor.setMeanK (50);
+  sor.setMeanK (25);
   // Set the standard deviation multiplier threshold 
   sor.setStddevMulThresh (1.0);
   // Call the filtering method 
   sor.filter (filtered_cloud);
-   
+
+  // Pointer to filtered point cloud 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud_ptr (new pcl::PointCloud<pcl::PointXYZ> (filtered_cloud));
+
+  /*
+
   // Print number of points before 
-  std::cerr << std::endl << " Before filtering: " << cloud.points.size () << " points " << std::endl;
+  std::cerr << std::endl << " Before Filtering: " << cloud.points.size () << " points " << std::endl;
   // Print number of points after  
-  std::cerr << " After filtering: " << filtered_cloud.points.size () << " points " <<  std::endl;
+  std::cerr << " After Filtering: " << filtered_cloud.points.size () << " points " <<  std::endl;
   // Print number of filtered points 
-  std::cerr << " Filtered points: " << (cloud.points.size () - filtered_cloud.points.size ()) << std::endl << std::endl;
+  std::cerr << " Filtered Points: " << (cloud.points.size () - filtered_cloud.points.size ()) << std::endl << std::endl;
+
+  */
+
+  ROS_INFO ("Statistical Outlier Removal | before: %d points | after: %d points | filtered: %d points", cloud.points.size (),  filtered_cloud.points.size (), cloud.points.size () - filtered_cloud.points.size ());
 
   // Remove the point cloud data 
   viewer.removePointCloud ("Original Point Cloud Input");
-  // And wait until key is pressed 
+  // And wait until Q key is pressed 
   viewer.spin ();
   // Add the filtered point cloud data in the same viewer 
   viewer.addPointCloud (filtered_cloud, "Filtered Point Cloud Data");
-  // And wait until key is pressed 
+  // And wait until Q key is pressed 
   viewer.spin ();
-
-*/
 
   //// TODO
   //// Solve segmentation fault by filtering 
   //// http://eigen.tuxfamily.org/dox/UnalignedArrayAssert.html 
 
-  // Filter point cloud data 
-  pcl::PointCloud<pcl::PointXYZ> filtered_cloud;
-  // Allegedly filtered 
-  filtered_cloud = cloud;
+
+
+  //// -------------------------------------------
+  //// ------ Estiamte 3D normals of points ------ 
+  //// -------------------------------------------
+
+  pcl::PointCloud<pcl::Normal> normals_cloud;
+  pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
+
+  // Create an object and estimate the normals
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+  ne.setSearchMethod (tree);
+  ne.setInputCloud (filtered_cloud_ptr);
+  ne.setKSearch (50);
+  ne.compute (normals_cloud);
+
+
 
 /*
 
@@ -188,13 +247,13 @@ int main (int argc, char** argv)
   //// TODO
   //// Can not instantiate object of class 
 
+
+
   //// --------------------------------------
   //// ------ Start fitting 2D circles ------ 
   //// --------------------------------------
 
-
-
-  // Inliers of circle model 
+  // Declare inliers of circle model 
   pcl::PointIndices inliers;
   // Coefficients of cirlce model 
   pcl::ModelCoefficients coefficients;
@@ -204,63 +263,74 @@ int main (int argc, char** argv)
   seg.setOptimizeCoefficients (true);
   // Set type of method 
   seg.setMethodType (pcl::SAC_RANSAC);
-  // Set number of maximum iterations 
-  seg.setMaxIterations (10);
   // Set type of model 
   seg.setModelType (pcl::SACMODEL_CIRCLE2D);
+  // Set number of maximum iterations 
+  seg.setMaxIterations (100);
   // Set threshold of model 
   seg.setDistanceThreshold (0.010);
+  // Set minimum and maximum radii 
+  seg.setRadiusLimits (minimum_radius, maximum_radius);
   // Give as input the filtered point cloud 
-  seg.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (filtered_cloud));
+  seg.setInputCloud (filtered_cloud_ptr);
   // Call the segmenting method 
   seg.segment (inliers, coefficients);
 
+  // Pointer to inliers of circle model
+  pcl::PointIndices::Ptr inliers_ptr (new pcl::PointIndices (inliers));
+
   if (inliers.indices.size () == 0)
   {
-    ROS_ERROR ("Could not estimate a planar model for the given dataset.");
+    ROS_ERROR ("Could not estimate a circular model for the given dataset.");
     return (-1);
   }
 
-  // Add circle model to point cloud 
-  viewer.addCircle (coefficients, "circle");
-  // And wait until key is pressed 
+  std::cerr << std::endl << " Model coefficients: " << coefficients.values[0] << " " << coefficients.values[1] << " " << coefficients.values[2] << " " << coefficients.values[3] << std::endl;
+  std::cerr << " Model inliers: " << inliers.indices.size () << std::endl << std::endl;
+
+  /*
+
+  int level = 1;
+  double scale = 0.025;
+  viewer.addPointCloudNormals (filtered_cloud, normals_cloud, level, scale, "Normals");
+  // And wait until Q key is pressed 
   viewer.spin ();
 
-  std::cerr << "Model coefficients: " << coefficients.values[0] << " " << coefficients.values[1] << " " << coefficients.values[2] << " " << coefficients.values[3] << std::endl;
+  */
 
-  std::cerr << "Model inliers: " << inliers.indices.size () << std::endl;
+  // Color the cloud with red
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "Filtered Point Cloud Data"); 
+  // And wait until Q key is pressed 
+  viewer.spin ();
 
-  //for (size_t i = 0; i < inliers.indices.size (); ++i)
-    //std::cerr << inliers.indices[i] << "    " << filtered_cloud.points[inliers.indices[i]].x << " " << filtered_cloud.points[inliers.indices[i]].y << " " << filtered_cloud.points[inliers.indices[i]].z << std::endl;
+  // TODO 
+  // Does NOT color any points 
 
 
 
-  std::cerr << std::endl << " Points: " << filtered_cloud.points.size () << std::endl << std::endl;
+  // Add circle model to point cloud 
+  viewer.addCircle (coefficients, "circle");
+  // And wait until Q key is pressed 
+  viewer.spin ();
 
-  pcl::ExtractIndices<pcl::PointXYZ> extract;
 
   // Extract the circular inliers from the input cloud 
-  extract.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (filtered_cloud));
-  extract.setIndices (boost::make_shared<pcl::PointIndices> (inliers));
-  extract.setNegative (false);
-  extract.filter (filtered_cloud);
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  ROS_INFO (" Filtered Cloud Ptr Size : %d points", filtered_cloud_ptr->points.size ());
+  extract.setInputCloud (filtered_cloud_ptr);
+  ROS_INFO (" Inliers Ptr Size : %d points", inliers_ptr->indices.size ());
+  extract.setIndices (inliers_ptr);
+  extract.setNegative (true);
+  extract.filter (*filtered_cloud_ptr);
+  ROS_INFO (" Extracted Cloud Ptr Size : %d points", filtered_cloud_ptr->points.size ());
 
-  std::cerr << std::endl << " Points: " << filtered_cloud.points.size () << std::endl << std::endl;
 
 
-
-  //pcl::ModelCoefficients coefficients;
-
-  // 
   //int number_of_points = cloud.points.size();
   //do
   //{
   // 
-  // 
-  // 
-  //} while (   )
-
-
+  //} while ( )
 
 
 
