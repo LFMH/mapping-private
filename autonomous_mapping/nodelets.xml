@@ -1,6 +1,6 @@
 <!-- PCL Features library component -->
 <library path="lib/libNextBestView">
-  <class name="NextBestView/Source" type="NextBestView::Source" base_class_type="nodelet::Nodelet">
+  <class name="autonomous_mapping/NextBestView" type="autonomous_mapping::NextBestView" base_class_type="nodelet::Nodelet">
     <description>
 	none
     </description>
