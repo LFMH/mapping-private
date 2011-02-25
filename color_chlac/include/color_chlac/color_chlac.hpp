@@ -167,8 +167,8 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGri
       return false;
     }
 
-    subdiv_b_ = Eigen3::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
-    subdivb_mul_ = Eigen3::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
+    subdiv_b_ = Eigen::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
+    subdivb_mul_ = Eigen::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
     hist_num = subdiv_b_[0] * subdiv_b_[1] * subdiv_b_[2];
   }
   else if( subdivision_size_ < 0 ){
@@ -1467,7 +1467,7 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl:
     // if( debug_val != center_idx )
     //   std::cout << debug_val << " " << center_idx << std::endl;
 
-    Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
+    Eigen::Vector3i ijk = Eigen::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
     hist_idx = ijk.dot (subdivb_mul_);
     //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << " ||| " << ijk[ 0 ] << " " << ijk[ 1 ] << " " << ijk[ 2 ] << " : " << hist_idx << std::endl;
   }

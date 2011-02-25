@@ -51,7 +51,7 @@ namespace pcl
 
       inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_, const float voxel_size_ );
 
-      Eigen3::Vector3i getSubdivNum(){ return subdiv_b_; };
+      Eigen::Vector3i getSubdivNum(){ return subdiv_b_; };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
@@ -107,16 +107,16 @@ namespace pcl
     protected:
       float voxel_size;
       pcl::VoxelGrid<PointT> grid;
-      Eigen3::MatrixXi relative_coordinates;
+      Eigen::MatrixXi relative_coordinates;
       int hist_num;
       float inverse_subdivision_size;
       int offset_x;
       int offset_y;
       int offset_z;
-      Eigen3::Vector3i div_b_;
-      Eigen3::Vector3i min_b_;
-      Eigen3::Vector3i subdiv_b_;
-      Eigen3::Vector3i subdivb_mul_;
+      Eigen::Vector3i div_b_;
+      Eigen::Vector3i min_b_;
+      Eigen::Vector3i subdiv_b_;
+      Eigen::Vector3i subdivb_mul_;
       int color;
       int center_r;
       int center_g;
