@@ -17,6 +17,7 @@
   <depend package="pcl_to_octree"/>
   <depend package="tf"/>
   <depend package="nodelet"/>
+  <depend package="nav_msgs"/>
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
   </export>

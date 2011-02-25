@@ -34,7 +34,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
+#include <nav_msgs/OccupancyGrid.h>
 /**
 @file
 
@@ -50,13 +50,16 @@
 - \b input_cloud_topic
 - \b output_octree_topic
  */
+
+
+namespace autonomous_mapping
+{
+
+double pi=3.141;
 typedef struct
 {
 	double x,y;
 }point_2d;
-
-namespace autonomous_mapping
-{
 
 void write_pgm (std::string filename, std::vector<std::vector<int> > cm)
 {
@@ -65,19 +68,19 @@ void write_pgm (std::string filename, std::vector<std::vector<int> > cm)
 	myfile << "P2" << std::endl;
 	myfile << (int)cm[0].size() << " " << (int)cm.size() << std::endl;
 	int max = 0;
-    for (std::vector<std::vector<int> >::iterator it = cm.begin (); it != cm.end (); it++)
-        for (std::vector<int>::iterator jt = it->begin(); jt != it->end (); jt++)
-        	if (max < (*jt))
-        		max = (*jt);
+	for (std::vector<std::vector<int> >::iterator it = cm.begin (); it != cm.end (); it++)
+		for (std::vector<int>::iterator jt = it->begin(); jt != it->end (); jt++)
+			if (max < (*jt))
+				max = (*jt);
 	myfile << max << std::endl;
 
-    for (std::vector<std::vector<int> >::iterator it = cm.begin (); it != cm.end (); it++)
-    {
-        for (std::vector<int>::iterator jt = it->begin(); jt != it->end (); jt++)
-        	myfile << (*jt) << " ";
-        myfile << std::endl;
-    }
-    myfile.close();
+	for (std::vector<std::vector<int> >::iterator it = cm.begin (); it != cm.end (); it++)
+	{
+		for (std::vector<int>::iterator jt = it->begin(); jt != it->end (); jt++)
+			myfile << (*jt) << " ";
+		myfile << std::endl;
+	}
+	myfile.close();
 }
 
 class NextBestView:public pcl_ros::PCLNodelet
@@ -87,22 +90,39 @@ public:
 	void onInit ();
 protected:
 	using pcl_ros::PCLNodelet::pnh_;
-	//parameters
+	// parameters:
+	// topic names
 	std::string input_cloud_topic_;
 	std::string output_octree_topic_;
 	std::string output_pose_topic_;
 	std::string laser_frame_;
+	std::string ogrid_topic_;
+	std::string ogrid_sub_topic_;
 
+	// octree parameters
 	double octree_res_, octree_maxrange_;
 	int level_, free_label_, occupied_label_, unknown_label_;
 	bool check_centroids_;
 	bool visualize_octree_;
 
+	// search parameters
 	double normal_search_radius_;
 	int min_pts_per_cluster_;
 	double eps_angle_;
 	double tolerance_;
 	double boundary_angle_threshold_;
+
+	// costmap related stuff
+	int nr_costmap_dirs_;
+	double sensor_d_min_;
+	double sensor_d_max_;
+	double kernel_degree_step_;
+	double kernel_radial_step_;
+	double sensor_opening_angle_;
+	double costmap_grid_cell_size_;
+	bool received_map_;
+	// kernels for every (discretized) direction
+	std::vector<std::vector<point_2d> > vis_kernel;
 
 	//objects needed
 	tf::TransformListener tf_listener_;
@@ -115,15 +135,17 @@ protected:
 
 	sensor_msgs::PointCloud2 cloud_in_;
 	geometry_msgs::PoseArray nbv_pose_array_;
-
+	nav_msgs::OccupancyGrid map_;
+	// ROS communications / Publishers / Subscribers
 	ros::Subscriber cloud_sub_;
+	ros::Subscriber grid_sub_;
 	ros::Publisher octree_pub_;
 	pcl_ros::Publisher<pcl::PointNormal> border_cloud_pub_;
 	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud_pub_;
 	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud2_pub_;
 	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud3_pub_;
 	ros::Publisher pose_pub_;
-
+	ros::Publisher ogrid_pub_;
 	// Publishes the octree in MarkerArray format so that it can be visualized in rviz
 	ros::Publisher octree_marker_array_publisher_;
 	/* The following publisher, even though not required, is used because otherwise rviz
@@ -131,14 +153,15 @@ protected:
 	ros::Publisher octree_marker_publisher_;
 	// Marker array to visualize the octree. It displays the occupied cells of the octree
 	visualization_msgs::MarkerArray octree_marker_array_msg_;
-	static bool compareClusters(pcl::PointIndices c1, pcl::PointIndices c2) { return (c1.indices.size() < c2.indices.size()); }
 
+	static bool compareClusters(pcl::PointIndices c1, pcl::PointIndices c2) { return (c1.indices.size() < c2.indices.size()); }
+	void grid_cb (const nav_msgs::OccupancyGridConstPtr& grid_msg);
 	void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg);
 	void createOctree (pcl::PointCloud<pcl::PointXYZ>& pointcloud2_pcl, octomap::pose6d laser_pose);
-	void visualizeOctree(const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg, geometry_msgs::Point viewpoint);
-	void castRayAndLabel(pcl::PointCloud<pcl::PointXYZ>& cloud, octomap::pose6d origin);
-	void findBorderPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud, std::string frame_id);
-	void computeBoundaryPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud, pcl::PointCloud<pcl::Normal>& border_normals, std::vector<pcl::PointIndices>& clusters, pcl::PointCloud<pcl::PointXYZ>* cluster_clouds);
+	void visualizeOctree (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg, geometry_msgs::Point viewpoint);
+	void castRayAndLabel (pcl::PointCloud<pcl::PointXYZ>& cloud, octomap::pose6d origin);
+	void findBorderPoints (pcl::PointCloud<pcl::PointXYZ>& border_cloud, std::string frame_id);
+	void computeBoundaryPoints (pcl::PointCloud<pcl::PointXYZ>& border_cloud, pcl::PointCloud<pcl::Normal>& border_normals, std::vector<pcl::PointIndices>& clusters, pcl::PointCloud<pcl::PointXYZ>* cluster_clouds);
 
 	void extractClusters (const pcl::PointCloud<pcl::PointXYZ> &cloud,
 			const pcl::PointCloud<pcl::Normal> &normals,
@@ -148,7 +171,7 @@ protected:
 			unsigned int min_pts_per_cluster = 1,
 			unsigned int max_pts_per_cluster = std::numeric_limits<int>::max ());
 
-	//void cumputeKernel (double fi,double d_min,double d_max,double step_size,double degree_size);
+	void create_kernels ();
 
 public:
 	NextBestView();
@@ -157,7 +180,8 @@ public:
 };
 
 
-NextBestView::NextBestView () {
+NextBestView::NextBestView () : received_map_(false)
+{
 
 }
 
@@ -168,15 +192,29 @@ NextBestView::~NextBestView()
 	octree_marker_array_publisher_.shutdown();
 	octree_marker_publisher_.shutdown();
 }
+
 void NextBestView::onInit()
 {
 	pcl_ros::PCLNodelet::onInit ();
+	// costmap params
+	pnh_->param("nr_costmap_dirs", nr_costmap_dirs_, 8);
+	pnh_->param("sensor_d_min", sensor_d_min_, 1.0);
+	pnh_->param("sensor_d_max", sensor_d_max_, 4.0);
+	pnh_->param("kernel_radial_step", kernel_radial_step_, 0.1);
+	pnh_->param("kernel_degree_step", kernel_degree_step_, 10.0*pi/180.0);
+	pnh_->param("sensor_opening_angle", sensor_opening_angle_, pi);
+	pnh_->param("costmap_grid_cell_size", costmap_grid_cell_size_, 0.15);
+
+	// topic names
+	pnh_->param("ogrid_sub_topic", ogrid_sub_topic_, std::string("/map"));
+	pnh_->param("ogrid_topic", ogrid_topic_, std::string("/nbv_map"));
 	pnh_->param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
 	pnh_->param("output_octree_topic", output_octree_topic_, std::string("/nbv_octree"));
 	pnh_->param("output_pose_topic", output_pose_topic_, std::string("/nbv_pose"));
 	pnh_->param("laser_frame", laser_frame_, std::string("/laser_tilt_link"));
 	pnh_->param("octree_resolution", octree_res_, 0.1);
 
+	// octree stuff
 	pnh_->param("octree_maxrange", octree_maxrange_, -1.0);
 	pnh_->param("level", level_, 0);
 	pnh_->param("check_centroids", check_centroids_, false);
@@ -185,14 +223,18 @@ void NextBestView::onInit()
 	pnh_->param("unknown_label", unknown_label_, -1);
 	pnh_->param("visualize_octree", visualize_octree_, true);
 
+	// search stuff
 	pnh_->param("normal_search_radius", normal_search_radius_, 0.6);
 	pnh_->param("min_pts_per_cluster", min_pts_per_cluster_, 10);
 	pnh_->param("eps_angle", eps_angle_, 0.25);
 	pnh_->param("tolerance", tolerance_, 0.3);
 	pnh_->param("boundary_angle_threshold", boundary_angle_threshold_, 2.5);
 
+	// create subs and pubs
 	cloud_sub_ = pnh_->subscribe (input_cloud_topic_, 1, &NextBestView::cloud_cb, this);
 	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1);
+	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1);
+	grid_sub_=pnh_->subscribe(ogrid_sub_topic_,1,&NextBestView::grid_cb,this);
 	border_cloud_pub_ = pcl_ros::Publisher<pcl::PointNormal> (*pnh_, "border_cloud", 1);
 	cluster_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "cluster_cloud", 1);
 	cluster_cloud2_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "cluster_cloud2", 1);
@@ -203,13 +245,109 @@ void NextBestView::onInit()
 	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100);
 
 	octree_ = NULL;
+
+	// finally, precompute visibility kernel points
+	create_kernels ();
 }
+
+void NextBestView::grid_cb(const nav_msgs::OccupancyGridConstPtr& grid_msg)
+{
+	map_.header = grid_msg->header;
+	map_.info = grid_msg->info;
+	map_.data.resize(grid_msg->data.size());
+
+	// dilate the map..
+	double dilation_radius = 0.5;
+	int dilation_radius_grid_cells = (dilation_radius / map_.info.resolution);
+	int n = dilation_radius_grid_cells * 2 + 1;
+
+	std::vector<std::vector<int> > dil_kernel;
+	ROS_INFO ("creating dilation kernel for map with size %i x %i... ", n, n);
+	dil_kernel.resize(n);
+	for (int i = 0; i < n; i++)
+	{
+		dil_kernel[i].resize(n);
+		for (int j = 0; j < n; j++)
+		{
+			double sqr_dist = (i - (dilation_radius_grid_cells+1))*(i - (dilation_radius_grid_cells+1))
+					    		+ (j - (dilation_radius_grid_cells+1))*(j - (dilation_radius_grid_cells+1));
+			if (sqr_dist < dilation_radius_grid_cells*dilation_radius_grid_cells)
+				dil_kernel[i][j] = 1;
+			else
+				dil_kernel[i][j] = 0;
+		}
+	}
+	ROS_INFO ("done.");
+
+
+	ROS_INFO ("dilating map... ");
+	for (unsigned int p = 0; p < grid_msg->data.size(); p++)
+		map_.data[p] = grid_msg->data[p];
+	int w = grid_msg->info.width;
+	int h = grid_msg->info.height;
+	for (unsigned int p = 0; p < grid_msg->data.size(); p++)
+	{
+		if (grid_msg->data[p] == 0) // free point in map
+		{
+			// find index in data... set it to 100
+			int row = p / w;
+			int col = (p - row * w) - (dilation_radius_grid_cells+1);
+			row -= (dilation_radius_grid_cells+1);
+
+			bool found_occupied_cell = false;
+			for (int i = 0; i < n && !found_occupied_cell; i++)
+				for (int j = 0; j < n && !found_occupied_cell; j++)
+					if (dil_kernel[i][j] == 1)
+					{
+						int x = col + i;
+						int y = row + j;
+						if (x >= 0 && x < w && y >= 0 && y < h &&
+								grid_msg->data[y*w+x] != 0)
+						{
+							map_.data[p] = 100;
+							found_occupied_cell = true;
+						}
+					}
+		}
+	}
+	ROS_INFO ("done.");
+
+	received_map_=true;
+}
+
+
+void NextBestView::create_kernels ()
+{
+	vis_kernel.resize(nr_costmap_dirs_);
+	point_2d ker_pt;
+	ROS_INFO ("creating visibility kernels... ");
+	for(double d = sensor_d_min_; d < sensor_d_max_; d += kernel_radial_step_)
+	{
+		for (double phi2 = -sensor_opening_angle_/2; phi2 < sensor_opening_angle_/2; phi2 += kernel_degree_step_)
+		{
+			double x = d*cos(phi2);
+			double y = d*sin(phi2);
+
+			for (int i = 0; i < nr_costmap_dirs_; i++)
+			{
+				double theta=i*2*pi/nr_costmap_dirs_;
+				ker_pt.x = cos(theta)*x - sin(theta)*y;
+				ker_pt.y = sin(theta)*x + cos(theta)*y;
+				vis_kernel[i].push_back(ker_pt);
+			}
+		}
+	}
+	ROS_INFO ("done.");
+}
+
 /**
  * \brief cloud callback and the core filtering function at the same time
  * \param pointcloud2_msg input point cloud to be processed
  */
-void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg) {
 
+void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg)
+{
+	ros::Time start_time = ros::Time::now();
 	pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl;
 	octomap::point3d octomap_point3d;
 
@@ -305,82 +443,82 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	nextract.filter(border_normals);
 	ROS_INFO("%d points in normals cloud after NaN removal", (int)border_normals.points.size());
 
-	// set params: nr_dirs=8, d_min=1.0, d_max=4.0, grid_cell_size=0.2
-	// create costmaps
-	//    min,max x,y from input --> grid map size
-	//    create vec<vec<vec<int> > > > .... 0
-	// create vis. kernel from sensor model
-	//    see notes
-	//
-	double pi=3.141;
-	int nr_dirs=8;
-	double d_min=1.0;
-	double d_max=4.0;
-	double grid_cell_size=0.1;
+
 	geometry_msgs::Point min,max;
 	min.x=(double)border_cloud.points[0].x;
 	min.y=(double)border_cloud.points[0].y;
 	max.x=min.x;
 	max.y=min.y;
-	for (int i=1;i<border_cloud.points.size();i++)
+	for (unsigned int i=1;i<border_cloud.points.size();i++)
 	{
 		if (min.x > border_cloud.points[i].x) min.x = border_cloud.points[i].x;
 		if (min.y > border_cloud.points[i].y) min.y = border_cloud.points[i].y;
 		if (max.x < border_cloud.points[i].x) max.x = border_cloud.points[i].x;
 		if (max.y < border_cloud.points[i].y) max.y = border_cloud.points[i].y;
 	}
-	double x_dim=(int)abs((max.x-min.x)/grid_cell_size)+1;
-	double y_dim=(int)abs((max.y-min.y)/grid_cell_size)+1;
+	min.x -= sensor_d_max_;
+	min.y -= sensor_d_max_;
+	max.x += sensor_d_max_;
+	max.y += sensor_d_max_;
+	double x_dim=(int)abs((max.x-min.x)/costmap_grid_cell_size_)+1;
+	double y_dim=(int)abs((max.y-min.y)/costmap_grid_cell_size_)+1;
 	ROS_INFO("X,Y min, max: %f, %f, %f, %f", min.x, min.y, max.x, max.y);
 	ROS_INFO("X,Y DIMENSIONS OF THE COSTMAP: %f, %f",x_dim,y_dim);
+
+	// initialize vector of costmaps
 	std::vector<std::vector<std::vector<int> > > costmap;
-	costmap.resize(nr_dirs);
-	for (int i = 0; i < nr_dirs; ++i) {
+	costmap.resize(nr_costmap_dirs_);
+	for (int i = 0; i < nr_costmap_dirs_; ++i) {
 		costmap[i].resize(x_dim);
 
 		for (int j = 0; j < x_dim; ++j)
 			costmap[i][j].resize(y_dim);
 	}
-	std::vector<point_2d> vis_ker;
-	double step_size=0.1;
-	double degree_size=10.0*pi/180.0;
-	double fi=pi;
-	int ker_counter=0;
-	point_2d ker_pt;
-	for(double d=d_min;d<d_max;d+=step_size)
+
+	// compute costmaps -- convolute with the different kernels
+	for (int dir=0;dir<nr_costmap_dirs_;dir++)
 	{
-		for (double fi2 = -pi/2; fi2 < pi/2; fi2 += degree_size)
+		for (unsigned int i=0;i<border_cloud.points.size();i++)
 		{
-			ker_pt.x=d*cos(fi2);
-			ker_pt.y=d*sin(fi2);
-			vis_ker.push_back(ker_pt);
-			ker_counter++;
-		}
-	}
-	for (int dir=0;dir<nr_dirs;dir++)
-	{
-		double theta=dir*2*pi/nr_dirs;
-		for (int i=0;i<border_cloud.points.size();i++)
-		{
-			for (int j=0;j<ker_counter;j++)
+			for (unsigned int j=0;j<vis_kernel[dir].size();j++)
 			{
-				double x=(double)border_cloud.points[i].x+sin(theta)*vis_ker[j].x-cos(theta)*vis_ker[j].y;
-				double y=(double)border_cloud.points[i].y+cos(theta)*vis_ker[j].x+sin(theta)*vis_ker[j].y;
-				int id_x=(int)(x_dim*(x-min.x)/(max.x-min.x));
-				int id_y=(int)(y_dim*(y-min.y)/(max.y-min.y));
-				if (id_x >= 0 && id_x < x_dim &&
-					id_y >= 0 && id_y < y_dim)
-					costmap[dir][id_x][id_y]++;
+				double x=(double)border_cloud.points[i].x + vis_kernel[dir][j].x;
+				double y=(double)border_cloud.points[i].y + vis_kernel[dir][j].y;
+				int id_x=(int)(x_dim*((x-min.x)/(max.x-min.x)));
+				int id_y=(int)(y_dim*((y-min.y)/(max.y-min.y)));
+
+
+				if (received_map_)
+				{
+					//  // NOTE: this assumes the "/map" message had no rotation (0,0,0,1)..
+					double min_map_x = (double)map_.info.origin.position.x;
+					double min_map_y = (double)map_.info.origin.position.y;
+					double max_map_x = (double)(map_.info.origin.position.x + map_.info.resolution * map_.info.width);
+					double max_map_y = (double)(map_.info.origin.position.y + map_.info.resolution * map_.info.height);
+
+					int id_x_m=(int)(map_.info.width*((x-min_map_x)/(max_map_x-min_map_x)));
+					int id_y_m=(int)(map_.info.height*((y-min_map_y)/(max_map_y-min_map_y)));
+					if (map_.data[id_y_m*map_.info.width+id_x_m] == 0)
+						if (id_x >= 0 && id_x < x_dim &&
+								id_y >= 0 && id_y < y_dim)
+							costmap[dir][id_x][id_y]++;;
+				}
+				else
+					if (id_x >= 0 && id_x < x_dim &&
+							id_y >= 0 && id_y < y_dim)
+						costmap[dir][id_x][id_y]++;
 			}
 		}
 	}
+
+	// find best scanning pose -- simply the maximum
 	int max_reward = 0;
 	int best_i=0, best_j=0, best_k=0;
-	for (int i = 0; i < nr_dirs; ++i)
+	for (int i = 0; i < nr_costmap_dirs_; ++i)
 	{
-		std::stringstream ss;
-		ss << "costmap_" << border_cloud.header.stamp << "_" << i;
-		write_pgm (ss.str(), costmap[i]);
+		//		std::stringstream ss;
+		//		ss << "costmap_" << border_cloud.header.stamp << "_" << i;
+		//		write_pgm (ss.str(), costmap[i]);
 		for (int j = 0; j < x_dim; ++j)
 			for (int k = 0; k < y_dim; k++)
 			{
@@ -394,39 +532,67 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 				}
 			}
 	}
+
+	// prepare a occupancy grid to be published to rviz
+	nav_msgs::OccupancyGrid ogrid;
+	ogrid.header.frame_id = "/map";
+	ogrid.info.resolution = costmap_grid_cell_size_;
+	ogrid.info.width = x_dim;
+	ogrid.info.height = y_dim;
+	geometry_msgs::Pose gridmap_pose;
+	gridmap_pose.position.x = min.x;
+	gridmap_pose.position.y = min.y;
+	gridmap_pose.position.z = 0;
+	ogrid.info.origin = gridmap_pose;
+
+	// prepare a single costmap...
+	std::vector<std::vector<int> > final_costmap;
+	final_costmap.resize(x_dim);
+	for (int i=0;i<x_dim;i++)
+		final_costmap[i].resize(y_dim);
+
+
+
+	// assign the best costmap to be the final costmap
+	int max_final_reward = 0;
+	{
+		int k = best_i;
+		for (int i=0;i<x_dim;i++)
+			for(int j=0;j<y_dim;j++)
+			{
+				final_costmap[i][j]+=costmap[k][i][j];
+				if (final_costmap[i][j] > max_final_reward)
+					max_final_reward = final_costmap[i][j];
+			}
+	}
+
+	// fill the occupancy grid message, scaled to 0...255
+	for (int j=0;j<y_dim;j++)
+		for (int i=0;i<x_dim;i++)
+			ogrid.data.push_back (255 * (double)final_costmap[i][j] / (double)max_final_reward);
+
+	ogrid_pub_.publish (ogrid);
+
+	//std::stringstream sss;
+	//sss << "final_costmap_" << border_cloud.header.stamp;
+
+	//write_pgm (sss.str(), final_costmap);
+	// also publish the best found pose
 	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
 	nbv_pose_array_.header.stamp = ros::Time::now();
 	nbv_pose_array_.poses.resize(0);
 	geometry_msgs::Pose p;
-	p.position.x = min.x + (best_j + 0.5) * grid_cell_size;
-	p.position.y = min.y + (best_k + 0.5) * grid_cell_size;
+	p.position.x = min.x + (best_j + 0.5) * costmap_grid_cell_size_;
+	p.position.y = min.y + (best_k + 0.5) * costmap_grid_cell_size_;
 	p.position.z = 0;
 	btVector3 axis(0, 0, 1);
-	btQuaternion quat (axis, best_i*2.0*pi/nr_dirs);
+	btQuaternion quat (axis, pi+((double)best_i)*2.0*pi/(double)nr_costmap_dirs_);
 	ROS_INFO("BEST I,J,K::: %i %i %i (reward %i)", best_i, best_j, best_k, max_reward);
-	ROS_INFO("BEST robot pose::: x,y = [%f , %f], theta = %f", p.position.x, p.position.y, best_i*2.0*pi/nr_dirs);
+	ROS_INFO("BEST robot pose::: x,y = [%f , %f], theta = %f", p.position.x, p.position.y, best_i*2.0*pi/nr_costmap_dirs_);
 	geometry_msgs::Quaternion quat_msg;
 	tf::quaternionTFToMsg(quat, quat_msg);
 	p.orientation = quat_msg;
 	nbv_pose_array_.poses.push_back(p);
-
-	//computeKernel(180.0,d_min,d_max,0.1,10*pi/180);
-	//ROS_INFO("THE NUMBER OF ELEMENTS IN THE VECTOR POINT %d",ker_counter);
-	pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree2 =
-			boost::shared_ptr <pcl::KdTreeFLANN<pcl::PointXYZ> > (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
-
-	tree2->setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (border_cloud));
-	// Decompose a region of space into clusters based on the euclidean distance between points, and the normal
-	std::vector<pcl::PointIndices> clusters;
-	pcl::extractEuclideanClusters <pcl::PointXYZ, pcl::Normal> (border_cloud, border_normals, tolerance_, tree2, clusters, eps_angle_, min_pts_per_cluster_);
-	//
-	pcl::PointCloud<pcl::PointXYZ> cluster_clouds[3];
-	//
-	//  /*
-	//   * compute boundary points from clusters and put them into pose array
-	//   */
-	//  computeBoundaryPoints(border_cloud, border_normals, clusters, cluster_clouds);
-	///////////////////////////////////
 
 	//publish poses
 	pose_pub_.publish(nbv_pose_array_);
@@ -441,17 +607,6 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	}
 	border_cloud_pub_.publish(border_pn_cloud);
 
-	//publish the clusters for visualization
-	for (unsigned int i = 0; i < 3; i++) {
-		if (cluster_clouds[i].points.size() == 0) {
-			cluster_clouds[i].header.frame_id = border_cloud.header.frame_id;
-			cluster_clouds[i].header.stamp = ros::Time::now();
-		}
-	}
-	cluster_cloud_pub_.publish(cluster_clouds[0]);
-	cluster_cloud2_pub_.publish(cluster_clouds[1]);
-	cluster_cloud3_pub_.publish(cluster_clouds[2]);
-
 	// publish binary octree
 	if (0) {
 		octomap_ros::OctomapBinary octree_msg;
@@ -459,7 +614,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 		octree_pub_.publish(octree_msg);
 	}
 
-	ROS_INFO("All computed and published");
+	ROS_INFO("All computed and published in %f seconds.", (ros::Time::now () - start_time).toSec());
 
 	//**********************************************************************************
 	//Visualization
@@ -473,22 +628,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 		visualizeOctree(pointcloud2_msg, viewpoint);
 	}
 }
-/*void NextBestView::computeKernel(double fi,double d_min,double d_max,double step_size,double,degree_size)
-{
-	 std::vector<point_2d> vis_ker;
-	    int ker_counter=0;
-	    point_2d ker_pt;
-	    for(double d=d_min;d<d_max;d+=step_size)
-	    {
-	    	for (double fi2=-90*pi/180;fi2<90*pi/180;fi2+=degree_size)
-	    	{
-	    	  ker_pt.x=d*sin(fi2);
-	    	  ker_pt.y=d*cos(fi2);
-	    	  vis_ker.push_back(ker_pt);
-	    	  ker_counter++;
-	    	}
-	    }
-}*/
+
 void NextBestView::computeBoundaryPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud, pcl::PointCloud<pcl::Normal>& border_normals, std::vector<pcl::PointIndices>& clusters, pcl::PointCloud<pcl::PointXYZ>* cluster_clouds) {
 	//clear old poses
 	nbv_pose_array_.poses.clear();
@@ -611,8 +751,8 @@ void NextBestView::computeBoundaryPoints(pcl::PointCloud<pcl::PointXYZ>& border_
 					dx = (double)cluster_cloud.points[i].x-geometric_center.x;
 					dy = (double)cluster_cloud.points[i].y-geometric_center.y;
 					//todo? normalize(dx,dy) to unit length, then factor is in meters..
-							cluster_cloud_2.points[i].x = cluster_cloud.points[i].x + factor * dx; //(geometric_center.x+factor*dist*sin(fi));
-							cluster_cloud_2.points[i].y = cluster_cloud.points[i].y + factor * dy; //(geometric_center.y+factor*dist*cos(fi));
+					cluster_cloud_2.points[i].x = cluster_cloud.points[i].x + factor * dx; //(geometric_center.x+factor*dist*sin(fi));
+					cluster_cloud_2.points[i].y = cluster_cloud.points[i].y + factor * dy; //(geometric_center.y+factor*dist*cos(fi));
 				}
 			}
 			//ROS_INFO("TEST MESAGE %f",cluster_cloud_2.points[3].x);
