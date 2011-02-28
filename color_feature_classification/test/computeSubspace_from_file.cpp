@@ -15,37 +15,39 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
-const float lower = 0;//-1;
+//const float lower = 0;//-1;
 const float upper = 1;
 
-void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
-  if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
-  else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+// void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
+//   if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
+//   else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+//   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
+//   else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+// }
+void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_max ) {
+  if( feature_max[ index ] == 0 ) feature[ index ] = 0;
   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
-  else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+  else feature[ index ] = upper * feature[ index ] / feature_max[ index ];
 }
 
 void
 readFeatureModels ( int argc, char **argv, const std::string &extension, 
-		    std::vector< std::vector<float> > &models, const string minmax_filename = "" )
+		    std::vector< std::vector<float> > &models, const string max_filename = "" )
 {  
   char line[ 100 ];
   string tmpname;
   int dim, sample_num;
   std::vector<float> feature;
-  std::vector<float> feature_min;
   std::vector<float> feature_max;
   bool is_normalize = false;
 
   //* bin normalization parameters
-  if( minmax_filename.size() != 0 ){
+  if( max_filename.size() != 0 ){
     is_normalize = true;
-    FILE *fp = fopen( minmax_filename.c_str(), "r" );
-    float val1, val2;
-    while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
-      feature_min.push_back( val1 );
-      feature_max.push_back( val2 );
-    }
+    FILE *fp = fopen( max_filename.c_str(), "r" );
+    float val;
+    while( fscanf( fp, "%f\n", &val ) != EOF )
+      feature_max.push_back( val );
     fclose( fp );
   }
   
@@ -72,7 +74,7 @@ readFeatureModels ( int argc, char **argv, const std::string &extension,
 	for(int n=0;n<sample_num;n++){
 	  for(int t=0;t<dim;t++){
 	    fscanf(fp,"%f ",&(feature[ t ]) );
-	    scaling( t, feature, feature_min, feature_max );
+	    scaling( t, feature, feature_max );
 	  }
 	  models.push_back ( feature );
 	}

@@ -12,21 +12,22 @@ function Exit()
 # The directory containing the configuration .txt files
 DATA=`rospack find color_feature_classification`/demos
 
-dirNum=`ls $1/* -d | wc -l`
+#dirNum=`ls $1/* -d | wc -l`
+dirNum=63
 for((i=0;i<$dirNum;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     #echo $dir_name
 
-    if [ ! -d "$1/$dir_name" ]; then
-      continue
-    fi
-    
     mkdir $1/test_features_c/$dir_name -p
     mkdir $1/test_features_d/$dir_name -p
     mkdir $1/test_features_g/$dir_name -p
     mkdir $1/test_features_r/$dir_name -p
 
+    if [ ! -d "$1/$dir_name" ]; then
+      continue
+    fi
+    
     n=0
     for j in `find $1/$dir_name -type f \( -iname "*.pcd" ! -iname "*vfh*" ! -iname "*colorCHLAC*" \)`
     do

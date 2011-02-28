@@ -8,14 +8,19 @@
 using namespace pcl;
 using namespace std;
 
-const float lower = 0;//-1;
+//const float lower = 0;//-1;
 const float upper = 1;
 
-void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
-  if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
-  else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+// void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
+//   if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
+//   else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+//   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
+//   else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+// }
+void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_max ) {
+  if( feature_max[ index ] == 0 ) feature[ index ] = 0;
   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
-  else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+  else feature[ index ] = upper * feature[ index ] / feature_max[ index ];
 }
 
 //-------
@@ -26,17 +31,14 @@ int main( int argc, char** argv ){
     return(-1);
   }
   std::vector<float> feature;
-  std::vector<float> feature_min;
   std::vector<float> feature_max;
 
   // bin normalization parameters
   string filename;
   FILE *fp = fopen( argv[2], "r" );
-  float val1, val2;
-  while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
-    feature_min.push_back( val1 );
-    feature_max.push_back( val2 );
-  }
+  float val;
+  while( fscanf( fp, "%f\n", &val ) != EOF )
+    feature_max.push_back( val );
   fclose( fp );
 
   //* read
@@ -61,7 +63,7 @@ int main( int argc, char** argv ){
   feature.resize( dim );
   for(int t=0;t<dim;t++){
     fscanf(fp,"%f ",&(feature[ t ]) );
-    scaling( t, feature, feature_min, feature_max );
+    scaling( t, feature, feature_max );
   }
   fclose(fp);
 

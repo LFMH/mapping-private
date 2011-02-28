@@ -1,4 +1,5 @@
 #define QUIET
+//#define CALC_TIME
 
 #include <ros/ros.h>
 #include <pcl/point_types.h>
@@ -21,14 +22,19 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
-const float lower = 0;//-1;
+//const float lower = 0;//-1;
 const float upper = 1;
 
-void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
-  if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
-  else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+// void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
+//   if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
+//   else if( feature[ index ] == feature_min[ index ] ) feature[ index ] = lower;
+//   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
+//   else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+// }
+void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_max ) {
+  if( feature_max[ index ] == 0 ) feature[ index ] = 0;
   else if( feature[ index ] == feature_max[ index ] ) feature[ index ] = upper;
-  else feature[ index ] = lower + (upper-lower) * ( feature[ index ] - feature_min[ index ] ) / ( feature_max[ index ] - feature_min[ index ] );
+  else feature[ index ] = upper * feature[ index ] / feature_max[ index ];
 }
 
 int classify_by_kNN( std::vector<float> feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
@@ -65,6 +71,7 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
   float dot_max = 0;
   float dot;
   float sum = vec.dot( vec );
+  double t1, t2, t_all = 0;
   for( int i=0; i<obj_class_num;i++ ){
     sprintf( filename, "%s/%03d", dirname, i );
     pca.read( filename, false );
@@ -79,6 +86,7 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     VectorXf variance = pca.Variance();
     MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
     VectorXf tmpVec;
+    t1 = my_clock();
     if( pca.mean_flg ){
       //cout << pca.Mean() << endl;
       VectorXf tmpVec2 = vec-pca.Mean();
@@ -89,16 +97,22 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
       tmpVec = tmpMat2.transpose() * vec;
 
     if( MULTIPLE_SIMILARITY )
-      for( int j=0; j<dim_subspace; j++ )
-	tmpVec( j ) *= sqrt( variance( j ) );
+      for( int j=1; j<dim_subspace; j++ )
+	tmpVec( j ) *= sqrt( variance( j ) ) / sqrt( variance( 0 ) );
 
     dot = tmpVec.dot( tmpVec ) / sum;
     if( dot > dot_max ){
       dot_max = dot;
       class_num = i;
     }
+    t2 = my_clock();
+    t_all += t2 - t1;
   }
+#ifdef CALC_TIME
+  cout << t_all * 1000 << endl;
+#else
   cout << class_num << " " << dot_max << endl;
+#endif
   return class_num;
 }
 
@@ -136,7 +150,6 @@ int main( int argc, char** argv ){
   const char feature_type = argv[2][0];
   const char classifier_type = argv[3][0];
   std::vector<float> feature;
-  std::vector<float> feature_min;
   std::vector<float> feature_max;
   bool is_normalize = false;
 
@@ -157,11 +170,9 @@ int main( int argc, char** argv ){
   if( parse_argument (argc, argv, "-norm", filename) > 0 ){
     is_normalize = true;
     fp = fopen( filename.c_str(), "r" );
-    float val1, val2;
-    while( fscanf( fp, "%f %f\n", &val1, &val2 ) != EOF ){
-      feature_min.push_back( val1 );
-      feature_max.push_back( val2 );
-    }
+    float val;
+    while( fscanf( fp, "%f\n", &val ) != EOF )
+      feature_max.push_back( val );
     fclose( fp );
   }
 
@@ -189,7 +200,7 @@ int main( int argc, char** argv ){
   if( is_normalize ){
     for(int t=0;t<dim;t++){
       fscanf(fp,"%f ",&(feature[ t ]) );
-      scaling( t, feature, feature_min, feature_max );
+      scaling( t, feature, feature_max );
     }
   }
   else

@@ -19,15 +19,11 @@ readHist_saveMinMax ( int argc, char **argv, const std::string &extension, const
   string tmpname;
   int dim, sample_num;
   float val;
-  std::vector<float> feature_min;
   std::vector<float> feature_max;
 
-  feature_min.resize( max_dim_size );
   feature_max.resize( max_dim_size );
-  for( int i = 0; i < max_dim_size; i++ ){
+  for( int i = 0; i < max_dim_size; i++ )
     feature_max[i]=-FLT_MAX;
-    feature_min[i]=FLT_MAX;
-  }
 
   for (int i = 1; i < argc; i++){
     string fname = string (argv[i]);
@@ -53,7 +49,6 @@ readHist_saveMinMax ( int argc, char **argv, const std::string &extension, const
       for(int n=0;n<sample_num;n++){
 	for(int t=0;t<dim;t++){
 	  fscanf(fp,"%f ",&val );
-	  if( feature_min[ t ] > val ) feature_min[ t ] = val;
 	  if( feature_max[ t ] < val ) feature_max[ t ] = val;
 	}
       }
@@ -62,14 +57,14 @@ readHist_saveMinMax ( int argc, char **argv, const std::string &extension, const
   }
   FILE *fp = fopen( filename, "w" );
   for( int i = 0; i < dim; i++ )
-    fprintf( fp, "%f %f\n", feature_min[ i ], feature_max[ i ] );
+    fprintf( fp, "%f\n", feature_max[ i ] );
   fclose(fp);
 }
 
 int main(int argc, char** argv)
 {
   if( argc < 3 ){
-    ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output(bin_normalization).txt}\n", argv[0]);
+    ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output(bin_normalization/max_X).txt}\n", argv[0]);
     return(-1);
   }
 

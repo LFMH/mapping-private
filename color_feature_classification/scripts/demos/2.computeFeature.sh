@@ -2,25 +2,32 @@
 # Example directory containing .pcd files
 DATA=`rospack find color_feature_classification`/demos
 
+mkdir -p $DATA/test_data
+mkdir -p $DATA/test_data/test_features_c
+mkdir -p $DATA/test_data/test_features_d
+mkdir -p $DATA/test_data/test_features_g
+mkdir -p $DATA/test_data/test_features_r
+
 dirNum=`ls $DATA/data/* -d | wc -l`
-for((i=0;i<$dirNum;i++))
+#for((i=0;i<$dirNum;i++))
+for((i=8;i<9;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     #echo $dir_name
-    mkdir $DATA/test_features_c/$dir_name
-    mkdir $DATA/test_features_d/$dir_name
-    mkdir $DATA/test_features_g/$dir_name
-    mkdir $DATA/test_features_r/$dir_name
+    mkdir -p $DATA/test_data/test_features_c/$dir_name
+    mkdir -p $DATA/test_data/test_features_d/$dir_name
+    mkdir -p $DATA/test_data/test_features_g/$dir_name
+    mkdir -p $DATA/test_data/test_features_r/$dir_name
 
     n=0
     for j in `find $DATA/data/$dir_name -type f \( -iname "*.pcd" ! -iname "*vfh*" ! -iname "*colorCHLAC*" \)`
     do
 	echo "Processing $j"
 	num=$(printf "%03d" $n)
-	rosrun color_feature_classification computeFeature $j c $DATA $DATA/test_features_c/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j d $DATA $DATA/test_features_d/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j g $DATA $DATA/test_features_g/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j r $DATA $DATA/test_features_r/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j c $DATA $DATA/test_data/test_features_c/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j d $DATA $DATA/test_data/test_features_d/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j g $DATA $DATA/test_data/test_features_g/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j r $DATA $DATA/test_data/test_features_r/$dir_name/$num.pcd	
 	n=`expr $n + 1`	
     done
 done

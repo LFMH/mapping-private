@@ -2,10 +2,10 @@
 DATA=`rospack find color_feature_classification`/demos_artificial
 
 # NOTE: comment-out the followings if you don't use normalization
-norm_flag_c="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_c.txt"
-norm_flag_d="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_d.txt"
-norm_flag_g="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_g.txt"
-norm_flag_r="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_r.txt"
+norm_flag_c="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_c.txt"
+norm_flag_d="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_d.txt"
+norm_flag_g="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_g.txt"
+norm_flag_r="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_r.txt"
 
 # # compute a subspace
 n=0

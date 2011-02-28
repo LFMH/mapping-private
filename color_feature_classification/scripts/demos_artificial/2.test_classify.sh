@@ -3,10 +3,10 @@
 DATA=`rospack find color_feature_classification`/demos_artificial
 
 # NOTE: comment-out the followings if you don't use normalization
-norm_flag_c="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_c.txt"
-norm_flag_d="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_d.txt"
-norm_flag_g="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_g.txt"
-norm_flag_r="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/minmax_r.txt"
+norm_flag_c="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_c.txt"
+norm_flag_d="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_d.txt"
+norm_flag_g="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_g.txt"
+norm_flag_r="-norm `rospack find color_feature_classification`/demos_artificial/bin_normalization/max_r.txt"
 
 echo "----------------------------------------------------------"
 echo "colorCHLAC - rotateion variant - (981)"
@@ -17,7 +17,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i c s -sub 3 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
+    rosrun color_feature_classification test_classify_from_file $i c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
     n=`expr $n + 1`
 done
 #
@@ -30,7 +30,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i d s -sub 3 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
+    rosrun color_feature_classification test_classify_from_file $i d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
     n=`expr $n + 1`
 done
 #
@@ -43,7 +43,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i g s -sub 3 $norm_flag_g
+    rosrun color_feature_classification test_classify_from_file $i g s -sub 15 $norm_flag_g
     n=`expr $n + 1`
 done
 #
@@ -56,7 +56,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i r s -sub 3 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
+    rosrun color_feature_classification test_classify_from_file $i r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
     n=`expr $n + 1`
 done
 
