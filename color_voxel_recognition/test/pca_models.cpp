@@ -1,11 +1,9 @@
 #include <iostream>
-#include <octave/config.h>
-#include <octave/Matrix.h>
 #include <color_voxel_recognition/CCHLAC.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
 #include <color_voxel_recognition/libPCA.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /********************************************************************/
 /* 検出対象物体を分割した全ての部分領域からColor-CHLAC特徴をとり主成分分析する   */
@@ -36,11 +34,11 @@ int main( int argc, char* argv[])
 
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
   PCA pca;
-  pca.read("scene/pca_result", ASCII_MODE_P );
-  Matrix axis = pca.Axis();
-  axis.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3, dim );
-  Matrix axis_t = axis.transpose();
-  ColumnVector variance = pca.Variance();
+  pca.read("models/compress_axis", ASCII_MODE_P );
+  Eigen3::MatrixXf tmpaxis = pca.Axis();
+  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen3::MatrixXf axis_t = axis.transpose();
+  Eigen3::VectorXf variance = pca.Variance();
 
   //****************************************************//
   //* 全てのボクセルファイルの全ての分割領域からのCCHLAC特徴抽出 *//
@@ -80,11 +78,12 @@ int main( int argc, char* argv[])
     voxel_bin.cleanVoxelData();
     voxel_bin.readVoxel( color_threshold_r, color_threshold_g, color_threshold_b );
         
-    ColumnVector feature[24];
-    ColumnVector feature_bin;
-    ColumnVector feature_tmp;
-    ColumnVector feature_tmp2;
-    ColumnVector feature_final;
+    std::vector<float> feature[24];
+    std::vector<float> feature_bin;
+    std::vector<float> feature_tmp;
+    std::vector<float> feature_tmp2;
+    std::vector<float> feature_final(dim);
+    Eigen3::VectorXf vec2;
 
     for(int k=0;k<z_num;k++){
       for(int j=0;j<y_num;j++){
@@ -98,12 +97,12 @@ int main( int argc, char* argv[])
 	  if(gx>xsize-1) gx = xsize-1;
 	  if(gy>ysize-1) gy = ysize-1;
 	  if(gz>zsize-1) gz = zsize-1;
-	  
+
 	  //* CCHLAC特徴抽出
 	  CCHLAC::extractColorCHLAC( feature[0], voxel, sx, sy, sz, gx, gy, gz );
 	  bool exist_flag = false;
 	  for(int j=0;j<2;j++){
-	    if( feature[0](j)!=0 ){
+	    if( feature[0][j]!=0 ){
 	      exist_flag = true;
 	      break;
 	    }
@@ -112,7 +111,7 @@ int main( int argc, char* argv[])
 	    CCHLAC::extractColorCHLAC_bin( feature_bin, voxel_bin, sx, sy, sz, gx, gy, gz );
 	    feature[0].resize(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
 	    for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-	      feature[0](t+DIM_COLOR_1_3) = feature_bin(t);
+	      feature[0][t+DIM_COLOR_1_3] = feature_bin[t];
 	    
 	    //* 90度ずつ変化させた24姿勢のそれぞれにおける特徴ベクトルを計算
 	    for(int i=0;i<3;i++)
@@ -136,10 +135,16 @@ int main( int argc, char* argv[])
 	    
 	    //* それぞれのCCHLAC特徴ベクトルを低次元に圧縮
 	    for(int i=0;i<24;i++){
-	      feature_final = axis_t*feature[i];
-	      if( WHITENING )
+	      Map<Eigen3::VectorXf> vec( &(feature[i][0]), feature[i].size() );
+	      vec2 = axis_t*vec;
+	      if( WHITENING ){
 		for(int t=0;t<dim;t++)
-		  feature_final(t) /= sqrt( variance(t) );
+		  feature_final[t] = vec2( t ) / sqrt( variance(t) );
+	      }
+	      else{
+		for(int t=0;t<dim;t++)
+		  feature_final[t] = vec2( t );
+	      }
 	      pca_each.addData( feature_final ); // PCAを解く準備
 	    }
 	  }

@@ -9,7 +9,7 @@
 
 #include <color_voxel_recognition/glView.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /***************************************************************/
 /* ボクセルを表示する                                              */

@@ -7,7 +7,8 @@
 #include <color_voxel_recognition/objFile.hpp>
 #include <color_voxel_recognition/ppmFile.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/CAM_SIZE"
+//#include "../param/CAM_SIZE"
+#include "./CAM_SIZE"
 
 /*****************************************************************/
 /* カラー画像と同じ大きさの、物体抽出範囲のマスク画像（MaskImg/以下）に対して */

@@ -1,6 +1,3 @@
 voxel_size: 0.02
 dim: 100
 box_size(scene): 10
-box_size(model): 10
-rotate_num: 3
-max_voxel_num: 80000000

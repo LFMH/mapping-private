@@ -17,11 +17,13 @@ int main( int argc, char** argv ){
   //* read
   pcl::PointCloud<PointXYZRGB> input_cloud;
   readPoints( argv[1], input_cloud );
+  //pcl::io::savePCDFile ("hogehoge.pcd",input_cloud,true);
   double t1 = my_clock();
 
   //* compute normals
   pcl::PointCloud<PointXYZRGBNormal> cloud;
   computeNormal( input_cloud, cloud );
+  ROS_INFO("Normal compute done in %f seconds.", my_clock()-t1);
 
   //* voxelize
   pcl::VoxelGrid<PointXYZRGBNormal> grid;

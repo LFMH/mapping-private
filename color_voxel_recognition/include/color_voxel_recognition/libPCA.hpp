@@ -1,50 +1,53 @@
-#ifndef MY_PCA_HPP
-#define MY_PCA_HPP
+#ifndef MY_PCA_EIGEN_HPP
+#define MY_PCA_EIGEN_HPP
 
-#include <octave/config.h>
-#include <octave/Matrix.h>
+#include <vector>
+#include <Eigen3/Eigenvalues>
 
-/**********************/
-/* 主成分分析をするクラス */
-/**********************/
+using namespace Eigen3;
+
+/*****************/
+/* class for PCA */
+/*****************/
 
 class PCA{
 public:
-  PCA( bool _mean_flg = true ); // 自己相関行列からサンプル平均値をひかない場合はfalseに
+  bool mean_flg;        // "true" when you substract the mean vector from the correlation matrix
+
+  PCA( bool _mean_flg = true ); // _mean_flg should be "true" when you substract the mean vector from the correlation matrix
+  
   ~PCA(){}
+  
+  //* add feature vectors to the correlation matrix one by one
+  void addData( std::vector<float> &feature );
 
-  //* 特徴ベクトルを読み込みながら自己相関行列を計算していく
-  void addData( ColumnVector &feature );
-
-  //* 主成分分析を行う
-  void solve();
+  //* solve PCA
+  void solve( bool regularization_flg = false, float regularization_nolm = 0.0001 );
     
-  //* 主成分軸のマトリックスの取得
-  const Matrix &Axis() const { return axis; }
+  //* get eigen vectors
+  const MatrixXf &Axis() const { return axis; }
 
-  //* 固有値を並べたベクトルの取得
-  const ColumnVector &Variance() const { return variance; }
+  //* get eigen values
+  const VectorXf &Variance() const { return variance; }
 
-  //* データの平均ベクトルの取得
-  const ColumnVector &Mean() const;
+  //* get the mean vector of feature vectors
+  const VectorXf &Mean() const;
     
-  //* PCAのデータをファイルから読み込み
+  //* read PCA file
   void read( const char *filename, bool ascii = false );
 
-  //* PCAのデータをファイルに出力
+  //* write PCA file
   void write( const char *filename, bool ascii = false );
     
 private:
-  int dim;               // 特徴次元
-  bool mean_flg;         // 自己相関行列から平均値をひくか否かのフラグ
-  long long nsample;     // サンプル数
-  ColumnVector mean;     // 特徴量の平均
-  Matrix correlation;    // 自己相関行列
-  Matrix axis;           // 主成分軸
-  ColumnVector variance; // 固有値を並べたベクトル
+  int dim;              // dimension of feature vectors
+  long long nsample;    // number of feature vectors
+  VectorXf mean;        // mean vector of feature vectors
+  MatrixXf correlation; // self correlation matrix
+  MatrixXf axis;        // eigen vectors
+  VectorXf variance;    // eigen values
 
-  //* 固有値の大きい順に固有値と固有ベクトルを並び替える
-  void sortVecAndVal( Matrix &vecs, ColumnVector &vals );  
+  void sortVecAndVal( MatrixXf &vecs, VectorXf &vals );
 };
 
 #endif

@@ -20,7 +20,7 @@
   </export>
   
   <rosdep name="freeglut3-dev"/>
-  <rosdep name="octave"/>
+  <!-- <rosdep name="octave"/> -->
 </package>
 
 

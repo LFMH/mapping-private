@@ -1,12 +1,9 @@
-#include <octave/config.h>
-#include <octave/Matrix.h>
-
 #include <color_voxel_recognition/libPCA.hpp>
 
 #include <color_voxel_recognition/CCHLAC.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /*****************************************************/
 /* 環境の分割領域毎にColor-CHLAC特徴をとり、次元圧縮        */
@@ -49,10 +46,10 @@ int main(int argc, char** argv){
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
   PCA pca;
   pca.read("scene/pca_result", ASCII_MODE_P );
-  Matrix axis = pca.Axis();
-  axis.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3, dim );
-  Matrix axis_t = axis.transpose();
-  ColumnVector variance = pca.Variance();
+  Eigen3::MatrixXf tmpaxis = pca.Axis();
+  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen3::MatrixXf axis_t = axis.transpose();
+  Eigen3::VectorXf variance = pca.Variance();
 
   //* 分割領域の個数を調べる
   int x_num = xsize/box_size;
@@ -67,7 +64,7 @@ int main(int argc, char** argv){
   const int xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   int *exist_num = new int[ xyz_num ];
-  ColumnVector *nFeatures = new ColumnVector[ xyz_num ];   //  分割CCHLAC
+  VectorXf *nFeatures = new VectorXf[ xyz_num ];   //  分割CCHLAC
 
   //* おそらくメモリが足りなくなるので、複数回に分けてボクセル化→CCHLAC抽出を行っていきます
   int z_num_middle = max_voxel_num / ( x_num * box_size * y_num * box_size * box_size );
@@ -107,9 +104,9 @@ int main(int argc, char** argv){
   //* 全ての分割領域からのCCHLAC特徴抽出 *//
   //*********************************//
 
-  ColumnVector feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
-  ColumnVector feature1;
-  ColumnVector feature2;
+  VectorXf feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
+  std::vector<float> feature1;
+  std::vector<float> feature2;
 
   for(int tmp_num=0; tmp_num<z_num_num+1; tmp_num++){
     printf("%d in %d...\n",tmp_num,z_num_num);
@@ -141,10 +138,10 @@ int main(int argc, char** argv){
 	  CCHLAC::extractColorCHLAC( feature1, voxel, sx, sy, sz, gx, gy, gz );
 	  CCHLAC::extractColorCHLAC_bin( feature2, voxel_bin, sx, sy, sz, gx, gy, gz );
 	  for(int t=0;t<DIM_COLOR_1_3;t++)
-	    feature(t) = feature1(t);
+	    feature(t) = feature1[t];
 	  for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-	    feature(t+DIM_COLOR_1_3) = feature2(t);
-	  exist_num[ x + y*x_num + z*xy_num ] = ( feature2(0) + feature2(1) ) * 3 + 0.001; // ボクセルの数
+	    feature(t+DIM_COLOR_1_3) = feature2[t];
+	  exist_num[ x + y*x_num + z*xy_num ] = ( feature2[0] + feature2[1] ) * 3 + 0.001; // ボクセルの数
 
 	  nFeatures[ x + y*x_num + z*xy_num ] = axis_t* feature;
 	  if( WHITENING )

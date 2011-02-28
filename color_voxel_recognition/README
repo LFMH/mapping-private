@@ -1,3 +1,6 @@
+いまの進捗：
+ これからpca_modelsなどを点群から直接VoxelFilter使って、PCLバージョンのColorCHLACとるよう変える
+
 # Library for detecting objects by ColorCHLAC and subspace method.
 # works with Kinect
 

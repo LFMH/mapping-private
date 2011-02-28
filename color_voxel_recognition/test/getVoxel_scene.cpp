@@ -6,7 +6,7 @@
 #include <color_voxel_recognition/objFile.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 #define PCL_MODE
 #ifdef PCL_MODE

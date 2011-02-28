@@ -1,11 +1,8 @@
-#include <octave/config.h>
-#include <octave/Matrix.h>
-
 #include <color_voxel_recognition/libPCA.hpp>
 #include <color_voxel_recognition/CCHLAC.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /********************************************************************/
 /* 環境全体を分割した全ての部分領域からColor-CHLAC特徴をとり主成分分析する      */
@@ -77,9 +74,10 @@ int main(int argc, char** argv){
   //*********************************//
 
   PCA pca( false ); // 特徴ベクトルから平均ベクトルをひかない。必ずfalseにすること
-  ColumnVector feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
-  ColumnVector feature1; // RGB二値化しないCCHLAC特徴
-  ColumnVector feature2; // RGB二値化するCCHLAC特徴
+  //ColumnVector feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
+  std::vector<float> feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
+  std::vector<float> feature1; // RGB二値化しないCCHLAC特徴
+  std::vector<float> feature2; // RGB二値化するCCHLAC特徴
 
   for(int tmp_num=0; tmp_num<z_num_num+1; tmp_num++){
     printf("%d in %d...\n",tmp_num,z_num_num);
@@ -111,7 +109,7 @@ int main(int argc, char** argv){
 	  CCHLAC::extractColorCHLAC( feature1, voxel, sx, sy, sz, gx, gy, gz );
 	  bool exist_flg = false;
 	  for(int t=0;t<6;t++){
-	    if(feature1(t)>0){
+	    if(feature1[t]>0){
 	      exist_flg = true;
 	      break;
 	    }
@@ -119,9 +117,9 @@ int main(int argc, char** argv){
 	  if(exist_flg){ // ボクセルのない空領域でなければ（=CCHLAC特徴が零ベクトルでなければ）
 	    CCHLAC::extractColorCHLAC_bin( feature2, voxel_bin, sx, sy, sz, gx, gy, gz );
 	    for(int t=0;t<DIM_COLOR_1_3;t++)
-	      feature(t) = feature1(t);
+	      feature[t] = feature1[t];
 	    for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-	      feature(t+DIM_COLOR_1_3) = feature2(t);
+	      feature[t+DIM_COLOR_1_3] = feature2[t];
 	    pca.addData( feature ); // PCAを解く準備
 	  }
 	}

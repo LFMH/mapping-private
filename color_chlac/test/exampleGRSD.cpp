@@ -83,6 +83,7 @@ int main( int argc, char** argv )
   pcl::PCDReader reader;
   pcl::PCDWriter writer;
   reader.read ( argv[1], input_cloud);
+  //pcl::io::savePCDFile ("hogehoge.pcd",input_cloud,true);
   
   //Normal estimation
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d; 
@@ -93,7 +94,9 @@ int main( int argc, char** argv )
   KdTreePtr normals_tree;
   normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
   n3d.setSearchMethod (normals_tree);
+  t1 = my_clock();
   n3d.compute (cloud_normals);
+  ROS_INFO("Normal compute done in %f seconds.", my_clock()-t1);
 
     // mls (for testing)
 //   pcl::PointCloud<pcl::PointNormal> cloud_normals;
@@ -149,9 +152,9 @@ int main( int argc, char** argv )
   
   t1 = my_clock();
   // Get rmin/rmax for adjacent 27 voxel
-  Eigen::MatrixXi relative_coordinates (3, 13);
+  Eigen3::MatrixXi relative_coordinates (3, 13);
 
-  Eigen::MatrixXi transition_matrix =  Eigen::MatrixXi::Zero(6, 6);
+  Eigen3::MatrixXi transition_matrix =  Eigen3::MatrixXi::Zero(6, 6);
 
   int idx = 0;
   
@@ -179,7 +182,7 @@ int main( int argc, char** argv )
   relative_coordinates( 1, idx ) = 0;
   relative_coordinates( 2, idx ) = 0;
 
-  Eigen::MatrixXi relative_coordinates_all (3, 26);
+  Eigen3::MatrixXi relative_coordinates_all (3, 26);
   relative_coordinates_all.block<3, 13>(0, 0) = relative_coordinates;
   relative_coordinates_all.block<3, 13>(0, 13) = -relative_coordinates;
   

@@ -1,11 +1,8 @@
-#include <octave/config.h>
-#include <octave/Matrix.h>
-
 #include <color_voxel_recognition/libPCA.hpp>
 #include <color_voxel_recognition/CCHLAC.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /***********************************************************************/
 /* 1. 環境全体を分割した全ての部分領域からColor-CHLAC特徴をとり主成分分析する      */
@@ -65,7 +62,7 @@ int main(int argc, char** argv){
 
   //* 領域内のボクセルの個数と領域の特徴量のメモリ確保
   int *exist_num = new int[ xy_num * z_num ];  // 領域内のボクセルの個数
-  ColumnVector *nFeatures = new ColumnVector[ xy_num * z_num ]; // 領域の特徴量
+  Eigen3::VectorXf *nFeatures = new Eigen3::VectorXf[ xy_num * z_num ]; // 領域の特徴量
 
   //* おそらくメモリが足りなくなるので、複数回に分けてボクセル化→CCHLAC抽出を行っていきます
   int z_num_middle = max_voxel_num / ( x_num * box_size * y_num * box_size * box_size );
@@ -90,8 +87,9 @@ int main(int argc, char** argv){
     //* 全ての分割領域からのCCHLAC特徴抽出 *//
     //*********************************//
 
-    ColumnVector feature1; // RGB二値化しないCCHLAC特徴
-    ColumnVector feature2; // RGB二値化するCCHLAC特徴
+    std::vector<float> feature( DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3 );
+    std::vector<float> feature1; // RGB二値化しないCCHLAC特徴
+    std::vector<float> feature2; // RGB二値化するCCHLAC特徴
 
     int idx = 0;
     for(int tmp_num=0; tmp_num<z_num_num+1; tmp_num++){
@@ -123,17 +121,21 @@ int main(int argc, char** argv){
 	    //* CCHLAC特徴抽出
 	    CCHLAC::extractColorCHLAC_bin( feature2, voxel_bin, sx, sy, sz, gx, gy, gz );
 
-	    nFeatures[ idx ].resize( DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3 );
-	    exist_num[ idx ] = ( feature2(0) + feature2(1) ) * 3 + 0.001;
+	    exist_num[ idx ] = ( feature2[0] + feature2[1] ) * 3 + 0.001;
 
 	    if( exist_num[ idx ] > 0 ){ // ボクセルのない空領域でなければ
 	      CCHLAC::extractColorCHLAC( feature1, voxel, sx, sy, sz, gx, gy, gz );
 	      for(int t=0;t<DIM_COLOR_1_3;t++)
-		nFeatures[ idx ](t) = feature1(t);
+		feature[t] = feature1[t];
 	      for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-		nFeatures[ idx ](t+DIM_COLOR_1_3) = feature2(t);
-	      pca.addData( nFeatures[ idx ] ); // PCAを解く準備
+		feature[t+DIM_COLOR_1_3] = feature2[t];
+	      for( int t=0; t<DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3; t++ )
+		nFeatures[ idx ][ t ] = feature[ t ];
+	      pca.addData( feature ); // PCAを解く準備
 	    }
+	    else
+	      for( int t=0; t<DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3; t++ )
+		nFeatures[ idx ][ t ] = 0;
 	    idx++;
 	  }
 	}
@@ -153,10 +155,10 @@ int main(int argc, char** argv){
   //****************************************************//
 
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
-  Matrix axis = pca.Axis();
-  axis.resize( DIM_COLOR_1_3+DIM_COLOR_BIN_1_3, dim );
-  Matrix axis_t = axis.transpose();
-  ColumnVector variance = pca.Variance();
+  Eigen3::MatrixXf tmpaxis = pca.Axis();
+  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen3::MatrixXf axis_t = axis.transpose();
+  Eigen3::VectorXf variance = pca.Variance();
 
   //* 書き込む先のファイルを開く
   //* 特徴ファイルとボクセルの有無ファイル

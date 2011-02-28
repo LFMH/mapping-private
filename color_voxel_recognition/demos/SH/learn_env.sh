@@ -10,7 +10,7 @@ then
 fi
 
 # 環境データを取得
-rosrun color_voxel_recognition saveData scene_for_PCA /input:=/camera/depth/points2
+rosrun color_voxel_recognition saveData scene_for_PCA /input:=/camera/depth/points2_throttle
 
 # フォルダを準備
 rm scene

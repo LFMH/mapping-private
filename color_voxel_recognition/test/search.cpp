@@ -7,14 +7,11 @@
 #include <math.h>
 #include <fstream>
 
-#include <octave/config.h>
-#include <octave/Matrix.h>
-
 #include <color_voxel_recognition/libPCA.hpp>
 #include <color_voxel_recognition/Param.hpp>
 #include <color_voxel_recognition/Search.hpp>
 
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /***************************************************************************************/
 /* 環境全体からスライディングボックス方式により                                                 */

@@ -8,7 +8,8 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/point_types.h"
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/CAM_SIZE"
+//#include "../param/CAM_SIZE"
+#include "./CAM_SIZE"
 
 /****************************************************************************/
 /* 検出対象物体の計測データ（複数方向から取得したもの）をcolor point cloud化                      */

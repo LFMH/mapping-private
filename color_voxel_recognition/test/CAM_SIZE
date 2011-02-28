@@ -1,0 +1,5 @@
+const int CWIDTH  = 320; // 市仿□脰颶及產汔
+const int CHEIGHT = 240; // 市仿□脰颶及衝汔
+
+const int SWIDTH  = 176; // SR4000脰颶及產汔
+const int SHEIGHT = 144; // SR4000脰颶及衝汔

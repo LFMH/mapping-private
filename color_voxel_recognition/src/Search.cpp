@@ -1,3 +1,5 @@
+#define QUIET
+
 #include <iostream>
 #include <stdio.h>
 //#include <stdlib.h>
@@ -6,14 +8,13 @@
 #include <sys/time.h>
 //#include <math.h>
 //#include <fstream>
-#include <octave/config.h>
-#include <octave/Matrix.h>
 #include "color_voxel_recognition/libPCA.hpp"
-#include "color_voxel_recognition/CCHLAC.hpp"
+//#include "color_voxel_recognition/CCHLAC.hpp"
 #include "color_voxel_recognition/Search.hpp"
+#include "color_chlac/grsd_colorCHLAC_tools.h"
 
 //* 時間計測用
-double my_clock__()
+double my_clock_()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -40,6 +41,46 @@ SearchObj::~SearchObj(){
   if( max_z != NULL ) delete[] max_z;
   if( max_mode != NULL ) delete[] max_mode;
   if( max_dot  != NULL ) delete[] max_dot;
+  if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
+  if( nFeatures != NULL ) delete[] nFeatures;
+}
+
+SearchObj_multi::SearchObj_multi() :
+  model_num(0),
+  max_x(NULL),
+  max_y(NULL),
+  max_z(NULL),
+  max_mode(NULL),
+  max_dot (NULL),
+  axis_q (NULL) {
+}
+
+SearchObj_multi::~SearchObj_multi(){
+  if( max_x != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
+    delete max_x;
+    max_x = NULL;
+  }
+  if( max_y != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
+    delete max_y;
+    max_y = NULL;
+  }
+  if( max_z != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
+    delete max_z;
+    max_z = NULL;
+  }
+  if( max_mode != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
+    delete max_mode;
+    max_mode = NULL;
+  }
+  if( max_dot != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
+    delete max_dot;
+    max_dot = NULL;
+  }
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
   if( nFeatures != NULL ) delete[] nFeatures;
 }
@@ -84,12 +125,11 @@ void SearchObj::setThreshold( int _exist_voxel_num_threshold ){
 void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   PCA pca_each;
   pca_each.read( filename, ascii );
-  Matrix tmpaxis = pca_each.Axis();
-  tmpaxis.resize( dim, dim_model );
-  //Matrix tmpaxis_t = tmpaxis.transpose();
-  axis_q = tmpaxis.transpose();
+  Eigen3::MatrixXf tmpaxis = pca_each.Axis();
+  Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+  axis_q = tmpaxis2.transpose();
   if( multiple_similarity ){
-    ColumnVector variance = pca_each.Variance();
+    Eigen3::VectorXf variance = pca_each.Variance();
     for( int i=0; i<dim_model; i++ )
       for( int j=0; j<dim; j++ )
 	axis_q( i, j ) = sqrt( variance( i ) ) * axis_q( i, j );
@@ -118,14 +158,14 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new ColumnVector[ xyz_num ];
+  nFeatures = new Eigen3::VectorXf [ xyz_num ];
   for(int n=0;n<xyz_num;n++){
     nFeatures[ n ].resize(dim);
     if( ascii ){
       int tmpval;
       for(int j=0;j<dim;j++){
 	fscanf(fp,"%d:%lf ",&tmpval,&tmpval_d);
-	nFeatures[ n ]( j ) = tmpval_d;
+	nFeatures[ n ][ j ] = tmpval_d;
       }
       fscanf(fp,"\n");
       fscanf(fp2,"%d\n",exist_voxel_num+n);
@@ -133,7 +173,7 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
     else{
       for(int j=0;j<dim;j++){
 	fread(&tmpval_d,sizeof(tmpval_d),1,fp);
-	nFeatures[ n ]( j ) = tmpval_d;
+	nFeatures[ n ][ j ] = tmpval_d;
       }
       fread(exist_voxel_num+n,sizeof(exist_voxel_num[n]),1,fp2);
     }
@@ -315,7 +355,7 @@ inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z
 //* 全ての検出モードでの物体検出
 void SearchObj::search(){
   double t1,t2;//時間計測用の変数
-  t1 = my_clock__();
+  t1 = my_clock_();
   if( range1 == range2 ){
     if( range2 == range3 ){ // range1 = range2 = range3
       search_part( S_MODE_1 );
@@ -344,7 +384,7 @@ void SearchObj::search(){
     search_part( S_MODE_5 );
     search_part( S_MODE_6 );
   }
-  t2 = my_clock__();
+  t2 = my_clock_();
   search_time = t2 - t1;
 }
 
@@ -358,8 +398,8 @@ void SearchObj::search_part( SearchMode mode ){
   const int y_end = y_num - yrange + 1;
   const int z_end = z_num - zrange + 1;
   
-  ColumnVector feature_tmp;
-  ColumnVector tmpVector;
+  Eigen3::VectorXf feature_tmp;
+  Eigen3::VectorXf tmpVector;
   double dot,sum;
   int overlap_num;
   int exist_num;
@@ -375,17 +415,14 @@ void SearchObj::search_part( SearchMode mode ){
 	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
 	    
 	    //* 類似度計算
-	    sum = feature_tmp.transpose()*feature_tmp;
+	    sum = feature_tmp.dot( feature_tmp );
 	    tmpVector = axis_q * feature_tmp;
-#if 0
 	    sum = sqrt(sum);
-	    dot = tmpVector.transpose()*tmpVector;
+	    dot = tmpVector.dot( tmpVector );
 	    dot = sqrt( dot );
 	    dot /= sum ;
-#else // 少しでも高速化したいときはこちらでもよい
-	    dot = tmpVector.transpose()*tmpVector;
-	    dot /= sum ;
-#endif
+	    //std::cout << x << " " << y << " " << z << " : " << dot << std::endl;
+		
 	    //* 類似度が高ければ保存
 	    for( int i=0; i<rank_num; i++ ){
 	      if(dot>max_dot[ i ]){
@@ -460,6 +497,123 @@ T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int
   return result;
 }
 
+void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, const std::vector< std::vector<float> > colorCHLAC, std::vector< std::vector<float> > feature ){
+  //* 分割領域の個数を調べる
+  x_num = subdiv_b_[0];
+  y_num = subdiv_b_[1];
+  z_num = subdiv_b_[2];
+  std::cout << x_num << " " << y_num << " " << z_num << std::endl;
+  xy_num = x_num*y_num;
+  const int xyz_num = xy_num * z_num;
+  if( xyz_num < 1 )
+    return;
+
+  exist_voxel_num = new int[ xyz_num ];
+  nFeatures = new Eigen3::VectorXf [ xyz_num ];
+
+  //*********************************//
+  //* 全ての分割領域からの特徴抽出 *//
+  //*********************************//
+  int idx = 0;
+  const int dim_feature = feature_max.size(); // = 137
+  //const int lower = 0;
+  const int upper = 1;
+  for(int z=0;z<z_num;z++){
+    for(int y=0;y<y_num;y++){
+      for(int x=0;x<x_num;x++){
+	exist_voxel_num[ idx ] = ( colorCHLAC[idx][0] + colorCHLAC[idx][1] ) * 2 + 0.001; // ボクセルの数      
+	// histogram normalization
+	for( int t=0; t<dim_feature; t++ ){
+	  if( feature_max[ t ] == 0 ) feature[ idx ][ t ] = 0;
+	  else if( feature[ idx ][ t ] == feature_max[ t ] ) feature[ idx ][ t ] = upper;
+	  else feature[ idx ][ t ] = upper * feature[ idx ][ t ] / feature_max[ t ];
+	}
+	Map<VectorXf> vec( &(feature[ idx ][0]), feature[ idx ].size() );
+	nFeatures[ idx ] = axis_p * vec;
+
+	//*************************************//
+	//* 積分する（viola-jones積分画像の特徴版） *//
+	//*************************************//
+	    
+	if(z==0){
+	  if(y==0){
+	    if(x!=0){ // (1,0,0)
+	      exist_voxel_num[ idx ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
+	      nFeatures[ idx ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
+	    }
+	  }
+	  else{
+	    if(x==0){ // (0,1,0)
+	      exist_voxel_num[ idx ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
+	      nFeatures[ idx ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
+	    }
+	    else{ // (1,1,0)
+	      exist_voxel_num[ idx ] 
+		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
+		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
+	      nFeatures[ idx ]
+		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
+		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
+	    }
+	  }
+	}
+	else{
+	  if(y==0){
+	    if(x==0){ // (0,0,1)	
+	      exist_voxel_num[ idx ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
+	      nFeatures[ idx ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
+	    }
+	    else {// (1,0,1)
+	      exist_voxel_num[ idx ] 
+		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
+	      nFeatures[ idx ]
+		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
+	    }
+	  }
+	  else{
+	    if(x==0){ // (0,1,1)
+	      exist_voxel_num[ idx ] 
+		+= exist_voxel_num[ x + ( y - 1 )*x_num + z *xy_num ]
+		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  exist_voxel_num[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	      nFeatures[ idx ]
+		+= nFeatures[ x + ( y - 1 )*x_num + z *xy_num ]
+		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  nFeatures[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	    }
+	    else{ // (1,1,1)
+	      exist_voxel_num[ idx ] 
+		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
+		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
+		-  exist_voxel_num[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
+		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
+		+  exist_voxel_num[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	      nFeatures[ idx ] 
+		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
+		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
+		-  nFeatures[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
+		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
+		+  nFeatures[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	    }
+	  }
+	}
+	idx++;
+      }
+    }
+  }
+}
+
+
 //*******************
 //* 結果をファイルに出力
 void SearchObj::writeResult( const char *filename, int box_size ){
@@ -494,13 +648,15 @@ void SearchObj::cleanMax(){
 ///    オンライン処理向け    ///
 ////////////////////////////
 
-void SearchObj::setSceneAxis( Matrix _axis ){
+void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis ){
   axis_p = _axis;
 }
 
-void SearchObj::setSceneAxis( Matrix _axis, ColumnVector var, int dim ){
-  for( int i=0; i<dim; i++ ){
-    for( int j=0; j<DIM_COLOR_1_3+DIM_COLOR_BIN_1_3; j++ ){
+void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ){
+  const int rows = _axis.rows();
+  const int cols = _axis.cols();
+  for( int i=0; i<rows; i++ ){
+    for( int j=0; j<cols; j++ ){
       const float tmpval = 1/ sqrt( var( i ) );
       _axis( i, j ) = tmpval * _axis( i, j ) ;
     }
@@ -526,143 +682,228 @@ void SearchObj::cleanData(){
   nFeatures = NULL;
 }
 
-void SearchObj::setData( Voxel& voxel, Voxel& voxel_bin, int dim, int box_size ){
-  //* 分割領域の個数を調べる
-  const int xsize = voxel.Xsize();
-  const int ysize = voxel.Ysize();
-  const int zsize = voxel.Zsize();
-  x_num = xsize/box_size;
-  if(xsize%box_size > 0)   x_num++;
-  y_num = ysize/box_size;
-  if(ysize%box_size > 0)   y_num++;
-  z_num = zsize/box_size;
-  if(zsize%box_size > 0)   z_num++;
-  xy_num = x_num*y_num;
-  const int xyz_num = xy_num * z_num;
-  if( xyz_num < 1 )
-    return;
+void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+  //* compute - GRSD -
+  std::vector< std::vector<float> > grsd;
+  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  //* compute - ColorCHLAC -
+  std::vector< std::vector<float> > colorCHLAC;
+  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
 
-  exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new ColumnVector[ xyz_num ];
+  std::vector< std::vector<float> > feature;
+  const int h_num = colorCHLAC.size();
+  for( int h=0; h<h_num; h++ )
+    feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+  setData( subdiv_b_, colorCHLAC, feature );
+}
 
-  //*********************************//
-  //* 全ての分割領域からのCCHLAC特徴抽出 *//
-  //*********************************//
-      
-  ColumnVector feature(DIM_COLOR_1_3+DIM_COLOR_BIN_1_3);
-  ColumnVector feature1;
-  ColumnVector feature2;
-            
-  int sx, sy, sz, gx, gy, gz;
-  for(int z=0;z<z_num;z++){
-    for(int y=0;y<y_num;y++){
-      for(int x=0;x<x_num;x++){
-	sx = x*box_size+1;
-	sy = y*box_size+1;
-	sz = z*box_size+1;
-	gx = sx+box_size;
-	gy = sy+box_size;
-	gz = sz+box_size;
-	if(gx>xsize-1) gx = xsize-1;
-	if(gy>ysize-1) gy = ysize-1;
-	if(gz>zsize-1) gz = zsize-1;
+void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+  //* compute - GRSD -
+  std::vector< std::vector<float> > grsd;
+  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  //* compute - ColorCHLAC -
+  std::vector< std::vector<float> > colorCHLAC;
+  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+
+  std::vector< std::vector<float> > feature;
+  const int h_num = colorCHLAC.size();
+  for( int h=0; h<h_num; h++ )
+    feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
+  setData( subdiv_b_, colorCHLAC, feature );
+}
+
+void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+  std::vector< std::vector<float> > colorCHLAC;
+  Eigen3::Vector3i subdiv_b_ = computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+  setData( subdiv_b_, colorCHLAC, colorCHLAC );
+}
+
+const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
+const int SearchObj::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
+const int SearchObj::maxZrange( int num ){ return zRange( max_mode[ num ] ); }
+
+void SearchObj::setNormalizeVal( const char* filename ){ 
+  FILE *fp = fopen( filename, "r" );
+  float val;
+  while( fscanf( fp, "%f\n", &val ) != EOF )
+    feature_max.push_back( val );
+  fclose( fp );    
+}
+
+//*******************************//
+//*     SearchObj_multi    *//
+//*******************************//
+
+void SearchObj_multi::setRank( int _rank_num ){
+  rank_num = _rank_num;
+
+  if( max_x != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
+    delete max_x;
+  }
+  if( max_y != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
+    delete max_y;
+  }
+  if( max_z != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
+    delete max_z;
+  }
+  if( max_mode != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
+    delete max_mode;
+  }
+  if( max_dot != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
+    delete max_dot;
+  }
+  max_x = new int*[ model_num ];
+  max_y = new int*[ model_num ];
+  max_z = new int*[ model_num ];
+  max_mode = new SearchMode*[ model_num ];
+  max_dot = new double*[ model_num ];
+
+  for( int m=0; m<model_num; m++ ){
+    max_x[ m ] = new int[ rank_num ];
+    max_y[ m ] = new int[ rank_num ];
+    max_z[ m ] = new int[ rank_num ];
+    max_mode[ m ] = new SearchMode[ rank_num ];
+    max_dot[ m ] = new double[ rank_num ];
+    for( int i=0; i<rank_num; i++ )  max_dot[ m ][ i ] = 0;
+  }
+}
+
+void SearchObj_multi::readAxis( const char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
+  if( axis_q != NULL ) delete[] axis_q;
+  axis_q = new Eigen3::MatrixXf [ model_num ];
+
+  PCA pca_each;
+  for( int m=0; m<model_num; m++ ){
+    pca_each.read( filename[ m ], ascii );
+    Eigen3::MatrixXf tmpaxis = pca_each.Axis();
+    Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+    axis_q[ m ] = tmpaxis2.transpose();
+    if( multiple_similarity ){
+      Eigen3::VectorXf variance = pca_each.Variance();
+      for( int i=0; i<dim_model; i++ )
+	for( int j=0; j<dim; j++ )
+	  axis_q[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q[ m ]( i, j );
+    }
+  }
+}
+
+void SearchObj_multi::cleanMax(){
+  for( int m=0; m<model_num; m++ ){
+    for( int i=0; i<rank_num; i++ ){
+      max_x[ m ][ i ] = 0;
+      max_y[ m ][ i ] = 0;
+      max_z[ m ][ i ] = 0;
+      max_dot[ m ][ i ] = 0;
+    }
+  }
+}
+
+const int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode[ m_num ][ num ] ); }
+const int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode[ m_num ][ num ] ); }
+const int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode[ m_num ][ num ] ); }
+
+inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
+  int num;
+  int xrange = 0, yrange = 0, zrange = 0;
+  int val1, val2, val3;
+  getRange( xrange, yrange, zrange, mode );
+
+  for( num = 0; num < rank_num-1; num++ ){
+    val1 = max_x[ m_num ][ num ] - x;
+    if( val1 < 0 )
+      val1 = - val1 - xRange( max_mode[ m_num ][ num ] );
+    else
+      val1 -= xrange;
+
+    val2 = max_y[ m_num ][ num ] - y;
+    if( val2 < 0 )
+      val2 = - val2 - yRange( max_mode[ m_num ][ num ] );
+    else
+      val2 -= yrange;
+
+    val3 = max_z[ m_num ][ num ] - z;
+    if( val3 < 0 )
+      val3 = - val3 - zRange( max_mode[ m_num ][ num ] );
+    else
+      val3 -= zrange;
+
+    if( ( val1 <= 0 ) && ( val2 <= 0 ) && ( val3 <= 0 ) )
+      return num;
+  }
+  return num;
+}
+
+inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
+  max_dot[ m_num ][ dest_num ] = max_dot[ m_num ][ src_num ];
+  max_x[ m_num ][ dest_num ] = max_x[ m_num ][ src_num ];
+  max_y[ m_num ][ dest_num ] = max_y[ m_num ][ src_num ];
+  max_z[ m_num ][ dest_num ] = max_z[ m_num ][ src_num ];
+  max_mode[ m_num ][ dest_num ] = max_mode[ m_num ][ src_num ];
+}
+
+inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
+  max_dot[ m_num ][ dest_num ] = dot;
+  max_x[ m_num ][ dest_num ] = x;
+  max_y[ m_num ][ dest_num ] = y;
+  max_z[ m_num ][ dest_num ] = z;
+  max_mode[ m_num ][ dest_num ] = mode;
+}
+
+void SearchObj_multi::search_part( SearchMode mode ){
+  int xrange = 0, yrange = 0, zrange = 0;
+  getRange( xrange, yrange, zrange, mode );
+
+  const int x_end = x_num - xrange + 1;
+  const int y_end = y_num - yrange + 1;
+  const int z_end = z_num - zrange + 1;
+  
+  Eigen3::VectorXf feature_tmp;
+  Eigen3::VectorXf tmpVector;
+  double dot,sum;
+  int overlap_num;
+  int exist_num;
+  if((x_end>0)&&(y_end>0)&&(z_end>0)){    
+    for(int z=0;z<z_end;z++){	      
+      for(int y=0;y<y_end;y++){
+	for(int x=0;x<x_end;x++){
+
+	  //* 領域内にボクセルが存在するか否かをチェック
+	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
+	  if(exist_num > exist_voxel_num_threshold){ // 領域内にボクセルが一定数以上あれば
+
+	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
 	    
-	//* CCHLAC特徴抽出
-	CCHLAC::extractColorCHLAC( feature1, voxel, sx, sy, sz, gx, gy, gz );
-	CCHLAC::extractColorCHLAC_bin( feature2, voxel_bin, sx, sy, sz, gx, gy, gz );
-	for(int t=0;t<DIM_COLOR_1_3;t++)
-	  feature(t) = feature1(t);
-	for(int t=0;t<DIM_COLOR_BIN_1_3;t++)
-	  feature(t+DIM_COLOR_1_3) = feature2(t);
-	exist_voxel_num[ x + y*x_num + z*xy_num ] = ( feature2(0) + feature2(1) ) * 3 + 0.001; // ボクセルの数
-	    
-	nFeatures[ x + y*x_num + z*xy_num ] = axis_p * feature;
-// 	if( whitening ){
-// 	  for(int t=0;t<dim;t++)
-// 	    nFeatures[ x + y*x_num + z*xy_num ](t) /= sqrt( var(t) );
-// 	}
-	    
-	//*************************************//
-	//* 積分する（viola-jones積分画像の特徴版） *//
-	//*************************************//
-	    
-	if(z==0){
-	  if(y==0){
-	    if(x!=0){ // (1,0,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
+	    //* 類似度計算
+	    sum = feature_tmp.dot( feature_tmp );
+	    sum = sqrt(sum);
+
+	    for( int m=0; m<model_num; m++ ){
+	      tmpVector = axis_q[ m ] * feature_tmp;
+	      dot = tmpVector.dot( tmpVector );
+	      dot = sqrt( dot );
+	      dot /= sum ;
+	      //* 類似度が高ければ保存
+	      for( int i=0; i<rank_num; i++ ){
+		if(dot>max_dot[ m ][ i ]){
+		  overlap_num = checkOverlap( m, x, y, z, mode );
+		  for( int j=0; j<overlap_num-i; j++ )
+		    max_cpy( m, overlap_num-1-j, overlap_num-j );		  
+		  
+		  if( i<=overlap_num )
+		    max_assign( m, i, dot, x, y, z, mode );
+		  break;
+		}
+	      }
 	    }
-	  }
-	  else{
-	    if(x==0){ // (0,1,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
-	    }
-	    else{ // (1,1,0)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
-		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
-		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
-		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
-	    }
-	  }
-	}
-	else{
-	  if(y==0){
-	    if(x==0){ // (0,0,1)	
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
-	    }
-	    else {// (1,0,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
-		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
-	    }
-	  }
-	  else{
-	    if(x==0){ // (0,1,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
-		+= exist_voxel_num[ x + ( y - 1 )*x_num + z *xy_num ]
-		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  exist_voxel_num[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ]
-		+= nFeatures[ x + ( y - 1 )*x_num + z *xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	    }
-	    else{ // (1,1,1)
-	      exist_voxel_num[ x + y*x_num + z*xy_num ] 
-		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
-		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
-		-  exist_voxel_num[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
-		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
-		+  exist_voxel_num[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ x + y*x_num + z*xy_num ] 
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
-		-  nFeatures[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
-		+  nFeatures[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	    }
+
 	  }
 	}
       }
     }
   }
 }
-
-const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
-const int SearchObj::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
-const int SearchObj::maxZrange( int num ){ return zRange( max_mode[ num ] ); }

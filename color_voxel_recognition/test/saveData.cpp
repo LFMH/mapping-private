@@ -5,8 +5,8 @@
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
 #include <float.h>
-#include "../param/FILE_MODE"
-#include "../param/CAM_SIZE"
+#include "./FILE_MODE"
+//#include "../param/CAM_SIZE"
 #include <ros/ros.h>
 #include "pcl/io/pcd_io.h"
 #include "pcl_ros/subscriber.h"

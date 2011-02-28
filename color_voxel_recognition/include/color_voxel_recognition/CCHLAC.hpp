@@ -1,8 +1,8 @@
 #ifndef MY_CCHLAC_HPP
 #define MY_CCHLAC_HPP
 
-#include <octave/config.h>
-#include <octave/Matrix.h>
+#include <iostream>
+#include <vector>
 #include "Voxel.hpp"
 
 /*****************************************************/
@@ -21,17 +21,17 @@ enum RotateMode{ R_MODE_1, R_MODE_2, R_MODE_3, R_MODE_4 };
 class CCHLAC{
 public:
   //* RGB値を2値化しない場合の特徴抽出
-  static void extractColorCHLAC( ColumnVector &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );
+  static void extractColorCHLAC( std::vector<float> &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );
   
   //* RGB値を2値化する場合の特徴抽出
-  static void extractColorCHLAC_bin( ColumnVector &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );
+  static void extractColorCHLAC_bin( std::vector<float> &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz );
   
   //* ボクセルを90度回転したときの特徴量を計算
-  static void rotateFeature90( ColumnVector &output, const ColumnVector &input, RotateMode mode );
+  static void rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode );
 
 private:  
-  static void extractColorCHLAC( ColumnVector &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize );
-  static void extractColorCHLAC_bin( ColumnVector &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize );
+  static void extractColorCHLAC( std::vector<float> &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize );
+  static void extractColorCHLAC_bin( std::vector<float> &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize );
 
   // no constructor
   CCHLAC();

@@ -126,10 +126,6 @@ pcl::rotateFeature90( std::vector<float> &output, const std::vector<float> &inpu
   }
 }
 
-inline int reverse( int val ){
-  return 255 - val;
-}
-
 template <typename PointT, typename PointOutT> inline int
 pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_r ( int val )
 {
@@ -147,6 +143,25 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_b ( int val )
 {
   if( val > color_thB ) return 1;
   return 0;
+}
+
+template <typename PointT, typename PointOutT> inline void
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ ){
+#ifdef C3_HLAC
+  const int val1 = r;
+  const int val2 = g;
+  const int val3 = b;
+  r  = 255 * sin( val1 * angle_norm );
+  g  = 255 * sin( val2 * angle_norm );
+  b  = 255 * sin( val3 * angle_norm );
+  r_ = 255 * cos( val1 * angle_norm );
+  g_ = 255 * cos( val2 * angle_norm );
+  b_ = 255 * cos( val3 * angle_norm );
+#else
+  r_ = 255 - r;
+  g_ = 255 - g;
+  b_ = 255 - b;
+#endif
 }
 
 template <typename PointT, typename PointOutT> inline bool
@@ -167,8 +182,8 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGri
       return false;
     }
 
-    subdiv_b_ = Eigen::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
-    subdivb_mul_ = Eigen::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
+    subdiv_b_ = Eigen3::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
+    subdivb_mul_ = Eigen3::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
     hist_num = subdiv_b_[0] * subdiv_b_[1] * subdiv_b_[2];
   }
   else if( subdivision_size_ < 0 ){
@@ -264,12 +279,8 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_0_bin ( const int id
 }
 
 template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b )
+pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
 {
-  const int r_ = reverse( r );
-  const int g_ = reverse( g );
-  const int b_ = reverse( b );
-
   switch( neighbor_idx ){
   case 0:
     output.points[idx].histogram[   6 ] += center_r * r;
@@ -775,7 +786,7 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1 ( const int idx, P
 }
 
 template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b )
+pcl::ColorCHLACEstimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
 {
   const int r_ = 1 - r;
   const int g_ = 1 - g;
@@ -1467,36 +1478,37 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl:
     // if( debug_val != center_idx )
     //   std::cout << debug_val << " " << center_idx << std::endl;
 
-    Eigen::Vector3i ijk = Eigen::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
+    Eigen3::Vector3i ijk = Eigen3::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
     hist_idx = ijk.dot (subdivb_mul_);
     //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << " ||| " << ijk[ 0 ] << " " << ijk[ 1 ] << " " << ijk[ 2 ] << " : " << hist_idx << std::endl;
   }
 
   color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
-  center_r = (0xff0000 & color) >> 16;
-  center_g = (0x00ff00 & color) >> 8;
-  center_b =  0x0000ff & color;
-  center_r_ = reverse( center_r );
-  center_g_ = reverse( center_g );
-  center_b_ = reverse( center_b );
+  center_r  = (0xff0000 & color) >> 16;
+  center_g  = (0x00ff00 & color) >> 8;
+  center_b  =  0x0000ff & color;
   center_bin_r = binarize_r( center_r );
   center_bin_g = binarize_g( center_g );
   center_bin_b = binarize_b( center_b );
-  addColorCHLAC_0( hist_idx, output );
   addColorCHLAC_0_bin( hist_idx, output );
+
+  setColor( center_r, center_g, center_b, center_r_, center_g_, center_b_ );
+  addColorCHLAC_0( hist_idx, output );
 
   const std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
 
+  int r, g, b, r_, g_, b_;
   for (int i = 0; i < 13; ++i){
     // Check if the point is invalid
     if ( neighbors[i]!=-1 ){
       color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
-      const int r = (0xff0000 & color) >> 16;
-      const int g = (0x00ff00 & color) >> 8;
-      const int b =  0x0000ff & color;
-
-      addColorCHLAC_1 ( hist_idx, output, i, r, g, b );
+      r  = (0xff0000 & color) >> 16;
+      g  = (0x00ff00 & color) >> 8;
+      b  =  0x0000ff & color;
       addColorCHLAC_1_bin ( hist_idx, output, i, binarize_r(r), binarize_g(g), binarize_b(b) );
+
+      setColor( r, g, b, r_, g_, b_ );
+      addColorCHLAC_1 ( hist_idx, output, i, r, g, b, r_, g_, b_ );
     }
   }
 }
@@ -1511,8 +1523,8 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOu
       output.points[h].histogram[ i ] *= NORMALIZE_1;
     for(int i=DIM_COLOR_1_3; i<501; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_0_BIN;
-    // for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
-    //   output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
+    for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
   }
 }
 
@@ -1603,12 +1615,8 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_0_bin ( const in
 }
 
 template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
 {
-  const int r_ = reverse( r );
-  const int g_ = reverse( g );
-  const int b_ = reverse( b );
-
   output.points[idx].histogram[   6 ] += center_r * r;
   output.points[idx].histogram[   7 ] += center_r * r_;
   output.points[idx].histogram[   8 ] += center_r * g;
@@ -1648,7 +1656,7 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1 ( const int id
 }
 
 template <typename PointT, typename PointOutT> inline void 
-pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b )
+pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
 {
   const int r_ = 1 - r;
   const int g_ = 1 - g;
@@ -1704,39 +1712,6 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::addColorCHLAC_1_bin ( const in
   }
 }
 
-// template <typename PointT, typename PointOutT> inline void 
-// pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::computeColorCHLAC ( const pcl::PointCloud<PointT> &cloud,
-// 					       PointCloudOut &output, const int center_idx )
-// {
-//   color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
-//   center_r = (0xff0000 & color) >> 16;
-//   center_g = (0x00ff00 & color) >> 8;
-//   center_b =  0x0000ff & color;
-//   center_r_ = reverse( center_r );
-//   center_g_ = reverse( center_g );
-//   center_b_ = reverse( center_b );
-//   center_bin_r = binarize_r( center_r );
-//   center_bin_g = binarize_g( center_g );
-//   center_bin_b = binarize_b( center_b );
-//   addColorCHLAC_RI_0( output );
-//   addColorCHLAC_RI_0_bin( output );
-
-//   const std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
-
-//   for (int i = 0; i < 13; ++i){
-//     // Check if the point is invalid
-//     if ( neighbors[i]!=-1 ){
-//       color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
-//       const int r = (0xff0000 & color) >> 16;
-//       const int g = (0x00ff00 & color) >> 8;
-//       const int b =  0x0000ff & color;
-    
-//       addColorCHLAC_RI_1 ( output, i, r, g, b );
-//       addColorCHLAC_RI_1_bin ( output, i, binarize_r(r), binarize_g(g), binarize_b(b) );
-//     }
-//   }
-// }
-
 template <typename PointT, typename PointOutT> inline void
 pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOut &output )
 {
@@ -1746,13 +1721,13 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::normalizeColorCHLAC ( PointClo
     for(int i=6; i<42; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_1;
     for(int i=42; i<DIM_COLOR_RI_1_3; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1; // don't be divided by 13.
+      output.points[h].histogram[ i ] *= NORMALIZE_1; // not divided by 13.
     for(int i=DIM_COLOR_RI_1_3; i<69; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_0_BIN;
     for(int i=69; i<105; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_RI_1_BIN;
-    // for(int i=105; i<DIM_COLOR_RI_1_3_ALL; ++i)
-    //   output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
+    for(int i=105; i<DIM_COLOR_RI_1_3_ALL; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN; // not divided by 13.
   }
 }
 

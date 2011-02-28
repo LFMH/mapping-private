@@ -6,6 +6,7 @@
 mkdir models_online
 rm models
 ln -s models_online models
+cp scene/pca_result models/compress_axis
 
 # すでに物体データがある場合は消去
 if [ $(ls -d models/$1 | wc -l) = 1 ]
@@ -14,7 +15,7 @@ then
 fi
 
 # 検出対象物体データを取得
-rosrun color_voxel_recognition saveData models/$1 0.1 /input:=/camera/depth/points2
+rosrun color_voxel_recognition saveData models/$1 0.1 /input:=/camera/depth/points2_throttle
 
 # フォルダを準備
 mkdir models/$1/Voxel

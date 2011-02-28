@@ -47,7 +47,7 @@ int main( int argc, char** argv ){
 #ifdef DIVID_TEST
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, 10 );
+  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, 10, true );
 
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
@@ -72,7 +72,7 @@ int main( int argc, char** argv ){
 #else
   //* compute - GRSD -
   std::vector<float> grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size);
+  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, true);
 
   //* compute - ColorCHLAC -
   std::vector<float> colorCHLAC;

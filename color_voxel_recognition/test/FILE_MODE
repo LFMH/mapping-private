@@ -1,0 +1,24 @@
+
+// ボクセルデータファイルをアスキーにする場合はtrueにしてください
+#define ASCII_MODE_V false
+
+// 特徴量/ボクセルの個数ファイルをアスキーにする場合はtrueにしてください
+#define ASCII_MODE_F false
+
+// PCA結果ファイルをアスキーにする場合はtrueにしてください
+#define ASCII_MODE_P false
+
+// 特徴ベクトルを圧縮する際に白色化をしない場合はfalseにしてください
+#define WHITENING true
+
+// 複合類似度を使わない（CLAFIC法を使う）場合はfalseにしてください
+#define MULTIPLE_SIMILARITY true//false
+
+// RGB値の補助成分値の定義を{R 255-R}にしたい場合はSIMPLE_REVERSE
+// {cos sin}というようにしたい場合はTRIGONOMETRIC
+#define REVERSE_MODE SIMPLE_REVERSE //TRIGONOMETRIC
+
+// --- ここから先、オンライン処理向け --- //
+
+// プレビュー時に、メッシュではなくボクセルを表示する場合はfalseにしてください
+#define MESH_VIEW true

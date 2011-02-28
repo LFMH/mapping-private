@@ -6,127 +6,127 @@ using namespace std;
 
 //*****************************
 //* RGB値を2値化しない場合の特徴抽出
-void CCHLAC::extractColorCHLAC( ColumnVector &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz ){
+void CCHLAC::extractColorCHLAC( std::vector<float> &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz ){
   extractColorCHLAC( result, voxel.Vr(), voxel._Vr(), voxel.Vg(), voxel._Vg(), voxel.Vb(), voxel._Vb(), sx, sy, sz, gx, gy, gz, 1, 1, 1, voxel.Xsize(), voxel.Ysize(), voxel.Zsize() );
 }
 
 //***************************
 //* RGB値を2値化する場合の特徴抽出
-void CCHLAC::extractColorCHLAC_bin( ColumnVector &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz ){
+void CCHLAC::extractColorCHLAC_bin( std::vector<float> &result, Voxel &voxel, int sx, int sy, int sz, int gx, int gy, int gz ){
   extractColorCHLAC_bin( result, voxel.Vr(), voxel._Vr(), voxel.Vg(), voxel._Vg(), voxel.Vb(), voxel._Vb(), sx, sy, sz, gx, gy, gz, 1, 1, 1, voxel.Xsize(), voxel.Ysize(), voxel.Zsize() );
 }
 
 //***********************************
 //* ボクセルを90度回転したときの特徴量を計算
-void CCHLAC::rotateFeature90( ColumnVector &output, const ColumnVector &input, RotateMode mode ){
-  int dim = input.length();
+void CCHLAC::rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode ){
+  int dim = input.size();
 
   switch( dim ){
   case DIM_COLOR_BIN_1_3+DIM_COLOR_1_3:
     {
-      if( output.length() != dim )
+      if( output.size() != dim )
 	output.resize( dim );
       
-      ColumnVector tmp_input(DIM_COLOR_1_3);
-      ColumnVector tmp_output;
+      std::vector<float> tmp_input(DIM_COLOR_1_3);
+      std::vector<float> tmp_output;
       for(int i=0;i<DIM_COLOR_1_3;i++)
-	tmp_input(i) = input(i);
+	tmp_input[i] = input[i];
       rotateFeature90( tmp_output, tmp_input, mode );
       for(int i=0;i<DIM_COLOR_1_3;i++)
-	output(i) = tmp_output(i);
+	output[i] = tmp_output[i];
       
       tmp_input.resize( DIM_COLOR_BIN_1_3 );
       for(int i=0;i<DIM_COLOR_BIN_1_3;i++)
-	tmp_input(i) = input(i+DIM_COLOR_1_3);
+	tmp_input[i] = input[i+DIM_COLOR_1_3];
       rotateFeature90( tmp_output, tmp_input, mode );
       for(int i=0;i<DIM_COLOR_BIN_1_3;i++)
-	output(i+DIM_COLOR_1_3) = tmp_output(i);    
+	output[i+DIM_COLOR_1_3] = tmp_output[i];    
       break;
     }
     
   case DIM_COLOR_BIN_1_3:
   case DIM_COLOR_1_3:
-    if( output.length() != dim )
+    if( output.size() != dim )
       output.resize( dim );
     for(int i=0;i<6;i++)
-      output(i)=input(i);
+      output[i]=input[i];
     for(int i=474;i<dim;i++)
-      output(i)=input(i);
+      output[i]=input[i];
     
     switch( mode ){
     case R_MODE_1:
       for(int i=0;i<6;i++){
 	for(int j=0;j<6;j++){
-	  output(  8 + i*9 + j*78 ) = input(  6 + i*9 + j*78 );
-	  output( 11 + i*9 + j*78 ) = input(  7 + i*9 + j*78 );
-	  output( 14 + i*9 + j*78 ) = input(  8 + i*9 + j*78 );
-	  output(  7 + i*9 + j*78 ) = input(  9 + i*9 + j*78 );
-	  output( 10 + i*9 + j*78 ) = input( 10 + i*9 + j*78 );
-	  output( 13 + i*9 + j*78 ) = input( 11 + i*9 + j*78 );
-	  output(  6 + i*9 + j*78 ) = input( 12 + i*9 + j*78 );
-	  output(  9 + i*9 + j*78 ) = input( 13 + i*9 + j*78 );
-	  output( 12 + i*9 + j*78 ) = input( 14 + i*9 + j*78 );
-	  output( 62 + i*4 + j*78 ) = input( 60 + i*4 + j*78 );
-	  output( 63 + j*4 + i*78 ) = input( 61 + i*4 + j*78 ); // i,j いれかえ
-	  output( 60 + j*4 + i*78 ) = input( 62 + i*4 + j*78 ); // i,j いれかえ
-	  output( 61 + i*4 + j*78 ) = input( 63 + i*4 + j*78 );
+	  output[  8 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[  7 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 10 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[ 11 + i*9 + j*78 ];
+	  output[  6 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[  9 + i*9 + j*78 ] = input[ 13 + i*9 + j*78 ];
+	  output[ 12 + i*9 + j*78 ] = input[ 14 + i*9 + j*78 ];
+	  output[ 62 + i*4 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 63 + j*4 + i*78 ] = input[ 61 + i*4 + j*78 ]; // i,j いれかえ
+	  output[ 60 + j*4 + i*78 ] = input[ 62 + i*4 + j*78 ]; // i,j いれかえ
+	  output[ 61 + i*4 + j*78 ] = input[ 63 + i*4 + j*78 ];
 	}
       }
       break;
     case R_MODE_2:
       for(int i=0;i<6;i++){
 	for(int j=0;j<6;j++){
-	  output(  8 + i*9 + j*78 ) = input(  6 + i*9 + j*78 );
-	  output( 62 + i*4 + j*78 ) = input(  7 + i*9 + j*78 );
-	  output( 12 + j*9 + i*78 ) = input(  8 + i*9 + j*78 ); // i,j いれかえ
-	  output( 11 + i*9 + j*78 ) = input(  9 + i*9 + j*78 );
-	  output( 63 + j*4 + i*78 ) = input( 10 + i*9 + j*78 ); // i,j いれかえ
-	  output(  9 + j*9 + i*78 ) = input( 11 + i*9 + j*78 ); // i,j いれかえ
-	  output( 14 + i*9 + j*78 ) = input( 12 + i*9 + j*78 );
-	  output( 60 + j*4 + i*78 ) = input( 13 + i*9 + j*78 ); // i,j いれかえ
-	  output(  6 + j*9 + i*78 ) = input( 14 + i*9 + j*78 ); // i,j いれかえ
-	  output(  7 + i*9 + j*78 ) = input( 60 + i*4 + j*78 );
-	  output( 61 + i*4 + j*78 ) = input( 61 + i*4 + j*78 );
-	  output( 13 + j*9 + i*78 ) = input( 62 + i*4 + j*78 ); // i,j いれかえ
-	  output( 10 + i*9 + j*78 ) = input( 63 + i*4 + j*78 );
+	  output[  8 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 62 + i*4 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 12 + j*9 + i*78 ] = input[  8 + i*9 + j*78 ]; // i,j いれかえ
+	  output[ 11 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 63 + j*4 + i*78 ] = input[ 10 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  9 + j*9 + i*78 ] = input[ 11 + i*9 + j*78 ]; // i,j いれかえ
+	  output[ 14 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[ 60 + j*4 + i*78 ] = input[ 13 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  6 + j*9 + i*78 ] = input[ 14 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  7 + i*9 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 61 + i*4 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 13 + j*9 + i*78 ] = input[ 62 + i*4 + j*78 ]; // i,j いれかえ
+	  output[ 10 + i*9 + j*78 ] = input[ 63 + i*4 + j*78 ];
 	}
       }
       break;
     case R_MODE_3:
       for(int i=0;i<6;i++){
 	for(int j=0;j<6;j++){
-	  output( 12 + i*9 + j*78 ) = input(  6 + i*9 + j*78 );
-	  output( 13 + i*9 + j*78 ) = input(  7 + i*9 + j*78 );
-	  output( 14 + i*9 + j*78 ) = input(  8 + i*9 + j*78 );
-	  output( 62 + j*4 + i*78 ) = input(  9 + i*9 + j*78 ); // i,j いれかえ
-	  output( 61 + j*4 + i*78 ) = input( 10 + i*9 + j*78 ); // i,j いれかえ
-	  output( 60 + j*4 + i*78 ) = input( 11 + i*9 + j*78 ); // i,j いれかえ
-	  output(  8 + j*9 + i*78 ) = input( 12 + i*9 + j*78 ); // i,j いれかえ
-	  output(  7 + j*9 + i*78 ) = input( 13 + i*9 + j*78 ); // i,j いれかえ
-	  output(  6 + j*9 + i*78 ) = input( 14 + i*9 + j*78 ); // i,j いれかえ
-	  output(  9 + i*9 + j*78 ) = input( 60 + i*4 + j*78 );
-	  output( 10 + i*9 + j*78 ) = input( 61 + i*4 + j*78 );
-	  output( 11 + i*9 + j*78 ) = input( 62 + i*4 + j*78 );
-	  output( 63 + i*4 + j*78 ) = input( 63 + i*4 + j*78 );
+	  output[ 12 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[ 62 + j*4 + i*78 ] = input[  9 + i*9 + j*78 ]; // i,j いれかえ
+	  output[ 61 + j*4 + i*78 ] = input[ 10 + i*9 + j*78 ]; // i,j いれかえ
+	  output[ 60 + j*4 + i*78 ] = input[ 11 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  8 + j*9 + i*78 ] = input[ 12 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  7 + j*9 + i*78 ] = input[ 13 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  6 + j*9 + i*78 ] = input[ 14 + i*9 + j*78 ]; // i,j いれかえ
+	  output[  9 + i*9 + j*78 ] = input[ 60 + i*4 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[ 62 + i*4 + j*78 ];
+	  output[ 63 + i*4 + j*78 ] = input[ 63 + i*4 + j*78 ];
 	}
       }
       break;
     case R_MODE_4:
       for(int i=0;i<6;i++){
 	for(int j=0;j<6;j++){
-	  output( 12 + i*9 + j*78 ) = input(  6 + i*9 + j*78 );
-	  output(  9 + i*9 + j*78 ) = input(  7 + i*9 + j*78 );
-	  output(  6 + i*9 + j*78 ) = input(  8 + i*9 + j*78 );
-	  output( 13 + i*9 + j*78 ) = input(  9 + i*9 + j*78 );
-	  output( 10 + i*9 + j*78 ) = input( 10 + i*9 + j*78 );
-	  output(  7 + i*9 + j*78 ) = input( 11 + i*9 + j*78 );
-	  output( 14 + i*9 + j*78 ) = input( 12 + i*9 + j*78 );
-	  output( 11 + i*9 + j*78 ) = input( 13 + i*9 + j*78 );
-	  output(  8 + i*9 + j*78 ) = input( 14 + i*9 + j*78 );
-	  output( 62 + j*4 + i*78 ) = input( 60 + i*4 + j*78 ); // i,j いれかえ
-	  output( 63 + i*4 + j*78 ) = input( 61 + i*4 + j*78 );
-	  output( 60 + i*4 + j*78 ) = input( 62 + i*4 + j*78 );
-	  output( 61 + j*4 + i*78 ) = input( 63 + i*4 + j*78 ); // i,j いれかえ
+	  output[ 12 + i*9 + j*78 ] = input[  6 + i*9 + j*78 ];
+	  output[  9 + i*9 + j*78 ] = input[  7 + i*9 + j*78 ];
+	  output[  6 + i*9 + j*78 ] = input[  8 + i*9 + j*78 ];
+	  output[ 13 + i*9 + j*78 ] = input[  9 + i*9 + j*78 ];
+	  output[ 10 + i*9 + j*78 ] = input[ 10 + i*9 + j*78 ];
+	  output[  7 + i*9 + j*78 ] = input[ 11 + i*9 + j*78 ];
+	  output[ 14 + i*9 + j*78 ] = input[ 12 + i*9 + j*78 ];
+	  output[ 11 + i*9 + j*78 ] = input[ 13 + i*9 + j*78 ];
+	  output[  8 + i*9 + j*78 ] = input[ 14 + i*9 + j*78 ];
+	  output[ 62 + j*4 + i*78 ] = input[ 60 + i*4 + j*78 ]; // i,j いれかえ
+	  output[ 63 + i*4 + j*78 ] = input[ 61 + i*4 + j*78 ];
+	  output[ 60 + i*4 + j*78 ] = input[ 62 + i*4 + j*78 ];
+	  output[ 61 + j*4 + i*78 ] = input[ 63 + i*4 + j*78 ]; // i,j いれかえ
 	}
       }
       break;
@@ -148,8 +148,8 @@ void CCHLAC::rotateFeature90( ColumnVector &output, const ColumnVector &input, R
 //**************//
 
 // r, g, b : 0 or 1
-void CCHLAC::extractColorCHLAC_bin( ColumnVector &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize ){
-  if( result.length() != DIM_COLOR_BIN_1_3 ) result.resize( DIM_COLOR_BIN_1_3 );
+void CCHLAC::extractColorCHLAC_bin( std::vector<float> &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize ){
+  if( result.size() != DIM_COLOR_BIN_1_3 ) result.resize( DIM_COLOR_BIN_1_3 );
   const int xysize = xsize * ysize;
   
   /*** initialize ***/
@@ -685,13 +685,13 @@ void CCHLAC::extractColorCHLAC_bin( ColumnVector &result, const unsigned char *r
     }
   }
 
-  for(int i=0; i<6; ++i) result( i ) = (double)tmp[ i ] / 3.0;
-  for(int i=6; i<DIM_COLOR_BIN_1_3; ++i) result( i ) = (double)tmp[ i ] / 9.0;
+  for(int i=0; i<6; ++i) result[ i ] = (double)tmp[ i ] / 3.0;
+  for(int i=6; i<DIM_COLOR_BIN_1_3; ++i) result[ i ] = (double)tmp[ i ] / 9.0;
 }
 
 // r, g, b : 0 ~ 255
-void CCHLAC::extractColorCHLAC( ColumnVector &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize){
-  if( result.length() != DIM_COLOR_1_3 ) result.resize( DIM_COLOR_1_3 );
+void CCHLAC::extractColorCHLAC( std::vector<float> &result, const unsigned char *red, const unsigned char *nred, const unsigned char *green, const unsigned char *ngreen, const unsigned char *blue, const unsigned char *nblue, int sx, int sy, int sz, int gx, int gy, int gz, int rx, int ry, int rz, int xsize, int ysize, int zsize){
+  if( result.size() != DIM_COLOR_1_3 ) result.resize( DIM_COLOR_1_3 );
   int xysize = xsize * ysize;
   
   /*** initialize ***/
@@ -1236,7 +1236,7 @@ void CCHLAC::extractColorCHLAC( ColumnVector &result, const unsigned char *red, 
     }
   }
   
-  for(int i=0; i<6; ++i) result( i ) = tmp[ i ] / 765.0;
-  for(int i=6; i<DIM_COLOR_1_3; ++i) result( i ) = tmp[ i ] / 585225.0;
+  for(int i=0; i<6; ++i) result[ i ] = tmp[ i ] / 765.0;
+  for(int i=6; i<DIM_COLOR_1_3; ++i) result[ i ] = tmp[ i ] / 585225.0;
 }
 

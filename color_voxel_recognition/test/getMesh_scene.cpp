@@ -5,7 +5,8 @@
 
 #include <color_voxel_recognition/objFile.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include "../param/CAM_SIZE"
+//#include "../param/CAM_SIZE"
+#include "./CAM_SIZE"
 
 /***************************************************/
 /* 環境の計測データ（複数視点から取得したもの）をメッシュ化   */

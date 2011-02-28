@@ -1,9 +1,8 @@
 #include <iostream>
-#include <octave/config.h>
-#include <octave/Matrix.h>
+#include <stdio.h>
 #include <color_voxel_recognition/Param.hpp>
 #include <color_voxel_recognition/libPCA.hpp>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 using namespace std;
 
@@ -26,7 +25,7 @@ int main(int argc, char** argv)
 
   PCA pca_each;
   pca_each.read( tmpname ,ASCII_MODE_P );
-  ColumnVector variance = pca_each.Variance();
+  VectorXf variance = pca_each.Variance();
 
   //* 圧縮したCCHLAC特徴ベクトルの次元数の読み込み
   const int dim = Param::readDim();

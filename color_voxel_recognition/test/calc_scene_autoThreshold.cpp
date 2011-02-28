@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <float.h>
-#include "../param/FILE_MODE"
+#include "./FILE_MODE"
 
 /******************************************************************************/
 /* ボクセルデータを読み込み、                                                      */

@@ -5,24 +5,42 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 
+//#define ENABLE_NORMALIZATION
+#define C3_HLAC
+#ifdef C3_HLAC
+const float angle_norm = M_PI / 510;
+const float AVERAGE_COLOR_VAL = 0.7;
+#else
+const float AVERAGE_COLOR_VAL = 0.5;
+#endif
+const float AVERAGE_COLOR_VAL_BIN = 0.5;
+
 const int DIM_COLOR_1_3 = 495;        // Dimension of feature vector (without RGB binalize)
 const int DIM_COLOR_BIN_1_3 = 486;    // Dimension of feature vector (with RGB binalize)
 const int DIM_COLOR_1_3_ALL = 981;    // = DIM_COLOR_1_3 + DIM_COLOR_BIN_1_3
 const int DIM_COLOR_RI_1_3 = 63;      // Dimension of feature vector (without RGB binalize) - rotation-invariant -
 const int DIM_COLOR_RI_BIN_1_3 = 54;  // Dimension of feature vector (with RGB binalize) - rotation-invariant -
 const int DIM_COLOR_RI_1_3_ALL = 117; // = DIM_COLOR_RI_1_3 + DIM_COLOR_RI_BIN_1_3
-//const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_0 = 1/510.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+
+#ifdef ENABLE_NORMALIZATION
+const float NORMALIZE_0 = 1/(255.0*AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float NORMALIZE_1 = 1/(65025.0*AVERAGE_COLOR_VAL*AVERAGE_COLOR_VAL);  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float NORMALIZE_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_1_BIN = 1/(AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN);    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_RI_0 = 1/(255.0*AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_1 = 1/(845325.0*AVERAGE_COLOR_VAL*AVERAGE_COLOR_VAL); // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_1_BIN = 1/(13.0*AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN); // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+#else
+const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
 const float NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
-//const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_0_BIN = 1/2.0;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-//const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
-//const float NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_0 = 1/510.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
 const float NORMALIZE_RI_1 = 1/845325.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-//const float NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_0_BIN = 1/2.0;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
 const float NORMALIZE_RI_1_BIN = 1/13.0; // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+#endif
 
 namespace pcl
 {
@@ -51,7 +69,7 @@ namespace pcl
 
       inline bool setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_, const float voxel_size_ );
 
-      Eigen::Vector3i getSubdivNum(){ return subdiv_b_; };
+      Eigen3::Vector3i getSubdivNum(){ return subdiv_b_; };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Empty constructor. */
@@ -87,12 +105,13 @@ namespace pcl
       inline int binarize_r ( int val );
       inline int binarize_g ( int val );
       inline int binarize_b ( int val );
+      inline void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
 
       //* functions for ColorCHLACSignature981 (rotation-variant) *//
       virtual inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
       virtual inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
-      virtual inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      virtual inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
+      virtual inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
+      virtual inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
       virtual inline void computeColorCHLAC ( const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       virtual inline void normalizeColorCHLAC ( PointCloudOut &output );
 
@@ -107,16 +126,16 @@ namespace pcl
     protected:
       float voxel_size;
       pcl::VoxelGrid<PointT> grid;
-      Eigen::MatrixXi relative_coordinates;
+      Eigen3::MatrixXi relative_coordinates;
       int hist_num;
       float inverse_subdivision_size;
       int offset_x;
       int offset_y;
       int offset_z;
-      Eigen::Vector3i div_b_;
-      Eigen::Vector3i min_b_;
-      Eigen::Vector3i subdiv_b_;
-      Eigen::Vector3i subdivb_mul_;
+      Eigen3::Vector3i div_b_;
+      Eigen3::Vector3i min_b_;
+      Eigen3::Vector3i subdiv_b_;
+      Eigen3::Vector3i subdivb_mul_;
       int color;
       int center_r;
       int center_g;
@@ -157,16 +176,12 @@ namespace pcl
       };
 
     protected:
-      inline int binarize_r ( int val );
-      inline int binarize_g ( int val );
-      inline int binarize_b ( int val );
 
       //* functions for ColorCHLACSignature117 (rotation-invariant) *//
       inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
       inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
-      inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, int neighbor_idx, int r, int g, int b );
-      //inline void computeColorCHLAC (const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
+      inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
+      inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
       inline void normalizeColorCHLAC ( PointCloudOut &output );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
