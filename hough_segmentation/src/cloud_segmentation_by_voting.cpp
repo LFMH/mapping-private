@@ -1,5 +1,33 @@
+/*
+ * Copyright (c) 2011, Lucian Cosmin Goron <goron@cs.tum.edu>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
-// TODO insert BSD header
+
 
 // ros dependencies
 #include "ros/ros.h"
@@ -42,7 +70,69 @@ bool circle_step = false;
 
 
 
-// Method's Main
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Computes line's coefficients with regards to its inliers
+ * \param inliers_cloud The point cloud of the line's inliers
+ * \param coefficients The line's parameters where the first triplete is a point on the line and the second triplete is the direction
+ */
+void adjustLine (pcl::PointCloud<pcl::PointXYZ>::Ptr &inliers_cloud, pcl::ModelCoefficients &coefficients)
+{
+  // Vector of line
+  double line[2];
+  line[0] = coefficients.values [3];
+  line[1] = coefficients.values [4];
+
+  // Normalize the vector of line
+  double norm = sqrt (line[0]*line[0] + line[1]*line[1]);
+  line[0] = line[0] / norm;
+  line[1] = line[1] / norm;
+
+  // First point of line
+  double P1[2];
+  P1[0] = coefficients.values [0];
+  P1[1] = coefficients.values [1];
+
+  // Second point of line
+  double P2[2];
+  P2[0] = coefficients.values [3] + coefficients.values [0];
+  P2[1] = coefficients.values [4] + coefficients.values [1];
+
+  // Get limits of inliers leghtwise
+  double minimum_lengthwise =  DBL_MAX;
+  double maximum_lengthwise = -DBL_MAX;
+  for (int idx = 0; idx < (int)inliers_cloud->points.size (); idx++)
+  {
+    double P[2];
+    P[0] = inliers_cloud->points.at(idx).x - P1[0];
+    P[1] = inliers_cloud->points.at(idx).y - P1[1];
+
+    double distance_lengthwise = (line[0]*P[0]) + (line[1]*P[1]);
+    if (minimum_lengthwise > distance_lengthwise) minimum_lengthwise = distance_lengthwise;
+    if (maximum_lengthwise < distance_lengthwise) maximum_lengthwise = distance_lengthwise;
+  }
+
+  // New model's coefficients
+  P2[0] = P1[0] + line[0]*maximum_lengthwise;
+  P2[1] = P1[1] + line[1]*maximum_lengthwise;
+
+  P1[0] = P1[0] + line[0]*minimum_lengthwise;
+  P1[1] = P1[1] + line[1]*minimum_lengthwise;
+
+  // Save the new coefficients
+  coefficients.values [0] = P1[0];
+  coefficients.values [1] = P1[1];
+  coefficients.values [2] = 0.0;
+
+  coefficients.values [3] = P2[0] - P1[0];
+  coefficients.values [4] = P2[1] - P1[1];
+  coefficients.values [5] = 0.0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Main routine of the method. Segmentation of point cloud data based on Hough-voting of RANSAC-fitted models
+ */
 int main (int argc, char** argv)
 {
 
@@ -388,6 +478,8 @@ int main (int argc, char** argv)
       circle_viewer.spin ();
     }
 
+    // TODO Integrate the clustering results into the validation of model 
+
     // ---------------------------- //
     // Start the clustering process //
     // ---------------------------- //
@@ -594,29 +686,23 @@ int main (int argc, char** argv)
     // Check if the fitted lines has enough inliers in order to be accepted
     if ((int) line_inliers->indices.size () < minimum_line_inliers)
     {
-      ROS_ERROR ("NOT ACCEPTED ! Line [%2d] has %3d inliers with P1 = (%6.3f,%6.3f) and P2 = (%6.3f,%6.3f) found in maximum %d iterations",
-                 line_fit, line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
+      ROS_ERROR ("NOT ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, line_inliers->indices.size (),
+                 line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
 
       // No need for fitting lines anymore
       stop_lines = true;
     }
     else
     {
-      ROS_INFO ("ACCEPTED ! Line [%2d] has %3d inliers with P1 = (%6.3f,%6.3f) and P2 = (%6.3f,%6.3f) found in maximum %d iterations",
-                line_fit, line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
 
-      double x1 = line_coefficients.values [0];
-      double y1 = line_coefficients.values [1];
-      double z1 = 0.0;
+      ROS_INFO ("ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, line_inliers->indices.size (),
+                line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
 
-      double x2 = line_coefficients.values [3];
-      double y2 = line_coefficients.values [4];
-      double z2 = 0.0;
-
-      double m = (y2 - y1) / (x2 - x1);
-      double b = y1 - m*x1;
-
-      // Build the space of parameters for line //
+      // Build the space of parameters for lines //
+ 
+      // Computing the line's parameters
+      double m = line_coefficients.values [4] / line_coefficients.values [3];
+      double b = line_coefficients.values [1] - m * line_coefficients.values [0];
 
       // A vote consists of the actual line parameters
       pcl::PointXYZ line_vot;
@@ -670,12 +756,12 @@ int main (int argc, char** argv)
     std::stringstream line_inliers_id;
     line_inliers_id << "LINE_INLIERS_" << line_fit ;
 
+    // Compute line lengthwise with regard to its inliers
+    adjustLine (line_inliers_cloud, line_coefficients);
     // Add line model to point cloud
     line_viewer.addLine (line_coefficients, line_id.str ());
-
     // Add the point cloud data
     line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
-
     // Set the size of points for cloud
     line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, point_size, line_inliers_id.str ()); 
 
@@ -685,6 +771,8 @@ int main (int argc, char** argv)
       // And wait until Q key is pressed
       line_viewer.spin ();
     }
+
+    // TODO Integrate the clustering results into the validation of model 
 
     // ---------------------------- //
     // Start the clustering process //
@@ -706,13 +794,13 @@ int main (int argc, char** argv)
     // Call the extraction function
     line_clustering.extract (line_clusters);
 
-    /*
+    ///*
 
     ROS_WARN (" has %d clusters where", line_clusters.size() );
     for (int c = 0; c < (int) line_clusters.size(); c++)
       ROS_WARN ("       cluster %d has %d points", c, line_clusters.at(c).indices.size() );
 
-    */
+    //*/
 
     // Wait or not wait
     if ( line_step )
@@ -767,6 +855,8 @@ int main (int argc, char** argv)
   // Displaying the overall time
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   ROS_WARN ("Finished in %5.3g [s]", tt.toc ());
+
+
 
   // And wait until Q key is pressed
   circle_viewer.spin ();
