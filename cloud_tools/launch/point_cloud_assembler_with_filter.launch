@@ -14,7 +14,7 @@
         name="tilt_scan_assembler" respawn="true" machine="c2">
     <remap from="scan" to="shoulder_scan"/>
     <param name="max_scans" type="int" value="600" />
-    <param name="fixed_frame" type="string" value="/base_link" />
+    <param name="fixed_frame" type="string" value="/map" />
     <param name="ignore_laser_skew" type="bool" value="true" />
   </node>
   
