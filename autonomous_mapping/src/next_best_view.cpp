@@ -825,7 +825,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	}
 	for (unsigned int i = 0; i < scores.size (); i++)
 		ROS_INFO ("pose %i: %f", i, scores[i]);
-    double threshold=scores[0]/2;
+    double threshold=scores[0] * 4/5;
     int p=0;
     for (unsigned j=1;j<scores.size ();j++)
     	if (scores[j]>threshold)

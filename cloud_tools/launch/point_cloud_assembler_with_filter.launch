@@ -22,4 +22,7 @@
     <remap from="laser_scanner_signal" to="/laser_tilt_controller/laser_scanner_signal"/>
     <remap from="full_cloud" to="shoulder_cloud" />
   </node>
+    <node pkg="point_cloud_converter" type="point_cloud_converter" output="screen" name="point_cloud_converter" machine="c2">
+    <remap from="/points_in" to="/shoulder_cloud"/>
+  </node>
 </launch>

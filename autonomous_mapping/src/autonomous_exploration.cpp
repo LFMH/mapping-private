@@ -14,6 +14,8 @@
 #include <pcl_ros/publisher.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <pluginlib/class_list_macros.h>
+#include "pcl/io/pcd_io.h"
+#include "pcl/filters/voxel_grid.h"
 
 namespace autonomous_exploration
 {
@@ -23,7 +25,7 @@ class AutonomousExploration:public pcl_ros::PCLNodelet
     AutonomousExploration();
     ~AutonomousExploration();
     void autonomousExplorationCallBack(const geometry_msgs::Pose& pose_msg);
-    void pointcloudCallBack(const sensor_msgs::PointCloud& pointcloud_msg);
+    void pointcloudCallBack(const sensor_msgs::PointCloud2& pointcloud_msg);
     void laserScannerSignalCallBack(const pr2_msgs::LaserScannerSignal laser_scanner_signal_msg);
     void moveRobot(geometry_msgs::Pose goal_pose);
     void moveTorso(double position, double velocity, std::string direction);
@@ -45,6 +47,7 @@ class AutonomousExploration:public pcl_ros::PCLNodelet
     geometry_msgs::Pose pose_msg_;
     bool get_pointcloud_, received_pose_, received_laser_signal_;
     //ros::ServiceClient tilt_laser_client_;
+  pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
 };
 
 AutonomousExploration::AutonomousExploration()
@@ -65,13 +68,13 @@ void AutonomousExploration::onInit()
   received_pose_ = false;
   received_laser_signal_ = false;
   pose_subscriber_ = pnh_->subscribe(subscribe_pose_topic_, 100, &AutonomousExploration::autonomousExplorationCallBack, this);
-  pointcloud_publisher_ = pnh_->advertise<sensor_msgs::PointCloud>("pointcloud", 100);
+  pointcloud_publisher_ = pnh_->advertise<sensor_msgs::PointCloud2>("pointcloud", 100);
   tilt_laser_publisher_ = pnh_->advertise<pr2_msgs::PeriodicCmd>("/laser_tilt_controller/set_periodic_cmd", 1);
-  pointcloud_subscriber_ = pnh_->subscribe("/shoulder_cloud", 100, &AutonomousExploration::pointcloudCallBack, this);
+  pointcloud_subscriber_ = pnh_->subscribe("/points2_out", 100, &AutonomousExploration::pointcloudCallBack, this);
   laser_signal_subscriber_ = pnh_->subscribe("/laser_tilt_controller/laser_scanner_signal", 1, &AutonomousExploration::laserScannerSignalCallBack, this);
  // tilt_laser_client_ = pnh_->serviceClient<pr2_msgs::SetPeriodicCmd>("laser_tilt_controller/set_periodic_cmd");
   tilt_laser_traj_cmd_publisher_ = pnh_->advertise<pr2_msgs::LaserTrajCmd>("/laser_tilt_controller/set_traj_cmd", 1);
-  spin_thread_ = boost::thread (boost::bind (&ros::spin));
+  spin_thread_ = boost::thread (boost::bind (&AutonomousExploration::spin, this));
   //ros::spin();
 }
 void AutonomousExploration::spin()
@@ -83,7 +86,9 @@ void AutonomousExploration::spin()
     if(received_pose_ )
     {
       //move robot to the received pose
+      ROS_INFO("Moving the robot");
       moveRobot(pose_msg_);
+      ROS_INFO("End of Moving the robot");
       //rise the spine up to scan
       setLaserProfile("scan");
       moveTorso(0.3, 1.0, "up");
@@ -116,6 +121,18 @@ void AutonomousExploration::spin()
         get_pointcloud_ = true;
         angles += 30.0;
       }
+      while (!get_pointcloud_)
+	{
+	  loop.sleep();
+	}
+      ROS_INFO("Published aggregated cloud with %ld points", cloud_merged_.points.size());
+      cloud_merged_.header.stamp = ros::Time::now();
+      pointcloud_publisher_.publish(cloud_merged_);
+      
+      //Clear points for the next round
+      cloud_merged_.points.clear();
+      cloud_merged_.width = 0;
+      cloud_merged_.height = 0;
       received_pose_ = false;
       //lower the spine to navigate some place else
       moveTorso(0.01, 1.0, "down");
@@ -262,13 +279,25 @@ void AutonomousExploration::laserScannerSignalCallBack(const pr2_msgs::LaserScan
     received_laser_signal_ = true;
   }
 }
-void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud& pointcloud_msg)
+void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& pointcloud_msg)
 {
   if(get_pointcloud_)
   {
     ROS_INFO("pointcloud received");
-    pointcloud_publisher_.publish(pointcloud_msg);
-    ROS_INFO("pointcloud published");
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZ> ());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
+    pcl::fromROSMsg(pointcloud_msg, *cloud_tmp);
+    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    sor.setInputCloud (cloud_tmp);
+    sor.setLeafSize (0.02, 0.02, 0.02);
+    sor.filter (*cloud_tmp_filtered);
+
+
+    if (cloud_merged_.points.size() == 0)
+      cloud_merged_ = *cloud_tmp_filtered;
+    else
+      cloud_merged_ += *cloud_tmp_filtered;
+    //    ROS_INFO("pointcloud published");
     get_pointcloud_ = false;
   }
 }
