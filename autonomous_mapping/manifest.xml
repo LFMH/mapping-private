@@ -18,8 +18,13 @@
   <depend package="tf"/>
   <depend package="nodelet"/>
   <depend package="nav_msgs"/>
+  <depend package="move_base_msgs"/>
+  <depend package="actionlib"/>
+  <depend package="pr2_controllers_msgs"/>
+  <depend package="pr2_msgs"/>
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
+    <nodelet plugin="${prefix}/nodelets_exploration.xml" />
   </export>
 
 </package>

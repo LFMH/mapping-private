@@ -7,3 +7,11 @@
   </class>
 
 </library>
+<library path="lib/libAutonomousExploration">
+  <class name="autonomous_mapping/AutonomousExploration" type="autonomous_exploration::AutonomousExploration" base_class_type="nodelet::Nodelet">
+    <description>
+	none
+    </description>
+  </class>
+
+</library>

@@ -59,6 +59,7 @@ double pi=3.141;
 typedef struct
 {
 	double x,y;
+	int weight;
 }point_2d;
 
 void write_pgm (std::string filename, std::vector<std::vector<int> > cm)
@@ -83,7 +84,7 @@ void write_pgm (std::string filename, std::vector<std::vector<int> > cm)
 	myfile.close();
 }
 
-class NextBestView:public pcl_ros::PCLNodelet
+class NextBestView : public pcl_ros::PCLNodelet
 {
 
 public:
@@ -101,7 +102,7 @@ protected:
 
 	// octree parameters
 	double octree_res_, octree_maxrange_;
-	int level_, free_label_, occupied_label_, unknown_label_;
+	int level_, free_label_, occupied_label_, unknown_label_, fringe_label_;
 	bool check_centroids_;
 	bool visualize_octree_;
 
@@ -120,7 +121,18 @@ protected:
 	double kernel_radial_step_;
 	double sensor_opening_angle_;
 	double costmap_grid_cell_size_;
+	double sensor_horizontal_angle_;
+	double sensor_vertical_angle_;
+	double sensor_horizontal_resolution_;
+	double sensor_vertical_resolution_;
+	double sensor_preferred_opening_angle_;
+	double sensor_preferred_d_min_;
+	double sensor_preferred_d_max_;
+	double nr_pose_samples_;
 	bool received_map_;
+	//geometry_msgs::Point min,max,minoc,maxoc;
+	geometry_msgs::Pose p;
+	//std::vector<std::vector<std::vector<int> > > border_costmap;
 	// kernels for every (discretized) direction
 	std::vector<std::vector<point_2d> > vis_kernel;
 
@@ -140,11 +152,10 @@ protected:
 	ros::Subscriber cloud_sub_;
 	ros::Subscriber grid_sub_;
 	ros::Publisher octree_pub_;
-	pcl_ros::Publisher<pcl::PointNormal> border_cloud_pub_;
-	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud_pub_;
-	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud2_pub_;
-	pcl_ros::Publisher<pcl::PointXYZ> cluster_cloud3_pub_;
+	pcl_ros::Publisher<pcl::PointXYZ> border_cloud_pub_;
 	ros::Publisher pose_pub_;
+	ros::Publisher pose_boundary_pub_;
+	ros::Publisher pose_occupied_pub_;
 	ros::Publisher ogrid_pub_;
 	// Publishes the octree in MarkerArray format so that it can be visualized in rviz
 	ros::Publisher octree_marker_array_publisher_;
@@ -161,6 +172,7 @@ protected:
 	void visualizeOctree (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg, geometry_msgs::Point viewpoint);
 	void castRayAndLabel (pcl::PointCloud<pcl::PointXYZ>& cloud, octomap::pose6d origin);
 	void findBorderPoints (pcl::PointCloud<pcl::PointXYZ>& border_cloud, std::string frame_id);
+	void findOccupiedPoints(pcl::PointCloud<pcl::PointXYZ>& occupied_cloud, std::string frame_id);
 	void computeBoundaryPoints (pcl::PointCloud<pcl::PointXYZ>& border_cloud, pcl::PointCloud<pcl::Normal>& border_normals, std::vector<pcl::PointIndices>& clusters, pcl::PointCloud<pcl::PointXYZ>* cluster_clouds);
 
 	void extractClusters (const pcl::PointCloud<pcl::PointXYZ> &cloud,
@@ -172,6 +184,20 @@ protected:
 			unsigned int max_pts_per_cluster = std::numeric_limits<int>::max ());
 
 	void create_kernels ();
+	void find_min_max(pcl::PointCloud<pcl::PointXYZ> border_cloud, geometry_msgs::Point &min, geometry_msgs::Point &max);
+	std::vector<std::vector<std::vector<int> > > create_costmap(double x_dim,double y_dim, int nr_dirs, pcl::PointCloud<pcl::PointXYZ> border_cloud,geometry_msgs::Point &min,geometry_msgs::Point &max);
+	std::vector<std::vector<std::vector<int> > > create_empty_costmap (double x_dim, double y_dim, int nr_dirs);
+	geometry_msgs::Pose find_best_pose(int best_i,int best_j,int best_k,int max_reward,geometry_msgs::Point &min,geometry_msgs::Point &max);
+	geometry_msgs::Pose sample_from_costmap (std::vector<std::vector<std::vector<int> > > costmap, int max_reward, int nr_dirs, int x_dim, int y_dim, geometry_msgs::Point min, geometry_msgs::Point max, int &reward, double &score);
+	//geometry_msgs::PoseArray computedirections(double x, double y, double theta, int reward);
+	double compute_overlap_score(double x, double y, double theta, int reward);
+
+	void find_max_indices (int &best_i, int &best_j, int &best_k,
+				int nr_dirs, int x_dim, int y_dim, int &max_reward,
+				std::vector<std::vector<std::vector<int > > > costmap);
+
+	// save costmap stack to files
+	void save_costmaps (int nr_dirs, std::vector<std::vector<std::vector<int> > > costmap, std::string file_prefix, ros::Time stamp);
 
 public:
 	NextBestView();
@@ -201,10 +227,24 @@ void NextBestView::onInit()
 	pnh_->param("sensor_d_min", sensor_d_min_, 1.0);
 	pnh_->param("sensor_d_max", sensor_d_max_, 4.0);
 	pnh_->param("kernel_radial_step", kernel_radial_step_, 0.1);
-	pnh_->param("kernel_degree_step", kernel_degree_step_, 10.0*pi/180.0);
-	pnh_->param("sensor_opening_angle", sensor_opening_angle_, pi);
+	pnh_->param("kernel_degree_step", kernel_degree_step_, 10.0);
+	kernel_degree_step_=pi*kernel_degree_step_/180.0;
+	pnh_->param("sensor_opening_angle", sensor_opening_angle_, 180.0);
+	sensor_opening_angle_=pi*sensor_opening_angle_/180.0;
 	pnh_->param("costmap_grid_cell_size", costmap_grid_cell_size_, 0.15);
-
+	pnh_->param("sensor_horizontal_angle", sensor_horizontal_angle_,180.0);//180 degrees
+	sensor_horizontal_angle_=pi*sensor_horizontal_angle_/180.0;
+	pnh_->param("sensor_vertical_angle", sensor_vertical_angle_,91.71);
+	sensor_vertical_angle_=sensor_vertical_angle_*pi/180.0;
+	pnh_->param("sensor_horizontal_resolution", sensor_horizontal_resolution_,1.0);//1 degree
+	sensor_horizontal_resolution_=sensor_horizontal_resolution_*pi/180.0;
+	pnh_->param("sensor_vertical_resolution", sensor_vertical_resolution_,1.0);//1 degree
+	sensor_vertical_resolution_=sensor_vertical_resolution_*pi/180.0;
+	pnh_->param("sensor_preferred_opening_angle", sensor_preferred_opening_angle_,120.0);
+	sensor_preferred_opening_angle_=sensor_preferred_opening_angle_*pi/180.0;
+	pnh_->param("sensor_preferred_d_min", sensor_preferred_d_min_,1.0);
+	pnh_->param("sensor_preferred_d_max", sensor_preferred_d_max_,3.0);
+	pnh_->param("nr_pose_samples", nr_pose_samples_,100.0);//1 degree
 	// topic names
 	pnh_->param("ogrid_sub_topic", ogrid_sub_topic_, std::string("/map"));
 	pnh_->param("ogrid_topic", ogrid_topic_, std::string("/nbv_map"));
@@ -221,6 +261,7 @@ void NextBestView::onInit()
 	pnh_->param("free_label", free_label_, 0);
 	pnh_->param("occupied_label", occupied_label_, 1);
 	pnh_->param("unknown_label", unknown_label_, -1);
+	pnh_->param("fringe_label", fringe_label_, 2);
 	pnh_->param("visualize_octree", visualize_octree_, true);
 
 	// search stuff
@@ -235,11 +276,10 @@ void NextBestView::onInit()
 	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1);
 	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1);
 	grid_sub_=pnh_->subscribe(ogrid_sub_topic_,1,&NextBestView::grid_cb,this);
-	border_cloud_pub_ = pcl_ros::Publisher<pcl::PointNormal> (*pnh_, "border_cloud", 1);
-	cluster_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "cluster_cloud", 1);
-	cluster_cloud2_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "cluster_cloud2", 1);
-	cluster_cloud3_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "cluster_cloud3", 1);
+	border_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "border_cloud", 1);
 	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1);
+	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundardy_pose", 1);
+	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1);
 
 	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
 	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100);
@@ -250,6 +290,298 @@ void NextBestView::onInit()
 	create_kernels ();
 }
 
+void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
+			int nr_dirs, int x_dim, int y_dim, int &max_reward,
+			std::vector<std::vector<std::vector<int > > > costmap)
+{
+	for (int i = 0; i < nr_dirs; ++i)
+	{
+		//		std::stringstream ss;
+		//		ss << "costmap_" << border_cloud.header.stamp << "_" << i;
+		//		write_pgm (ss.str(), costmap[i]);
+		for (int j = 0; j < x_dim; ++j)
+			for (int k = 0; k < y_dim; k++)
+			{
+				int reward = costmap[i][j][k];
+				if (reward > max_reward)
+				{
+					max_reward = reward;
+					best_i = i;
+					best_j = j;
+					best_k = k;
+				}
+			}
+	}
+}
+void NextBestView::save_costmaps (int nr_dirs, std::vector<std::vector<std::vector<int> > > costmap, std::string file_prefix, ros::Time stamp)
+{
+	for (int i = 0; i < nr_dirs; ++i)
+	{
+		std::stringstream ss;
+		ss << file_prefix << "_" << stamp << "_" << i << ".pgm";
+		write_pgm (ss.str(), costmap[i]);
+	}
+}
+
+void NextBestView::find_min_max(pcl::PointCloud<pcl::PointXYZ> border_cloud,geometry_msgs::Point &min, geometry_msgs::Point &max)
+{
+		for (unsigned int i=1;i<border_cloud.points.size();i++)
+		{
+			if (min.x > border_cloud.points[i].x) min.x = border_cloud.points[i].x;
+			if (min.y > border_cloud.points[i].y) min.y = border_cloud.points[i].y;
+			if (max.x < border_cloud.points[i].x) max.x = border_cloud.points[i].x;
+			if (max.y < border_cloud.points[i].y) max.y = border_cloud.points[i].y;
+		}
+}
+
+std::vector<std::vector<std::vector<int> > > NextBestView::create_empty_costmap (double x_dim, double y_dim, int nr_dirs)
+{
+	std::vector<std::vector<std::vector<int> > > costmap;
+	costmap.resize (nr_dirs);
+	for (int i = 0; i < nr_dirs; ++i) {
+		costmap[i].resize(x_dim);
+
+		for (int j = 0; j < x_dim; ++j)
+			costmap[i][j].resize(y_dim);
+	}
+	return costmap;
+}
+
+
+std::vector<std::vector<std::vector<int> > > NextBestView::create_costmap (double x_dim, double y_dim, int nr_dirs, pcl::PointCloud<pcl::PointXYZ> cloud,geometry_msgs::Point &min,geometry_msgs::Point &max)
+{
+	// initialize vector of costmaps
+	std::vector<std::vector<std::vector<int> > > costmap = create_empty_costmap (x_dim, y_dim, nr_dirs);
+
+		// compute costmaps -- convolute with the different kernels
+		for (int dir=0;dir<nr_dirs;dir++)
+		{
+			for (unsigned int i=0;i<cloud.points.size();i++)
+			{
+				for (unsigned int j=0;j<vis_kernel[dir].size();j++)
+				{
+					double x=(double)cloud.points[i].x + vis_kernel[dir][j].x;
+					double y=(double)cloud.points[i].y + vis_kernel[dir][j].y;
+					int id_x=(int)(x_dim*((x-min.x)/(max.x-min.x)));
+					int id_y=(int)(y_dim*((y-min.y)/(max.y-min.y)));
+
+
+					if (received_map_)
+					{
+						//  // NOTE: this assumes the "/map" message had no rotation (0,0,0,1)..
+						double min_map_x = (double)map_.info.origin.position.x;
+						double min_map_y = (double)map_.info.origin.position.y;
+						double max_map_x = (double)(map_.info.origin.position.x + map_.info.resolution * map_.info.width);
+						double max_map_y = (double)(map_.info.origin.position.y + map_.info.resolution * map_.info.height);
+
+						int id_x_m=(int)(map_.info.width*((x-min_map_x)/(max_map_x-min_map_x)));
+						int id_y_m=(int)(map_.info.height*((y-min_map_y)/(max_map_y-min_map_y)));
+						if (map_.data[id_y_m*map_.info.width+id_x_m] == 0)
+							if (id_x >= 0 && id_x < x_dim &&
+									id_y >= 0 && id_y < y_dim)
+								costmap[dir][id_x][id_y]+=vis_kernel[dir][j].weight;
+					}
+					else
+						if (id_x >= 0 && id_x < x_dim &&
+								id_y >= 0 && id_y < y_dim)
+							costmap[dir][id_x][id_y]+=vis_kernel[dir][j].weight;
+				}
+			}
+		}
+		return costmap;
+}
+geometry_msgs::Pose NextBestView::find_best_pose(int best_i,int best_j,int best_k,int max_reward,geometry_msgs::Point &min,geometry_msgs::Point &max)
+{
+	    p.position.x = min.x + (best_j + 0.5) * costmap_grid_cell_size_;
+		p.position.y = min.y + (best_k + 0.5) * costmap_grid_cell_size_;
+		p.position.z = 0;
+		btVector3 axis(0, 0, 1);
+		btQuaternion quat (axis, pi+((double)best_i)*2.0*pi/(double)nr_costmap_dirs_);
+		ROS_INFO("BEST I,J,K::: %i %i %i (reward %i)", best_i, best_j, best_k, max_reward);
+		ROS_INFO("BEST robot pose::: x,y = [%f , %f], theta = %f", p.position.x, p.position.y, best_i*2.0*pi/nr_costmap_dirs_);
+		geometry_msgs::Quaternion quat_msg;
+		tf::quaternionTFToMsg(quat, quat_msg);
+		p.orientation = quat_msg;
+		return p;
+}
+/*geometry_msgs::PoseArray NextBestView::computedirections(double x, double y, double theta, int reward)
+{
+	geometry_msgs::PoseArray ret_poses;
+	std::vector<std::vector<int> > node_map;
+	double node_map_x=(int)(pi / 0.00436332313)+1;
+	double node_map_y=(int)(1.6/0.0174532925)+1;
+	node_map.resize (node_map_x);
+	for (int i = 0; i<node_map_x; i++)
+		node_map[i].resize(node_map_y);
+
+	geometry_msgs::Pose pose;
+	pose.position.x = x;
+	pose.position.y = y;
+	pose.position.z = 1.35;
+	octomap::point3d origin (x, y, pose.position.z);
+	int hit = 0, miss = 0, fringe = 0, known = 0;
+	// given a vector, along x axis.
+	btVector3 x_axis (1, 0, 0);
+	// rotate it "down" around y:
+	btQuaternion rot_down (btVector3(0,1,0), 0.3);
+	// rotate it in xy plane:
+	btQuaternion rot_in_xy (btVector3(0,0,1), theta);
+	int countx,county;
+	for (double pid=-pi*0.5,countx=0;pid<pi*0.5,countx<node_map_x;pid+=0.00436332313,countx++)  // 0.25 degrees steps
+	{
+		btQuaternion rot_in_laser_plane (btVector3 (0,0,1), pid);
+		for (double sid=-0.8,county=0;sid<0.8,county<node_map_y;sid+=0.0174532925,county++) // 1.0 degree steps
+		{
+
+			btQuaternion rot_laser_plane (btVector3 (0,1,0), sid);
+			btVector3 laser_ray (1, 0, 0);
+			btMatrix3x3 rot (rot_in_xy * rot_down * rot_laser_plane * rot_in_laser_plane);
+			btVector3 dir = rot * laser_ray;
+			octomap::point3d direction = octomap::point3d (dir.x(), dir.y(), dir.z());
+			octomap::point3d obstacle(0,0,0);
+
+			if (!octree_->castRay(origin, direction, obstacle, true, sensor_d_max_))
+			  {
+				miss++;
+			  }
+			else {
+				hit++;
+				octomap::OcTreeNodePCL *octree_node = octree_->search(obstacle);
+
+				// if occupied voxel
+				if (octree_node != NULL)
+				{
+					if (octree_node->getLabel() == occupied_label_)
+					{
+						known++;
+						node_map[countx][county] = 1;
+					}
+					else //if (octree_node->getLabel() == fringe_label_)
+					{
+						fringe++;
+						node_map[countx][county] = 2;
+					}
+				}
+
+			}
+
+			//geometry_msgs::Quaternion dir_tic;
+			//tf::quaternionTFToMsg(rot_in_xy * rot_down * rot_laser_plane * rot_in_laser_plane, dir_tic);
+			//pose.orientation = dir_tic;
+      		//ret_poses.poses.push_back (pose);
+		}
+
+	}
+	double p_f = (double)fringe/hit;
+	double p_k = (double)known/hit;
+	double entropy = - p_f * log (p_f) - p_k * log (p_k);
+	ROS_INFO ("found %i fringe points, %i occupied points, ratios: %f, %f, Entropy = %f, score = %f",
+					fringe, known, p_f, p_k, entropy, reward * entropy);
+	return ret_poses;
+}
+*/
+geometry_msgs::Pose NextBestView::sample_from_costmap (std::vector<std::vector<std::vector<int> > > costmap, int max_reward, int nr_dirs, int x_dim, int y_dim, geometry_msgs::Point min, geometry_msgs::Point max, int &reward, double &score)
+{
+	int dir, x, y;
+	int c;
+	do
+	{
+		dir = rand () * ((double)nr_dirs / RAND_MAX);
+		x = rand () * ((double)x_dim / RAND_MAX);
+		y = rand () * ((double)y_dim / RAND_MAX);
+
+		c = 0.5 * (double)max_reward + rand () * ((double)max_reward * 0.5 / RAND_MAX);
+		c = sqrt((double)max_reward*max_reward - (double)c*c); // quarter circular transfer function
+	} while (costmap [dir][x][y] < c);
+	reward = costmap[dir][x][y];
+
+	geometry_msgs::Pose pose = find_best_pose(dir, x, y, reward, min, max);
+	double real_x = min.x + (x + 0.5) * costmap_grid_cell_size_;
+	double real_y = min.y + (y + 0.5) * costmap_grid_cell_size_;
+	double theta = pi+((double)dir)*2.0*pi/(double)nr_costmap_dirs_;
+	score = compute_overlap_score (real_x, real_y, theta, reward);
+	pose.position.z = (double)score / 100;
+	return (pose);
+}
+double NextBestView::compute_overlap_score(double x, double y, double theta, int reward)
+{
+	std::vector<std::vector<int> > node_map;
+		double node_map_x=(int)(sensor_horizontal_angle_ / sensor_horizontal_resolution_)+1;
+		double node_map_y=(int)(sensor_vertical_angle_/sensor_vertical_resolution_)+1;
+		node_map.resize (node_map_x);
+		for (int i = 0; i<node_map_x; i++)
+			node_map[i].resize(node_map_y);
+
+		geometry_msgs::Pose pose;
+		pose.position.x = x;
+		pose.position.y = y;
+		pose.position.z = 1.35;
+		octomap::point3d origin (x, y, pose.position.z);
+		int hit = 0, miss = 0, fringe = 0, known = 0;
+		// given a vector, along x axis.
+		btVector3 x_axis (1, 0, 0);
+		// rotate it "down" around y:
+		btQuaternion rot_down (btVector3(0,1,0), 0.3);
+		// rotate it in xy plane:
+		btQuaternion rot_in_xy (btVector3(0,0,1), theta);
+		int countx = 0, county;
+		for (double pid=-sensor_horizontal_angle_*0.5;pid<sensor_horizontal_angle_*0.5 && countx<node_map_x;pid+=sensor_horizontal_resolution_,countx++)  // 1 degrees steps
+		{
+			btQuaternion rot_in_laser_plane (btVector3 (0,0,1), pid);
+			county = 0;
+			for (double sid=-sensor_vertical_angle_/2;sid<sensor_vertical_angle_/2 && county<node_map_y;sid+=sensor_vertical_resolution_,county++) // 1.0 degree steps
+			{
+
+				btQuaternion rot_laser_plane (btVector3 (0,1,0), sid);
+				btVector3 laser_ray (1, 0, 0);
+				btMatrix3x3 rot (rot_in_xy * rot_down * rot_laser_plane * rot_in_laser_plane);
+				btVector3 dir = rot * laser_ray;
+				octomap::point3d direction = octomap::point3d (dir.x(), dir.y(), dir.z());
+				octomap::point3d obstacle(0,0,0);
+
+				if (!octree_->castRay(origin, direction, obstacle, true, sensor_d_max_))
+				  {
+					miss++;
+				  }
+				else {
+					hit++;
+					octomap::OcTreeNodePCL *octree_node = octree_->search(obstacle);
+
+					// if occupied voxel
+					if (octree_node != NULL)
+					{
+						if (octree_node->getLabel() == occupied_label_)
+						{
+							known++;
+							node_map[countx][county] = 1;
+						}
+						else if (octree_node->getLabel() == fringe_label_)
+						{
+							fringe++;
+							node_map[countx][county] = 2;
+						}
+					}
+
+				}
+
+				//geometry_msgs::Quaternion dir_tic;
+				//tf::quaternionTFToMsg(rot_in_xy * rot_down * rot_laser_plane * rot_in_laser_plane, dir_tic);
+				//pose.orientation = dir_tic;
+	      		//ret_poses.poses.push_back (pose);
+			}
+
+		}
+		double p_f = (double)fringe/hit;
+		double p_k = (double)known/hit;
+		double entropy;
+		if (p_f == 0 || p_k == 0)
+			entropy = 0;
+		else
+			entropy = - p_f * log (p_f) - p_k * log (p_k);
+		ROS_INFO ("found %i fringe points, %i occupied points, ratios: %f, %f, Entropy = %f, score = %f",
+				fringe, known, p_f, p_k, entropy, reward * entropy);
+		return reward * entropy;
+}
 void NextBestView::grid_cb(const nav_msgs::OccupancyGridConstPtr& grid_msg)
 {
 	map_.header = grid_msg->header;
@@ -333,6 +665,11 @@ void NextBestView::create_kernels ()
 				double theta=i*2*pi/nr_costmap_dirs_;
 				ker_pt.x = cos(theta)*x - sin(theta)*y;
 				ker_pt.y = sin(theta)*x + cos(theta)*y;
+				if (d>sensor_preferred_d_min_ && d<sensor_preferred_d_max_
+						&& fabs(phi2)<sensor_preferred_opening_angle_/2)
+					ker_pt.weight = 2;
+				else
+					ker_pt.weight = 1;
 				vis_kernel[i].push_back(ker_pt);
 			}
 		}
@@ -397,11 +734,11 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	pcl::PointCloud<pcl::PointXYZ> border_cloud;
 	findBorderPoints(border_cloud, pointcloud2_msg->header.frame_id);
 
+	pcl::PointCloud<pcl::PointXYZ> occupied_cloud;
+	findOccupiedPoints(occupied_cloud, pointcloud2_msg->header.frame_id);
+
 	// Create the filtering objects
 	pcl::PassThrough<pcl::PointXYZ> pass;
-	pcl::ExtractIndices<pcl::PointXYZ> extract;
-	pcl::ExtractIndices<pcl::Normal> nextract;
-	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
 
 	//creating datasets
 	pcl::PointCloud<pcl::Normal> border_normals;
@@ -411,127 +748,117 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	pass.setFilterFieldName ("z");
 	pass.setFilterLimits (0, 2.2);
 	pass.filter(border_cloud);
+	pass.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (occupied_cloud));
+	pass.filter(occupied_cloud);
 
-	// tree object used for search
-	pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree =
-			boost::shared_ptr <pcl::KdTreeFLANN<pcl::PointXYZ> > (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
+    geometry_msgs::Point min,max;
+	min.x=FLT_MAX;
+	min.y=FLT_MAX;
+	max.x=-FLT_MAX;
+	max.y=-FLT_MAX;
 
-	// Estimate point normals
-	ne.setSearchMethod(tree);
-	ne.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (border_cloud));
-	ne.setRadiusSearch(normal_search_radius_);
-	//ne.setKSearch(0);
-	ne.compute(border_normals);
+	find_min_max(border_cloud,min,max);
+	find_min_max(occupied_cloud,min,max);
 
-	//filter again to remove spurious NaNs
-	pcl::PointIndices nan_indices;
-	for (unsigned int i = 0; i < border_normals.points.size(); i++) {
-		if (isnan(border_normals.points[i].normal[0]))
-			nan_indices.indices.push_back(i);
-	}
-	ROS_INFO("%d NaNs found", (int)nan_indices.indices.size());
-	//in pointcloud
-	extract.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (border_cloud));
-	extract.setIndices(boost::make_shared<pcl::PointIndices> (nan_indices));
-	extract.setNegative(true);
-	extract.filter(border_cloud);
-	ROS_INFO("%d points in border cloud after filtering and NaN removal", (int)border_cloud.points.size());
-	//and in the normals
-	nextract.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::Normal> > (border_normals));
-	nextract.setIndices(boost::make_shared<pcl::PointIndices> (nan_indices));
-	nextract.setNegative(true);
-	nextract.filter(border_normals);
-	ROS_INFO("%d points in normals cloud after NaN removal", (int)border_normals.points.size());
-
-
-	geometry_msgs::Point min,max;
-	min.x=(double)border_cloud.points[0].x;
-	min.y=(double)border_cloud.points[0].y;
-	max.x=min.x;
-	max.y=min.y;
-	for (unsigned int i=1;i<border_cloud.points.size();i++)
-	{
-		if (min.x > border_cloud.points[i].x) min.x = border_cloud.points[i].x;
-		if (min.y > border_cloud.points[i].y) min.y = border_cloud.points[i].y;
-		if (max.x < border_cloud.points[i].x) max.x = border_cloud.points[i].x;
-		if (max.y < border_cloud.points[i].y) max.y = border_cloud.points[i].y;
-	}
 	min.x -= sensor_d_max_;
 	min.y -= sensor_d_max_;
 	max.x += sensor_d_max_;
 	max.y += sensor_d_max_;
+
 	double x_dim=(int)abs((max.x-min.x)/costmap_grid_cell_size_)+1;
 	double y_dim=(int)abs((max.y-min.y)/costmap_grid_cell_size_)+1;
 	ROS_INFO("X,Y min, max: %f, %f, %f, %f", min.x, min.y, max.x, max.y);
 	ROS_INFO("X,Y DIMENSIONS OF THE COSTMAP: %f, %f",x_dim,y_dim);
+	std::vector<std::vector<std::vector<int> > > boundary_costmap, occupied_costmap;
+	boundary_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, border_cloud, min, max);
+	occupied_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, occupied_cloud, min, max);
 
-	// initialize vector of costmaps
-	std::vector<std::vector<std::vector<int> > > costmap;
-	costmap.resize(nr_costmap_dirs_);
-	for (int i = 0; i < nr_costmap_dirs_; ++i) {
-		costmap[i].resize(x_dim);
-
-		for (int j = 0; j < x_dim; ++j)
-			costmap[i][j].resize(y_dim);
-	}
-
-	// compute costmaps -- convolute with the different kernels
-	for (int dir=0;dir<nr_costmap_dirs_;dir++)
-	{
-		for (unsigned int i=0;i<border_cloud.points.size();i++)
-		{
-			for (unsigned int j=0;j<vis_kernel[dir].size();j++)
-			{
-				double x=(double)border_cloud.points[i].x + vis_kernel[dir][j].x;
-				double y=(double)border_cloud.points[i].y + vis_kernel[dir][j].y;
-				int id_x=(int)(x_dim*((x-min.x)/(max.x-min.x)));
-				int id_y=(int)(y_dim*((y-min.y)/(max.y-min.y)));
-
-
-				if (received_map_)
-				{
-					//  // NOTE: this assumes the "/map" message had no rotation (0,0,0,1)..
-					double min_map_x = (double)map_.info.origin.position.x;
-					double min_map_y = (double)map_.info.origin.position.y;
-					double max_map_x = (double)(map_.info.origin.position.x + map_.info.resolution * map_.info.width);
-					double max_map_y = (double)(map_.info.origin.position.y + map_.info.resolution * map_.info.height);
-
-					int id_x_m=(int)(map_.info.width*((x-min_map_x)/(max_map_x-min_map_x)));
-					int id_y_m=(int)(map_.info.height*((y-min_map_y)/(max_map_y-min_map_y)));
-					if (map_.data[id_y_m*map_.info.width+id_x_m] == 0)
-						if (id_x >= 0 && id_x < x_dim &&
-								id_y >= 0 && id_y < y_dim)
-							costmap[dir][id_x][id_y]++;;
-				}
-				else
-					if (id_x >= 0 && id_x < x_dim &&
-							id_y >= 0 && id_y < y_dim)
-						costmap[dir][id_x][id_y]++;
-			}
-		}
-	}
-
-	// find best scanning pose -- simply the maximum
-	int max_reward = 0;
-	int best_i=0, best_j=0, best_k=0;
+	// combine both costmaps using histogram intersection
+	std::vector<std::vector<std::vector<int> > > bound_occ_costmap = create_empty_costmap(x_dim, y_dim, nr_costmap_dirs_);
 	for (int i = 0; i < nr_costmap_dirs_; ++i)
-	{
-		//		std::stringstream ss;
-		//		ss << "costmap_" << border_cloud.header.stamp << "_" << i;
-		//		write_pgm (ss.str(), costmap[i]);
 		for (int j = 0; j < x_dim; ++j)
 			for (int k = 0; k < y_dim; k++)
 			{
-				int reward = costmap[i][j][k];
-				if (reward > max_reward)
-				{
-					max_reward = reward;
-					best_i = i;
-					best_j = j;
-					best_k = k;
-				}
+				// should use min function.. :D
+				if (boundary_costmap[i][j][k] < occupied_costmap[i][j][k])
+					bound_occ_costmap[i][j][k] =  boundary_costmap[i][j][k];
+				else
+					bound_occ_costmap[i][j][k] =  occupied_costmap[i][j][k];
 			}
+
+	save_costmaps (nr_costmap_dirs_, boundary_costmap, "boundary", pointcloud2_msg->header.stamp);
+	save_costmaps (nr_costmap_dirs_, occupied_costmap, "occupied", pointcloud2_msg->header.stamp);
+	save_costmaps (nr_costmap_dirs_, bound_occ_costmap, "combined", pointcloud2_msg->header.stamp);
+
+	// also publish the best found pose(s)
+	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
+	nbv_pose_array_.header.stamp = ros::Time::now();
+
+	// find best scanning pose -- simply the maximum
+	int max_reward = 0;
+	int best_combined_i=0, best_combined_j=0, best_combined_k=0;
+	find_max_indices (best_combined_i, best_combined_j, best_combined_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, bound_occ_costmap);
+	nbv_pose_array_.poses.resize(0);
+	//nbv_pose_array_.poses.push_back (find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max));
+	std::vector<double> scores;
+	int reward;
+	double score;
+	for (int i = 0; i < nr_pose_samples_; i++)
+	{
+		geometry_msgs::Pose pose = sample_from_costmap(bound_occ_costmap, max_reward, nr_costmap_dirs_, x_dim, y_dim, min, max, reward,score);
+		if (score == 0)
+			continue;
+		if (scores.size () == 0)
+		{
+			scores.insert (scores.begin(), score);
+			nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin(), pose);
+		}
+		else
+		for (unsigned int j = 0; j < scores.size(); j++)
+			if (scores[j] < score)
+			{
+				scores.insert (scores.begin() + j, score);
+				nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin() + j, pose);
+				break;
+			}
+
 	}
+	for (unsigned int i = 0; i < scores.size (); i++)
+		ROS_INFO ("pose %i: %f", i, scores[i]);
+    double threshold=scores[0]/2;
+    int p=0;
+    for (unsigned j=1;j<scores.size ();j++)
+    	if (scores[j]>threshold)
+    		p=j;
+    	else break;
+    nbv_pose_array_.poses.resize(p);
+	pose_pub_.publish(nbv_pose_array_);
+	/*double x, y, theta;
+    x = min.x + (best_combined_j + 0.5) * costmap_grid_cell_size_;
+	y = min.y + (best_combined_k + 0.5) * costmap_grid_cell_size_;
+	theta = pi+((double)best_combined_i)*2.0*pi/(double)nr_costmap_dirs_;
+	//geometry_msgs::PoseArray scan_poses = computedirections(x, y, theta, bound_occ_costmap[best_combined_i][best_combined_j][best_combined_k]);
+	scan_poses.header = nbv_pose_array_.header;
+	pose_pub_.publish(scan_poses);
+
+
+	nbv_pose_array_.poses.resize(0);
+	nbv_pose_array_.poses.push_back (find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max));
+	pose_boundary_pub_.publish(nbv_pose_array_);*/
+
+	max_reward = 0;
+	int best_boundary_i=0, best_boundary_j=0, best_boundary_k=0;
+	find_max_indices (best_boundary_i, best_boundary_j, best_boundary_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, boundary_costmap);
+	nbv_pose_array_.poses.resize(0);
+	nbv_pose_array_.poses.push_back (find_best_pose(best_boundary_i,best_boundary_j,best_boundary_k,max_reward,min,max));
+	pose_boundary_pub_.publish(nbv_pose_array_);
+
+	max_reward = 0;
+	int best_occupied_i=0, best_occupied_j=0, best_occupied_k=0;
+	find_max_indices (best_occupied_i, best_occupied_j, best_occupied_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, occupied_costmap);
+	nbv_pose_array_.poses.resize(0);
+	nbv_pose_array_.poses.push_back (find_best_pose(best_occupied_i,best_occupied_j,best_occupied_k,max_reward,min,max));
+	pose_occupied_pub_.publish(nbv_pose_array_);
 
 	// prepare a occupancy grid to be published to rviz
 	nav_msgs::OccupancyGrid ogrid;
@@ -551,16 +878,14 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	for (int i=0;i<x_dim;i++)
 		final_costmap[i].resize(y_dim);
 
-
-
 	// assign the best costmap to be the final costmap
 	int max_final_reward = 0;
 	{
-		int k = best_i;
+		int k = best_boundary_i;
 		for (int i=0;i<x_dim;i++)
 			for(int j=0;j<y_dim;j++)
 			{
-				final_costmap[i][j]+=costmap[k][i][j];
+				final_costmap[i][j]+=boundary_costmap[k][i][j];
 				if (final_costmap[i][j] > max_final_reward)
 					max_final_reward = final_costmap[i][j];
 			}
@@ -575,37 +900,11 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 	//std::stringstream sss;
 	//sss << "final_costmap_" << border_cloud.header.stamp;
-
 	//write_pgm (sss.str(), final_costmap);
-	// also publish the best found pose
-	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
-	nbv_pose_array_.header.stamp = ros::Time::now();
-	nbv_pose_array_.poses.resize(0);
-	geometry_msgs::Pose p;
-	p.position.x = min.x + (best_j + 0.5) * costmap_grid_cell_size_;
-	p.position.y = min.y + (best_k + 0.5) * costmap_grid_cell_size_;
-	p.position.z = 0;
-	btVector3 axis(0, 0, 1);
-	btQuaternion quat (axis, pi+((double)best_i)*2.0*pi/(double)nr_costmap_dirs_);
-	ROS_INFO("BEST I,J,K::: %i %i %i (reward %i)", best_i, best_j, best_k, max_reward);
-	ROS_INFO("BEST robot pose::: x,y = [%f , %f], theta = %f", p.position.x, p.position.y, best_i*2.0*pi/nr_costmap_dirs_);
-	geometry_msgs::Quaternion quat_msg;
-	tf::quaternionTFToMsg(quat, quat_msg);
-	p.orientation = quat_msg;
-	nbv_pose_array_.poses.push_back(p);
 
-	//publish poses
-	pose_pub_.publish(nbv_pose_array_);
 
 	//publish border cloud for visualization
-	pcl::PointCloud<pcl::PointNormal> border_pn_cloud;
-	if (border_cloud.points.size() > 0) {
-		pcl::concatenateFields(border_cloud, border_normals, border_pn_cloud);
-	} else {
-		border_pn_cloud.header.frame_id = border_cloud.header.frame_id;
-		border_pn_cloud.header.stamp = ros::Time::now();
-	}
-	border_cloud_pub_.publish(border_pn_cloud);
+	border_cloud_pub_.publish(border_cloud);
 
 	// publish binary octree
 	if (0) {
@@ -847,31 +1146,73 @@ void NextBestView::castRayAndLabel(pcl::PointCloud<pcl::PointXYZ>& cloud, octoma
 
 
 }
+void NextBestView::findOccupiedPoints(pcl::PointCloud<pcl::PointXYZ>& occupied_cloud, std::string frame_id)
+{
+	    occupied_cloud.header.frame_id = frame_id;
+		occupied_cloud.header.stamp = ros::Time::now();
+		std::list<octomap::OcTreeVolume> leaves;
+		octree_->getLeafNodes(leaves);
+		BOOST_FOREACH(octomap::OcTreeVolume vol, leaves) {
+			octomap::point3d centroid;
+			centroid(0) = vol.first.x(),  centroid(1) = vol.first.y(),  centroid(2) = vol.first.z();
+			octomap::OcTreeNodePCL *octree_node = octree_->search(centroid);
 
-void NextBestView::findBorderPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud, std::string frame_id) {
+			// if occupied voxel
+			if (octree_node != NULL && octree_node->getLabel() == occupied_label_)
+			{
+				pcl::PointXYZ occupied_pt (centroid.x(), centroid.y(), centroid.z());
+		        occupied_cloud.points.push_back(occupied_pt);
+			}
+		}
+}
+
+void NextBestView::findBorderPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud, std::string frame_id)
+{
 	border_cloud.header.frame_id = frame_id;
 	border_cloud.header.stamp = ros::Time::now();
 	std::list<octomap::OcTreeVolume> leaves;
 	octree_->getLeafNodes(leaves);
-	BOOST_FOREACH(octomap::OcTreeVolume vol, leaves) {
+	BOOST_FOREACH(octomap::OcTreeVolume vol, leaves)
+	{
 		octomap::point3d centroid;
 		centroid(0) = vol.first.x(),  centroid(1) = vol.first.y(),  centroid(2) = vol.first.z();
 		octomap::OcTreeNodePCL *octree_node = octree_->search(centroid);
-
+		int found = 0;
 		// if free voxel -> check for unknown neighbors
-		if (octree_node != NULL && octree_node->getLabel() == free_label_) {
-			for (int i=0; i<3; i++) {
-				octomap::point3d neighbor_centroid = centroid;
-				for (int j=-1; j<2; j+=2) {
-					neighbor_centroid(i) += j * octree_res_;
-					octomap::OcTreeNodePCL *neighbor = octree_->search(neighbor_centroid);
-					if (neighbor != NULL && neighbor->getLabel() == unknown_label_) {
-						// add to list of border voxels
-						pcl::PointXYZ border_pt (centroid.x(), centroid.y(), centroid.z());
-						border_cloud.points.push_back(border_pt);
-						break;
+		if (octree_node != NULL && octree_node->getLabel() == free_label_)
+		{
+			for (int x = -1; x <= 1; x++)
+			{
+				for (int y = -1; y <= 1; y++)
+				{
+					for (int z = -1; z <= 1; z++)
+					{
+						if (x == 0 && y == 0 && z == 0)
+							continue;
+						octomap::point3d neighbor_centroid (
+								centroid.x() + x * octree_res_,
+								centroid.y() + y * octree_res_,
+								centroid.z() + z * octree_res_);
+
+						octomap::OcTreeNodePCL *neighbor = octree_->search(neighbor_centroid);
+						if (neighbor != NULL && neighbor->getLabel() == unknown_label_) {
+							// add to list of border voxels
+							found++;
+							if (found > 7)
+							{
+								pcl::PointXYZ border_pt (centroid.x(), centroid.y(), centroid.z());
+								border_cloud.points.push_back(border_pt);
+								octree_node->setLogOdds (CLAMPING_THRES_MAX);
+								octree_node->setLabel(fringe_label_);
+								break;
+							}
+						}
 					}
+					if (found > 7)
+						break;
 				}
+				if (found > 7)
+					break;
 			}
 		}
 	}
@@ -931,6 +1272,7 @@ void NextBestView::createOctree (pcl::PointCloud<pcl::PointXYZ>& pointcloud2_pcl
 					octomap::OcTreeNodePCL *new_node = octree_->updateNode(centroid, false);
 					new_node->setCentroid(centroid);
 					new_node->setLabel(unknown_label_);
+
 				}
 			}
 		}
