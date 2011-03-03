@@ -1,3 +1,0 @@
-voxel_size: 0.02
-dim: 50
-box_size(scene): 10

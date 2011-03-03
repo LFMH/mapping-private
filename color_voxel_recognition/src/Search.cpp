@@ -32,7 +32,8 @@ SearchObj::SearchObj() :
   max_mode(NULL),
   max_dot (NULL),
   exist_voxel_num(NULL),
-  nFeatures(NULL) {
+  nFeatures(NULL),
+  compress_flg(false) {
 }
 
 SearchObj::~SearchObj(){
@@ -497,7 +498,7 @@ T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int
   return result;
 }
 
-void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, const std::vector< std::vector<float> > colorCHLAC, std::vector< std::vector<float> > feature ){
+void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, std::vector< std::vector<float> > feature ){
   //* 分割領域の個数を調べる
   x_num = subdiv_b_[0];
   y_num = subdiv_b_[1];
@@ -508,8 +509,8 @@ void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, const std::vector< st
   if( xyz_num < 1 )
     return;
 
-  exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new Eigen3::VectorXf [ xyz_num ];
+  // exist_voxel_num = new int[ xyz_num ];
+  // nFeatures = new Eigen3::VectorXf [ xyz_num ];
 
   //*********************************//
   //* 全ての分割領域からの特徴抽出 *//
@@ -521,7 +522,6 @@ void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, const std::vector< st
   for(int z=0;z<z_num;z++){
     for(int y=0;y<y_num;y++){
       for(int x=0;x<x_num;x++){
-	exist_voxel_num[ idx ] = ( colorCHLAC[idx][0] + colorCHLAC[idx][1] ) * 2 + 0.001; // ボクセルの数      
 	// histogram normalization
 	for( int t=0; t<dim_feature; t++ ){
 	  if( feature_max[ t ] == 0 ) feature[ idx ][ t ] = 0;
@@ -529,7 +529,10 @@ void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, const std::vector< st
 	  else feature[ idx ][ t ] = upper * feature[ idx ][ t ] / feature_max[ t ];
 	}
 	Map<VectorXf> vec( &(feature[ idx ][0]), feature[ idx ].size() );
-	nFeatures[ idx ] = axis_p * vec;
+	if( compress_flg )
+	  nFeatures[ idx ] = axis_p * vec;
+	else
+	  nFeatures[ idx ] = vec;
 
 	//*************************************//
 	//* 積分する（viola-jones積分画像の特徴版） *//
@@ -650,6 +653,7 @@ void SearchObj::cleanMax(){
 
 void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis ){
   axis_p = _axis;
+  compress_flg = true;
 }
 
 void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ){
@@ -662,6 +666,7 @@ void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int 
     }
   }
   axis_p = _axis;
+  compress_flg = true;
 }
 
 void SearchObj::cleanData(){
@@ -682,7 +687,7 @@ void SearchObj::cleanData(){
   nFeatures = NULL;
 }
 
-void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
   Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
@@ -692,12 +697,36 @@ void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid
 
   std::vector< std::vector<float> > feature;
   const int h_num = colorCHLAC.size();
-  for( int h=0; h<h_num; h++ )
+  exist_voxel_num = new int[ h_num ];
+  nFeatures = new Eigen3::VectorXf [ h_num ];
+  for( int h=0; h<h_num; h++ ){
     feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
-  setData( subdiv_b_, colorCHLAC, feature );
+    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+  }
+
+  setData( subdiv_b_, feature );
 }
 
-void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
+  //* compute - GRSD -
+  std::vector< std::vector<float> > grsd;
+  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+
+  std::vector< std::vector<float> > feature;
+  const int h_num = grsd.size();
+  exist_voxel_num = new int[ h_num ];
+  nFeatures = new Eigen3::VectorXf [ h_num ];
+  for( int h=0; h<h_num; h++ ){
+    feature.push_back( grsd[ h ] );
+    exist_voxel_num[ h ] = 0;
+    for( int i=0; i<20; i++ )
+      exist_voxel_num[ h ] += grsd[ h ][ i ];
+    exist_voxel_num[ h ] /= 26; // ボクセルの数 before adding up
+  }
+  setData( subdiv_b_, feature );
+}
+
+void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
   Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
@@ -707,15 +736,25 @@ void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelG
 
   std::vector< std::vector<float> > feature;
   const int h_num = colorCHLAC.size();
-  for( int h=0; h<h_num; h++ )
+  exist_voxel_num = new int[ h_num ];
+  nFeatures = new Eigen3::VectorXf [ h_num ];
+  for( int h=0; h<h_num; h++ ){
     feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
-  setData( subdiv_b_, colorCHLAC, feature );
+    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+  }
+  setData( subdiv_b_, feature );
 }
 
-void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize ){
+void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   std::vector< std::vector<float> > colorCHLAC;
   Eigen3::Vector3i subdiv_b_ = computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
-  setData( subdiv_b_, colorCHLAC, colorCHLAC );
+
+  const int h_num = colorCHLAC.size();
+  exist_voxel_num = new int[ h_num ];
+  nFeatures = new Eigen3::VectorXf [ h_num ];
+  for( int h=0; h<h_num; h++ )
+    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+  setData( subdiv_b_, colorCHLAC );
 }
 
 const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }

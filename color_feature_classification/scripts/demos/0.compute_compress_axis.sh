@@ -3,10 +3,10 @@
 DATA=`rospack find color_feature_classification`/demos
 
 # NOTE: comment-out the followings if you don't use normalization
-# norm_flag_c="-norm $DATA/bin_normalization/max_c.txt"
-# norm_flag_d="-norm $DATA/bin_normalization/max_d.txt"
-# norm_flag_g="-norm $DATA/bin_normalization/max_g.txt"
-# norm_flag_r="-norm $DATA/bin_normalization/max_r.txt"
+norm_flag_c="-norm $DATA/bin_normalization/max_c.txt"
+norm_flag_d="-norm $DATA/bin_normalization/max_d.txt"
+norm_flag_g="-norm $DATA/bin_normalization/max_g.txt"
+norm_flag_r="-norm $DATA/bin_normalization/max_r.txt"
 
 # compute a subspace
 files=`find $DATA/features_c/* -type f -iname "*.pcd" | sort -d`

@@ -7,13 +7,13 @@
 #include <color_voxel_recognition/glView.hpp>
 #include <color_voxel_recognition/Voxel.hpp>
 #include <color_voxel_recognition/Param.hpp>
-#include <color_voxel_recognition/libPCA_eigen.hpp>
+#include <color_voxel_recognition/libPCA.hpp>
 #include <color_voxel_recognition/Param.hpp>
 //#include <color_voxel_recognition/CCHLAC.hpp>
-#include <color_voxel_recognition/Search_VOSCH.hpp>
+#include <color_voxel_recognition/Search.hpp>
 #include "color_chlac/grsd_colorCHLAC_tools.h"
-#include "../param/FILE_MODE"
-#include "../param/CAM_SIZE"
+#include "./FILE_MODE"
+//#include "../param/CAM_SIZE"
 #include <ros/ros.h>
 #include "pcl/io/pcd_io.h"
 #include "pcl_ros/subscriber.h"
@@ -29,19 +29,16 @@
 /*  注） プレビューはMESH_VIEWがtrueならメッシュ、falseならボクセルで表示。                                                           */
 /****************************************************************************************************************************/
 
+typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 using namespace std;
 using namespace Eigen3;
 
-//float DISTANCE_TH = 1.0;
 float distance_th;
 
 //************************
 //* その他のグローバル変数など
-//Voxel voxel;
-
-SearchObjVOSCH search_obj;
-int color_threshold_r, color_threshold_g, color_threshold_b;
-int dim;
+SearchObj search_obj;
+const int dim = 20; // for GRSD
 int box_size;
 float voxel_size;
 float region_size;
@@ -50,8 +47,8 @@ bool exit_flg = false;
 bool start_flg = true;
 float detect_th = 0;
 int rank_num;
+//const double normals_radius_search = 0.02;
 
-//* Note that x and y values are inverted.
 template <typename T>
 int limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &output_cloud, const float dis_th ){
   output_cloud.width = input_cloud.width;
@@ -81,11 +78,15 @@ class ViewAndDetect {
 protected:
   ros::NodeHandle nh_;
 private:
-  pcl::PointCloud<pcl::PointXYZRGB> cloud_xyzrgb_, cloud_xyzrgb;
-  pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_normal, cloud_downsampled;
-  pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid;
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d; 
+  KdTreePtr normals_tree;
+  pcl::PointCloud<pcl::PointXYZ> cloud_xyz_, cloud_xyz;
+  pcl::PointCloud<pcl::Normal> cloud_normal;
+  pcl::PointCloud<pcl::PointNormal> cloud_xyz_normal, cloud_downsampled;
+  pcl::VoxelGrid<pcl::PointNormal> grid;
   bool relative_mode; // RELATIVE MODEにするか否か
-  double t1, t2, t0;
+  double t1, t1_2, t2, t0, t0_2, tAll;
+  int process_count;
 public:
   void activateRelativeMode(){ relative_mode = true; }
     string cloud_topic_;
@@ -95,7 +96,7 @@ public:
   //***************
   //* コンストラクタ
   ViewAndDetect() :
-    relative_mode(false) {
+    relative_mode(false), tAll(0), process_count(0) {
   }
 
   //*******************************
@@ -105,46 +106,28 @@ public:
         return;
       //ROS_INFO ("Received %d data points in frame %s with the following fields: %s", (int)cloud->width * cloud->height, cloud->header.frame_id.c_str (), pcl::getFieldsList (*cloud).c_str ());
       //cout << "fromROSMsg?" << endl;
-      pcl::fromROSMsg (*cloud, cloud_xyzrgb_);
+      pcl::fromROSMsg (*cloud, cloud_xyz_);
       //cout << "  fromROSMsg done." << endl;
       cout << "CREATE" << endl;
       t0 = my_clock();
 
-      // float x_min = 10000000, y_min = 10000000, z_min = 10000000;
-      // float x_max = -10000000, y_max = -10000000, z_max = -10000000;
-      // int pnum = cloud_xyzrgb_.points.size();
-      // for( int p=0; p<pnum; p++ ){
-      // 	if( cloud_xyzrgb_.points[ p ].x < x_min ) x_min = cloud_xyzrgb_.points[ p ].x;
-      // 	if( cloud_xyzrgb_.points[ p ].y < y_min ) y_min = cloud_xyzrgb_.points[ p ].y;
-      // 	if( cloud_xyzrgb_.points[ p ].z < z_min ) z_min = cloud_xyzrgb_.points[ p ].z;
-      // 	if( cloud_xyzrgb_.points[ p ].x > x_max ) x_max = cloud_xyzrgb_.points[ p ].x;
-      // 	if( cloud_xyzrgb_.points[ p ].y > y_max ) y_max = cloud_xyzrgb_.points[ p ].y;
-      // 	if( cloud_xyzrgb_.points[ p ].z > z_max ) z_max = cloud_xyzrgb_.points[ p ].z;
-      // }
-      //cout << x_min << " " << y_min << " " << z_min << endl;
-      //cout << x_max << " " << y_max << " " << z_max << endl;
-
-      //* limit distance
-      //* Note that x and y values are inverted.
-      // if( relative_mode ){
-      // 	float dis_min = FLT_MAX;
-      // 	for (int i=0; i<(int)cloud_xyzrgb_.points.size(); i++)
-      // 	  if( dis_min > cloud_xyzrgb_.points[ i ].z ) dis_min = cloud_xyzrgb_.points[ i ].z;
-      // 	limitPoint( cloud_xyzrgb_, cloud_xyzrgb, dis_min + distance_th );
-      // }
-      // else
-      //	limitPoint( cloud_xyzrgb_, cloud_xyzrgb, distance_th );
-      if( limitPoint( cloud_xyzrgb_, cloud_xyzrgb, distance_th ) > 10 ){
+      if( limitPoint( cloud_xyz_, cloud_xyz, distance_th ) > 10 ){
 	//cout << "  limit done." << endl;
 	cout << "compute normals and voxelize...." << endl;
-	
+
 	//****************************************
 	//* compute normals
-	computeNormal( cloud_xyzrgb, cloud_normal );
+	n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud_xyz));
+	n3d.setRadiusSearch (normals_radius_search);
+	normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
+	n3d.setSearchMethod (normals_tree);
+	n3d.compute (cloud_normal);
+	pcl::concatenateFields (cloud_xyz, cloud_normal, cloud_xyz_normal);
+
+	t0_2 = my_clock();
 	
 	//* voxelize
-	getVoxelGrid( grid, cloud_normal, cloud_downsampled, voxel_size );
-	//voxel.points2voxel( cloud_downsampled, SIMPLE_REVERSE );
+	getVoxelGrid( grid, cloud_xyz_normal, cloud_downsampled, voxel_size );
 	cout << "     ...done.." << endl;
 	
 	const int pnum = cloud_downsampled.points.size();
@@ -167,7 +150,8 @@ public:
 	//****************************************
 	//* 物体検出
 	search_obj.cleanData();
-	search_obj.setData( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_normal, cloud_downsampled, voxel_size, box_size, false );
+	search_obj.setDataGRSD( dim, grid, cloud_xyz_normal, cloud_downsampled, voxel_size, box_size );
+	t1_2 = my_clock();
 	if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
 	  search_obj.search();
 	
@@ -178,9 +162,14 @@ public:
 	
 	// if( ( voxel.Xsize() != 0 ) && ( voxel.Ysize() != 0 ) && ( voxel.Zsize() != 0 ) )
 	// 	v_state = DISP;
-	cout << "voxelize                   :"<< t1 - t0 << " sec" << endl;
-	cout << "feature extraction & search: "<< t2 - t1 << " sec" <<endl;
-	cout << "all processes              : "<< t2 - t0 << " sec" << endl;
+	tAll += t2 - t0;
+	process_count++;
+	cout << "normal estimation  :"<< t0_2 - t0 << " sec" << endl;
+	cout << "voxelize           :"<< t1 - t0_2 << " sec" << endl;
+	cout << "feature extraction : "<< t1_2 - t1 << " sec" <<endl;
+	cout << "search             : "<< t2 - t1_2 << " sec" <<endl;
+	cout << "all processes      : "<< t2 - t0 << " sec" << endl;
+	cout << "AVERAGE            : "<< tAll / process_count << " sec" << endl;
 	marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1); 
 	marker_array_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
 	visualization_msgs::MarkerArray marker_array_msg_;
@@ -268,7 +257,7 @@ int main(int argc, char* argv[]) {
     cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_pca_filename] <dim_model> <size1> <size2> <size3> <detect_th> <distance_th> /input:=/camera/depth/points2" << endl;
     exit( EXIT_FAILURE );
   }
-  ros::init (argc, argv, "detectObj_VOSCH", ros::init_options::AnonymousName);
+  ros::init (argc, argv, "detectObj_GRSD", ros::init_options::AnonymousName);
 
   voxel_size = Param::readVoxelSize();  //* ボクセルの一辺の長さ（mm）の読み込み
   //voxel.setVoxelSize( voxel_size );
@@ -280,12 +269,9 @@ int main(int argc, char* argv[]) {
   //****************************************
   //* 物体検出のための準備
   box_size = Param::readBoxSize_scene();  //* 分割領域の大きさの読み込み
-
-  //* 次元数など
-  dim = Param::readDim();  //* 圧縮した特徴ベクトルの次元数の読み込み
   const int dim_model = atoi(argv[4]);  //* 検出対象物体の部分空間の基底の次元数
   if( dim <= dim_model ){
-    cerr << "ERR: dim_model should be less than dim(in dim.txt)" << endl; // 注 特徴量の次元数よりも多くなくてはいけません
+    cerr << "ERR: dim_model should be less than " << dim << endl; // 注 特徴量の次元数よりも多くなくてはいけません
     exit( EXIT_FAILURE );
   }
   //* 検出ボックスの大きさを決定する
@@ -300,36 +286,19 @@ int main(int argc, char* argv[]) {
   int size3 = (int)tmp_val;
   if( ( ( tmp_val - size3 ) >= 0.5 ) || ( size3 == 0 ) ) size3++; // 四捨五入
   sliding_box_size = size1 * region_size;
+
   //* 変数をセット
-  search_obj.setNormalizeVal( "param/minmax_r.txt" );
+  search_obj.setNormalizeVal( "param/max_g.txt" );
   search_obj.setRange( size1, size2, size3 );
   search_obj.setRank( rank_num );
   search_obj.setThreshold( atoi(argv[2]) );
-  search_obj.readAxis( argv[3], dim, dim_model, ASCII_MODE_P, false );  //* 検出対象物体の部分空間の基底軸の読み込み
-
-  //* RGB二値化の閾値の読み込み
-  Param::readColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
-
-  //* 特徴を圧縮する際に使用する主成分軸の読み込み
-  PCA_eigen pca;
-  pca.read("models/compress_axis", ASCII_MODE_P );
-  MatrixXf tmpaxis = pca.Axis();
-  MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  MatrixXf axis_t = axis.transpose();
-  VectorXf variance = pca.Variance();
-  search_obj.setSceneAxis( axis_t, variance, dim );  //* 圧縮部分空間の基底軸のセット
+  search_obj.readAxis( argv[3], dim, dim_model, ASCII_MODE_P, MULTIPLE_SIMILARITY );  //* 検出対象物体の部分空間の基底軸の読み込み
 
   // 物体検出のための準備 ここまで
   //****************************************
 
-  //*****************************************//
-  //* 以下は、saveData.cppのmain関数と同じ *//
-  //*****************************************//
-  cout << "hoge" << endl;
-  // ボクセル（かメッシュ）のプレビューとデータ取得の準備
-  ViewAndDetect vad;
-
   // ループのスタート
+  ViewAndDetect vad;
   vad.loop();
   ros::spin();
 

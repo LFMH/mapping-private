@@ -34,9 +34,10 @@ public:
   void setSceneAxis( Eigen3::MatrixXf _axis );
   void setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ); // whitening むけ
   void cleanData();
-  void setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize = false );
-  void setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize = false );
-  void setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize = false );
+  void setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size );
+  void setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size );
+  void setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size );
+  void setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size );
   const int XYnum() { return xy_num; }
   const int Znum() { return z_num; }
   const int maxX( int num ){ return max_x[ num ]; }
@@ -68,6 +69,7 @@ protected:
   Eigen3::VectorXf *nFeatures; // 領域の特徴量
   Eigen3::MatrixXf axis_p;  // 圧縮部分空間の基底軸
   std::vector<float> feature_max; // for histogram normalization
+  bool compress_flg;
 
   int xRange( SearchMode mode ); // 引数の検出モードにおける検出ボックスのx辺の長さを返す
   int yRange( SearchMode mode ); // 引数の検出モードにおける検出ボックスのy辺の長さを返す 
@@ -76,7 +78,7 @@ protected:
   void max_cpy( int src_num, int dest_num ); // 既に発見した領域のランクをずらす
   void max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ); // 今発見した領域を既に発見した領域と置き換える
   void search_part( SearchMode mode ); // 引数の検出モードでの物体検出
-  void setData( const Eigen3::Vector3i subdiv_b_, const std::vector< std::vector<float> > colorCHLAC, std::vector< std::vector<float> > feature );
+  void setData( const Eigen3::Vector3i subdiv_b_, std::vector< std::vector<float> > feature );
   template <typename T>
   T clipValue( T* ptr, const int x, const int y, const int z, const int xrange, const int yrange, const int zrange ); // 順に値が積分された配列からその位置における値を取り出す
 };
@@ -137,6 +139,7 @@ protected:
   using SearchObj::nFeatures; // 領域の特徴量
   using SearchObj::axis_p;  // 圧縮部分空間の基底軸
   using SearchObj::feature_max; // for histogram normalization
+  using SearchObj::compress_flg;
   int checkOverlap( int m_num, int x, int y, int z, SearchMode mode ); // 既に検出した領域と被るかどうかをチェック
   void max_cpy( int m_num, int src_num, int dest_num ); // 既に発見した領域のランクをずらす
   void max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ); // 今発見した領域を既に発見した領域と置き換える

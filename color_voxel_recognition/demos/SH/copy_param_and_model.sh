@@ -1,11 +1,19 @@
 #!/bin/bash
 INDIR=`rospack find color_feature_classification`/demos
 OUTDIR=`rospack find color_voxel_recognition`/demos
-
-# parameters
 voxel_size=`cat $INDIR/voxel_size.txt`
+
+##################################
+# parameters
+
+# The number of the dimension of feature space
+# NOTE: not necessary for GRSD
 dim_feature=50
+
+# The size of the subdivisions = The step size for sliding box. ( $subdivision_size * $voxel_size = actual length (meter) )
 subdivision_size=10 # 5 for voxel_size=0.02
+
+##################################
 
 mkdir -p $OUTDIR/param
 cp $INDIR/color_threshold.txt $OUTDIR/param/

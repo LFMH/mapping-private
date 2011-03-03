@@ -53,7 +53,6 @@ bool start_flg = true;
 float detect_th = 0;
 int rank_num;
 
-//* Note that x and y values are inverted.
 template <typename T>
 int limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &output_cloud, const float dis_th ){
   output_cloud.width = input_cloud.width;
@@ -181,9 +180,9 @@ public:
 	//* 物体検出
 	search_obj.cleanData();
 #ifdef CCHLAC_TEST
-	search_obj.setDataColorCHLAC( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_downsampled, voxel_size, box_size, false );
+	search_obj.setDataColorCHLAC( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_downsampled, voxel_size, box_size );
 #else
-	search_obj.setDataVOSCH( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_normal, cloud_downsampled, voxel_size, box_size, false );
+	search_obj.setDataVOSCH( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_normal, cloud_downsampled, voxel_size, box_size );
 #endif
 	t1_2 = my_clock();
 	if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
@@ -295,7 +294,7 @@ int main(int argc, char* argv[]) {
     cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_pca_filename] <dim_model> <size1> <size2> <size3> <detect_th> <distance_th> /input:=/camera/depth/points2" << endl;
     exit( EXIT_FAILURE );
   }
-  ros::init (argc, argv, "detectObj_VOSCH", ros::init_options::AnonymousName);
+  ros::init (argc, argv, "detectObj", ros::init_options::AnonymousName);
 
   voxel_size = Param::readVoxelSize();  //* ボクセルの一辺の長さ（mm）の読み込み
   //voxel.setVoxelSize( voxel_size );
