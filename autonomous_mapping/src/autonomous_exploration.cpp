@@ -16,6 +16,8 @@
 #include <pluginlib/class_list_macros.h>
 #include "pcl/io/pcd_io.h"
 #include "pcl/filters/voxel_grid.h"
+#include <geometry_msgs/PoseArray.h>
+
 
 namespace autonomous_exploration
 {
@@ -24,7 +26,7 @@ class AutonomousExploration:public pcl_ros::PCLNodelet
   public:
     AutonomousExploration();
     ~AutonomousExploration();
-    void autonomousExplorationCallBack(const geometry_msgs::Pose& pose_msg);
+    void autonomousExplorationCallBack(const geometry_msgs::PoseArray& pose_msg);
     void pointcloudCallBack(const sensor_msgs::PointCloud2& pointcloud_msg);
     void laserScannerSignalCallBack(const pr2_msgs::LaserScannerSignal laser_scanner_signal_msg);
     void moveRobot(geometry_msgs::Pose goal_pose);
@@ -45,7 +47,7 @@ class AutonomousExploration:public pcl_ros::PCLNodelet
     std::string subscribe_pose_topic_;
     boost::thread spin_thread_;
     geometry_msgs::PoseArray pose_msg_;
-    bool get_pointcloud_, received_pose_, received_laser_signal_;
+    bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_;
     //ros::ServiceClient tilt_laser_client_;
   pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
 };
@@ -62,6 +64,7 @@ AutonomousExploration::~AutonomousExploration()
 void AutonomousExploration::onInit()
 {
   pcl_ros::PCLNodelet::onInit ();
+  move_robot_=true;
   pnh_->param("subscribe_pose_topic", subscribe_pose_topic_, std::string("/robot_pose"));
   ROS_INFO("autonomous_exploration node is up and running.");
   get_pointcloud_ = false;
@@ -87,6 +90,8 @@ void AutonomousExploration::spin()
     {
       for (int i=0;i<pose_msg_.poses.size();i++)
       {
+       if (move_robot_=true)
+       {
       //move robot to the received pose
       ROS_INFO("Moving the robot");
       moveRobot(pose_msg_.poses[i]);
@@ -137,6 +142,7 @@ void AutonomousExploration::spin()
       //lower the spine to navigate some place else
       moveTorso(0.01, 1.0, "down");
       setLaserProfile("navigation");
+       }
       }
     }
   }
@@ -172,7 +178,8 @@ void AutonomousExploration::moveRobot(geometry_msgs::Pose goal_pose)
   else
   {
     ROS_ERROR("Error in moving robot to goal pose.");
-    exit(1);
+    //exit(1);
+   move_robot_=false;
   }
 }
 
