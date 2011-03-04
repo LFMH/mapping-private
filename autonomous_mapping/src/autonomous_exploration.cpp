@@ -44,7 +44,7 @@ class AutonomousExploration:public pcl_ros::PCLNodelet
     ros::Publisher tilt_laser_traj_cmd_publisher_;
     std::string subscribe_pose_topic_;
     boost::thread spin_thread_;
-    geometry_msgs::Pose pose_msg_;
+    geometry_msgs::PoseArray pose_msg_;
     bool get_pointcloud_, received_pose_, received_laser_signal_;
     //ros::ServiceClient tilt_laser_client_;
   pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
@@ -85,9 +85,11 @@ void AutonomousExploration::spin()
     loop.sleep();
     if(received_pose_ )
     {
+      for (int i=0;i<pose_msg_.poses.size();i++)
+      {
       //move robot to the received pose
       ROS_INFO("Moving the robot");
-      moveRobot(pose_msg_);
+      moveRobot(pose_msg_.poses[i]);
       ROS_INFO("End of Moving the robot");
       //rise the spine up to scan
       setLaserProfile("scan");
@@ -95,11 +97,9 @@ void AutonomousExploration::spin()
       double angles = 0.0;
       while(angles <= 360)
       {
-        geometry_msgs::Pose new_pose;
+        geometry_msgs::Pose new_pose = pose_msg_.poses[i];
         btQuaternion q ( pcl::deg2rad(angles), 0, 0);
-        new_pose.position.x = pose_msg_.position.x;
-        new_pose.position.y = pose_msg_.position.y;
-        new_pose.position.z = pose_msg_.position.z;
+
         new_pose.orientation.x = q.x();
         new_pose.orientation.y = q.y();
         new_pose.orientation.z = q.z();
@@ -137,6 +137,7 @@ void AutonomousExploration::spin()
       //lower the spine to navigate some place else
       moveTorso(0.01, 1.0, "down");
       setLaserProfile("navigation");
+      }
     }
   }
 }
@@ -301,9 +302,9 @@ void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& p
     get_pointcloud_ = false;
   }
 }
-void AutonomousExploration::autonomousExplorationCallBack(const geometry_msgs::Pose& pose_msg)
+void AutonomousExploration::autonomousExplorationCallBack(const geometry_msgs::PoseArray& pose_msg)
 {
-  pose_msg_ = pose_msg;
+  pose_msg_=pose_msg;
   received_pose_ = true;
   ROS_INFO("Received a Pose");
 
