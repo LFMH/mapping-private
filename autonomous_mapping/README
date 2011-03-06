@@ -1,0 +1,34 @@
+This is the collection of TODOS that shall 1 day converge into 1 single launch file:
+
+============================================================
+Run exploration and next best view:
+roslaunch /etc/ros/cturtle/robot.launch
+roslaunch autonomous_mapping autonomous_exploration.launch 
+roslaunch autonomous_mapping  next_best_view.launch
+roslaunch cloud_tools point_cloud_assembler_with_filter.launch
+rostopic pub /robot_pose geometry_msgs/Pose """
+position:
+   x: -0.636
+   y: 1.011
+   z: 0.05 
+orientation:
+   x: -0.014
+   y: 0.013
+   z: -0.060
+   w: 1.0
+"""
+============================================================
+
+
+============================================================
+Get Kitchen URDF Model:
+roslaunch ias_kitchen_defs ias_kitchen_model.launch
+In Rviz add RobotModel display type and set Robot Description to:
+/ias_kitchen/kitchen_description
+Set TF Prefix to:
+/ias_kitchen
+Open the drawer:
+rostopic pub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [sink_block_drawer_sink_col1_top_joint], position: [0.5]}'
+Open the fridge:
+rostopipub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [fridge_block_fridge_joint], position : [1.57]}'
+============================================================
