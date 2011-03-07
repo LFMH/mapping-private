@@ -191,7 +191,7 @@ protected:
 	geometry_msgs::Pose sample_from_costmap (std::vector<std::vector<std::vector<int> > > costmap, int max_reward, int nr_dirs, int x_dim, int y_dim, geometry_msgs::Point min, geometry_msgs::Point max, int &reward, double &score);
 	//geometry_msgs::PoseArray computedirections(double x, double y, double theta, int reward);
 	double compute_overlap_score(double x, double y, double theta, int reward);
-
+	std::vector<std::vector<std::vector<int> > > reduced_costmap(std::vector<std::vector<std::vector<int> > > costmap, int best_j, int best_k,geometry_msgs::Point &min,geometry_msgs::Point &max,double &x_dim,double &y_dim);
 	void find_max_indices (int &best_i, int &best_j, int &best_k,
 				int nr_dirs, int x_dim, int y_dim, int &max_reward,
 				std::vector<std::vector<std::vector<int > > > costmap);
@@ -403,6 +403,24 @@ geometry_msgs::Pose NextBestView::find_best_pose(int best_i,int best_j,int best_
 		tf::quaternionTFToMsg(quat, quat_msg);
 		p.orientation = quat_msg;
 		return p;
+}
+std::vector<std::vector<std::vector<int> > >  NextBestView::reduced_costmap(std::vector<std::vector<std::vector<int> > > costmap, int best_j, int best_k,geometry_msgs::Point &min,geometry_msgs::Point &max,double &x_dim,double &y_dim)
+{
+	  p.position.x = min.x + (best_j + 0.5) * costmap_grid_cell_size_;
+	  p.position.y = min.y + (best_k + 0.5) * costmap_grid_cell_size_;
+	  p.position.z = 0;
+	  	octomap::OcTreeNodePCL *octree_node = octree_->search(p.position.x,p.position.y,p.position.y);
+	  	for (int dir=0;dir<nr_costmap_dirs_;dir++)
+	  		for (int i=0;i<x_dim;i++)
+	  			for (int j=0;j<y_dim;j++)
+	  			{
+	  				if (octree_node != NULL )
+	  				{
+	  					if (octree_node->getLabel()!=occupied_label_)
+	  					   costmap[dir][i][j]=0;
+	  				}
+	  			}
+	return costmap;
 }
 /*geometry_msgs::PoseArray NextBestView::computedirections(double x, double y, double theta, int reward)
 {
@@ -800,9 +818,12 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	find_max_indices (best_combined_i, best_combined_j, best_combined_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, bound_occ_costmap);
 	nbv_pose_array_.poses.resize(0);
 	//nbv_pose_array_.poses.push_back (find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max));
+	//geometry_msgs::Pose combined_bose=find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max);
 	std::vector<double> scores;
 	int reward;
 	double score;
+
+	bound_occ_costmap=reduced_costmap(bound_occ_costmap,best_combined_j,best_combined_k,min,max,x_dim,y_dim);
 	for (int i = 0; i < nr_pose_samples_; i++)
 	{
 		geometry_msgs::Pose pose = sample_from_costmap(bound_occ_costmap, max_reward, nr_costmap_dirs_, x_dim, y_dim, min, max, reward,score);
@@ -827,9 +848,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 		ROS_INFO ("pose %i: %f", i, scores[i]);
     double threshold=scores[0] * 4/5;
     int p=0;
-    for (unsigned j=1;j<scores.size ();j++)
+    for (unsigned j=0;j<scores.size ();j++)
     	if (scores[j]>threshold)
-    		p=j;
+    		p=j+1;
     	else break;
     nbv_pose_array_.poses.resize(p);
 	pose_pub_.publish(nbv_pose_array_);
