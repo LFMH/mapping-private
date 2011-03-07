@@ -3,6 +3,7 @@ This is the collection of TODOS that shall 1 day converge into 1 single launch f
 ============================================================
 Run exploration and next best view:
 roslaunch /etc/ros/cturtle/robot.launch
+roslaunch autonomous_mapping localization.launch
 roslaunch autonomous_mapping autonomous_exploration.launch 
 roslaunch autonomous_mapping  next_best_view.launch
 roslaunch cloud_tools point_cloud_assembler_with_filter.launch
@@ -17,6 +18,10 @@ orientation:
    z: -0.060
    w: 1.0
 """
+
+OR
+
+bash scripts/send_to_pose*.sh
 ============================================================
 
 
