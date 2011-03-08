@@ -1,7 +1,6 @@
 This is the collection of TODOS that shall 1 day converge into 1 single launch file:
 
-============================================================
-Run exploration and next best view:
+============Run exploration and next best view:===============
 roslaunch /etc/ros/cturtle/robot.launch
 roslaunch autonomous_mapping localization.launch
 roslaunch autonomous_mapping autonomous_exploration.launch 
@@ -25,8 +24,7 @@ bash scripts/send_to_pose*.sh
 ============================================================
 
 
-============================================================
-Get Kitchen URDF Model:
+============Get Kitchen URDF Model:=========================
 roslaunch ias_kitchen_defs ias_kitchen_model.launch
 In Rviz add RobotModel display type and set Robot Description to:
 /ias_kitchen/kitchen_description
@@ -37,3 +35,13 @@ rostopic pub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [sink_blo
 Open the fridge:
 rostopipub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [fridge_block_fridge_joint], position : [1.57]}'
 ============================================================
+
+
+=============Run registration================================
+Works at the moment on bags only.
+source diamondback
+rosbag play your_bag.bag --topics /autonomous_exploration/pointcloud
+roslaunch pointcloud_registration pointcloud_registration_node.launch
+
+Save your pcd:
+rosrun pcl_ros pointcloud_to_pcd /input:=/merged_pointcloud
