@@ -147,6 +147,9 @@ protected:
 
 	sensor_msgs::PointCloud2 cloud_in_;
 	geometry_msgs::PoseArray nbv_pose_array_;
+	visualization_msgs::MarkerArray marker;
+	visualization_msgs::Marker marker_bound_;
+	visualization_msgs::Marker marker_occ_;
 	nav_msgs::OccupancyGrid map_;
 	// ROS communications / Publishers / Subscribers
 	ros::Subscriber cloud_sub_;
@@ -154,9 +157,12 @@ protected:
 	ros::Publisher octree_pub_;
 	pcl_ros::Publisher<pcl::PointXYZ> border_cloud_pub_;
 	ros::Publisher pose_pub_;
+	ros::Publisher pose_marker_pub_, pose_marker_array_pub_;
 	ros::Publisher pose_boundary_pub_;
 	ros::Publisher pose_occupied_pub_;
 	ros::Publisher ogrid_pub_;
+	ros::Publisher marker_bound_pub_;
+	ros::Publisher marker_occ_pub_;
 	// Publishes the octree in MarkerArray format so that it can be visualized in rviz
 	ros::Publisher octree_marker_array_publisher_;
 	/* The following publisher, even though not required, is used because otherwise rviz
@@ -278,11 +284,14 @@ void NextBestView::onInit()
 	grid_sub_=pnh_->subscribe(ogrid_sub_topic_,1,&NextBestView::grid_cb,this);
 	border_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "border_cloud", 1);
 	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1);
-	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundardy_pose", 1);
+	pose_marker_pub_=pnh_->advertise<visualization_msgs::Marker>("pose_marker", 100);
+	pose_marker_array_pub_=pnh_->advertise<visualization_msgs::MarkerArray>("pose_marker_array", 100);
+	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundary_pose", 1);
 	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1);
-
 	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
 	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100);
+	marker_bound_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_boundary_marker", 100);
+	marker_occ_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_occupancy_marker", 100);
 
 	octree_ = NULL;
 
@@ -750,6 +759,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	 * find unknown voxels with free neighbors and add them to a pointcloud
 	 */
 	pcl::PointCloud<pcl::PointXYZ> border_cloud;
+
 	findBorderPoints(border_cloud, pointcloud2_msg->header.frame_id);
 
 	pcl::PointCloud<pcl::PointXYZ> occupied_cloud;
@@ -823,9 +833,11 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	int reward;
 	double score;
 
+  marker.markers.resize(nr_pose_samples_);
 	bound_occ_costmap=reduced_costmap(bound_occ_costmap,best_combined_j,best_combined_k,min,max,x_dim,y_dim);
 	for (int i = 0; i < nr_pose_samples_; i++)
 	{
+
 		geometry_msgs::Pose pose = sample_from_costmap(bound_occ_costmap, max_reward, nr_costmap_dirs_, x_dim, y_dim, min, max, reward,score);
 		if (score == 0)
 			continue;
@@ -835,6 +847,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 			nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin(), pose);
 		}
 		else
+		{
 		for (unsigned int j = 0; j < scores.size(); j++)
 			if (scores[j] < score)
 			{
@@ -842,8 +855,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 				nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin() + j, pose);
 				break;
 			}
-
+		}
 	}
+
 	for (unsigned int i = 0; i < scores.size (); i++)
 		ROS_INFO ("pose %i: %f", i, scores[i]);
     double threshold=scores[0] * 4/5;
@@ -853,7 +867,32 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
     		p=j+1;
     	else break;
     nbv_pose_array_.poses.resize(p);
-	pose_pub_.publish(nbv_pose_array_);
+    ROS_INFO("resizing marker array for goto poses");
+    marker.markers.resize(p);
+	ROS_INFO("populating marker array for goto poses");
+    for (int i = 0; i < p; i++)
+    {
+    	marker.markers[i].header.frame_id = pointcloud2_msg->header.frame_id;
+    	marker.markers[i].header.stamp=ros::Time::now();
+    	marker.markers[i].type = visualization_msgs::Marker::ARROW;
+    	marker.markers[i].action = visualization_msgs::Marker::ADD;
+    	marker.markers[i].ns="autonomous_mapping";
+    	marker.markers[i].pose= nbv_pose_array_.poses[i];
+    	marker.markers[i].scale.x=1.0;
+    	marker.markers[i].scale.y=1.0;
+    	marker.markers[i].id = i;
+    	marker.markers[i].color.r = 0.0f;
+    	marker.markers[i].color.g = 0.0f;
+    	marker.markers[i].color.b = 1.0f;
+    	marker.markers[i].color.a = 1.0f;
+
+    	marker.markers[i].lifetime = ros::Duration::Duration();
+    }
+	ROS_INFO("populated marker array for goto poses");
+    //pose_pub_.publish(nbv_pose_array_);
+	ROS_INFO("publishing marker array for goto poses");
+    pose_marker_array_pub_.publish(marker);
+    ROS_INFO("published marker array for goto poses,%ld",marker.markers.size());
 	/*double x, y, theta;
     x = min.x + (best_combined_j + 0.5) * costmap_grid_cell_size_;
 	y = min.y + (best_combined_k + 0.5) * costmap_grid_cell_size_;
@@ -872,15 +911,44 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	find_max_indices (best_boundary_i, best_boundary_j, best_boundary_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, boundary_costmap);
 	nbv_pose_array_.poses.resize(0);
 	nbv_pose_array_.poses.push_back (find_best_pose(best_boundary_i,best_boundary_j,best_boundary_k,max_reward,min,max));
-	pose_boundary_pub_.publish(nbv_pose_array_);
 
+	//pose_boundary_pub_.publish(nbv_pose_array_);
+	marker_bound_.header.frame_id=pointcloud2_msg->header.frame_id;
+	marker_bound_.header.frame_id = pointcloud2_msg->header.frame_id;
+	marker_bound_.header.stamp=ros::Time::now();
+	marker_bound_.type = visualization_msgs::Marker::ARROW;
+	marker_bound_.action = visualization_msgs::Marker::ADD;
+	marker_bound_.ns="autonomous_mapping";
+	marker_bound_.pose=find_best_pose(best_boundary_i,best_boundary_j,best_boundary_k,max_reward,min,max);
+	marker_bound_.scale.x=1.0;
+	marker_bound_.scale.y=1.0;
+	marker_bound_.id =0;
+	marker_bound_.color.r = 0.0f;
+	marker_bound_.color.g = 1.0f;
+	marker_bound_.color.b = 0.0f;
+	marker_bound_.color.a = 1.0f;
+	marker_bound_pub_.publish(marker_bound_);
 	max_reward = 0;
 	int best_occupied_i=0, best_occupied_j=0, best_occupied_k=0;
 	find_max_indices (best_occupied_i, best_occupied_j, best_occupied_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, occupied_costmap);
 	nbv_pose_array_.poses.resize(0);
 	nbv_pose_array_.poses.push_back (find_best_pose(best_occupied_i,best_occupied_j,best_occupied_k,max_reward,min,max));
-	pose_occupied_pub_.publish(nbv_pose_array_);
-
+	//pose_occupied_pub_.publish(nbv_pose_array_);
+	marker_occ_.header.frame_id=pointcloud2_msg->header.frame_id;
+	marker_occ_.header.frame_id = pointcloud2_msg->header.frame_id;
+	marker_occ_.header.stamp=ros::Time::now();
+	marker_occ_.type = visualization_msgs::Marker::ARROW;
+	marker_occ_.action = visualization_msgs::Marker::ADD;
+	marker_occ_.ns="autonomous_mapping";
+	marker_occ_.pose=find_best_pose(best_occupied_i,best_occupied_j,best_occupied_k,max_reward,min,max);
+	marker_occ_.scale.x=1.0;
+	marker_occ_.scale.y=1.0;
+	marker_occ_.id =0;
+	marker_occ_.color.r = 1.0f;
+	marker_occ_.color.g = 0.0f;
+	marker_occ_.color.b = 0.0f;
+	marker_occ_.color.a = 1.0f;
+	marker_occ_pub_.publish(marker_occ_);
 	// prepare a occupancy grid to be published to rviz
 	nav_msgs::OccupancyGrid ogrid;
 	ogrid.header.frame_id = "/map";
