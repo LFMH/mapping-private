@@ -45,3 +45,15 @@ roslaunch pointcloud_registration pointcloud_registration_node.launch
 
 Save your pcd:
 rosrun pcl_ros pointcloud_to_pcd /input:=/merged_pointcloud
+============================================================
+
+
+=============Segment through interaction=====================
+start the robot
+roslaunch ias_drawer_executive wopcl.launch
+rosrun SnapMapICP SnapMapICP
+rosrun ias_drawer_executive operate_handle_server
+Look for the list of poses in data/poses_handles.txt
+and run:
+rosrun ias_drawer_executive test_client 0 0.629 1.126 0.756 0.712 0.003 0.025 0.702
+============================================================
