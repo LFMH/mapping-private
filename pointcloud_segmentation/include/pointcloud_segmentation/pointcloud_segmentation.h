@@ -46,7 +46,7 @@ class PointCloudSegmentation
     boost::thread spin_thread_;
     // Create the segmentation object
     pcl::SACSegmentation<pcl::PointXYZINormal> seg_;
-    Eigen3::Vector3f axis_x_, axis_y_, axis_z_;
+    Eigen::Vector3f axis_x_, axis_y_, axis_z_;
     int label_, model_type_, method_type_;
     bool set_axis_, marker_published_, point_cloud_received_;
     pcl::PointCloud<pcl::PointXYZINormal> input_cloud_;

@@ -30,3 +30,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(pointcloud_segmentation src/pointcloud_segmentation.cpp)
+
+rosbuild_add_executable(segmentation_of_pointcloud src/segmentation_of_pointcloud.cpp)
+

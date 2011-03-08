@@ -14,7 +14,8 @@ PointCloudSegmentation::PointCloudSegmentation(): nh_("~")
 {
   nh_.param("subscribe_pointcloud_topic", subscribe_pointcloud_topic_, std::string("/point_cloud"));
   nh_.param("subscribe_box_fit_topic", subscribe_box_fit_topic_, std::string("/box_estimation_node/box_marker"));
-  nh_.param("model_type", model_type_, pcl::SACMODEL_PLANE);
+  //nh_.param("model_type", model_type_, pcl::SACMODEL_PLANE);
+  model_type_= pcl::SACMODEL_PLANE;
   nh_.param("method_type", method_type_, pcl::SAC_RANSAC);
   nh_.param("set_axis", set_axis_, true);
   marker_published_ = false;
@@ -226,7 +227,7 @@ void PointCloudSegmentation::segmentCeiling()
   pcl::PointCloud<pcl::PointSegmentation> segmented_ceiling;
 
   seg_.setOptimizeCoefficients (true);
-  seg_.setModelType (pcl::SACMODEL_ORIENTED_PLANE);
+  seg_.setModelType (pcl::SACMODEL_PERPENDICULAR_PLANE);
   seg_.setMethodType (pcl::SAC_RANSAC);
   seg_.setDistanceThreshold (0.01);
 
@@ -275,8 +276,10 @@ void PointCloudSegmentation::segmentFloor()
   pcl::PointCloud<pcl::PointSegmentation> segmented_floor;
 
   seg_.setOptimizeCoefficients (true);
-  seg_.setModelType (pcl::SACMODEL_ORIENTED_PLANE);
+  //seg_.setModelType (pcl::SACMODEL_ORIENTED_PLANE);
+  seg_.setModelType (pcl::SACMODEL_PERPENDICULAR_PLANE);
   seg_.setMethodType (pcl::SAC_RANSAC);
+
   seg_.setDistanceThreshold (0.01);
 
   seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (floor_candidate));
