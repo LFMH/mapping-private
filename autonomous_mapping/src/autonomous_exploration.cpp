@@ -47,7 +47,7 @@ private:
 	std::string subscribe_pose_topic_;
 	boost::thread spin_thread_;
 	geometry_msgs::PoseArray pose_msg_;
-	bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_;
+	bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_, publish_cloud_incrementally_;
 	//ros::ServiceClient tilt_laser_client_;
 	pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
 };
@@ -66,6 +66,7 @@ void AutonomousExploration::onInit()
 	pcl_ros::PCLNodelet::onInit ();
 	move_robot_=false;
 	pnh_->param("subscribe_pose_topic", subscribe_pose_topic_, std::string("/robot_pose"));
+  pnh_->param("publish_cloud_incrementally", publish_cloud_incrementally_, false);
 	ROS_INFO("autonomous_exploration node is up and running.");
 	get_pointcloud_ = false;
 	received_pose_ = false;
@@ -300,6 +301,11 @@ void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& p
 	if(get_pointcloud_)
 	{
 		ROS_INFO("pointcloud received");
+    
+    if (publish_cloud_incrementally_)
+    {
+      pointcloud_publisher_.publish(pointcloud_msg);
+    }
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZ> ());
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
 		pcl::fromROSMsg(pointcloud_msg, *cloud_tmp);
