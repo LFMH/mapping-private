@@ -27,5 +27,8 @@ rosbuild_add_library(AutonomousExploration src/autonomous_exploration.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
+
+# ------ [ Segmentation
+#rosbuild_add_executable(segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
+
 #target_link_libraries(example ${PROJECT_NAME})

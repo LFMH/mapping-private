@@ -22,6 +22,9 @@
   <depend package="actionlib"/>
   <depend package="pr2_controllers_msgs"/>
   <depend package="pr2_msgs"/>
+  <depend package="terminal_tools"/>
+  <depend package="pcl_visualization"/>
+  <depend package="pcl_cloud_algos"/>
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
     <nodelet plugin="${prefix}/nodelets_exploration.xml" />
