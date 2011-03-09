@@ -198,6 +198,7 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
   terminal_tools::parse_argument (argc, argv,   "-line_inliers_clustering_tolerance",   line_inliers_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-circle_inliers_clustering_tolerance", circle_inliers_clustering_tolerance);
+
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv,  "-point_size",  point_size);
   terminal_tools::parse_argument (argc, argv,   "-line_step",   line_step);
@@ -359,6 +360,129 @@ int main (int argc, char** argv)
     // Call the segmenting method
     circle_segmentation.segment (*circle_inliers, circle_coefficients);
 
+    // ---------------------------- //
+    // Start the extraction process //
+    // ---------------------------- //
+
+    // Point cloud of circle inliers
+    pcl::PointCloud<pcl::PointXYZ>::Ptr circle_inliers_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
+
+    // Extract the circular inliers from the input cloud
+    pcl::ExtractIndices<pcl::PointXYZ> circle_extraction;
+    // Set point cloud from where to extract
+    circle_extraction.setInputCloud (filtered_cloud);
+    // Set which indices to extract
+    circle_extraction.setIndices (circle_inliers);
+
+    // Return the points which represent the inliers
+    circle_extraction.setNegative (false);
+    // Call the extraction function
+    circle_extraction.filter (*circle_inliers_cloud);
+
+    ///*
+
+    // Return the remaining points of inliers
+    circle_extraction.setNegative (true);
+    // Call the extraction function
+    circle_extraction.filter (*filtered_cloud);
+
+    //*/
+
+    ///*
+
+    ROS_INFO ("Circle has %d inliers", circle_inliers_cloud->points.size());
+    ROS_INFO ("%d points remain after extraction", filtered_cloud->points.size ());
+
+    //*/
+
+    // ---------------------------- //
+    // Start the clustering process //
+    // ---------------------------- //
+
+    // Vector of clusters from inliers
+    std::vector<pcl::PointIndices> circle_clusters;
+    // Build kd-tree structure for clusters
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
+
+    // Instantiate cluster extraction object
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> circle_clustering;
+    // Set as input the cloud of circle inliers
+    circle_clustering.setInputCloud (circle_inliers_cloud);
+    // Radius of the connnectivity threshold
+    circle_clustering.setClusterTolerance (circle_inliers_clustering_tolerance);
+    // Provide pointer to the search method
+    circle_clustering.setSearchMethod (circle_clusters_tree);
+    // Call the extraction function
+    circle_clustering.extract (circle_clusters);
+
+    int maximum_circle_clusters_size = -1;
+    int maximum_circle_clusters_index = -1;
+    for (int c = 0; c < (int) circle_clusters.size(); c++)
+    {
+      if (maximum_circle_clusters_size < (int) circle_clusters.at(c).indices.size())
+      {
+        maximum_circle_clusters_size = circle_clusters.at(c).indices.size();
+        maximum_circle_clusters_index = c;
+      }
+    }
+
+    ///*
+
+    ROS_WARN (" has %d clusters where", circle_clusters.size());
+    for (int c = 0; c < (int) circle_clusters.size(); c++)
+      ROS_WARN ("       cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
+    ROS_WARN (" and biggest cluster is %d with %d points", maximum_circle_clusters_index, maximum_circle_clusters_size);
+
+    //*/
+
+    // -------------------------------------------------------------------------------------------------------------------------------
+
+    // The biggest cluster of the circle inliers
+    pcl::PointIndices::Ptr biggest_cluster_of_circle_inliers (new pcl::PointIndices ());
+    *biggest_cluster_of_circle_inliers = circle_clusters.at(0);
+
+    // Point cloud of the biggest cluster of the circle inliers
+    pcl::PointCloud<pcl::PointXYZ>::Ptr biggest_cluster_of_circle_inliers_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
+
+    ROS_WARN ("   before:");
+    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", biggest_cluster_of_circle_inliers_cloud->points.size ());
+    ROS_WARN ("   circle_inliers_cloud has %d inliers", circle_inliers_cloud->points.size ());
+    ROS_INFO ("   %d points remain after extraction", filtered_cloud->points.size ());
+
+    // Extract the circular inliers from the input cloud
+    pcl::ExtractIndices<pcl::PointXYZ> circle_clusters_extraction;
+    // Set point cloud from where to extract
+    circle_clusters_extraction.setInputCloud (circle_inliers_cloud);
+    // Set which indices to extract
+    circle_clusters_extraction.setIndices (biggest_cluster_of_circle_inliers);
+
+    // Return the points which represent the inliers
+    circle_clusters_extraction.setNegative (false);
+    // Call the extraction function
+    circle_clusters_extraction.filter (*biggest_cluster_of_circle_inliers_cloud);
+
+    // Return the remaining points of inliers
+    circle_clusters_extraction.setNegative (true);
+    // Call the extraction function
+    circle_clusters_extraction.filter (*circle_inliers_cloud);
+
+    // Set point cloud from where to extract
+    circle_extraction.setInputCloud (filtered_cloud);
+    // Set which indices to extract
+    circle_extraction.setIndices (biggest_cluster_of_circle_inliers);
+
+    // Return the remaining points of inliers
+    circle_extraction.setNegative (true);
+    // Call the extraction function
+    circle_extraction.filter (*filtered_cloud);
+
+    ROS_WARN ("   after:");
+    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", biggest_cluster_of_circle_inliers_cloud->points.size ());
+    ROS_WARN ("   circle_inliers_cloud has %d inliers left", circle_inliers_cloud->points.size ());
+    ROS_INFO ("   %d points remain after extraction", filtered_cloud->points.size ());
+
+    // -------------------------------------------------------------------------------------------------------------------------------
+
     // Check if the method found inliers for the current circle model
     if ((int) circle_inliers->indices.size () == 0)
     {
@@ -419,37 +543,6 @@ int main (int argc, char** argv)
       circle_parameters_cloud->points.push_back (circle_vot);
     }
 
-    // ---------------------------- //
-    // Start the extraction process //
-    // ---------------------------- //
-
-    // Point cloud of circle inliers
-    pcl::PointCloud<pcl::PointXYZ>::Ptr circle_inliers_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
-
-    // Extract the circular inliers from the input cloud
-    pcl::ExtractIndices<pcl::PointXYZ> circle_extraction;
-    // Set point cloud from where to extract
-    circle_extraction.setInputCloud (filtered_cloud);
-    // Set which indices to extract
-    circle_extraction.setIndices (circle_inliers);
-
-    // Return the points which represent the inliers
-    circle_extraction.setNegative (false);
-    // Call the extraction function
-    circle_extraction.filter (*circle_inliers_cloud);
-
-    // Return the remaining points of inliers
-    circle_extraction.setNegative (true);
-    // Call the extraction function
-    circle_extraction.filter (*filtered_cloud);
-
-    /*
-
-    //ROS_INFO ("Circle has %d inliers", circle_inliers_cloud->points.size());
-    //ROS_INFO ("%d points remain after extraction", filtered_cloud->points.size ());
-
-    */
-
     // --------------------------- //
     // Start visualization process //
     // --------------------------- //
@@ -470,43 +563,6 @@ int main (int argc, char** argv)
 
     // Set the size of points for cloud
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, point_size, circle_inliers_id.str ()); 
-
-    // Wait or not wait
-    if ( circle_step )
-    {
-      // And wait until Q key is pressed
-      circle_viewer.spin ();
-    }
-
-    // TODO Integrate the clustering results into the validation of model 
-
-    // ---------------------------- //
-    // Start the clustering process //
-    // ---------------------------- //
-
-    // Vector of clusters from inliers
-    std::vector<pcl::PointIndices> circle_clusters;
-    // Build kd-tree structure for clusters
-    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
-
-    // Instantiate cluster extraction object
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> circle_clustering;
-    // Set as input the cloud of circle inliers
-    circle_clustering.setInputCloud (circle_inliers_cloud);
-    // Radius of the connnectivity threshold
-    circle_clustering.setClusterTolerance (circle_inliers_clustering_tolerance);
-    // Provide pointer to the search method
-    circle_clustering.setSearchMethod (circle_clusters_tree);
-    // Call the extraction function
-    circle_clustering.extract (circle_clusters);
-
-    /*
-
-    ROS_WARN (" has %d clusters where", circle_clusters.size() );
-    for (int c = 0; c < (int) circle_clusters.size(); c++)
-      ROS_WARN ("       cluster %d has %d points", c, circle_clusters.at(c).indices.size() );
-
-    */
 
     // Wait or not wait
     if ( circle_step )
