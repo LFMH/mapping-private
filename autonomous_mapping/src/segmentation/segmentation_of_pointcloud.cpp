@@ -40,6 +40,7 @@
 #include "pcl/common/common.h"
 #include "pcl/features/normal_3d.h"
 #include "pcl/filters/passthrough.h"
+#include <pcl/filters/voxel_grid.h>
 #include "pcl/filters/extract_indices.h"
 #include "pcl/filters/statistical_outlier_removal.h"
 #include "pcl/sample_consensus/method_types.h"
@@ -68,7 +69,8 @@ bool step = false;
 bool clean = false;
 int size_of_points = 1;
 
-
+//Optional parameters
+bool find_box_model = false;
 
 #include <pcl_ias_sample_consensus/pcl_sac_model_orientation.h>
 //#include <pointcloud_segmentation/box_fit2_algo.h>
@@ -418,6 +420,9 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-clean", clean);
   terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
 
+  // Parsing the optional arguments
+  terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
+
   ROS_WARN ("Timer started !");
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
@@ -712,13 +717,21 @@ int main (int argc, char** argv)
 
   ///*
 
-  //bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> > cloud, std::vector<double> &coeff, double eps_angle_ = 0.1, double success_probability_ = 0.99, int verbosity_level_ = 1)
-  std::vector<double> coefficients;
-  bool yes_found_model = find_model (input_cloud, coefficients);
-
-  std::cerr << " yes_found_model = " << yes_found_model << std::endl;
-
-  //*/
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Find Box Model of a point cloud
+  if (find_box_model)
+  {
+    pcl::VoxelGrid<pcl::PointXYZINormal> vgrid;
+    vgrid.setLeafSize (0.05, 0.05, 0.05);
+    vgrid.setInputCloud (input_cloud);
+    pcl::PointCloud<pcl::PointXYZINormal> cloud_downsampled;
+    vgrid.filter (cloud_downsampled);
+    std::vector<double> coefficients (15, 0.0);
+    bool yes_found_model = find_model (cloud_downsampled.makeShared(), coefficients);
+    
+    if (yes_found_model)
+      ROS_INFO("Box Model found");
+  }
 
 
 
