@@ -57,3 +57,9 @@ Look for the list of poses in data/poses_handles.txt
 and run:
 rosrun ias_drawer_executive segment_furniture_interactive 0 0.629 1.126 0.756 0.712 0.003 0.025 0.702
 ============================================================
+
+
+=============Run segmentation of point cloud=====================
+roscd autonomous_mapping
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 1 -floor_limit 0.050 -ceiling_limit 0.100 -plane_threshold 0.075
+============================================================
