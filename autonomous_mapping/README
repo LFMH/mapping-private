@@ -49,13 +49,13 @@ rosrun pcl_ros pointcloud_to_pcd /input:=/merged_pointcloud
 
 
 =============Segment through interaction=====================
-start the robot
+roslaunch /etc/ros/robot.launch
 roslaunch ias_drawer_executive wopcl.launch
-rosrun SnapMapICP SnapMapICP
-rosrun ias_drawer_executive operate_handle_server
-Look for the list of poses in data/poses_handles.txt
-and run:
-rosrun ias_drawer_executive segment_furniture_interactive 0 0.629 1.126 0.756 0.712 0.003 0.025 0.702
+on account ruehr: roslaunch ias_drawer_executive pcl.launch
+ rosrun ias_drawer_executive operate_handle_server
+ rosrun ias_drawer_executive segment_furniture_interactive 
+rosrun point_cloud_converter point_cloud_converter /points_in:=/shoulder_cloud
+rosrun autonomous_mapping segment_difference /cloud_pcd:=/points2_out
 ============================================================
 
 
