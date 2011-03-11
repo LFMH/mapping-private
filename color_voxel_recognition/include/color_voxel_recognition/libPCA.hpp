@@ -2,9 +2,9 @@
 #define MY_PCA_EIGEN_HPP
 
 #include <vector>
-#include <Eigen3/Eigenvalues>
+#include <Eigen/Eigenvalues>
 
-using namespace Eigen3;
+using namespace Eigen;
 
 /*****************/
 /* class for PCA */

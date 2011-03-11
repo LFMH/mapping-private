@@ -2,7 +2,7 @@
 #include <iostream>
 #include "color_feature_classification/libPCA.hpp"
 
-using namespace Eigen3;
+using namespace Eigen;
 using namespace std;
 
 int main( int argc, char** argv ){

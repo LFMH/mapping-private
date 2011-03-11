@@ -16,7 +16,7 @@
 //#include "../param/CAM_SIZE"
 #include <ros/ros.h>
 #include "pcl/io/pcd_io.h"
-#include "pcl_ros/subscriber.h"
+//#include "pcl_ros/subscriber.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -32,7 +32,7 @@
 /****************************************************************************************************************************/
 
 using namespace std;
-using namespace Eigen3;
+using namespace Eigen;
 
 //float DISTANCE_TH = 1.0;
 float distance_th;
@@ -95,10 +95,11 @@ private:
   int process_count;
 public:
   void activateRelativeMode(){ relative_mode = true; }
-    string cloud_topic_;
-    pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
-    ros::Publisher marker_pub_;
-    ros::Publisher marker_array_pub_;
+  string cloud_topic_;
+  //pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
+  ros::Subscriber sub_;
+  ros::Publisher marker_pub_;
+  ros::Publisher marker_array_pub_;
   //***************
   //* コンストラクタ
   ViewAndDetect() :
@@ -283,7 +284,8 @@ public:
   
   void loop(){
       cloud_topic_ = "input";
-      sub_.subscribe (nh_, "input", 1000,  boost::bind (&ViewAndDetect::vad_cb, this, _1));
+      //sub_.subscribe (nh_, "input", 1000,  boost::bind (&ViewAndDetect::vad_cb, this, _1));
+      sub_ = nh_.subscribe ("input", 1,  &ViewAndDetect::vad_cb, this);
       ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());
   }
 };
@@ -344,10 +346,10 @@ int main(int argc, char* argv[]) {
   //* 特徴を圧縮する際に使用する主成分軸の読み込み
   PCA pca;
   pca.read("models/compress_axis", ASCII_MODE_P );
-  Eigen3::MatrixXf tmpaxis = pca.Axis();
-  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  Eigen3::MatrixXf axis_t = axis.transpose();
-  Eigen3::VectorXf variance = pca.Variance();
+  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen::MatrixXf axis_t = axis.transpose();
+  Eigen::VectorXf variance = pca.Variance();
   if( WHITENING )
     search_obj.setSceneAxis( axis_t, variance, dim );  //* whitening
   else

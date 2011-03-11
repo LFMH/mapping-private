@@ -9,7 +9,7 @@
 //#include "../param/CAM_SIZE"
 #include <ros/ros.h>
 #include "pcl/io/pcd_io.h"
-#include "pcl_ros/subscriber.h"
+//#include "pcl_ros/subscriber.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -123,8 +123,9 @@ private:
   const char *save_base_dir;
 public:
   void activateRelativeMode(){ relative_mode = true; }
-    string cloud_topic_;
-    pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
+  string cloud_topic_;
+  //pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
+  ros::Subscriber sub_;
 
   //***************
   //* コンストラクタ
@@ -175,7 +176,7 @@ public:
 	if( ( voxel.Xsize() != 0 ) && ( voxel.Ysize() != 0 ) && ( voxel.Zsize() != 0 ) ){
 
 	  sprintf(filename,"%s/Points/%03d.pcd", save_base_dir, captureNum );
-	  //pcl::io::savePCDFile (filename, *cloud, Eigen3::Vector4f::Zero (), Eigen3::Quaternionf::Identity (), true);
+	  //pcl::io::savePCDFile (filename, *cloud, Eigen::Vector4f::Zero (), Eigen::Quaternionf::Identity (), true);
 	  pcl::io::savePCDFile (filename, cloud_xyzrgb, true);
 	  cout << "captured. " << captureNum << endl;
 	  captureNum++;
@@ -189,7 +190,8 @@ public:
   void loop(){
       cloud_topic_ = "input";
 
-      sub_.subscribe (nh_, "input", 1,  boost::bind (&ViewAndSave::vas_cb, this, _1));
+      //sub_.subscribe (nh_, "input", 1,  boost::bind (&ViewAndSave::vas_cb, this, _1));
+      sub_ = nh_.subscribe ("input", 1,  &ViewAndSave::vas_cb, this);
       ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());
   }
 };

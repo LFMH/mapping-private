@@ -46,10 +46,10 @@ int main(int argc, char** argv){
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
   PCA pca;
   pca.read("scene/pca_result", ASCII_MODE_P );
-  Eigen3::MatrixXf tmpaxis = pca.Axis();
-  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  Eigen3::MatrixXf axis_t = axis.transpose();
-  Eigen3::VectorXf variance = pca.Variance();
+  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen::MatrixXf axis_t = axis.transpose();
+  Eigen::VectorXf variance = pca.Variance();
 
   //* 分割領域の個数を調べる
   int x_num = xsize/box_size;

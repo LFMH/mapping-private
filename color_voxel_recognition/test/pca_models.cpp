@@ -35,10 +35,10 @@ int main( int argc, char* argv[])
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
   PCA pca;
   pca.read("models/compress_axis", ASCII_MODE_P );
-  Eigen3::MatrixXf tmpaxis = pca.Axis();
-  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  Eigen3::MatrixXf axis_t = axis.transpose();
-  Eigen3::VectorXf variance = pca.Variance();
+  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen::MatrixXf axis_t = axis.transpose();
+  Eigen::VectorXf variance = pca.Variance();
 
   //****************************************************//
   //* 全てのボクセルファイルの全ての分割領域からのCCHLAC特徴抽出 *//
@@ -83,7 +83,7 @@ int main( int argc, char* argv[])
     std::vector<float> feature_tmp;
     std::vector<float> feature_tmp2;
     std::vector<float> feature_final(dim);
-    Eigen3::VectorXf vec2;
+    Eigen::VectorXf vec2;
 
     for(int k=0;k<z_num;k++){
       for(int j=0;j<y_num;j++){
@@ -135,7 +135,7 @@ int main( int argc, char* argv[])
 	    
 	    //* それぞれのCCHLAC特徴ベクトルを低次元に圧縮
 	    for(int i=0;i<24;i++){
-	      Map<Eigen3::VectorXf> vec( &(feature[i][0]), feature[i].size() );
+	      Map<Eigen::VectorXf> vec( &(feature[i][0]), feature[i].size() );
 	      vec2 = axis_t*vec;
 	      if( WHITENING ){
 		for(int t=0;t<dim;t++)

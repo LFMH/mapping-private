@@ -31,8 +31,8 @@ public:
   void cleanMax();
 
   // オンライン処理むけ
-  void setSceneAxis( Eigen3::MatrixXf _axis );
-  void setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ); // whitening むけ
+  void setSceneAxis( Eigen::MatrixXf _axis );
+  void setSceneAxis( Eigen::MatrixXf _axis, Eigen::VectorXf var, int dim ); // whitening むけ
   void cleanData();
   void setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size );
   void setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size );
@@ -64,10 +64,10 @@ protected:
   int *max_z; // 検出領域の開始地点のz座標（rank_num位まで保存）
   SearchMode *max_mode; // 検出領域を検出したときの検出モード
   double *max_dot; // 検出領域と検出対象物体との類似度（rank_num位まで保存）
-  Eigen3::MatrixXf axis_q;   // 検出対象物体の部分空間の基底軸
+  Eigen::MatrixXf axis_q;   // 検出対象物体の部分空間の基底軸
   int *exist_voxel_num; // 領域内のボクセルの個数
-  Eigen3::VectorXf *nFeatures; // 領域の特徴量
-  Eigen3::MatrixXf axis_p;  // 圧縮部分空間の基底軸
+  Eigen::VectorXf *nFeatures; // 領域の特徴量
+  Eigen::MatrixXf axis_p;  // 圧縮部分空間の基底軸
   std::vector<float> feature_max; // for histogram normalization
   bool compress_flg;
 
@@ -78,7 +78,7 @@ protected:
   void max_cpy( int src_num, int dest_num ); // 既に発見した領域のランクをずらす
   void max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ); // 今発見した領域を既に発見した領域と置き換える
   void search_part( SearchMode mode ); // 引数の検出モードでの物体検出
-  void setData( const Eigen3::Vector3i subdiv_b_, std::vector< std::vector<float> > feature );
+  void setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vector<float> > feature );
   template <typename T>
   T clipValue( T* ptr, const int x, const int y, const int z, const int xrange, const int yrange, const int zrange ); // 順に値が積分された配列からその位置における値を取り出す
 };
@@ -102,8 +102,8 @@ public:
   void cleanMax();
 
   // オンライン処理むけ
-  //void setSceneAxis( Eigen3::MatrixXf _axis );
-  //void setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ); // whitening むけ
+  //void setSceneAxis( Eigen::MatrixXf _axis );
+  //void setSceneAxis( Eigen::MatrixXf _axis, Eigen::VectorXf var, int dim ); // whitening むけ
   //void cleanData();
   //void setData( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size, const bool is_normalize = false );
   //void setData( pcl::VoxelGrid<>& grid, Voxel& voxel_bin, int dim, int box_size );
@@ -134,7 +134,7 @@ protected:
   int **max_z; // 検出領域の開始地点のz座標（rank_num位まで保存）
   SearchMode **max_mode; // 検出領域を検出したときの検出モード
   double **max_dot; // 検出領域と検出対象物体との類似度（rank_num位まで保存）
-  Eigen3::MatrixXf *axis_q;   // 検出対象物体の部分空間の基底軸
+  Eigen::MatrixXf *axis_q;   // 検出対象物体の部分空間の基底軸
   using SearchObj::exist_voxel_num; // 領域内のボクセルの個数
   using SearchObj::nFeatures; // 領域の特徴量
   using SearchObj::axis_p;  // 圧縮部分空間の基底軸

@@ -62,7 +62,7 @@ int main(int argc, char** argv){
 
   //* 領域内のボクセルの個数と領域の特徴量のメモリ確保
   int *exist_num = new int[ xy_num * z_num ];  // 領域内のボクセルの個数
-  Eigen3::VectorXf *nFeatures = new Eigen3::VectorXf[ xy_num * z_num ]; // 領域の特徴量
+  Eigen::VectorXf *nFeatures = new Eigen::VectorXf[ xy_num * z_num ]; // 領域の特徴量
 
   //* おそらくメモリが足りなくなるので、複数回に分けてボクセル化→CCHLAC抽出を行っていきます
   int z_num_middle = max_voxel_num / ( x_num * box_size * y_num * box_size * box_size );
@@ -155,10 +155,10 @@ int main(int argc, char** argv){
   //****************************************************//
 
   //* CCHLAC特徴を圧縮する際に使用する主成分軸の読み込み
-  Eigen3::MatrixXf tmpaxis = pca.Axis();
-  Eigen3::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  Eigen3::MatrixXf axis_t = axis.transpose();
-  Eigen3::VectorXf variance = pca.Variance();
+  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
+  Eigen::MatrixXf axis_t = axis.transpose();
+  Eigen::VectorXf variance = pca.Variance();
 
   //* 書き込む先のファイルを開く
   //* 特徴ファイルとボクセルの有無ファイル

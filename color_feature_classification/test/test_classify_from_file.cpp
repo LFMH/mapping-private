@@ -1,5 +1,6 @@
 #define QUIET
 //#define CALC_TIME
+#define SHOW_SIMILARITY
 
 #include <ros/ros.h>
 #include <pcl/point_types.h>
@@ -24,6 +25,12 @@ using namespace terminal_tools;
 
 //const float lower = 0;//-1;
 const float upper = 1;
+
+int MyCmp(const void* a, const void* b){
+  if(*(float *)a < *(float *)b) return 1;
+  else if(*(float *)a == *(float *)b) return 0;
+  else                            return -1;
+}
 
 // void scaling( const int index, std::vector<float> &feature, const std::vector<float> feature_min, const std::vector<float> feature_max ) {
 //   if( feature_min[ index ] == feature_max[ index ] ) feature[ index ] = 0;
@@ -70,6 +77,7 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
   int class_num = -1;
   float dot_max = 0;
   float dot;
+  float *dots = new float[ obj_class_num ];
   float sum = vec.dot( vec );
   double t1, t2, t_all = 0;
   for( int i=0; i<obj_class_num;i++ ){
@@ -101,6 +109,10 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
 	tmpVec( j ) *= sqrt( variance( j ) ) / sqrt( variance( 0 ) );
 
     dot = tmpVec.dot( tmpVec ) / sum;
+
+#ifdef SHOW_SIMILARITY
+    dots[ i ] = dot;
+#endif
     if( dot > dot_max ){
       dot_max = dot;
       class_num = i;
@@ -108,10 +120,23 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     t2 = my_clock();
     t_all += t2 - t1;
   }
+#ifdef SHOW_SIMILARITY
+  float *dots_copy = new float[ obj_class_num ];
+  for(int i=0;i<obj_class_num;i++)
+    dots_copy[i] = dots[i];
+  qsort(dots_copy, obj_class_num, sizeof(float), MyCmp);
+  for( int i=0; i<obj_class_num;i++ )
+    for( int j=0; j<obj_class_num;j++ )
+      if(dots[j]==dots_copy[i])
+	cout << j << " " << dots[ j ] << endl;
+  
+  
+#else
 #ifdef CALC_TIME
   cout << t_all * 1000 << endl;
 #else
   cout << class_num << " " << dot_max << endl;
+#endif
 #endif
   return class_num;
 }

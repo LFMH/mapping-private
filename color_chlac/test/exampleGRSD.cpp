@@ -6,7 +6,7 @@
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/features/rsd.h"
 #include <algorithm>
-#include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
+#include <color_chlac/pcl_cloud_algos_point_types.h>
 #include <pcl/features/normal_3d.h>
 #include <terminal_tools/parse.h>
 #include <pcl/surface/mls.h>
@@ -152,9 +152,9 @@ int main( int argc, char** argv )
   
   t1 = my_clock();
   // Get rmin/rmax for adjacent 27 voxel
-  Eigen3::MatrixXi relative_coordinates (3, 13);
+  Eigen::MatrixXi relative_coordinates (3, 13);
 
-  Eigen3::MatrixXi transition_matrix =  Eigen3::MatrixXi::Zero(6, 6);
+  Eigen::MatrixXi transition_matrix =  Eigen::MatrixXi::Zero(6, 6);
 
   int idx = 0;
   
@@ -182,7 +182,7 @@ int main( int argc, char** argv )
   relative_coordinates( 1, idx ) = 0;
   relative_coordinates( 2, idx ) = 0;
 
-  Eigen3::MatrixXi relative_coordinates_all (3, 26);
+  Eigen::MatrixXi relative_coordinates_all (3, 26);
   relative_coordinates_all.block<3, 13>(0, 0) = relative_coordinates;
   relative_coordinates_all.block<3, 13>(0, 13) = -relative_coordinates;
   

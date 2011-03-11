@@ -16,7 +16,7 @@
 //#include "../param/CAM_SIZE"
 #include <ros/ros.h>
 #include "pcl/io/pcd_io.h"
-#include "pcl_ros/subscriber.h"
+//#include "pcl_ros/subscriber.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -31,7 +31,7 @@
 
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 using namespace std;
-using namespace Eigen3;
+using namespace Eigen;
 
 float distance_th;
 
@@ -89,10 +89,11 @@ private:
   int process_count;
 public:
   void activateRelativeMode(){ relative_mode = true; }
-    string cloud_topic_;
-    pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
-    ros::Publisher marker_pub_;
-    ros::Publisher marker_array_pub_;
+  string cloud_topic_;
+  //pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
+  ros::Subscriber sub_;
+  ros::Publisher marker_pub_;
+  ros::Publisher marker_array_pub_;
   //***************
   //* コンストラクタ
   ViewAndDetect() :
@@ -246,7 +247,8 @@ public:
   
   void loop(){
       cloud_topic_ = "input";
-      sub_.subscribe (nh_, "input", 1000,  boost::bind (&ViewAndDetect::vad_cb, this, _1));
+      //sub_.subscribe (nh_, "input", 1000,  boost::bind (&ViewAndDetect::vad_cb, this, _1));
+      sub_ = nh_.subscribe ("input", 1,  &ViewAndDetect::vad_cb, this);
       ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());
   }
 };

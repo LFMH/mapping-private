@@ -126,11 +126,11 @@ void SearchObj::setThreshold( int _exist_voxel_num_threshold ){
 void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   PCA pca_each;
   pca_each.read( filename, ascii );
-  Eigen3::MatrixXf tmpaxis = pca_each.Axis();
-  Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+  Eigen::MatrixXf tmpaxis = pca_each.Axis();
+  Eigen::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
   axis_q = tmpaxis2.transpose();
   if( multiple_similarity ){
-    Eigen3::VectorXf variance = pca_each.Variance();
+    Eigen::VectorXf variance = pca_each.Variance();
     for( int i=0; i<dim_model; i++ )
       for( int j=0; j<dim; j++ )
 	axis_q( i, j ) = sqrt( variance( i ) ) * axis_q( i, j );
@@ -159,7 +159,7 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new Eigen3::VectorXf [ xyz_num ];
+  nFeatures = new Eigen::VectorXf [ xyz_num ];
   for(int n=0;n<xyz_num;n++){
     nFeatures[ n ].resize(dim);
     if( ascii ){
@@ -399,8 +399,8 @@ void SearchObj::search_part( SearchMode mode ){
   const int y_end = y_num - yrange + 1;
   const int z_end = z_num - zrange + 1;
   
-  Eigen3::VectorXf feature_tmp;
-  Eigen3::VectorXf tmpVector;
+  Eigen::VectorXf feature_tmp;
+  Eigen::VectorXf tmpVector;
   double dot,sum;
   int overlap_num;
   int exist_num;
@@ -498,7 +498,7 @@ T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int
   return result;
 }
 
-void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, std::vector< std::vector<float> > feature ){
+void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vector<float> > feature ){
   //* 分割領域の個数を調べる
   x_num = subdiv_b_[0];
   y_num = subdiv_b_[1];
@@ -510,7 +510,7 @@ void SearchObj::setData( const Eigen3::Vector3i subdiv_b_, std::vector< std::vec
     return;
 
   // exist_voxel_num = new int[ xyz_num ];
-  // nFeatures = new Eigen3::VectorXf [ xyz_num ];
+  // nFeatures = new Eigen::VectorXf [ xyz_num ];
 
   //*********************************//
   //* 全ての分割領域からの特徴抽出 *//
@@ -651,12 +651,12 @@ void SearchObj::cleanMax(){
 ///    オンライン処理向け    ///
 ////////////////////////////
 
-void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis ){
+void SearchObj::setSceneAxis( Eigen::MatrixXf _axis ){
   axis_p = _axis;
   compress_flg = true;
 }
 
-void SearchObj::setSceneAxis( Eigen3::MatrixXf _axis, Eigen3::VectorXf var, int dim ){
+void SearchObj::setSceneAxis( Eigen::MatrixXf _axis, Eigen::VectorXf var, int dim ){
   const int rows = _axis.rows();
   const int cols = _axis.cols();
   for( int i=0; i<rows; i++ ){
@@ -690,7 +690,7 @@ void SearchObj::cleanData(){
 void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
   computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
@@ -698,7 +698,7 @@ void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid
   std::vector< std::vector<float> > feature;
   const int h_num = colorCHLAC.size();
   exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen3::VectorXf [ h_num ];
+  nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
     feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
     exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
@@ -710,12 +710,12 @@ void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid
 void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
 
   std::vector< std::vector<float> > feature;
   const int h_num = grsd.size();
   exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen3::VectorXf [ h_num ];
+  nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
     feature.push_back( grsd[ h ] );
     exist_voxel_num[ h ] = 0;
@@ -729,7 +729,7 @@ void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl
 void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   //* compute - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen3::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
   //* compute - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
   computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
@@ -737,7 +737,7 @@ void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelG
   std::vector< std::vector<float> > feature;
   const int h_num = colorCHLAC.size();
   exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen3::VectorXf [ h_num ];
+  nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
     feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
     exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
@@ -747,11 +747,11 @@ void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelG
 
 void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size ){
   std::vector< std::vector<float> > colorCHLAC;
-  Eigen3::Vector3i subdiv_b_ = computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
 
   const int h_num = colorCHLAC.size();
   exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen3::VectorXf [ h_num ];
+  nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ )
     exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
   setData( subdiv_b_, colorCHLAC );
@@ -814,16 +814,16 @@ void SearchObj_multi::setRank( int _rank_num ){
 
 void SearchObj_multi::readAxis( const char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   if( axis_q != NULL ) delete[] axis_q;
-  axis_q = new Eigen3::MatrixXf [ model_num ];
+  axis_q = new Eigen::MatrixXf [ model_num ];
 
   PCA pca_each;
   for( int m=0; m<model_num; m++ ){
     pca_each.read( filename[ m ], ascii );
-    Eigen3::MatrixXf tmpaxis = pca_each.Axis();
-    Eigen3::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
+    Eigen::MatrixXf tmpaxis = pca_each.Axis();
+    Eigen::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
     axis_q[ m ] = tmpaxis2.transpose();
     if( multiple_similarity ){
-      Eigen3::VectorXf variance = pca_each.Variance();
+      Eigen::VectorXf variance = pca_each.Variance();
       for( int i=0; i<dim_model; i++ )
 	for( int j=0; j<dim; j++ )
 	  axis_q[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q[ m ]( i, j );
@@ -901,8 +901,8 @@ void SearchObj_multi::search_part( SearchMode mode ){
   const int y_end = y_num - yrange + 1;
   const int z_end = z_num - zrange + 1;
   
-  Eigen3::VectorXf feature_tmp;
-  Eigen3::VectorXf tmpVector;
+  Eigen::VectorXf feature_tmp;
+  Eigen::VectorXf tmpVector;
   double dot,sum;
   int overlap_num;
   int exist_num;
