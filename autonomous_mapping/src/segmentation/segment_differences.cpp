@@ -37,9 +37,9 @@
 
 /**
 
-\author Dejan Pangercic
+   \author Dejan Pangercic
 
-@b segmentat_difference exemplifies how to find a difference between 2 point clouds.
+   @b segment_difference exemplifies how to find a difference between 2 point clouds.
 
 **/
 
@@ -75,6 +75,7 @@ public:
   double rate_;
   int counter_;
   double distance_threshold_;
+  bool segment_, take_first_cloud_;
   ////////////////////////////////////////////////////////////////////////////////
   SegmentDifferencesNode  (ros::NodeHandle &n) : nh_(n)
   {
@@ -88,14 +89,13 @@ public:
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_cloud_topic_).c_str ());
     pub_filtered_.advertise (nh_, output_filtered_cloud_topic_.c_str (), 1);
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_filtered_cloud_topic_).c_str ());
-
     sub_ = nh_.subscribe (input_cloud_topic_, 1,  &SegmentDifferencesNode::cloud_cb, this);
     ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (input_cloud_topic_).c_str ());
     //set PCL classes
     seg_.setDistanceThreshold (distance_threshold_);
-    
     rate_ = 1;
     counter_ = 0;
+    segment_ = take_first_cloud_ = false;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -106,19 +106,22 @@ public:
     pcl::PointCloud<pcl::PointXYZ> output;
     pcl::PointCloud<pcl::PointXYZ> output_filtered;
     pcl::fromROSMsg(*pc, cloud_in);
+    nh_.getParam("/segment_difference_interactive/segment", segment_);
+    nh_.getParam("/segment_difference_interactive/take_first_cloud", take_first_cloud_);
     
-    if (counter_ == 0)
+    if (take_first_cloud_)
     {
       ROS_INFO("Setting input cloud with %ld points", cloud_in.points.size());
       seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud_in));
       counter_++;
+      nh_.setParam("/segment_difference_interactive/take_first_cloud", false);
     }
-    else
+    else if (segment_)
     {
       ROS_INFO("Setting target cloud with %ld points", cloud_in.points.size());
       seg_.setTargetCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud_in));
       seg_.segment (output);
-      counter_ = 0;
+      //counter_ = 0;
       ROS_INFO("Publishing difference cloud with %ld points", output.points.size());
       pub_diff_.publish (output);
       outrem_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(output));
@@ -126,7 +129,11 @@ public:
       outrem_.setMinNeighborsInRadius (15);
       outrem_.filter (output_filtered);
       pub_filtered_.publish (output_filtered);
+      segment_ = false;
+      nh_.setParam("/segment_difference_interactive/segment", false);
     }
+    else 
+      return;
   }
 };
 
