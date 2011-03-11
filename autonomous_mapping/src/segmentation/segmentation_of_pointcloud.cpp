@@ -162,7 +162,7 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
   // Create model
   //pcl::SACModelOrientation<pcl::Normal> model1 (nrmls.makeShared ());
-  pcl::SACModelOrientation<pcl::Normal>::Ptr model = boost::make_shared<pcl::SACModelOrientation<pcl::Normal> >(boost::make_shared<pcl::PointCloud<pcl::Normal> > (nrmls));
+  pcl::SACModelOrientation<pcl::Normal>::Ptr model = boost::make_shared<pcl::SACModelOrientation<pcl::Normal> >(nrmls.makeShared ());
   // SACModelOrientation<pcl::Normal> model(nrmls);
 
   std::cerr << endl << "  C  " << endl << endl; 
