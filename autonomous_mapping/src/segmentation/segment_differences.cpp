@@ -92,7 +92,7 @@ public:
     nh_.param("input_cloud_topic", input_cloud_topic_, std::string("/cloud_pcd"));
     nh_.param("output_cloud_topic", output_cloud_topic_, std::string("difference"));
     nh_.param("output_filtered_cloud_topic", output_filtered_cloud_topic_, std::string("difference_filtered"));
-    nh_.param("distance_threshold", distance_threshold_, 0.0005);
+    nh_.param("distance_threshold", distance_threshold_, 0.01);
     ROS_INFO ("Distance threshold set to %lf.", distance_threshold_);
     pub_diff_.advertise (nh_, output_cloud_topic_.c_str (), 1);
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_cloud_topic_).c_str ());
@@ -139,14 +139,14 @@ public:
       seg_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud_in));
       seg_.segment (output);
       //counter_ = 0;
-      // outrem_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(output));
-      // outrem_.setRadiusSearch (0.02);
-      // outrem_.setMinNeighborsInRadius (15);
-      // outrem_.filter (output_filtered);
+      outrem_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(output));
+      outrem_.setRadiusSearch (0.02);
+      outrem_.setMinNeighborsInRadius (10);
+      outrem_.filter (output_filtered);
       
       //cluster
       std::vector<pcl::PointIndices> clusters;
-      cluster_.setInputCloud (boost::make_shared<PointCloud>(output));
+      cluster_.setInputCloud (boost::make_shared<PointCloud>(output_filtered));
       cluster_.setClusterTolerance (object_cluster_tolerance_);
       cluster_.setMinClusterSize (object_cluster_min_size_);
       //    cluster_.setMaxClusterSize (object_cluster_max_size_);
@@ -174,27 +174,31 @@ public:
       pcl::PointXYZ point_max;
       btScalar dist = 100.00;
       int closest_cluster = 0;
-      for (unsigned int i = 0; i < clusters.size(); i++)
+      if (clusters.size() > 0)
 	{
-	  pcl::copyPointCloud (output, clusters[i], cloud_object_clustered);
-	  getMinMax3D (cloud_object_clustered, point_min, point_max);
-	  //Calculate the centroid of the hull
-	  cluster_center.setX((point_max.x + point_min.x)/2);
-	  cluster_center.setY((point_max.y + point_min.y)/2);
-	  cluster_center.setZ((point_max.z + point_min.z)/2);
-	  if (dist > fabs(robot_position.distance(cluster_center)))
+	  for (unsigned int i = 0; i < clusters.size(); i++)
 	    {
-	      closest_cluster = i;
-	      dist = fabs(robot_position.distance(cluster_center));
+	      pcl::copyPointCloud (output_filtered, clusters[i], cloud_object_clustered);
+	      getMinMax3D (cloud_object_clustered, point_min, point_max);
+	      //Calculate the centroid of the hull
+	      cluster_center.setX((point_max.x + point_min.x)/2);
+	      cluster_center.setY((point_max.y + point_min.y)/2);
+	      cluster_center.setZ((point_max.z + point_min.z)/2);
+	      if (dist > fabs(robot_position.distance(cluster_center)))
+		{
+		  closest_cluster = i;
+		  dist = fabs(robot_position.distance(cluster_center));
+		}
+	      ROS_INFO("Robot's distance to cluster %d is %fm", i, fabs(robot_position.distance(cluster_center)));
+	      cloud_object_clustered.points.clear();
 	    }
-	  ROS_INFO("Robot's distance to cluster %d is %fm", i, fabs(robot_position.distance(cluster_center)));
-	  cloud_object_clustered.points.clear();
+	  ROS_INFO("Closest cluster: %d", closest_cluster);
+	  pcl::copyPointCloud (output_filtered, clusters[closest_cluster], cloud_object_clustered);
+	  ROS_INFO("Publishing difference cloud with %ld points to topic %s", cloud_object_clustered.points.size(), output_filtered_cloud_topic_.c_str());
+	  pub_filtered_.publish (cloud_object_clustered);
 	}
-      ROS_INFO("Closest cluster: %d", closest_cluster);
-      pcl::copyPointCloud (output, clusters[closest_cluster], cloud_object_clustered);
-      ROS_INFO("Publishing difference cloud with %ld points to topic %s", cloud_object_clustered.points.size(), output_filtered_cloud_topic_.c_str());
-      pub_filtered_.publish (cloud_object_clustered);
-      //pub_filtered_.publish (output_filtered);
+      //ROS_INFO("Publishing difference cloud with %ld points to topic %s", output.points.size(), output_filtered_cloud_topic_.c_str());
+	//pub_filtered_.publish (output);
       segment_ = false;
       nh_.setParam("/segment_difference_interactive/segment", false);
     }
