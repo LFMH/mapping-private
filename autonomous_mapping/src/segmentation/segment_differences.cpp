@@ -100,9 +100,9 @@ public:
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_filtered_cloud_topic_).c_str ());
     sub_ = nh_.subscribe (input_cloud_topic_, 1,  &SegmentDifferencesNode::cloud_cb, this);
     ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (input_cloud_topic_).c_str ());
-    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.05);
+    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.08);
     //min 100 points
-    nh_.param("object_cluster_min_size", object_cluster_min_size_, 200);
+    nh_.param("object_cluster_min_size", object_cluster_min_size_, 500);
     //set PCL classes
     seg_.setDistanceThreshold (distance_threshold_);
     clusters_tree_ = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
@@ -198,7 +198,7 @@ public:
 	  pub_filtered_.publish (cloud_object_clustered);
 	}
       //ROS_INFO("Publishing difference cloud with %ld points to topic %s", output.points.size(), output_filtered_cloud_topic_.c_str());
-	//pub_filtered_.publish (output);
+      //pub_filtered_.publish (output);
       segment_ = false;
       nh_.setParam("/segment_difference_interactive/segment", false);
     }
