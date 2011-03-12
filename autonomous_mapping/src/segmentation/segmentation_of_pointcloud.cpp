@@ -29,6 +29,9 @@
 
 
 
+// ros dependencies
+#include "ros/ros.h"
+
 // terminal tools dependecies
 #include "terminal_tools/parse.h"
 
@@ -339,9 +342,6 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
 
 
-
-
-
 void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
                                 pcl::PointCloud<pcl::Normal> &normals_cloud,
                                 Eigen::Vector3f axis,
@@ -353,7 +353,6 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
                                 double plane_inliers_clustering_tolerance,
                                 pcl_visualization::PCLVisualizer &viewer)
 {
-
 
   // Count number of fitted planes 
   int plane_fit = 0;
@@ -373,9 +372,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
     segmentation_of_planes.setModelType (pcl::SACMODEL_NORMAL_PLANE);
     segmentation_of_planes.setNormalDistanceWeight (0.1);
     segmentation_of_planes.setMethodType (pcl::SAC_RANSAC);
-
     segmentation_of_planes.setDistanceThreshold (plane_threshold);
-
     segmentation_of_planes.setMaxIterations (maximum_plane_iterations);
     segmentation_of_planes.setAxis (axis);
     segmentation_of_planes.setEpsAngle (epsilon_angle);
@@ -391,7 +388,6 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
           plane_coefficients->values [0], plane_coefficients->values [1], plane_coefficients->values [2], plane_coefficients->values [3], maximum_plane_iterations);
     }
 
-
     // Check if the fitted circle has enough inliers in order to be accepted
     if ((int) plane_inliers->indices.size () < minimum_plane_inliers)
     {
@@ -402,11 +398,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
     }
     else
     {
-      ROS_ERROR ("ACCEPTED !");
-
-
-
-
+      ROS_WARN ("ACCEPTED !");
 
       // ----------------------------------- //
       // Start processing the accepted plane //
@@ -446,7 +438,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
 
       // Create ID for visualization
       std::stringstream id_of_plane;
-      id_of_plane << "PLANE_" << plane_fit;
+      id_of_plane << "PLANE_" << ros::Time::now();
 
       // Add point cloud to viewer
       viewer.addPointCloud (*plane_inliers_cloud, id_of_plane.str());
@@ -540,7 +532,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
       {
         // Create ID for visualization
         std::stringstream id_of_surface;
-        id_of_surface << "PLANE_" << plane_fit << "_SURFACE_" << c;
+        id_of_surface << "SURFACE_" << ros::Time::now();
 
         // Add point cloud to viewer
         viewer.addPointCloud (*plane_clusters_clouds.at(c), id_of_surface.str());
@@ -568,14 +560,18 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
         }
       }
 
+
+      /*
+
+      // Remove the point cloud data
+      viewer.removePointCloud (id_of_plane.str());
+
+      */
+
       // ------------------------------------- //
       // End of processing the accepted circle //
       // ------------------------------------- //
-
-
-
     }
-
 
     // number of fitted planes
     plane_fit++;
@@ -586,23 +582,14 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
 
     // Print the number of points left for model fitting
     if ( (int) input_cloud.points.size () < minimum_plane_inliers )
-      ROS_ERROR (" %d < %d | Stop !", input_cloud.points.size (), minimum_plane_inliers);
+      ROS_ERROR ("%d < %d | Stop !", input_cloud.points.size (), minimum_plane_inliers);
     else
       if ( (int) input_cloud.points.size () > minimum_plane_inliers )
-        ROS_WARN (" %d > %d | Continue... ", input_cloud.points.size (), minimum_plane_inliers);
+        ROS_INFO ("%d > %d | Continue... ", input_cloud.points.size (), minimum_plane_inliers);
       else
-        ROS_WARN (" %d = %d | Continue... ", input_cloud.points.size (), minimum_plane_inliers);
+        ROS_INFO ("%d = %d | Continue... ", input_cloud.points.size (), minimum_plane_inliers);
 
   } while ((int) input_cloud.points.size () > minimum_plane_inliers && stop_planes == false);
-
-
-
-
-  /*
-
-*/
-
-
 }
 
 
@@ -619,6 +606,9 @@ int main (int argc, char** argv)
   // Initialize random number generator
   srand (time(0));
 
+  // Initialize ros time
+  ros::Time::init();
+
   // Declare the timer
   terminal_tools::TicToc tt;
 
@@ -626,7 +616,7 @@ int main (int argc, char** argv)
   tt.tic ();
 
 
-  
+
   // --------------------------------------------------------------- //
   // ------------------ Check and parse arguments ------------------ //
   // --------------------------------------------------------------- //
@@ -644,6 +634,8 @@ int main (int argc, char** argv)
     ROS_INFO ("                     -plane_threshold X                      = ");
     ROS_INFO ("                     -minimum_plane_inliers X                = ");
     ROS_INFO ("                     -maximum_plane_iterations X             = ");
+    ROS_INFO (" ");
+    ROS_INFO ("                     -minimum_size_of_plane_cluster          = ");
     ROS_INFO ("                     -plane_inliers_clustering_tolarence     = ");
     ROS_INFO (" ");
     ROS_INFO ("                     -step B                                 = wait or not wait");
@@ -686,8 +678,12 @@ int main (int argc, char** argv)
   // Parsing the optional arguments
   terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
 
+
+
   ROS_WARN ("Timer started !");
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
+
 
   // ---------------------------------------------------------------- //
   // ------------------ Visualize point cloud data ------------------ //
@@ -727,6 +723,7 @@ int main (int argc, char** argv)
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
   // Set the size of points for cloud
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "INPUT"); 
+
   // Wait or not wait
   if ( step )
   {
@@ -735,10 +732,11 @@ int main (int argc, char** argv)
   }
 
   // Remove or not remove the cloud from viewer
-  if ( !clean )
+  if ( clean )
   {
     // Remove the point cloud data
     viewer.removePointCloud ("INPUT");
+
     // Wait or not wait
     if ( step )
     {
@@ -749,7 +747,7 @@ int main (int argc, char** argv)
 
 
 
-/*
+  /*
 
   // ------------------------------------------------------------------------ //
   // ------------------ Removal of outliers for input data ------------------ //
@@ -763,7 +761,7 @@ int main (int argc, char** argv)
   // Set which point cloud to filter
   sor.setInputCloud (input_cloud);
   // Set number of points for mean distance estimation
-  sor.setMeanK (25);
+  sor.setMeanK (50);
   // Set the standard deviation multiplier threshold
   sor.setStddevMulThresh (1.0);
   // Call the filtering method
@@ -784,7 +782,7 @@ int main (int argc, char** argv)
   }
 
   // Remove the point cloud data
-  viewer.removePointCloud ("FILTERED");
+  viewer.removePointCloud ("INPUT");
 
   // Wait or not wait
   if ( step )
@@ -793,14 +791,13 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
+  // Save the filtered cloud to the working cloud
+  *input_cloud = *filtered_cloud;
+
 */
 
 
-
-  // --------------------------------------------------------------- //
-  // ------------------ Start filtering the cloud ------------------ //
-  // --------------------------------------------------------------- //
-
+  
   // The minimum and maximum height of point cloud
   pcl::PointXYZINormal minimum_point, maximum_point;
   pcl::getMinMax3D (*input_cloud, minimum_point, maximum_point);
@@ -810,14 +807,27 @@ int main (int argc, char** argv)
   floor_limit = height_of_cloud * floor_limit;
   ceiling_limit = height_of_cloud * ceiling_limit;
 
-  ROS_INFO ("Minimum point is (%6.3f,%6.3f,%6.3f)", minimum_point.x, minimum_point.y, minimum_point.z);
-  ROS_INFO ("Maximum point is (%6.3f,%6.3f,%6.3f)", maximum_point.x, maximum_point.y, maximum_point.z);
-  ROS_INFO ("Height is %5.3f meters", height_of_cloud);
+  if ( verbose )
+  {
+    /*
 
-  ROS_INFO ("      threshold = %5.3f meters", threshold);
-  ROS_INFO ("    floor limit = %5.3f meters", floor_limit);
-  ROS_INFO ("  ceiling limit = %5.3f meters", ceiling_limit);
- 
+    ROS_INFO ("     floor limit = %5.3f meters", floor_limit);
+    ROS_INFO ("   ceiling limit = %5.3f meters", ceiling_limit);
+    ROS_INFO (" threshold limit = %5.3f meters", threshold);
+
+    */
+
+    ROS_INFO ("Minimum point is (%6.3f,%6.3f,%6.3f)", minimum_point.x, minimum_point.y, minimum_point.z);
+    ROS_INFO ("Maximum point is (%6.3f,%6.3f,%6.3f)", maximum_point.x, maximum_point.y, maximum_point.z);
+    ROS_INFO ("Height is %5.3f meters", height_of_cloud);
+  } 
+
+
+
+  // -------------------------------------------------------------------- //
+  // ------------------ Start with filtering the cloud ------------------ //
+  // -------------------------------------------------------------------- //
+
   // Create the filtering object
   pcl::PassThrough<pcl::PointXYZINormal> pass;
   pass.setInputCloud (input_cloud);
@@ -846,6 +856,51 @@ int main (int argc, char** argv)
     // Show the floor's number of points
     ROS_INFO ("The floor has %d points and was saved to data/floor.pcd", floor_cloud->points.size ());
   }
+ 
+  // Point cloud of ceiling points
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr ceiling_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+
+  // Set ceiling limits
+  if ( ceiling_limit == 0.0 ) 
+    pass.setFilterLimits (maximum_point.z - threshold, maximum_point.z);
+  else
+    pass.setFilterLimits (maximum_point.z - ceiling_limit, maximum_point.z);
+
+  // Call the filtering function
+  pass.setFilterLimitsNegative (false);
+  pass.filter (*ceiling_cloud);
+  pass.setFilterLimitsNegative (true);
+  pass.filter (*input_cloud);
+
+  // Save these points to disk
+  pcl::io::savePCDFile ("data/ceiling.pcd", *ceiling_cloud);
+
+  if ( verbose )
+  {
+    // Show the ceiling's number of points
+    ROS_INFO ("The ceiling has %d points and was saved to data/ceiling.pcd", ceiling_cloud->points.size ());
+  }
+
+  // Point cloud of walls points
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr walls_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+
+  // Save the cloud with the walls
+  *walls_cloud = *input_cloud;
+
+  // Save these points to disk
+  pcl::io::savePCDFile ("data/walls.pcd", *walls_cloud);
+
+  if ( verbose )
+  {
+    // Show the walls' number of points
+    ROS_INFO ("The walls have %d points and were saved to data/walls.pcd", walls_cloud->points.size ());
+  }
+
+
+ 
+  // -------------------------------------------------------------- //
+  // ------------------ Visulize filtered clouds ------------------ //
+  // -------------------------------------------------------------- //
 
   // Add point cloud to viewer
   viewer.addPointCloud (*floor_cloud, "FLOOR");
@@ -875,83 +930,10 @@ int main (int argc, char** argv)
     }
   }
 
-  // Point cloud of ceiling points
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr ceiling_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
-
-  // Set ceiling limits
-  if ( ceiling_limit == 0.0 ) 
-    pass.setFilterLimits (maximum_point.z - threshold, maximum_point.z);
-  else
-    pass.setFilterLimits (maximum_point.z - ceiling_limit, maximum_point.z);
-
-  // Call the filtering function
-  pass.setFilterLimitsNegative (false);
-  pass.filter (*ceiling_cloud);
-  pass.setFilterLimitsNegative (true);
-  pass.filter (*input_cloud);
-
-  // Save these points to disk
-  pcl::io::savePCDFile ("data/ceiling.pcd", *ceiling_cloud);
-
-  if ( verbose )
-  {
-    // Show the ceiling's number of points
-    ROS_INFO ("The ceiling has %d points and was saved to data/ceiling.pcd", ceiling_cloud->points.size ());
-  }
-
-  // Add point cloud to viewer
-  viewer.addPointCloud (*ceiling_cloud, "CEILING");
-  // Color the cloud in green
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "CEILING");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "CEILING"); 
-
-  // Wait or not wait
-  if ( step )
-  {
-    // And wait until Q key is pressed
-    viewer.spin ();
-  }
-
-  // Remove or not remove the cloud from viewer
-  if ( clean )
-  {
-    // Remove the point cloud data
-    viewer.removePointCloud ("CEILING");
-
-    // Wait or not wait
-    if ( step )
-    {
-      // And wait until Q key is pressed
-      viewer.spin ();
-    }
-  }
-
-
-
-  // TODO To save the remaining point cloud after each segmentation stage 
-
-
-
-  // Point cloud of walls points
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr walls_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
-
-  // Save the cloud with the walls
-  *walls_cloud = *input_cloud;
-
-  // Save these points to disk
-  pcl::io::savePCDFile ("data/walls.pcd", *walls_cloud);
-
-  if ( verbose )
-  {
-    // Show the walls' number of points
-    ROS_INFO ("The walls have %d points and were saved to data/walls.pcd", walls_cloud->points.size ());
-  }
-
   // Add the input cloud
   viewer.addPointCloud (*walls_cloud, "WALLS");
-  // Color the cloud in blue
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "WALLS");
+  // Color the cloud in green
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "WALLS");
   // Set the size of points for cloud
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "WALLS"); 
 
@@ -976,9 +958,64 @@ int main (int argc, char** argv)
     }
   }
 
+  /*
+
+  // Add point cloud to viewer
+  viewer.addPointCloud (*ceiling_cloud, "CEILING");
+  // Color the cloud in blue
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "CEILING");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "CEILING"); 
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Remove or not remove the cloud from viewer
+  if ( clean )
+  {
+    // Remove the point cloud data
+    viewer.removePointCloud ("CEILING");
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+  }
+
+  */
 
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // ------------------------------------------------------ //
+  // ------------------ Lose the ceiling ------------------ //
+  // ------------------------------------------------------ //
+
+  // Remove the point cloud data
+  viewer.removePointCloud ("INPUT");
+
+  /*
+
+  // Remove the point cloud data
+  viewer.removePointCloud ("CEILING");
+
+  */
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Find Box Model of a point cloud
   if (find_box_model)
   {
@@ -1034,284 +1071,33 @@ int main (int argc, char** argv)
 
 
 
+  // ------------------------------------------------------------------------------------- //
+  // ------------------ Segment horizontal and vertical planar surfaces ------------------ //
+  // ------------------------------------------------------------------------------------- //
 
+  ROS_ERROR ("Z axis aligned planes");
   Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
   segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
 
-  ROS_INFO (" ");
-  ROS_INFO (" ");
-  ROS_INFO (" ");
-
+  ROS_ERROR ("Y axis aligned planes");
   Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
   segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
 
-  ROS_INFO (" ");
-  ROS_INFO (" ");
-  ROS_INFO (" ");
-
+  ROS_ERROR ("X axis aligned planes");
   Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
   segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
 
-  ROS_INFO (" ");
-  ROS_INFO (" ");
-  ROS_INFO (" ");
 
 
+  // ------------------------------------------------------------------ //
+  // ------------------ Lose the walls ans the floor ------------------ //
+  // ------------------------------------------------------------------ //
 
+  // Remove the point cloud data
+  viewer.removePointCloud ("FLOOR");
 
-
-
-
-
-
-
-
-
-
-
-
-
-  // ----------------------------------------------------------------- //
-  // ------------------ Segment the VERTICAL planes ------------------ //
-  // ----------------------------------------------------------------- //
-
-  // Create the segmentation object and declare variables
-  pcl::SACSegmentationFromNormals<pcl::PointXYZINormal, pcl::Normal> segmentation_of_plane;
-  Eigen::Vector3f Z_axes = Eigen::Vector3f (0.0, 0.0, 1.0); 
-  pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices ());
-  pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients ());
-
-  // Set all the parameters for segmenting vertical planes
-  segmentation_of_plane.setOptimizeCoefficients (true);
-  segmentation_of_plane.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-  segmentation_of_plane.setNormalDistanceWeight (0.1);
-  segmentation_of_plane.setMethodType (pcl::SAC_RANSAC);
-  segmentation_of_plane.setMaxIterations (maximum_plane_iterations);
-  segmentation_of_plane.setDistanceThreshold (plane_threshold);
-  segmentation_of_plane.setAxis (Z_axes);
-  segmentation_of_plane.setEpsAngle (0.05);
-  segmentation_of_plane.setInputCloud (input_cloud);
-  segmentation_of_plane.setInputNormals (normals_cloud);
-
-  // Obtain the plane inliers and coefficients
-  segmentation_of_plane.segment (*plane_inliers, *plane_coefficients);
-
-  if ( verbose )
-  {
-    //ROS_INFO ("Plane has %5d inliers with parameters A = (%6.3f,%6.3f,%6.3f) B = (%6.3f,%6.3f,%6.3f) C = (%6.3f,%6.3f,%6.3f) D = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations",
-    //plane_inliers->indices.size (), plane_coefficients->values [0], plane_coefficients->values [1], plane_coefficients->values [2], plane_coefficients->values [3], plane_coefficients->values [4], plane_coefficients->values [5], plane_coefficients->values [6], plane_coefficients->values [7], plane_coefficients->values [8], plane_coefficients->values [9], plane_coefficients->values [10], plane_coefficients->values [11], maximum_plane_iterations);
-
-  }
-
-  // Point cloud of plane inliers
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr plane_inliers_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
-
-  // Extract the circular inliers from the input cloud
-  pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_plane_inliers;
-  // Set point cloud from where to extract
-  extraction_of_plane_inliers.setInputCloud (input_cloud);
-  // Set which indices to extract
-  extraction_of_plane_inliers.setIndices (plane_inliers);
-  // Return the points which represent the inliers
-  extraction_of_plane_inliers.setNegative (false);
-  // Call the extraction function
-  extraction_of_plane_inliers.filter (*plane_inliers_cloud);
-  // Return the remaining points of inliers
-  extraction_of_plane_inliers.setNegative (true);
-  // Call the extraction function
-  extraction_of_plane_inliers.filter (*input_cloud);
-
-  // Extract the normals of plane inliers 
-  pcl::ExtractIndices<pcl::Normal> extraction_of_normals;
-
-  // Set normals cloud from where to extract
-  extraction_of_normals.setInputCloud (normals_cloud);
-  // Return the remaining normals
-  extraction_of_normals.setNegative (true);
-  // Set which indices to extract
-  extraction_of_normals.setIndices (plane_inliers);
-  // Call the extraction function
-  extraction_of_normals.filter (*normals_cloud);
-
-  if ( verbose )
-  {
-    ROS_INFO ("And %d points remain after the extraction of plane model inliers with %d normals of course", input_cloud->points.size (), normals_cloud->points.size ());
-  }
-
-  // Vector of clusters from inliers
-  std::vector<pcl::PointIndices> plane_clusters;
-  // Build kd-tree structure for clusters
-  pcl::KdTreeFLANN<pcl::PointXYZINormal>::Ptr plane_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZINormal> ());
-
-  // Instantiate cluster extraction object
-  pcl::EuclideanClusterExtraction<pcl::PointXYZINormal> clustering_of_plane_inliers;
-  // Set as input the cloud of circle inliers
-  clustering_of_plane_inliers.setInputCloud (plane_inliers_cloud);
-  // Radius of the connnectivity threshold
-  clustering_of_plane_inliers.setClusterTolerance (0.050);
-  // Minimum size of clusters
-  clustering_of_plane_inliers.setMinClusterSize (100);
-  // Provide pointer to the search method
-  clustering_of_plane_inliers.setSearchMethod (plane_clusters_tree);
-  // Call the extraction function
-  clustering_of_plane_inliers.extract (plane_clusters);
-
-  if ( verbose )
-  {
-    ROS_WARN ("Plane model has %d clusters where", plane_clusters.size());
-    for (int c = 0; c < (int) plane_clusters.size(); c++)
-      ROS_WARN ("  Cluster %d has %d points", c, (int) plane_clusters.at(c).indices.size());
-  }
-
-  // Point clouds which represent the clusters of the plane inliers
-  std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> plane_clusters_clouds;
-  // Where to save the point clouds of tables
-  std::vector<std::string> paths_of_tables;
-
-  for (int c = 0; c < (int) plane_clusters.size(); c++)
-  {
-    // Local variables
-    pcl::PointIndices::Ptr pointer_of_plane_cluster (new pcl::PointIndices (plane_clusters.at(c)));
-    pcl::PointCloud<pcl::PointXYZINormal>::Ptr cluster (new pcl::PointCloud<pcl::PointXYZINormal>);
-    std::stringstream path;
-
-    // Extract the circular inliers from the input cloud
-    pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_plane_clusters;
-    // Set point cloud from where to extract
-    extraction_of_plane_clusters.setInputCloud (plane_inliers_cloud);
-    // Set which indices to extract
-    extraction_of_plane_clusters.setIndices (pointer_of_plane_cluster);
-    // Return the points which represent the inliers
-    extraction_of_plane_clusters.setNegative (false);
-    // Call the extraction function
-    extraction_of_plane_clusters.filter (*cluster);
-
-    // Save these points to disk
-    path << "data/table_" << c << ".pcd";
-    pcl::io::savePCDFile (path.str (), *cluster);
-
-    if ( verbose )
-    {
-      // Show the table's number of points
-      //ROS_INFO ("Table %d has %d points and was saved to %s", c, cluster->points.size(), *path.str());
-      ROS_INFO ("Table %d has %d points and was saved to data/table_%d.pcd", c, cluster->points.size(), c);
-    }
-
-    // Save cluster
-    plane_clusters_clouds.push_back (cluster);
-    // Save path
-    paths_of_tables.push_back (path.str());
-  }
-
-  for (int c = 0; c < (int) plane_clusters.size(); c++)
-  {
-    // Add point cloud to viewer
-    viewer.addPointCloud (*plane_clusters_clouds.at(c), paths_of_tables.at(c));
-    // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, paths_of_tables.at(c)); 
-
-    // Wait or not wait
-    if ( step )
-    {
-      // And wait until Q key is pressed
-      viewer.spin ();
-    }
-
-    // Remove or not remove the cloud from viewer
-    if ( clean )
-    {
-      // Remove the point cloud data
-      viewer.removePointCloud (paths_of_tables.at(c));
-      // Wait or not wait
-      if ( step )
-      {
-        // And wait until Q key is pressed
-        viewer.spin ();
-      }
-    }
-  }
-
-
-
-  // ------------------------------------------------------------------- //
-  // ------------------ Segment the HORIZONTAL planes ------------------ //
-  // ------------------------------------------------------------------- //
-
-  // Create the segmentation object and declare variables
-  pcl::SACSegmentationFromNormals<pcl::PointXYZINormal, pcl::Normal> segmentation_of_horizontal_plane;
-  //Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0);
-  Eigen::Vector3f X_axis = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
-  pcl::PointIndices::Ptr horizontal_plane_inliers (new pcl::PointIndices ());
-  pcl::ModelCoefficients::Ptr horizontal_plane_coefficients (new pcl::ModelCoefficients ());
-
-  // Set all the parameters for segmenting vertical planes
-  segmentation_of_horizontal_plane.setOptimizeCoefficients (true);
-  segmentation_of_horizontal_plane.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-  segmentation_of_horizontal_plane.setNormalDistanceWeight (0.1);
-  segmentation_of_horizontal_plane.setMethodType (pcl::SAC_RANSAC);
-  segmentation_of_horizontal_plane.setMaxIterations (maximum_plane_iterations);
-  segmentation_of_horizontal_plane.setDistanceThreshold (plane_threshold);
-  segmentation_of_horizontal_plane.setAxis (X_axis);
-  segmentation_of_horizontal_plane.setEpsAngle (0.05);
-  segmentation_of_horizontal_plane.setInputCloud (input_cloud);
-  segmentation_of_horizontal_plane.setInputNormals (normals_cloud);
-
-  // Obtain the plane inliers and coefficients
-  segmentation_of_horizontal_plane.segment (*horizontal_plane_inliers, *horizontal_plane_coefficients);
-
-  if ( verbose )
-  {
-    ROS_INFO ("Horizontal plane has %5d inliers with parameters a, b, c, d found in maximum %d iterations", horizontal_plane_inliers->indices.size (), maximum_plane_iterations);
-    //std::cerr << "Model coefficients: " << horizontal_plane_coefficients->values[0] << " " << horizontal_plane_coefficients->values[1] << " " << horizontal_plane_coefficients->values[2] << " " << horizontal_plane_coefficients->values[3] << std::endl;
-
- std::cerr << "Model coefficients: " << *horizontal_plane_coefficients << std::endl;
-
-  }
-
-  // Point cloud of plane inliers
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr horizontal_plane_inliers_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
-
-  // Extract the circular inliers from the input cloud
-  pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_horizontal_plane_inliers;
-  // Set point cloud from where to extract
-  extraction_of_horizontal_plane_inliers.setInputCloud (input_cloud);
-  // Set which indices to extract
-  extraction_of_horizontal_plane_inliers.setIndices (horizontal_plane_inliers);
-  // Return the points which represent the inliers
-  extraction_of_horizontal_plane_inliers.setNegative (false);
-  // Call the extraction function
-  extraction_of_horizontal_plane_inliers.filter (*horizontal_plane_inliers_cloud);
-  // Return the remaining points of inliers
-  extraction_of_horizontal_plane_inliers.setNegative (true);
-  // Call the extraction function
-  extraction_of_horizontal_plane_inliers.filter (*input_cloud);
-
-  // Extract the normals of plane inliers 
-  pcl::ExtractIndices<pcl::Normal> horizontal_extraction_of_normals;
-
-  // Set normals cloud from where to extract
-  horizontal_extraction_of_normals.setInputCloud (normals_cloud);
-  // Return the remaining normals
-  horizontal_extraction_of_normals.setNegative (true);
-  // Set which indices to extract
-  horizontal_extraction_of_normals.setIndices (horizontal_plane_inliers);
-  // Call the extraction function
-  horizontal_extraction_of_normals.filter (*normals_cloud);
-
-  if ( verbose )
-  {
-    ROS_INFO ("And %d points remain after the extraction of plane model inliers with %d normals of course", input_cloud->points.size (), normals_cloud->points.size ());
-  }
-
-
-
-
-
-
-  // Add point cloud to viewer
-  viewer.addPointCloud (*horizontal_plane_inliers_cloud, "HORIZONTAL");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "HORIZONTAL"); 
+  // Remove the point cloud data
+  viewer.removePointCloud ("WALLS");
 
   // Wait or not wait
   if ( step )
@@ -1319,23 +1105,6 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
-
-  //// Remove or not remove the cloud from viewer
-  //if ( clean )
-  //{
-    //// Remove the point cloud data
-    //viewer.removePointCloud ("HORIZONTAL");
-    //// Wait or not wait
-    //if ( step )
-    //{
-      //// And wait until Q key is pressed
-      //viewer.spin ();
-    //}
-  //}
-
-
-
-
 
 
 
