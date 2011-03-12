@@ -149,6 +149,8 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
   // Compute center point
   //cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
+  
+  // TODO template SAC model and method on the input point type an dget rid of this
   pcl::PointCloud<pcl::Normal> nrmls ;
   nrmls.header = cloud->header;
   nrmls.points.resize(cloud->points.size());
@@ -162,20 +164,15 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
   std::cerr << endl << "  B  " << endl << endl; 
 
   // Create model
-  //pcl::SACModelOrientation<pcl::Normal> model1 (nrmls.makeShared ());
-  pcl::SACModelOrientation<pcl::Normal>::Ptr model = boost::make_shared<pcl::SACModelOrientation<pcl::Normal> >(nrmls.makeShared ());
-  // SACModelOrientation<pcl::Normal> model(nrmls);
-
-  std::cerr << endl << "  C  " << endl << endl; 
-
+  pcl::SACModelOrientation<pcl::Normal>::Ptr model (new pcl::SACModelOrientation<pcl::Normal> (nrmls.makeShared ()));
   model->axis_[0] = 0 ;
   model->axis_[1] = 0 ;
   model->axis_[2] = 1 ;
-
-  //model->setDataSet ((sensor_msgs::PointCloud*)(cloud.get())); // TODO: this is nasty :)
   if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
       model->axis_[0], model->axis_[1], model->axis_[2], eps_angle_);
 
+  std::cerr << endl << "  C  " << endl << endl; 
+  
   // Check probability of success and decide on method
   Eigen::VectorXf refined;
   std::vector<int> inliers;
