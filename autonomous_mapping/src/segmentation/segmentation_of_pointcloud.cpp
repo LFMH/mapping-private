@@ -393,32 +393,6 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
     // Obtain the plane inliers and coefficients
     segmentation_of_planes.segment (*plane_inliers, *plane_coefficients);
 
-
-
-
-
-
-    pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
-    pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
-
-    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-
-    // Project the table inliers using the planar model coefficients    
-
-    ROS_INFO (" input cloud : %d ", input_cloud.points.size());
-    ROS_INFO (" input cloud ptr: %d ", input_cloud.makeShared()->points.size());
-
-    proj_.setInputCloud (input_cloud.makeShared());
-    proj_.setIndices (plane_inliers);
-    proj_.setModelCoefficients (plane_coefficients);
-    proj_.filter (cloud_projected);
-
-
-
-
-
-    //cerr << *plane_inliers << endl;
-
     if ( verbose )
     {
       ROS_INFO ("Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", plane_inliers->indices.size (), 
@@ -1241,37 +1215,32 @@ int main (int argc, char** argv)
     }
     else
     {
-/*
+
       //pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
       pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
-
       pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
-
       proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
 
       // Project the table inliers using the planar model coefficients    
+       // ROS_INFO (" auxiliary size : %d ", auxiliary_input_cloud->points.size());
+       // ROS_INFO (" planar surfaces indices size : %d ", planar_surfaces_indices.at (surface)->indices.size());
+       // ROS_INFO (" Table model: [%f, %f, %f, %f]", planar_surfaces_coeficients.at (surface)->values[0], planar_surfaces_coeficients.at (surface)->values[1], planar_surfaces_coeficients.at (surface)->values[2], planar_surfaces_coeficients.at (surface)->values[3]);
+       // cerr <<  *planar_surfaces_indices.at (surface) << endl;
 
-       ROS_INFO (" auxiliary size : %d ", auxiliary_input_cloud->points.size());
-       ROS_INFO (" planar surfaces indices size : %d ", planar_surfaces_indices.at (surface)->indices.size());
-       ROS_INFO (" Table model: [%f, %f, %f, %f]", planar_surfaces_coeficients.at (surface)->values[0], planar_surfaces_coeficients.at (surface)->values[1], planar_surfaces_coeficients.at (surface)->values[2], planar_surfaces_coeficients.at (surface)->values[3]);
-       cerr <<  *planar_surfaces_indices.at (surface) << endl;
-
-      proj_.setInputCloud (input_cloud);
+      proj_.setInputCloud (auxiliary_input_cloud);
       proj_.setIndices (planar_surfaces_indices.at (surface));
       proj_.setModelCoefficients (planar_surfaces_coeficients.at (surface));
       proj_.filter (cloud_projected);
       //cloud_pub_.publish (cloud_projected);
 
-      exit(0);
-
       // Save furniture surface
       //furniture_surfaces.push_back (planar_surfaces.at (surface));
-      //furniture_surfaces.push_back (cloud_projected);
+      furniture_surfaces.push_back (cloud_projected.makeShared());
 
       // Save id of that surface
       furniture_surfaces_ids.push_back (planar_surfaces_ids.at (surface));
 
-*/
+      
 
     }
   }
@@ -1293,12 +1262,11 @@ int main (int argc, char** argv)
 
     ROS_INFO ("Furniture surface %d has %d points", furniture, furniture_surfaces.at (furniture)->points.size ());
 
-    pcl::ConvexHull2D<pcl::PointXYZINormal> chull_;  
+    pcl::ConvexHull<pcl::PointXYZINormal> chull_;  
     pcl::PointCloud<pcl::PointXYZINormal> cloud_hull;
 
     // Create a Convex Hull representation of the projected inliers
     chull_.setInputCloud (furniture_surfaces.at (furniture));
-    //chull_.setInputCloud (auxiliary_input_cloud);
 
     cerr << " A " << endl ;
     chull_.reconstruct (cloud_hull);
@@ -1309,23 +1277,48 @@ int main (int argc, char** argv)
     pcl::ExtractPolygonalPrismData<pcl::PointXYZINormal> prism_;
 
     // ---[ Get the objects on top of the table
-    pcl::PointIndices cloud_object_indices;
+    pcl::PointIndices::Ptr cloud_object_indices (new pcl::PointIndices ());
     prism_.setHeightLimits (0.000, 0.200);
 
 
     ROS_INFO (" auxiliary size : %d ", auxiliary_input_cloud->points.size());
 
-    //prism_.setInputCloud (auxiliary_input_cloud);
-
+    prism_.setInputCloud (auxiliary_input_cloud);
     prism_.setInputPlanarHull (cloud_hull.makeShared());
-    //prism_.setViewPoint (0.0, 0.0, 1.5);
-
+    prism_.setViewPoint (0.0, 0.0, 1.5);
     cerr << " C " << endl ;
-    prism_.segment (cloud_object_indices);
+    prism_.segment (*cloud_object_indices);
     cerr << " D " << endl ;
+    ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
-    ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices.indices.size ());
+    //extract handles
+    pcl::PointCloud<pcl::PointXYZINormal> handles_cloud;
+    pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_handles_inliers;
+    // Set point cloud from where to extract
+    extraction_of_handles_inliers.setInputCloud (auxiliary_input_cloud);
+    // Set which indices to extract
+    extraction_of_handles_inliers.setIndices (cloud_object_indices);
+    // Return the points which represent the inliers
+    extraction_of_handles_inliers.setNegative (false);
+    // Call the extraction function
+    extraction_of_handles_inliers.filter (handles_cloud);
 
+    //visualize handles
+    std::stringstream id_of_handle;
+    id_of_handle << "HANDLE_" << ros::Time::now();
+    viewer.addPointCloud (handles_cloud, id_of_handle.str());
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_handle.str());     
+    // Wait or not wait
+    if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+    // Return the remaining points of inliers
+//    extraction_of_handles_inliers.setNegative (true);
+  // Call the extraction function
+  //  extraction_of_plane_inliers.filter (input_cloud);
   }
 
 
