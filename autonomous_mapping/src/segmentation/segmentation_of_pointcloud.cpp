@@ -143,8 +143,6 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
   // Compute center point
   //cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
-  
-  // TODO template SAC model and method on the input point type an dget rid of this
   pcl::PointCloud<pcl::Normal> nrmls ;
   nrmls.header = cloud->header;
   nrmls.points.resize(cloud->points.size());
@@ -158,15 +156,20 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
   std::cerr << endl << "  B  " << endl << endl; 
 
   // Create model
-  pcl::SACModelOrientation<pcl::Normal>::Ptr model (new pcl::SACModelOrientation<pcl::Normal> (nrmls.makeShared ()));
+  //pcl::SACModelOrientation<pcl::Normal> model1 (nrmls.makeShared ());
+  pcl::SACModelOrientation<pcl::Normal>::Ptr model = boost::make_shared<pcl::SACModelOrientation<pcl::Normal> >(nrmls.makeShared ());
+  // SACModelOrientation<pcl::Normal> model(nrmls);
+
+  std::cerr << endl << "  C  " << endl << endl; 
+
   model->axis_[0] = 0 ;
   model->axis_[1] = 0 ;
   model->axis_[2] = 1 ;
+
+  //model->setDataSet ((sensor_msgs::PointCloud*)(cloud.get())); // TODO: this is nasty :)
   if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Axis is (%g,%g,%g) and maximum angular difference %g",
       model->axis_[0], model->axis_[1], model->axis_[2], eps_angle_);
 
-  std::cerr << endl << "  C  " << endl << endl; 
-  
   // Check probability of success and decide on method
   Eigen::VectorXf refined;
   std::vector<int> inliers;
@@ -393,13 +396,14 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
 
 
 
+
+
     pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
     pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
 
     proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
 
     // Project the table inliers using the planar model coefficients    
-    
 
     ROS_INFO (" input cloud : %d ", input_cloud.points.size());
     ROS_INFO (" input cloud ptr: %d ", input_cloud.makeShared()->points.size());
@@ -408,6 +412,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
     proj_.setIndices (plane_inliers);
     proj_.setModelCoefficients (plane_coefficients);
     proj_.filter (cloud_projected);
+
 
 
 
