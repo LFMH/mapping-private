@@ -63,9 +63,14 @@ rosrun autonomous_mapping segment_difference /cloud_pcd:=/points2_out
 
 
 =============Run segmentation of point cloud=====================
-segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 0 -verbose 1 -floor_limit 0.050 -ceiling_limit 0.100 -plane_threshold 0.075
+
+// Running command //
 segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 1 -verbose 1 -size_of_points 2 -floor_limit 0.050 -ceiling_limit 0.100 -minimum_size_of_plane_cluster 250 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.100 -epsilon_angle 0.100
 
 // Nicely fitted planes for surfaces of robot's working space with visible handles //
 segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 200 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.050 -epsilon_angle 0.050 -minimum_plane_inliers 500
+
+// Best planar fits so far and handles are maintained very good. //
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46   -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000
+
 =================================================================

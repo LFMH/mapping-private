@@ -38,16 +38,20 @@
 // pcl dependencies
 #include "pcl/io/pcd_io.h"
 
+#include "pcl/surface/convex_hull.h"
+
+#include "pcl/filters/voxel_grid.h"
 #include "pcl/filters/passthrough.h"
-#include <pcl/filters/voxel_grid.h>
 #include "pcl/filters/extract_indices.h"
+#include "pcl/filters/project_inliers.h"
 #include "pcl/filters/statistical_outlier_removal.h"
 
 #include "pcl/sample_consensus/method_types.h"
-#include <pcl/sample_consensus/impl/ransac.hpp>
+#include "pcl/sample_consensus/impl/ransac.hpp"
 
 #include "pcl/segmentation/sac_segmentation.h"
 #include "pcl/segmentation/extract_clusters.h"
+#include "pcl/segmentation/extract_polygonal_prism_data.h"
 
 // pcl visualization dependencies
 #include "pcl_visualization/pcl_visualizer.h"
@@ -339,16 +343,20 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
 
 
-void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
-                                pcl::PointCloud<pcl::Normal> &normals_cloud,
-                                Eigen::Vector3f axis,
-                                double epsilon_angle,
-                                double plane_threshold,
-                                int minimum_plane_inliers,
-                                int maximum_plane_iterations,
-                                int minimum_size_of_plane_cluster,
-                                double plane_inliers_clustering_tolerance,
-                                pcl_visualization::PCLVisualizer &viewer)
+void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
+                            pcl::PointCloud<pcl::Normal> &normals_cloud,
+                            Eigen::Vector3f axis,
+                            double epsilon_angle,
+                            double plane_threshold,
+                            int minimum_plane_inliers,
+                            int maximum_plane_iterations,
+                            int minimum_size_of_plane_cluster,
+                            double plane_inliers_clustering_tolerance,
+                            std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> &planar_surfaces,
+                            std::vector<std::string> &planar_surfaces_ids,
+                            std::vector<pcl::PointIndices::Ptr> &planar_surfaces_indices,
+                            std::vector<pcl::ModelCoefficients::Ptr> &planar_surfaces_coeficients,
+                            pcl_visualization::PCLVisualizer &viewer)
 {
 
   // Count number of fitted planes 
@@ -356,6 +364,9 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
 
   // Stop condition for fitting
   bool stop_planes = false;
+
+  // Count one hundred mishaps
+  int counter = 0;
 
   do
   {
@@ -367,7 +378,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
     // Set all the parameters for segmenting vertical planes
     segmentation_of_planes.setOptimizeCoefficients (true);
     segmentation_of_planes.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-    segmentation_of_planes.setNormalDistanceWeight (0.1);
+    segmentation_of_planes.setNormalDistanceWeight (0.05);
     segmentation_of_planes.setMethodType (pcl::SAC_RANSAC);
     segmentation_of_planes.setDistanceThreshold (plane_threshold);
     segmentation_of_planes.setMaxIterations (maximum_plane_iterations);
@@ -379,6 +390,30 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
     // Obtain the plane inliers and coefficients
     segmentation_of_planes.segment (*plane_inliers, *plane_coefficients);
 
+
+
+
+    pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
+    pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
+
+    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+
+    // Project the table inliers using the planar model coefficients    
+    
+
+    ROS_INFO (" input cloud : %d ", input_cloud.points.size());
+    ROS_INFO (" input cloud ptr: %d ", input_cloud.makeShared()->points.size());
+
+    proj_.setInputCloud (input_cloud.makeShared());
+    proj_.setIndices (plane_inliers);
+    proj_.setModelCoefficients (plane_coefficients);
+    proj_.filter (cloud_projected);
+
+
+
+
+    //cerr << *plane_inliers << endl;
+
     if ( verbose )
     {
       ROS_INFO ("Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", plane_inliers->indices.size (), 
@@ -386,16 +421,26 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
     }
 
     // Check if the fitted circle has enough inliers in order to be accepted
-    if ((int) plane_inliers->indices.size () < minimum_plane_inliers)
+    if ((int) plane_inliers->indices.size () < minimum_plane_inliers) 
     {
       ROS_ERROR ("NOT ACCEPTED !");
 
-      // No need for fitting planes anymore
-      stop_planes = true;
+      counter++;
+
+      cerr <<" COUNTER = " << counter << endl ;
+
+      if ( counter == 100 )
+      {
+        // No need for fitting planes anymore
+        stop_planes = true;
+      }
     }
     else
     {
       ROS_WARN ("ACCEPTED !");
+
+      // Reset counter
+      counter = 0;
 
       // ----------------------------------- //
       // Start processing the accepted plane //
@@ -517,6 +562,15 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
         // Save cluster
         plane_clusters_clouds.push_back (cluster);
 
+        // Save planar surface
+        planar_surfaces.push_back (cluster);
+
+        // Save indices of planar surfaces
+        planar_surfaces_indices.push_back (pointer_of_plane_cluster);
+
+        // Save coefficients of plane's planar surface
+        planar_surfaces_coeficients.push_back (plane_coefficients);
+
         if ( verbose )
         {
           ROS_INFO ("  Planar surface %d has %d points", c, cluster->points.size());
@@ -530,6 +584,9 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
         // Create ID for visualization
         std::stringstream id_of_surface;
         id_of_surface << "SURFACE_" << ros::Time::now();
+
+        // Save id of planar surface
+        planar_surfaces_ids.push_back (id_of_surface.str());
 
         // Add point cloud to viewer
         viewer.addPointCloud (*plane_clusters_clouds.at(c), id_of_surface.str());
@@ -568,6 +625,7 @@ void segmentAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal> &input_clo
       // ------------------------------------- //
       // End of processing the accepted circle //
       // ------------------------------------- //
+
     }
 
     // number of fitted planes
@@ -706,6 +764,9 @@ int main (int argc, char** argv)
   // Input point cloud data
   pcl::PointCloud<pcl::PointXYZINormal>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
 
+  // Auxiliary
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr auxiliary_input_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+
   // Load point cloud data
   if (pcl::io::loadPCDFile (argv[pFileIndicesPCD[0]], *input_cloud) == -1)
   {
@@ -741,6 +802,11 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
   }
+
+  // Auxiliary
+  pcl::io::loadPCDFile (argv[pFileIndicesPCD[0]], *auxiliary_input_cloud);
+  //pcl::copyPointCloud (*input_cloud, *auxiliary_input_cloud);
+  //*auxiliary_input_cloud = *input_cloud;
 
 
 
@@ -1072,17 +1138,29 @@ int main (int argc, char** argv)
   // ------------------ Segment horizontal and vertical planar surfaces ------------------ //
   // ------------------------------------------------------------------------------------- //
 
+  // Point clouds which represent the clusters of the plane inliers
+  std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> planar_surfaces;
+
+  // String ids of planar surfaces
+  std::vector<std::string> planar_surfaces_ids;
+
+  // Indices of planar surfaces
+  std::vector<pcl::PointIndices::Ptr> planar_surfaces_indices;
+
+  // Coefficients of planar surfaces
+  std::vector<pcl::ModelCoefficients::Ptr> planar_surfaces_coeficients;
+
   ROS_ERROR ("Z axis aligned planes");
   Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
-  segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
+  getAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coeficients, viewer);
 
   ROS_ERROR ("Y axis aligned planes");
   Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
-  segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
+  getAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coeficients, viewer);
 
   ROS_ERROR ("X axis aligned planes");
   Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
-  segmentAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, viewer);
+  getAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coeficients, viewer);
 
 
 
@@ -1105,14 +1183,207 @@ int main (int argc, char** argv)
 
 
 
+  // --------------------------------------------------------------------------- //
+  // ------------------ Sort out furniture and walls surfaces ------------------ //
+  // --------------------------------------------------------------------------- //
+
+  if ( verbose )
+  {
+    ROS_INFO ("THERE ARE %d PLANAR SURFACES", planar_surfaces.size());
+    ROS_INFO ("AND THERE ARE %d STRING IDS", planar_surfaces_ids.size());
+  }
+
+  // Point clouds which represent the surfaces of furniture complaints
+  std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> furniture_surfaces;
+
+  // String ids of furniture surfaces
+  std::vector<std::string> furniture_surfaces_ids;
+
+  // Point clouds which represent the surfaces of walls
+  std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> surfaces_of_walls;
+
+  // String ids for surfaces of walls
+  std::vector<std::string> surfaces_of_walls_ids;
+
+  for (int surface = 0; surface < (int) planar_surfaces.size(); surface++)
+  {
+    // The minimum and maximum height of each planar surface
+    pcl::PointXYZINormal point_with_minimum_3D_values, point_with_maximum_3D_values;
+    pcl::getMinMax3D (*planar_surfaces.at (surface), point_with_minimum_3D_values, point_with_maximum_3D_values);
+
+    if ( verbose )
+    {
+      ROS_INFO ("FOR PLANAR SURFACE %2d MIN HEIGHT IS %f AND MAX IS %f METERS", surface, point_with_minimum_3D_values.z, point_with_maximum_3D_values.z);
+    }
+
+    if ( point_with_maximum_3D_values.z > 2.0 )
+    {
+      // Save surface of wall
+      surfaces_of_walls.push_back (planar_surfaces.at (surface));
+
+      // Save id of that surface
+      surfaces_of_walls_ids.push_back (planar_surfaces_ids.at (surface));
+
+      // Remove the point cloud data
+      viewer.removePointCloud (planar_surfaces_ids.at (surface));
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+    }
+    else
+    {
+/*
+      //pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
+      pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
+
+      pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
+
+      proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+
+      // Project the table inliers using the planar model coefficients    
+
+       ROS_INFO (" auxiliary size : %d ", auxiliary_input_cloud->points.size());
+       ROS_INFO (" planar surfaces indices size : %d ", planar_surfaces_indices.at (surface)->indices.size());
+       ROS_INFO (" Table model: [%f, %f, %f, %f]", planar_surfaces_coeficients.at (surface)->values[0], planar_surfaces_coeficients.at (surface)->values[1], planar_surfaces_coeficients.at (surface)->values[2], planar_surfaces_coeficients.at (surface)->values[3]);
+       cerr <<  *planar_surfaces_indices.at (surface) << endl;
+
+      proj_.setInputCloud (input_cloud);
+      proj_.setIndices (planar_surfaces_indices.at (surface));
+      proj_.setModelCoefficients (planar_surfaces_coeficients.at (surface));
+      proj_.filter (cloud_projected);
+      //cloud_pub_.publish (cloud_projected);
+
+      exit(0);
+
+      // Save furniture surface
+      //furniture_surfaces.push_back (planar_surfaces.at (surface));
+      //furniture_surfaces.push_back (cloud_projected);
+
+      // Save id of that surface
+      furniture_surfaces_ids.push_back (planar_surfaces_ids.at (surface));
+
+*/
+
+    }
+  }
+
+  if ( verbose )
+  {
+    ROS_INFO ("%d FURNITURE SURFACES", furniture_surfaces.size());
+    ROS_INFO ("AND %d SURFACES OF WALLS", surfaces_of_walls.size());
+  }
 
 
 
+  // ---------------------------------------------------------------------- //
+  // ------------------ Extraction of polygon prism data ------------------ //
+  // ---------------------------------------------------------------------- //
+
+  for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
+  {
+
+    ROS_INFO ("Furniture surface %d has %d points", furniture, furniture_surfaces.at (furniture)->points.size ());
+
+    pcl::ConvexHull2D<pcl::PointXYZINormal> chull_;  
+    pcl::PointCloud<pcl::PointXYZINormal> cloud_hull;
+
+    // Create a Convex Hull representation of the projected inliers
+    chull_.setInputCloud (furniture_surfaces.at (furniture));
+    //chull_.setInputCloud (auxiliary_input_cloud);
+
+    cerr << " A " << endl ;
+    chull_.reconstruct (cloud_hull);
+    cerr << " B " << endl ;
+
+    ROS_INFO ("Convex hull %d has %d data points.", furniture, (int)cloud_hull.points.size ());
+
+    pcl::ExtractPolygonalPrismData<pcl::PointXYZINormal> prism_;
+
+    // ---[ Get the objects on top of the table
+    pcl::PointIndices cloud_object_indices;
+    prism_.setHeightLimits (0.000, 0.200);
+
+
+    ROS_INFO (" auxiliary size : %d ", auxiliary_input_cloud->points.size());
+
+    //prism_.setInputCloud (auxiliary_input_cloud);
+
+    prism_.setInputPlanarHull (cloud_hull.makeShared());
+    //prism_.setViewPoint (0.0, 0.0, 1.5);
+
+    cerr << " C " << endl ;
+    prism_.segment (cloud_object_indices);
+    cerr << " D " << endl ;
+
+    ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices.indices.size ());
+
+  }
 
 
 
+/*
+
+  // ---------------------------------------------- //
+  // ------------------ ?? ?? ?? ------------------ //
+  // ---------------------------------------------- //
+
+  for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
+  {
+
+    ROS_INFO ("Furniture surface %d has %d points", furniture, furniture_surfaces.at (furniture)->points.size ());
+
+    pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
+    pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
+    pcl::ConvexHull2D<pcl::PointXYZINormal> chull_;  
+    pcl::PointCloud<pcl::PointXYZINormal> cloud_hull;
+
+    proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+
+    // Project the table inliers using the planar model coefficients    
+    proj_.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (auxiliary_input_cloud));
+    proj_.setIndices (boost::make_shared<pcl::PointIndices> ( ? ));
+    proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients> ( ? ));
+    proj_.filter (cloud_projected);
+    //cloud_pub_.publish (cloud_projected);
+
+    chull_.setInputCloud (boost::make_shared<PointCloud> (cloud_projected));
+    chull_.reconstruct (cloud_hull);
+
+    // Create a Convex Hull representation of the projected inliers
+    chull_.setInputCloud (furniture_surfaces.at(furniture));
+
+    cerr << " A " << endl ;
+    chull_.reconstruct (cloud_hull);
+    cerr << " B " << endl ;
+
+    ROS_INFO ("Convex hull %d has %d data points.", furniture, (int)cloud_hull.points.size ());
+
+    pcl::ExtractPolygonalPrismData<pcl::PointXYZINormal> prism_;
+
+    // ---[ Get the objects on top of the table
+    pcl::PointIndices cloud_object_indices;
+    prism_.setHeightLimits (0.000, 0.200);
+    prism_.setInputCloud (furniture_surfaces.at (furniture));
+    prism_.setInputPlanarHull (cloud_hull.makeShared());
+    prism_.setViewPoint (1.0, 0.0, 1.5);
+
+    cerr << " C " << endl ;
+    prism_.segment (cloud_object_indices);
+    cerr << " D " << endl ;
+
+    ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices.indices.size ());
+
+  }
+
+*/
 
 
+
+  // TODO extract from the cloud the indices which make up the handles 
 
 
 
@@ -1127,4 +1398,3 @@ int main (int argc, char** argv)
 
   return (0);
 }
-
