@@ -75,5 +75,8 @@ segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6
 
 // Maybe the -cam parameters will change depending on the screen size and resolution //
 segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000
+ 
+//  
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000 -minimum_size_of_handle_cluster 25 -handlers_clustering_tolerance 0.025
 
 =================================================================

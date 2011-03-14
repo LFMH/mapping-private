@@ -59,6 +59,10 @@
 // pcl ias sample consensus dependencies
 #include <pcl_ias_sample_consensus/pcl_sac_model_orientation.h>
 
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/kdtree/tree_types.h>
+#include <pcl/kdtree/organized_data.h>
+
 
 
 // Filtering's Parameters
@@ -75,6 +79,8 @@ int maximum_plane_iterations = 1000; /// [iterations]
 // Clustering's Parameters
 int minimum_size_of_plane_cluster = 100; /// [points]
 double plane_inliers_clustering_tolerance = 0.100; /// [meters]
+int minimum_size_of_handle_cluster = 10; /// [points]
+double handle_clustering_tolerance = 0.050; /// [meters]
 
 // Visualization's Parameters
 bool step = false;
@@ -346,7 +352,8 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <pcl::PointXYZINormal> 
 
 
 
-void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliary_input_cloud,
+void getAxesOrientedPlanes (/*pcl::PointCloud<pcl::PointXYZINormal>::Ptr auxiliary_input_cloud,*/
+                            /*pcl::PointCloud<pcl::PointXYZINormal>::Ptr pivot_auxiliary_input_cloud,*/
                             pcl::PointCloud<pcl::PointXYZINormal> &input_cloud,
                             pcl::PointCloud<pcl::Normal> &normals_cloud,
                             Eigen::Vector3f axis,
@@ -397,14 +404,16 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
     ////////// ////////// ///////// ///////// ///////// /////////
     ROS_ERROR ("%d INDICES OF PLANE INLIERS", (int) plane_inliers->indices.size());
     //cerr << plane_clusters.at(c) << endl ;
-    for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++) 
-      cerr << plane_inliers->indices.at(idx) << " " ;
+//    for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++) 
+//      cerr << plane_inliers->indices.at(idx) << " " ;
+    if ( (int) plane_inliers->indices.size() != 0 )
+      cerr << plane_inliers->indices.at (0) << " ... " << plane_inliers->indices.at (plane_inliers->indices.size() - 1) ;
     cerr << endl;
     // Wait or not wait
     if ( step )
     {
       // And wait until Q key is pressed
-      viewer.spin ();
+//      viewer.spin ();
     }
     ////////// ////////// ///////// ///////// ///////// /////////
 
@@ -460,11 +469,29 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
       extraction_of_plane_inliers.setNegative (true);
       // Call the extraction function
       extraction_of_plane_inliers.filter (*pivot_input_cloud);
-
+///*
       ////////// ////////// ///////// ///////// ///////// /////////
       ROS_ERROR ("%d INDICES OF PLANE INLIERS", (int) plane_inliers->indices.size());
       //cerr << plane_clusters.at(c) << endl ;
-      for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++) 
+//      for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++) 
+//        cerr << plane_inliers->indices.at(idx) << " " ;
+      if ( (int) plane_inliers->indices.size() != 0 )
+        cerr << plane_inliers->indices.at (0) << " ... " << plane_inliers->indices.at (plane_inliers->indices.size() - 1) ;
+      cerr << endl;
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+ //       viewer.spin ();
+      }
+      ////////// ////////// ///////// ///////// ///////// /////////
+//*/
+
+/*
+      ////////// ////////// ///////// ///////// ///////// /////////
+      ROS_ERROR ("%d INDICES OF PLANE INLIERS CLOUD", (int) plane_inliers_cloud->points.size());
+      //cerr << plane_clusters.at(c) << endl ;
+      for (int idx = 0; idx < (int) plane_inliers_cloud->points.size(); idx++) 
         cerr << plane_inliers->indices.at(idx) << " " ;
       cerr << endl;
       // Wait or not wait
@@ -474,20 +501,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
         viewer.spin ();
       }
       ////////// ////////// ///////// ///////// ///////// /////////
-
-      ////////// ////////// ///////// ///////// ///////// /////////
-      ROS_ERROR ("%d INDICES OF PLANE INLIERS CLOUD", (int) plane_inliers_cloud->points.size());
-      //cerr << plane_clusters.at(c) << endl ;
-      //for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++) 
-      //cerr << plane_inliers->indices.at(idx) << " " ;
-      //cerr << endl;
-      // Wait or not wait
-      if ( step )
-      {
-        // And wait until Q key is pressed
-        viewer.spin ();
-      }
-      ////////// ////////// ///////// ///////// ///////// /////////
+*/
 
 //      ROS_INFO ("  SIZE OF INPUT CLOUD : %d ", (int) input_cloud.points.size());
 //      ROS_INFO ("  SIZE OF PIVOT INPUT CLOUD : %d ", (int) pivot_input_cloud->points.size());
@@ -583,19 +597,18 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
                                                                 unsigned int max_pts_per_cluster = (std::numeric_limits<int>::max) ());
 */
 
+/*
       ROS_WARN ("%d size of plane inliers", (int) plane_inliers->indices.size());
 
       // Vector of plane indices
-      std::vector<int> indices;
+      const std::vector<int> indices;
       for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++)
         indices.push_back (plane_inliers->indices.at(idx));
 
       ROS_WARN ("%d size of indices", (int) indices.size());
 
       ROS_WARN ("%d size of auxiliary input cloud", (int) auxiliary_input_cloud->points.size());
-
-      // Vector of clusters from inliers
-      std::vector<pcl::PointIndices> plane_clusters;
+*/
 
 /*
       // tree object used for search
@@ -603,11 +616,11 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
       tree->setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZINormal> > (auxiliary_input_cloud));
 */
 
-      ///*
+/*
       // Build kd-tree structure for clusters
       pcl::KdTreeFLANN<pcl::PointXYZINormal>::Ptr plane_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZINormal> ());
       plane_clusters_tree->setInputCloud (auxiliary_input_cloud);
-      //*/
+*/
 
 /*
       pcl::KdTree<pcl::PointXYZINormal>::Ptr _clusters_tree;
@@ -615,7 +628,58 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
       _clusters_tree->setEpsilon (1);
 */
 
-      pcl::extractEuclideanClusters <pcl::PointXYZINormal> (*auxiliary_input_cloud, indices, plane_clusters_tree, plane_inliers_clustering_tolerance, plane_clusters, minimum_size_of_plane_cluster, plane_inliers->indices.size());
+
+
+/*
+
+      ROS_WARN ("%d size of plane inliers", (int) plane_inliers->indices.size());
+
+      // Vector of plane indices
+      boost::shared_ptr <const std::vector<int> > pointer_of_indices;
+
+      // *pointer_of_indices = indices;
+
+      pointer_of_indices = 
+      //for (int idx = 0; idx < (int) plane_inliers->indices.size(); idx++)
+      //{
+        //cerr << plane_inliers->indices.at(idx) << endl ;
+        //int pivot = plane_inliers->indices.at(idx);
+        //cerr << pivot << endl ;
+        //pointer_of_indices.push_back (pivot);
+        //}
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+
+
+      ROS_WARN ("%d size of indices", (int) pointer_of_indices->size());
+
+      ROS_WARN ("%d size of auxiliary input cloud", (int) auxiliary_input_cloud->points.size());
+
+
+      int spatial_locator_ = 1;
+
+      pcl::KdTree<pcl::PointXYZINormal>::Ptr tree_;
+
+      // Initialize the spatial locator
+      initTree (spatial_locator_, tree_);
+
+      // Send the input dataset to the spatial locator
+      tree_->setInputCloud (auxiliary_input_cloud, pointer_of_indices);
+
+      // Vector of clusters from inliers
+      std::vector<pcl::PointIndices> plane_clusters;
+
+      //pcl::extractEuclideanClusters (*auxiliary_input_cloud, pointer_of_indices, tree_, plane_inliers_clustering_tolerance, plane_clusters, minimum_size_of_plane_cluster, plane_inliers->indices.size());
+
+*/
+
+
+      //pcl::extractEuclideanClusters <pcl::PointXYZINormal> (*auxiliary_input_cloud, indices, plane_clusters_tree, plane_inliers_clustering_tolerance, plane_clusters, minimum_size_of_plane_cluster, plane_inliers->indices.size());
 
 /*
 
@@ -632,7 +696,12 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
 
 
 
-      /*
+
+
+
+
+
+      ///*
 
       // Vector of clusters from inliers
       std::vector<pcl::PointIndices> plane_clusters;
@@ -643,6 +712,9 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
       pcl::EuclideanClusterExtraction<pcl::PointXYZINormal> clustering_of_plane_inliers;
       // Set as input the cloud of circle inliers
       clustering_of_plane_inliers.setInputCloud (plane_inliers_cloud);
+//    clustering_of_plane_inliers.setInputCloud (pivot_auxiliary_input_cloud);
+      // Set which indices to clsuter
+//      clustering_of_plane_inliers.setIndices (plane_inliers);
       // Radius of the connnectivity threshold
       clustering_of_plane_inliers.setClusterTolerance (plane_inliers_clustering_tolerance);
       // Minimum size of clusters
@@ -652,8 +724,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
       // Call the extraction function
       clustering_of_plane_inliers.extract (plane_clusters);
 
-*/
-
+      //*/
 
 
 
@@ -679,16 +750,18 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
         pcl::PointCloud<pcl::PointXYZINormal>::Ptr cluster (new pcl::PointCloud<pcl::PointXYZINormal>);
 
         ////////// ////////// ///////// ///////// ///////// /////////
-        ROS_ERROR ("%d INDICES OF PLANE CLUSTERS AT C", (int) plane_clusters.at(c).indices.size());
+        ROS_ERROR ("%d INDICES OF PLANE CLUSTERS AT %d", (int) plane_clusters.at(c).indices.size(), c);
         //cerr << plane_clusters.at(c) << endl ;
-        for (int idx = 0; idx < (int) plane_clusters.at(c).indices.size(); idx++) 
-          cerr << plane_clusters.at(c).indices.at(idx) << " " ;
+//        for (int idx = 0; idx < (int) plane_clusters.at(c).indices.size(); idx++) 
+//          cerr << plane_clusters.at(c).indices.at(idx) << " " ;
+        if ( (int) plane_clusters.at(c).indices.size() != 0 )
+          cerr << plane_clusters.at(c).indices.at(0) << " ... " << plane_clusters.at(c).indices.at (plane_clusters.at(c).indices.size() - 1) ;
         cerr << endl;
         // Wait or not wait
         if ( step )
         {
           // And wait until Q key is pressed
-          viewer.spin ();
+//          viewer.spin ();
         }
         ////////// ////////// ///////// ///////// ///////// /////////
 
@@ -696,6 +769,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
         pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_plane_clusters;
         // Set point cloud from where to extract
         extraction_of_plane_clusters.setInputCloud (plane_inliers_cloud);
+//        extraction_of_plane_clusters.setInputCloud (pivot_auxiliary_input_cloud);
         // Set which indices to extract
         extraction_of_plane_clusters.setIndices (pointer_of_plane_cluster);
         // Return the points which represent the inliers
@@ -708,7 +782,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
 
         // Save planar surface
         planar_surfaces.push_back (cluster);
-
+/*
         ////////// ////////// ///////// ///////// ///////// /////////
         ROS_ERROR ("%d INDICES OF POINTER OF PLANE CLUSTER", (int) pointer_of_plane_cluster->indices.size());
         //cerr << *pointer_of_plane_cluster << endl ;
@@ -722,7 +796,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<pcl::PointXYZINormal>::Ptr &auxiliar
           viewer.spin ();
         }
         ////////// ////////// ///////// ///////// ///////// /////////
- 
+*/
         // Save indices of planar surfaces
         planar_surfaces_indices.push_back (pointer_of_plane_cluster);
 
@@ -850,6 +924,8 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("                     -minimum_size_of_plane_cluster          = ");
     ROS_INFO ("                     -plane_inliers_clustering_tolarence     = ");
+    ROS_INFO ("                     -minimum_size_of_handle_cluster         = ");
+    ROS_INFO ("                     -handle_clustering_tolerance             = ");
     ROS_INFO (" ");
     ROS_INFO ("                     -step B                                 = wait or not wait");
     ROS_INFO ("                     -clean B                                = remove or not remove");
@@ -881,6 +957,8 @@ int main (int argc, char** argv)
   // Parse arguments for clustering
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_plane_cluster", minimum_size_of_plane_cluster);
   terminal_tools::parse_argument (argc, argv, "-plane_inliers_clustering_tolerance", plane_inliers_clustering_tolerance);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_handle_cluster", minimum_size_of_handle_cluster);
+  terminal_tools::parse_argument (argc, argv, "-handle_clustering_tolerance", handle_clustering_tolerance);
 
   // Parse arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-step", step);
@@ -907,7 +985,7 @@ int main (int argc, char** argv)
   // Set the background of viewer
   viewer.setBackgroundColor (0.0, 0.0, 0.0);
   // Add system coordiante to viewer
-  viewer.addCoordinateSystem (1.0f);
+  viewer.addCoordinateSystem (0.75f);
   // Parse the camera settings and update the internal camera
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -1308,17 +1386,26 @@ int main (int argc, char** argv)
   // Coefficients of planar surfaces
   std::vector<pcl::ModelCoefficients::Ptr> planar_surfaces_coefficients;
 
+  // Pivot Auxiliary 
+  pcl::PointCloud<pcl::PointXYZINormal>::Ptr pivot_auxiliary_input_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+
+  // Give it some points
+  *pivot_auxiliary_input_cloud = *input_cloud;
+
+//  ROS_WARN (" current input cloud size is %d", (int) input_cloud->points.size());
+//  ROS_WARN (" pivot auxiliary input cloud size is %d", (int) pivot_auxiliary_input_cloud->points.size());
+
   ROS_ERROR ("Z axis aligned planes");
   Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
-  getAxesOrientedPlanes (auxiliary_input_cloud, *input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+  getAxesOrientedPlanes (/*auxiliary_input_cloud,*/ /*pivot_auxiliary_input_cloud,*/ *input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("Y axis aligned planes");
   Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
-  getAxesOrientedPlanes (auxiliary_input_cloud, *input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+  getAxesOrientedPlanes (/*auxiliary_input_cloud,*/ /*pivot_auxiliary_input_cloud,*/ *input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("X axis aligned planes");
   Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
-  getAxesOrientedPlanes (auxiliary_input_cloud, *input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+  getAxesOrientedPlanes (/*auxiliary_input_cloud,*/ /*pivot_auxiliary_input_cloud,*/ *input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
 
 
@@ -1345,10 +1432,15 @@ int main (int argc, char** argv)
   // ------------------ Sort out furniture and walls surfaces ------------------ //
   // --------------------------------------------------------------------------- //
 
+  // Type of furniture 
+  std::vector<std::string> type_of_furniture;
+
   if ( verbose )
   {
+    ROS_INFO (" ");
     ROS_INFO ("THERE ARE %d PLANAR SURFACES", (int) planar_surfaces.size());
     ROS_INFO ("AND THERE ARE %d STRING IDS", (int) planar_surfaces_ids.size());
+    ROS_INFO (" ");
   }
 
   // Point clouds which represent the surfaces of furniture complaints
@@ -1394,24 +1486,60 @@ int main (int argc, char** argv)
     }
     else
     {
+
+      // Sort horizontal and vertical pieces of furniture
+      if ( std::abs(planar_surfaces_coefficients.at (surface)->values[2]) > std::max (std::abs(planar_surfaces_coefficients.at (surface)->values[0]), std::abs(planar_surfaces_coefficients.at (surface)->values[1])) )
+      {
+        type_of_furniture.push_back ("HORIZONTAL");
+        ROS_WARN ("HORIZONTAL");
+      }
+      else
+      {
+        type_of_furniture.push_back ("VERTICAL");
+        ROS_WARN ("VERTICAL");
+      }
+
+      ROS_INFO ("  auxiliary size: %d ", (int) auxiliary_input_cloud->points.size());
+      ROS_INFO ("  planar surfaces indices size: %d ", (int) planar_surfaces_indices.at (surface)->indices.size());
+      ROS_INFO ("  table model: [%f, %f, %f, %f]", planar_surfaces_coefficients.at (surface)->values[0], planar_surfaces_coefficients.at (surface)->values[1], planar_surfaces_coefficients.at (surface)->values[2], planar_surfaces_coefficients.at (surface)->values[3]);
+//      cerr <<  *planar_surfaces_indices.at (surface) << endl;
+
       pcl::PointCloud<pcl::PointXYZINormal> cloud_projected;
-      pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
-
-      ROS_INFO (" auxiliary size : %d ", (int) auxiliary_input_cloud->points.size());
-      ROS_INFO (" planar surfaces indices size : %d ", (int) planar_surfaces_indices.at (surface)->indices.size());
-      ROS_INFO (" Table model: [%f, %f, %f, %f]", planar_surfaces_coefficients.at (surface)->values[0], planar_surfaces_coefficients.at (surface)->values[1], planar_surfaces_coefficients.at (surface)->values[2], planar_surfaces_coefficients.at (surface)->values[3]);
-      cerr <<  *planar_surfaces_indices.at (surface) << endl;
-
 
       // Project the table inliers using the planar model coefficients    
+      pcl::ProjectInliers<pcl::PointXYZINormal> proj_;   
       proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-      proj_.setInputCloud (auxiliary_input_cloud);
-      proj_.setIndices (planar_surfaces_indices.at (surface));
+      proj_.setInputCloud (planar_surfaces.at (surface));
+      //proj_.setIndices (planar_surfaces_indices.at (surface));
       proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
       proj_.filter (cloud_projected);
 
+      // Remove the point cloud data
+      viewer.removePointCloud (planar_surfaces_ids.at (surface));
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+
+      // Visualize Projecte Poitns
+      std::stringstream id_of_proj;
+      id_of_proj << "PROJ_" << ros::Time::now();
+      viewer.addPointCloud (cloud_projected, id_of_proj.str());
+      // Set the size of points for cloud
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_proj.str());
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+
       // Save furniture surface
-      //furniture_surfaces.push_back (planar_surfaces.at (surface));
+//      furniture_surfaces.push_back (planar_surfaces.at (surface));
       furniture_surfaces.push_back (cloud_projected.makeShared());
 
       // Save id of that surface
@@ -1421,8 +1549,10 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
+    ROS_INFO (" ");
     ROS_INFO ("%d FURNITURE SURFACES", (int) furniture_surfaces.size());
     ROS_INFO ("AND %d SURFACES OF WALLS", (int) surfaces_of_walls.size());
+    ROS_INFO (" ");
   }
 
 
@@ -1434,71 +1564,170 @@ int main (int argc, char** argv)
   for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
   {
 
-    ROS_INFO ("Furniture surface %d has %d points", furniture, (int) furniture_surfaces.at (furniture)->points.size ());
+    // Select only the vertical furniture pieces
+    if ( type_of_furniture. at (furniture) == "VERTICAL" )
+    { 
 
-    pcl::ConvexHull<pcl::PointXYZINormal> chull_;  
-    pcl::PointCloud<pcl::PointXYZINormal> cloud_hull;
+      ROS_WARN ("VERTICAL");
 
-    // Create a Convex Hull representation of the projected inliers
-    chull_.setInputCloud (furniture_surfaces.at (furniture));
+      ROS_INFO ("Furniture surface %d has %d points", furniture, (int) furniture_surfaces.at (furniture)->points.size ());
 
-    cerr << " A " << endl ;
-    chull_.reconstruct (cloud_hull);
-    cerr << " B " << endl ;
+      pcl::PointCloud<pcl::PointXYZINormal> cloud_hull;
 
-    ROS_INFO ("Convex hull %d has %d data points.", furniture, (int)cloud_hull.points.size ());
+      // Create a Convex Hull representation of the projected inliers
+      pcl::ConvexHull<pcl::PointXYZINormal> chull_;  
+      chull_.setInputCloud (furniture_surfaces.at (furniture));
+      chull_.reconstruct (cloud_hull);
 
-    pcl::ExtractPolygonalPrismData<pcl::PointXYZINormal> prism_;
+      ROS_INFO ("Convex hull %d has %d data points.", furniture, (int) cloud_hull.points.size ());
+      /*
+      // Visualize Convex Hulls
+      std::stringstream id_of_hull;
+      id_of_hull << "HULL_" << ros::Time::now();
+      // Visualize hull of cloud 
+      viewer.addPointCloud (cloud_hull, id_of_hull.str());
+      // Set the size of points for cloud
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_hull.str());     
+      // Wait or not wait
+      if ( step )
+      {
+      // And wait until Q key is pressed
+      viewer.spin ();
+      }
+      */
+      pcl::PointIndices::Ptr cloud_object_indices (new pcl::PointIndices ());
 
-    // ---[ Get the objects on top of the table
-    pcl::PointIndices::Ptr cloud_object_indices (new pcl::PointIndices ());
-    prism_.setHeightLimits (0.000, 0.200);
+      // ---[ Get the objects on top of the table
+      pcl::ExtractPolygonalPrismData<pcl::PointXYZINormal> prism_;
+      prism_.setHeightLimits (0.025, 0.100);
+      prism_.setInputCloud (auxiliary_input_cloud);
+      prism_.setInputPlanarHull (cloud_hull.makeShared());
+      prism_.setViewPoint (0.0, 0.0, 1.5);
+      prism_.segment (*cloud_object_indices);
 
+      ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
-    ROS_INFO (" auxiliary size : %d ", (int) auxiliary_input_cloud->points.size());
+      // Extract handles
+      pcl::PointCloud<pcl::PointXYZINormal> handle_cloud;
+      pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_handle_inliers;
+      // Set point cloud from where to extract
+      extraction_of_handle_inliers.setInputCloud (auxiliary_input_cloud);
+      // Set which indices to extract
+      extraction_of_handle_inliers.setIndices (cloud_object_indices);
+      // Return the points which represent the inliers
+      extraction_of_handle_inliers.setNegative (false);
+      // Call the extraction function
+      extraction_of_handle_inliers.filter (handle_cloud);
 
-    prism_.setInputCloud (auxiliary_input_cloud);
-    prism_.setInputPlanarHull (cloud_hull.makeShared());
-    prism_.setViewPoint (0.0, 0.0, 1.5);
-    cerr << " C " << endl ;
-    prism_.segment (*cloud_object_indices);
-    cerr << " D " << endl ;
-    ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
-
-    //extract handles
-    pcl::PointCloud<pcl::PointXYZINormal> handles_cloud;
-    pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_handles_inliers;
-    // Set point cloud from where to extract
-    extraction_of_handles_inliers.setInputCloud (auxiliary_input_cloud);
-    // Set which indices to extract
-    extraction_of_handles_inliers.setIndices (cloud_object_indices);
-    // Return the points which represent the inliers
-    extraction_of_handles_inliers.setNegative (false);
-    // Call the extraction function
-    extraction_of_handles_inliers.filter (handles_cloud);
-
-    //visualize handles
-    std::stringstream id_of_handle;
-    id_of_handle << "HANDLE_" << ros::Time::now();
-    viewer.addPointCloud (handles_cloud, id_of_handle.str());
-    // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_handle.str());     
-    // Wait or not wait
-    if ( step )
+      // Visualize handles
+      std::stringstream id_of_handle;
+      id_of_handle << "HANDLE_" << ros::Time::now();
+      // Visualize handle
+      viewer.addPointCloud (handle_cloud, id_of_handle.str());
+      // Set the size of points for cloud
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_handle.str());     
+      // Wait or not wait
+      if ( step )
       {
         // And wait until Q key is pressed
         viewer.spin ();
       }
 
-    // Return the remaining points of inliers
-    //    extraction_of_handles_inliers.setNegative (true);
-  // Call the extraction function
-  //  extraction_of_plane_inliers.filter (input_cloud);
+      // TODO extract clusters of handle clouds
+
+      // Vector of clusters from handles
+      std::vector<pcl::PointIndices> handle_clusters;
+      // Build kd-tree structure for clusters
+      pcl::KdTreeFLANN<pcl::PointXYZINormal>::Ptr handle_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZINormal> ());
+
+      // Instantiate cluster extraction object
+      pcl::EuclideanClusterExtraction<pcl::PointXYZINormal> clustering_of_handles;
+      // Set as input the cloud of handle
+      clustering_of_handles.setInputCloud (handle_cloud.makeShared());
+      // Radius of the connnectivity threshold
+      clustering_of_handles.setClusterTolerance (handle_clustering_tolerance);
+      // Minimum size of clusters
+      clustering_of_handles.setMinClusterSize (minimum_size_of_handle_cluster);
+      // Provide pointer to the search method
+      clustering_of_handles.setSearchMethod (handle_clusters_tree);
+      // Call the extraction function
+      clustering_of_handles.extract (handle_clusters);
+
+      // Point clouds which represent the clusters of the handle
+      std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> handle_clusters_clouds;
+
+      // Vector of the indices of handles
+      std::vector<pcl::PointIndices::Ptr> handle_indices;
+
+      // Vector of ids of handles
+      std::vector<std::string> handle_ids;
+
+      for (int c = 0; c < (int) handle_clusters.size(); c++)
+      {
+        // Local variables
+        pcl::PointIndices::Ptr pointer_of_handle_cluster (new pcl::PointIndices (handle_clusters.at(c)));
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr cluster_of_handle (new pcl::PointCloud<pcl::PointXYZINormal>);
+
+        // Extract handle points from the input cloud
+        pcl::ExtractIndices<pcl::PointXYZINormal> extraction_of_handle_clusters;
+        // Set point cloud from where to extract
+        extraction_of_handle_clusters.setInputCloud (handle_cloud.makeShared());
+        // Set which indices to extract
+        extraction_of_handle_clusters.setIndices (pointer_of_handle_cluster);
+        // Return the points which represent the inliers
+        extraction_of_handle_clusters.setNegative (false);
+        // Call the extraction function
+        extraction_of_handle_clusters.filter (*cluster_of_handle);
+
+        if ( verbose )
+        {
+          ROS_INFO ("  Cluster of handle %d has %d points", c, (int) cluster_of_handle->points.size());
+        }
+
+        // Create id for visualization
+        std::stringstream id_of_handle_cluster;
+        id_of_handle_cluster << "HANDLE_CLUSTER_" << ros::Time::now();
+
+        // Add point cloud to viewer
+        viewer.addPointCloud (*cluster_of_handle, id_of_handle_cluster.str());
+        // Set the size of points for cloud
+        viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_handle_cluster.str()); 
+
+        // Wait or not wait
+        if ( step )
+        {
+          // And wait until Q key is pressed
+          viewer.spin ();
+        }
+
+        // Remove or not remove the cloud from viewer
+        if ( clean )
+        {
+          // Remove the point cloud data
+          viewer.removePointCloud (id_of_handle.str());
+          // Wait or not wait
+          if ( step )
+          {
+            // And wait until Q key is pressed
+            viewer.spin ();
+          }
+        }
+
+        // Save cluster of handle
+        handle_clusters_clouds.push_back (cluster_of_handle);
+
+        // Save indices of handles
+        handle_indices.push_back (pointer_of_handle_cluster);
+
+        // Save id of handle
+        handle_ids.push_back (id_of_handle.str());
+      }
+
+      // Remove the cloud of handle
+      viewer.removePointCloud (id_of_handle.str());
+
+    }
   }
-
-
-
-  // TODO extract from the cloud the indices which make up the handles 
 
 
 
