@@ -66,7 +66,7 @@ void AutonomousExploration::onInit()
 	pcl_ros::PCLNodelet::onInit ();
 	move_robot_=false;
 	pnh_->param("subscribe_pose_topic", subscribe_pose_topic_, std::string("/robot_pose"));
-  pnh_->param("publish_cloud_incrementally", publish_cloud_incrementally_, false);
+	pnh_->param("publish_cloud_incrementally", publish_cloud_incrementally_, false);
 	ROS_INFO("autonomous_exploration node is up and running.");
 	get_pointcloud_ = false;
 	received_pose_ = false;
@@ -100,40 +100,41 @@ void AutonomousExploration::spin()
 				}
 				else break;
 
-            if (!move_robot_)
-            {
-			ROS_INFO("no good pose to navigate to");
-			exit(1);
-            }
-			//rise the spine up to scan
-			setLaserProfile("scan");
-			moveTorso(0.3, 1.0, "up");
-			double angles = 0.0;
-			while(angles <= 360)
-			{
-				geometry_msgs::Pose new_pose = pose_msg_.poses[i];
-				btQuaternion q ( pcl::deg2rad(angles), 0, 0);
-
-				new_pose.orientation.x = q.x();
-				new_pose.orientation.y = q.y();
-				new_pose.orientation.z = q.z();
-				new_pose.orientation.w = q.w();
-				//setLaserProfile("scan");
-				moveRobot(new_pose);
-				//setLaserProfile("navigation");
-			}
-				received_laser_signal_ = false;
-				while(!received_laser_signal_)
+				if (!move_robot_)
 				{
-					loop.sleep();
+					ROS_INFO("no good pose to navigate to");
+					exit(1);
 				}
+				//rise the spine up to scan
+				setLaserProfile("scan");
+				moveTorso(0.3, 1.0, "up");
+				double angles = 0.0;
+				while(angles <= 360)
+				{
+					geometry_msgs::Pose new_pose = pose_msg_.poses[i];
+					btQuaternion q ( pcl::deg2rad(angles), 0, 0);
 
-				//TODO: Use laser service to sync
-				//Wait 11 seconds before taking a scan
-				sleep(11);
-				//get a point cloud
-				get_pointcloud_ = true;
-				angles += 30.0;
+					new_pose.orientation.x = q.x();
+					new_pose.orientation.y = q.y();
+					new_pose.orientation.z = q.z();
+					new_pose.orientation.w = q.w();
+					//setLaserProfile("scan");
+					moveRobot(new_pose);
+					//setLaserProfile("navigation");
+
+					received_laser_signal_ = false;
+					while(!received_laser_signal_)
+					{
+						loop.sleep();
+					}
+
+					//TODO: Use laser service to sync
+					//Wait 11 seconds before taking a scan
+					sleep(11);
+					//get a point cloud
+					get_pointcloud_ = true;
+					angles += 30.0;
+				}
 			}
 			while (!get_pointcloud_)
 			{
@@ -301,11 +302,11 @@ void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& p
 	if(get_pointcloud_)
 	{
 		ROS_INFO("pointcloud received");
-    
-    if (publish_cloud_incrementally_)
-    {
-      pointcloud_publisher_.publish(pointcloud_msg);
-    }
+
+		if (publish_cloud_incrementally_)
+		{
+			pointcloud_publisher_.publish(pointcloud_msg);
+		}
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZ> ());
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
 		pcl::fromROSMsg(pointcloud_msg, *cloud_tmp);

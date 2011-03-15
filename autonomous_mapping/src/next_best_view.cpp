@@ -56,6 +56,8 @@ namespace autonomous_mapping
 {
 
 double pi=3.141;
+int counter=0;
+int number;
 typedef struct
 {
 	double x,y;
@@ -83,7 +85,34 @@ void write_pgm (std::string filename, std::vector<std::vector<int> > cm)
 	}
 	myfile.close();
 }
+/*void write_kernel_pgm (std::string filename, std::vector<std::vector<point_2d> > ker)
+{
+	std::ofstream myfile;
+	myfile.open (filename.c_str());
+	myfile << "P2" << std::endl;
+	myfile << (int)ker[0].size() << " " << (int)ker.size() << std::endl;
+	point_2d max;
+	for (std::vector<std::vector<point_2d> >::iterator it = ker.begin (); it != ker.end (); it++)
+		for (std::vector<point_2d>::iterator jt = it->begin(); jt != it->end (); jt++)
+		{
+			if (max.x < jt->x)
+				max.x = jt->x;
+	        if (max.y<jt->y)
+	        	max.y-jt->y;
+	        if (max.weight<jt->weight)
+	        	max.weight=jt->weight;
+		}
+	myfile << max.x<<max.y << max.weight<<std::endl;
 
+	for (std::vector<std::vector<point_2d> >::iterator it = ker.begin (); it != ker.end (); it++)
+	{
+		for (std::vector<point_2d>::iterator jt = it->begin(); jt != it->end (); jt++)
+			myfile <<jt-it->begin() << " ";
+		myfile << std::endl;
+	}
+	myfile.close();
+}
+*/
 class NextBestView : public pcl_ros::PCLNodelet
 {
 
@@ -92,7 +121,7 @@ public:
 protected:
 	using pcl_ros::PCLNodelet::pnh_;
 	// parameters:
-	// topic names
+	// topic namesros/ros.h
 	std::string input_cloud_topic_;
 	std::string output_octree_topic_;
 	std::string output_pose_topic_;
@@ -144,7 +173,7 @@ protected:
 	octomap::ScanGraph* octomap_graph_;
 
 	octomap::KeyRay ray;
-
+	pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl_total;
 	sensor_msgs::PointCloud2 cloud_in_;
 	geometry_msgs::PoseArray nbv_pose_array_;
 	visualization_msgs::MarkerArray marker;
@@ -155,7 +184,7 @@ protected:
 	ros::Subscriber cloud_sub_;
 	ros::Subscriber grid_sub_;
 	ros::Publisher octree_pub_;
-	pcl_ros::Publisher<pcl::PointXYZ> border_cloud_pub_;
+	//pcl_ros::Publisher<pcl::PointXYZ> border_cloud_pub_;
 	ros::Publisher pose_pub_;
 	ros::Publisher pose_marker_pub_, pose_marker_array_pub_;
 	ros::Publisher pose_boundary_pub_;
@@ -163,6 +192,8 @@ protected:
 	ros::Publisher ogrid_pub_;
 	ros::Publisher marker_bound_pub_;
 	ros::Publisher marker_occ_pub_;
+	ros::Publisher aggregated_pub_;
+	ros::Publisher border_cloud_pub_;
 	// Publishes the octree in MarkerArray format so that it can be visualized in rviz
 	ros::Publisher octree_marker_array_publisher_;
 	/* The following publisher, even though not required, is used because otherwise rviz
@@ -204,6 +235,7 @@ protected:
 
 	// save costmap stack to files
 	void save_costmaps (int nr_dirs, std::vector<std::vector<std::vector<int> > > costmap, std::string file_prefix, ros::Time stamp);
+	//void save_kernel(int nr_dirs,std::vector<std::vector<point_2d> > kernel, std::string file_prefix, ros::Time stamp);
 
 public:
 	NextBestView();
@@ -279,20 +311,21 @@ void NextBestView::onInit()
 
 	// create subs and pubs
 	cloud_sub_ = pnh_->subscribe (input_cloud_topic_, 1, &NextBestView::cloud_cb, this);
-	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1);
-	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1);
+	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1,true);
+	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1,true);
 	grid_sub_=pnh_->subscribe(ogrid_sub_topic_,1,&NextBestView::grid_cb,this);
-	border_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "border_cloud", 1);
-	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1);
-	pose_marker_pub_=pnh_->advertise<visualization_msgs::Marker>("pose_marker", 100);
-	pose_marker_array_pub_=pnh_->advertise<visualization_msgs::MarkerArray>("pose_marker_array", 100);
-	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundary_pose", 1);
-	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1);
-	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
-	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100);
-	marker_bound_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_boundary_marker", 100);
-	marker_occ_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_occupancy_marker", 100);
-
+	//border_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "border_cloud", 1);
+	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1,true);
+	pose_marker_pub_=pnh_->advertise<visualization_msgs::Marker>("pose_marker", 100,true);
+	pose_marker_array_pub_=pnh_->advertise<visualization_msgs::MarkerArray>("pose_marker_array", 100,true);
+	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundary_pose", 1,true);
+	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1,true);
+	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100,true);
+	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100,true);
+	marker_bound_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_boundary_marker", 100,true);
+	marker_occ_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_occupancy_marker", 100,true);
+	aggregated_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("aggregated_point_cloud",1,true);
+	border_cloud_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("border_cloud",1,true);
 	octree_ = NULL;
 
 	// finally, precompute visibility kernel points
@@ -331,7 +364,16 @@ void NextBestView::save_costmaps (int nr_dirs, std::vector<std::vector<std::vect
 		write_pgm (ss.str(), costmap[i]);
 	}
 }
-
+/*void NextBestView::save_kernel(int nr_dirs,std::vector<std::vector<point_2d> > kernel, std::string file_prefix, ros::Time stamp)
+{
+     for(int i=0;i<nr_dirs;i++)
+     {
+			std::stringstream ss;
+			ss << file_prefix << "_" << stamp << "_" << i << ".pgm";
+			write_kernel_pgm (ss.str(), kernel);
+     }
+}
+*/
 void NextBestView::find_min_max(pcl::PointCloud<pcl::PointXYZ> border_cloud,geometry_msgs::Point &min, geometry_msgs::Point &max)
 {
 		for (unsigned int i=1;i<border_cloud.points.size();i++)
@@ -711,12 +753,27 @@ void NextBestView::create_kernels ()
 
 void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg)
 {
+	counter++;
+	//sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg_total;
 	ros::Time start_time = ros::Time::now();
 	pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl;
+	pcl::fromROSMsg(*pointcloud2_msg, pointcloud2_pcl);
+	pointcloud2_pcl_total.header.frame_id="/map";
+	pointcloud2_pcl_total.header.stamp=start_time;
+	pointcloud2_pcl_total+=pointcloud2_pcl;
+	number+=pointcloud2_pcl.points.size();
+    pointcloud2_pcl_total.points.resize(number);
+	if (counter<14)
+		return;
+
+
+	//pointcloud2_pcl_total.points.resize(number);
+
+
+    aggregated_pub_.publish(pointcloud2_pcl_total);
+	ROS_INFO("Number is %d, %d",number,counter);
 	octomap::point3d octomap_point3d;
-
 	ROS_INFO("Received point cloud");
-
 	//get the latest parameters
 	pnh_->getParam("normal_search_radius", normal_search_radius_);
 	pnh_->getParam("min_pts_per_cluster", min_pts_per_cluster_);
@@ -727,10 +784,14 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	//get the viewpoint (position of laser) from tf
 	tf::StampedTransform transform;
 	try {
-		ros::Time acquisition_time = pointcloud2_msg->header.stamp;
+
+		ros::Time acquisition_time = pointcloud2_pcl_total.header.stamp;
+
 		ros::Duration timeout(1.0 / 30);
-		tf_listener_.waitForTransform(pointcloud2_msg->header.frame_id, laser_frame_, acquisition_time, timeout);
-		tf_listener_.lookupTransform(pointcloud2_msg->header.frame_id, laser_frame_, acquisition_time, transform);
+
+		tf_listener_.waitForTransform(pointcloud2_pcl_total.header.frame_id, laser_frame_, acquisition_time, timeout);
+
+		tf_listener_.lookupTransform(pointcloud2_pcl_total.header.frame_id, laser_frame_, acquisition_time, transform);
 	}
 	catch (tf::TransformException& ex) {
 		ROS_WARN("[next_best_view] TF exception:\n%s", ex.what());
@@ -741,29 +802,29 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 
 	//Converting PointCloud2 msg format to pcl pointcloud format in order to read the 3d data
-	pcl::fromROSMsg(*pointcloud2_msg, pointcloud2_pcl);
+	//pcl::fromROSMsg(*pointcloud2_msg, pointcloud2_pcl);
 
 	// create or update the octree
 	if (octree_ == NULL) {
 		octomap_graph_ = new octomap::ScanGraph();
 		octree_ = new octomap::OcTreePCL(octree_res_);
 	}
-	createOctree(pointcloud2_pcl, laser_pose);
+	createOctree(pointcloud2_pcl_total, laser_pose);
 
 	/*
 	 * assign new points to Leaf Nodes  and cast rays from laser pos to point
 	 */
-	castRayAndLabel(pointcloud2_pcl, laser_pose);
+	castRayAndLabel(pointcloud2_pcl_total, laser_pose);
 
 	/*
 	 * find unknown voxels with free neighbors and add them to a pointcloud
 	 */
 	pcl::PointCloud<pcl::PointXYZ> border_cloud;
 
-	findBorderPoints(border_cloud, pointcloud2_msg->header.frame_id);
+	findBorderPoints(border_cloud,pointcloud2_msg->header.frame_id);
 
 	pcl::PointCloud<pcl::PointXYZ> occupied_cloud;
-	findOccupiedPoints(occupied_cloud, pointcloud2_msg->header.frame_id);
+	findOccupiedPoints(occupied_cloud,pointcloud2_msg->header.frame_id);
 
 	// Create the filtering objects
 	pcl::PassThrough<pcl::PointXYZ> pass;
@@ -817,7 +878,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	save_costmaps (nr_costmap_dirs_, boundary_costmap, "boundary", pointcloud2_msg->header.stamp);
 	save_costmaps (nr_costmap_dirs_, occupied_costmap, "occupied", pointcloud2_msg->header.stamp);
 	save_costmaps (nr_costmap_dirs_, bound_occ_costmap, "combined", pointcloud2_msg->header.stamp);
-
+	//save_kernel  (nr_costmap_dirs_, vis_kernel, "vis_kernel", pointcloud2_msg->header.stamp);
 	// also publish the best found pose(s)
 	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
 	nbv_pose_array_.header.stamp = ros::Time::now();
@@ -860,7 +921,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 	for (unsigned int i = 0; i < scores.size (); i++)
 		ROS_INFO ("pose %i: %f", i, scores[i]);
-    double threshold=scores[0] * 4/5;
+    double threshold=scores[0] *0.75;
     int p=0;
     for (unsigned j=0;j<scores.size ();j++)
     	if (scores[j]>threshold)
@@ -878,8 +939,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
     	marker.markers[i].action = visualization_msgs::Marker::ADD;
     	marker.markers[i].ns="autonomous_mapping";
     	marker.markers[i].pose= nbv_pose_array_.poses[i];
-    	marker.markers[i].scale.x=1.0;
-    	marker.markers[i].scale.y=1.0;
+    	marker.markers[i].scale.x=0.5;
+    	marker.markers[i].scale.y=4.0;
     	marker.markers[i].id = i;
     	marker.markers[i].color.r = 0.0f;
     	marker.markers[i].color.g = 0.0f;
@@ -920,8 +981,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	marker_bound_.action = visualization_msgs::Marker::ADD;
 	marker_bound_.ns="autonomous_mapping";
 	marker_bound_.pose=find_best_pose(best_boundary_i,best_boundary_j,best_boundary_k,max_reward,min,max);
-	marker_bound_.scale.x=1.0;
-	marker_bound_.scale.y=1.0;
+	marker_bound_.scale.x=0.5;
+	marker_bound_.scale.y=4.0;
 	marker_bound_.id =0;
 	marker_bound_.color.r = 0.0f;
 	marker_bound_.color.g = 1.0f;
@@ -941,8 +1002,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	marker_occ_.action = visualization_msgs::Marker::ADD;
 	marker_occ_.ns="autonomous_mapping";
 	marker_occ_.pose=find_best_pose(best_occupied_i,best_occupied_j,best_occupied_k,max_reward,min,max);
-	marker_occ_.scale.x=1.0;
-	marker_occ_.scale.y=1.0;
+	marker_occ_.scale.x=0.5;
+	marker_occ_.scale.y=4.0;
 	marker_occ_.id =0;
 	marker_occ_.color.r = 1.0f;
 	marker_occ_.color.g = 0.0f;
@@ -1397,7 +1458,7 @@ void NextBestView::createOctree (pcl::PointCloud<pcl::PointXYZ>& pointcloud2_pcl
 
 void NextBestView::visualizeOctree(const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg, geometry_msgs::Point viewpoint) {
 	// each array stores all cubes of a different size, one for each depth level:
-	octree_marker_array_msg_.markers.resize(4);
+	octree_marker_array_msg_.markers.resize(3);
 	double lowestRes = octree_->getResolution();
 	//ROS_INFO_STREAM("lowest resolution: " << lowestRes);
 
@@ -1419,10 +1480,11 @@ void NextBestView::visualizeOctree(const sensor_msgs::PointCloud2ConstPtr& point
 				octree_marker_array_msg_.markers[1].points.push_back(cube_center);
 			else if (unknown_label_ == node->getLabel())
 				octree_marker_array_msg_.markers[2].points.push_back(cube_center);
+
 		}
 	}
 
-	octree_marker_array_msg_.markers[3].points.push_back(viewpoint);
+	//octree_marker_array_msg_.markers[3].points.push_back(viewpoint);
 
 	// occupied cells
 	octree_marker_array_msg_.markers[0].ns = "Occupied cells";
@@ -1446,11 +1508,11 @@ void NextBestView::visualizeOctree(const sensor_msgs::PointCloud2ConstPtr& point
 	octree_marker_array_msg_.markers[2].color.a = 0.05f;
 
 	// viewpoint
-	octree_marker_array_msg_.markers[3].ns = "viewpoint";
+	/*octree_marker_array_msg_.markers[3].ns = "Fringe cells";
 	octree_marker_array_msg_.markers[3].color.r = 1.0f;
 	octree_marker_array_msg_.markers[3].color.g = 1.0f;
 	octree_marker_array_msg_.markers[3].color.b = 0.0f;
-	octree_marker_array_msg_.markers[3].color.a = 0.8f;
+	octree_marker_array_msg_.markers[3].color.a = 0.5f;*/
 
 	for (unsigned i = 0; i < octree_marker_array_msg_.markers.size(); ++i)
 	{
