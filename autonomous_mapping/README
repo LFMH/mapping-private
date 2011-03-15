@@ -1,6 +1,6 @@
 This is the collection of TODOS that shall 1 day converge into 1 single launch file:
 
-============Run exploration and next best view:===============
+============Run exploration and next best view:==============
 roslaunch /etc/ros/cturtle/robot.launch
 roslaunch autonomous_mapping localization.launch
 roslaunch autonomous_mapping autonomous_exploration.launch 
@@ -21,10 +21,10 @@ orientation:
 OR
 
 bash scripts/send_to_pose*.sh
-============================================================
+=============================================================
 
 
-============Get Kitchen URDF Model:=========================
+============Get Kitchen URDF Model:==========================
 roslaunch ias_kitchen_defs ias_kitchen_model.launch
 In Rviz add RobotModel display type and set Robot Description to:
 /ias_kitchen/kitchen_description
@@ -34,7 +34,7 @@ Open the drawer:
 rostopic pub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [sink_block_drawer_sink_col1_top_joint], position: [0.5]}'
 Open the fridge:
 rostopipub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [fridge_block_fridge_joint], position : [1.57]}'
-============================================================
+=============================================================
 
 
 =============Run registration================================
@@ -45,7 +45,7 @@ roslaunch pointcloud_registration pointcloud_registration_node.launch
 
 Save your pcd:
 rosrun pcl_ros pointcloud_to_pcd /input:=/merged_pointcloud
-============================================================
+=============================================================
 
 
 =============Segment through interaction=====================
@@ -59,24 +59,24 @@ rosrun ias_drawer_executive segment_furniture_interactive
 rosrun point_cloud_converter point_cloud_converter /points_in:=/shoulder_cloud
 rosrun SnapMapICP SnapMapICP
 rosrun autonomous_mapping segment_difference /cloud_pcd:=/points2_out
-============================================================
+=============================================================
 
 
-=============Run segmentation of point cloud=====================
+=============Run segmentation of point cloud=================
 
-// Running command //
-segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 1 -verbose 1 -size_of_points 2 -floor_limit 0.050 -ceiling_limit 0.100 -minimum_size_of_plane_cluster 250 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.100 -epsilon_angle 0.100
+// Path of the input pcd is probably different and also the -cam parameters will change depending on the screen size and resolution //
 
-// Nicely fitted planes for surfaces of robot's working space with visible handles //
-segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 200 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.050 -epsilon_angle 0.050 -minimum_plane_inliers 500
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000
 
-// Best planar fits so far and handles are maintained very good. //
-segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89477,31.6553/-2.51672,0.940282,1.3723/-12.3464,-5.71247,13.1585/0.579109,0.40143,0.709568/1278,997/1682,46   -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000
-
-// Maybe the -cam parameters will change depending on the screen size and resolution //
 segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000
- 
-//  
+
+// Very Good Results //
 segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 2 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000 -minimum_size_of_handle_cluster 25 -handlers_clustering_tolerance 0.025
 
-=================================================================
+// Command of Screenshots and Movies //
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 3 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.025 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000 -minimum_size_of_handle_cluster 25 -handlers_clustering_tolerance 0.025
+
+// Command of Screenshots and Movies //
+segmentation_of_pointcloud data/september2010scan_iros2011.pcd -cam 4.89471,31.6552/-1.6893,-0.277547,1.37496/-11.5189,-6.93031,13.1611/0.579109,0.40143,0.709568/1678,975/1,95 -step 1 -clean 0 -verbose 1 -size_of_points 3 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.100 -plane_threshold 0.030 -epsilon_angle 0.025 -minimum_plane_inliers 500 -maximum_plane_iterations 1000 -minimum_size_of_handle_cluster 20 -handlers_clustering_tolerance 0.025
+
+=============================================================
