@@ -38,6 +38,7 @@ do
     echo $dir_name
     files=`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g $DATA/pca_result_g/$num
+    #rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp $DATA/pca_result_g/compress_axis $norm_flag_g $DATA/pca_result_g/$num
 done
 #
 dirNum=`ls $DATA/features_r/* -d | wc -l`

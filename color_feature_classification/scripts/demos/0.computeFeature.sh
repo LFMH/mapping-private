@@ -20,10 +20,10 @@ do
     do
 	echo "Processing $j"
 	num=$(printf "%03d" $n)
-	rosrun color_feature_classification computeFeature $j c -rotate 3 -subdiv $subdiv -offset $offset $DATA $DATA/features_c/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j d -rotate 3 -subdiv $subdiv -offset $offset $DATA $DATA/features_d/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j g -rotate 3 -subdiv $subdiv -offset $offset $DATA $DATA/features_g/$dir_name/$num.pcd	
-	rosrun color_feature_classification computeFeature $j r -rotate 3 -subdiv $subdiv -offset $offset $DATA $DATA/features_r/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j c -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_c/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j d -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_d/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j g -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_g/$dir_name/$num.pcd	
+	rosrun color_feature_classification computeFeature $j r -rotate 1 -subdiv $subdiv -offset $offset $DATA $DATA/features_r/$dir_name/$num.pcd	
 	n=`expr $n + 1`	
     done
 done

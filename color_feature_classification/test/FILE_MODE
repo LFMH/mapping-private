@@ -1,5 +1,5 @@
 #define WHITENING true
-#define MULTIPLE_SIMILARITY true
+#define MULTIPLE_SIMILARITY false //true
 #define TRAIN_90_ROTATION false//true
 #define THEORY_NORMALIZE false//true
 // 注 THEORY_NORMALIZEをONにするならcolor_chlacのdefineもかえなければ

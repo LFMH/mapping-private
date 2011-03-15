@@ -61,6 +61,11 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
 	for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	  //* compute - GRSD -
 	  std::vector< std::vector<float> > grsd;
+	  // if( feature_type == 'r' )
+	  //   computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	  // else
+	  //   computeGRSD_large( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	  
 	  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	  const int hist_num = grsd.size(); // number of subdivisions
 		
@@ -218,6 +223,10 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 	    for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
 		//* compute - GRSD -
+		// if( feature_type == 'r' )
+		//   computeGRSD( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+		// else
+		//   computeGRSD_large( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 		computeGRSD( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 		const int hist_num = grsd.size();
 

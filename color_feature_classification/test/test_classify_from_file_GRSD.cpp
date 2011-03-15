@@ -23,6 +23,8 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
+int file_num[ 9 ];
+
 //const float lower = 0;//-1;
 const float upper = 1;
 
@@ -80,63 +82,53 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
   float *dots = new float[ obj_class_num ];
   float sum = vec.dot( vec );
   double t1, t2, t_all = 0;
+  int current_num = 0;
   for( int i=0; i<obj_class_num;i++ ){
-    sprintf( filename, "%s/%03d", dirname, i );
-    pca.read( filename, false );
-//     cout << pca.Axis() << endl;
-//     continue;
-//     for( int t=0; t<981;t++ )
-//       printf("%f ",vec[t]);
-    // VectorXf var = pca.Variance();
-    // cout << var << endl;
-    // exit(1);
-    MatrixXf tmpMat = pca.Axis();
-    VectorXf variance = pca.Variance();
-    MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
-    VectorXf tmpVec;
-    t1 = my_clock();
-    if( pca.mean_flg ){
-      //cout << pca.Mean() << endl;
-      VectorXf tmpVec2 = vec-pca.Mean();
-      tmpVec = tmpMat2.transpose() * tmpVec2;
-      sum = tmpVec2.dot( tmpVec2 );
-    }
-    else
-      tmpVec = tmpMat2.transpose() * vec;
-
-    if( MULTIPLE_SIMILARITY )
-      for( int j=1; j<dim_subspace; j++ )
-	tmpVec( j ) *= sqrt( variance( j ) ) / sqrt( variance( 0 ) );
-
-    dot = tmpVec.dot( tmpVec ) / sum;
-
+    for( int j=0; j<file_num[ i ];j++ ){
+      sprintf( filename, "%s/%03d_%03d", dirname, i, current_num++);
+      pca.read( filename, false );
+      //     cout << pca.Axis() << endl;
+      //     continue;
+      //     for( int t=0; t<981;t++ )
+      //       printf("%f ",vec[t]);
+      // VectorXf var = pca.Variance();
+      // cout << var << endl;
+      // exit(1);
+      MatrixXf tmpMat = pca.Axis();
+      VectorXf variance = pca.Variance();
+      MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
+      VectorXf tmpVec;
+      t1 = my_clock();
+      if( pca.mean_flg ){
+	//cout << pca.Mean() << endl;
+	VectorXf tmpVec2 = vec-pca.Mean();
+	tmpVec = tmpMat2.transpose() * tmpVec2;
+	sum = tmpVec2.dot( tmpVec2 );
+      }
+      else
+	tmpVec = tmpMat2.transpose() * vec;
+      
+      if( MULTIPLE_SIMILARITY )
+	for( int j=1; j<dim_subspace; j++ )
+	  tmpVec( j ) *= sqrt( variance( j ) ) / sqrt( variance( 0 ) );
+      
+      dot = tmpVec.dot( tmpVec ) / sum;
+      
 #ifdef SHOW_SIMILARITY
-    dots[ i ] = dot;
+      dots[ i ] = dot;
 #endif
-    if( dot > dot_max ){
-      dot_max = dot;
-      class_num = i;
+      if( dot > dot_max ){
+	dot_max = dot;
+	class_num = i + 1;
+      }
+      t2 = my_clock();
+      t_all += t2 - t1;
     }
-    t2 = my_clock();
-    t_all += t2 - t1;
   }
-#ifdef SHOW_SIMILARITY
-  float *dots_copy = new float[ obj_class_num ];
-  for(int i=0;i<obj_class_num;i++)
-    dots_copy[i] = dots[i];
-  qsort(dots_copy, obj_class_num, sizeof(float), MyCmp);
-  for( int i=0; i<obj_class_num;i++ )
-    for( int j=0; j<obj_class_num;j++ )
-      if(dots[j]==dots_copy[i])
-	cout << j << " " << dots[ j ] << endl;
-  
-  
-#else
 #ifdef CALC_TIME
   cout << t_all * 1000 << endl;
 #else
   cout << class_num << " " << dot_max << endl;
-#endif
 #endif
   return class_num;
 }
@@ -177,6 +169,16 @@ int main( int argc, char** argv ){
   std::vector<float> feature;
   std::vector<float> feature_max;
   bool is_normalize = false;
+
+  file_num[ 0 ] = 3;
+  file_num[ 1 ] = 5;
+  file_num[ 2 ] = 4;
+  file_num[ 3 ] = 2;
+  file_num[ 4 ] = 2;
+  file_num[ 5 ] = 1;
+  file_num[ 6 ] = 3;
+  file_num[ 7 ] = 2;
+  file_num[ 8 ] = 1;
 
   // color threshold
   int thR, thG, thB;

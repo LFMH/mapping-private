@@ -6,7 +6,7 @@
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/features/rsd.h"
 #include <algorithm>
-#include <color_chlac/pcl_cloud_algos_point_types.h>
+#include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 #include <pcl/features/normal_3d.h>
 #include <terminal_tools/parse.h>
 #include <pcl/surface/mls.h>

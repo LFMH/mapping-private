@@ -10,7 +10,7 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
-const int max_dim_size = 1200;
+const int max_dim_size = 1500;
 
 void
 readHist_saveMinMax ( int argc, char **argv, const std::string &extension, const char* filename )

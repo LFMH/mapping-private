@@ -3,7 +3,7 @@
 
 #include <pcl/features/feature.h>
 #include <pcl/filters/voxel_grid.h>
-#include <color_chlac/pcl_cloud_algos_point_types.h>
+#include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 
 //#define ENABLE_NORMALIZATION
 #define C3_HLAC

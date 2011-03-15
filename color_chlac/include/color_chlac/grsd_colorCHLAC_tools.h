@@ -33,6 +33,7 @@ const double normals_radius_search = 0.02;
 //const float NORMALIZE_GRSD = NR_CLASS / 52.0; // 52 = 2 * 26
 //const float NORMALIZE_GRSD = NR_CLASS / 104.0; // 104 = 2 * 2 * 26
 const float NORMALIZE_GRSD = 20.0 / 26; // (bin num) / 26
+const int GRSD_LARGE_DIM = 325; // 25 * 13
 
 //-----------
 //* time
@@ -324,6 +325,163 @@ template <typename T>
 void computeGRSD(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const float voxel_size, const bool is_normalize = false ){
   std::vector< std::vector<float> > tmp( 1 );
   computeGRSD( grid, cloud, cloud_downsampled, tmp, voxel_size, 0, 0, 0, 0, is_normalize ); // for one signature
+  feature = tmp[ 0 ];
+}
+
+//-----------------------------------
+//* compute - rotation-variant GRSD -
+template <typename T>
+Eigen::Vector3i computeGRSD_large(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector< std::vector<float> > &feature, const float voxel_size, const int subdivision_size = 0, const int offset_x = 0, const int offset_y = 0, const int offset_z = 0, const bool is_normalize = false ){
+#ifndef QUIET
+  ROS_INFO("rsd %f, normals %f, leaf %f", rsd_radius_search, normals_radius_search, voxel_size);
+#endif
+  feature.resize( 0 );
+  boost::shared_ptr< const pcl::PointCloud<T> > cloud_downsampled_ptr;
+  cloud_downsampled_ptr.reset (new pcl::PointCloud<T> (cloud_downsampled));
+  pcl::PointCloud<pcl::GRSDSignature325> cloud_grsd;
+  
+  //* for computing multiple GRSD with subdivisions
+  int hist_num = 1;
+  float inverse_subdivision_size;
+  Eigen::Vector3i div_b_;
+  Eigen::Vector3i min_b_;
+  Eigen::Vector3i subdiv_b_;
+  Eigen::Vector3i subdivb_mul_;
+  if( subdivision_size > 0 ){
+    inverse_subdivision_size = 1.0 / subdivision_size;
+    div_b_ = grid.getNrDivisions();
+    min_b_ = grid.getMinBoxCoordinates();
+    if( ( div_b_[0] <= offset_x ) || ( div_b_[1] <= offset_y ) || ( div_b_[2] <= offset_z ) ){
+      std::cerr << "(In computeGRSD_large) offset values (" << offset_x << "," << offset_y << "," << offset_z << ") exceed voxel grid size (" << div_b_[0] << "," << div_b_[1] << "," << div_b_[2] << ")."<< std::endl;
+      return Eigen::Vector3i::Zero();
+    }
+    subdiv_b_ = Eigen::Vector3i ( ceil( ( div_b_[0] - offset_x )*inverse_subdivision_size ), ceil( ( div_b_[1] - offset_y )*inverse_subdivision_size ), ceil( ( div_b_[2] - offset_z )*inverse_subdivision_size ) );
+    subdivb_mul_ = Eigen::Vector3i ( 1, subdiv_b_[0], subdiv_b_[0] * subdiv_b_[1] );
+    hist_num = subdiv_b_[0] * subdiv_b_[1] * subdiv_b_[2];
+  }
+  else if( subdivision_size < 0 ){
+    std::cerr << "(In computeGRSD_large) Invalid subdivision size: " << subdivision_size << std::endl;
+    return Eigen::Vector3i::Zero();
+  }
+  cloud_grsd.points.resize(hist_num);
+
+  // Compute RSD
+  pcl::RSDEstimation <T, T, pcl::PrincipalRadiiRSD> rsd;
+  rsd.setInputCloud( cloud_downsampled_ptr );
+  boost::shared_ptr< const pcl::PointCloud<T> > cloud_ptr = boost::make_shared<const pcl::PointCloud<T> > (cloud);
+  rsd.setSearchSurface( cloud_ptr );
+  rsd.setInputNormals( cloud_ptr );
+#ifndef QUIET
+  ROS_INFO("radius search: %f", std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
+#endif
+  rsd.setRadiusSearch(std::max(rsd_radius_search, voxel_size/2 * sqrt(3)));
+  //( boost::make_shared<pcl::KdTreeFLANN<T> > () )->setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (cloud) );
+  //rsd.setSearchMethod( boost::make_shared<pcl::KdTreeFLANN<T> > () );
+  boost::shared_ptr< pcl::KdTree<T> > tree2 = boost::make_shared<pcl::KdTreeFLANN<T> > ();
+  tree2->setInputCloud (boost::make_shared<const pcl::PointCloud<T> > (cloud));
+  rsd.setSearchMethod(tree2);
+  pcl::PointCloud<pcl::PrincipalRadiiRSD> radii;
+  t1 = my_clock();
+  rsd.compute(radii);
+#ifndef QUIET
+  ROS_INFO("RSD compute done in %f seconds.", my_clock()-t1);
+#endif
+  
+  // Get rmin/rmax for adjacent 27 voxel
+  t1 = my_clock();
+  Eigen::MatrixXi relative_coordinates (3, 13);
+
+  int idx = 0;
+  
+  // 0 - 8
+  for( int i=-1; i<2; i++ )
+  {
+    for( int j=-1; j<2; j++ )
+    {
+      relative_coordinates( 0, idx ) = i;
+      relative_coordinates( 1, idx ) = j;
+      relative_coordinates( 2, idx ) = -1;
+      idx++;
+    }
+  }
+  // 9 - 11
+  for( int i=-1; i<2; i++ )
+  {
+    relative_coordinates( 0, idx ) = i;
+    relative_coordinates( 1, idx ) = -1;
+    relative_coordinates( 2, idx ) = 0;
+    idx++;
+  }
+  // 12
+  relative_coordinates( 0, idx ) = -1;
+  relative_coordinates( 1, idx ) = 0;
+  relative_coordinates( 2, idx ) = 0;
+
+  // Get transition matrix
+  std::vector<int> types (radii.points.size());
+ 
+  for (size_t idx = 0; idx < radii.points.size (); ++idx)
+    types[idx] = get_type(radii.points[idx].r_min, radii.points[idx].r_max);
+  
+  for (size_t idx = 0; idx < cloud_downsampled_ptr->points.size (); ++idx)
+  {
+    // calc hist_idx
+    int hist_idx;
+    if( hist_num == 1 ) hist_idx = 0;
+    else{
+      const int tmp_x = floor( cloud_downsampled_ptr->points[ idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
+      const int tmp_y = floor( cloud_downsampled_ptr->points[ idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
+      const int tmp_z = floor( cloud_downsampled_ptr->points[ idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;
+      /* const int x_mul_y = div_b_[0] * div_b_[1]; */
+      /* const int tmp_z = idx / x_mul_y - offset_z; */
+      /* const int tmp_y = ( idx % x_mul_y ) / div_b_[0] - offset_y; */
+      /* const int tmp_x = idx % div_b_[0] - offset_x; */
+      if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ) continue; // ignore idx smaller than offset.
+      Eigen::Vector3i ijk = Eigen::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
+      hist_idx = ijk.dot (subdivb_mul_);
+    }
+
+    int source_type = types[idx];
+    std::vector<int> neighbors = grid.getNeighborCentroidIndices ( cloud_downsampled_ptr->points[idx], relative_coordinates);
+    for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
+    {
+      int neighbor_type;
+      if (neighbors[id_n] == -1)
+        neighbor_type = EMPTY;
+      else
+        neighbor_type = types[neighbors[id_n]];
+
+      // ignore EMPTY
+      if( neighbor_type != EMPTY )
+	cloud_grsd.points[ hist_idx ].histogram[ source_type + neighbor_type * 5 + id_n * 25 ]++;
+    }
+  }
+#ifndef QUIET
+  ROS_INFO("GRSD compute done in %f seconds.", my_clock()-t1);
+#endif
+
+  feature.resize( hist_num );
+  if( is_normalize ){
+    for( int h=0; h<hist_num; h++ ){
+      feature[ h ].resize( GRSD_LARGE_DIM );
+      for( int i=0; i<GRSD_LARGE_DIM; i++)
+        feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ] * NORMALIZE_GRSD;
+    }
+  }
+  else{
+    for( int h=0; h<hist_num; h++ ){
+      feature[ h ].resize( GRSD_LARGE_DIM );
+      for( int i=0; i<GRSD_LARGE_DIM; i++)
+        feature[ h ][ i ] = cloud_grsd.points[ h ].histogram[ i ];
+    }
+  }
+  return subdiv_b_;
+}
+
+template <typename T>
+void computeGRSD_large(pcl::VoxelGrid<T> grid, pcl::PointCloud<T> cloud, pcl::PointCloud<T> cloud_downsampled, std::vector<float> &feature, const float voxel_size, const bool is_normalize = false ){
+  std::vector< std::vector<float> > tmp( 1 );
+  computeGRSD_large( grid, cloud, cloud_downsampled, tmp, voxel_size, 0, 0, 0, 0, is_normalize ); // for one signature
   feature = tmp[ 0 ];
 }
 
