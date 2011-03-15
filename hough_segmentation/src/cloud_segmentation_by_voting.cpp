@@ -157,7 +157,7 @@ int main (int argc, char** argv)
   // Argument check and info about
   if (argc < 2)
   {
-    std::cout << std::endl;
+    ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("where <options> are: -line_threshold X                       = threshold for line inlier selection");
     ROS_INFO ("                     -circle_threshold X                     = threshold for circle inlier selection");
@@ -170,11 +170,11 @@ int main (int argc, char** argv)
     ROS_INFO ("                     -maximum_circle_iterations D            = ");
     ROS_INFO ("                     -line_inliers_clustering_tolerance X    = ");
     ROS_INFO ("                     -circle_inliers_clustering_tolerance X  = ");
-    ROS_INFO ("                                                               ");
+    ROS_INFO (" ");
     ROS_INFO ("                     -point_size B                           = ");
     ROS_INFO ("                     -line_step B                            = wait or not wait");
     ROS_INFO ("                     -circle_step B                          = wait or not wait");
-    std::cout << std::endl;
+    ROS_INFO (" ");
     return (-1);
   }
 
@@ -245,7 +245,8 @@ int main (int argc, char** argv)
   // Save filtered cloud to auxiliary
   *auxiliary_filtered_cloud = *filtered_cloud;
 
-  ROS_INFO ("Statistical Outlier Removal ! before: %d points | after: %d points | filtered: %d points", input_cloud->points.size (),  filtered_cloud->points.size (), input_cloud->points.size () - filtered_cloud->points.size ());
+  ROS_INFO ("Statistical Outlier Removal ! before: %d points | after: %d points | filtered: %d points",
+            (int) input_cloud->points.size (),  (int) filtered_cloud->points.size (), (int) input_cloud->points.size () - (int) filtered_cloud->points.size ());
 
 
 
@@ -390,8 +391,8 @@ int main (int argc, char** argv)
 
     ///*
 
-    ROS_INFO ("Circle has %d inliers", circle_inliers_cloud->points.size());
-    ROS_INFO ("%d points remain after extraction", filtered_cloud->points.size ());
+    ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
+    ROS_INFO ("%d points remain after extraction", (int) filtered_cloud->points.size ());
 
     //*/
 
@@ -428,8 +429,8 @@ int main (int argc, char** argv)
 
     ///*
 
-    ROS_WARN (" has %d clusters where", circle_clusters.size());
-    for (int c = 0; c < (int) circle_clusters.size(); c++)
+    ROS_WARN (" has %d clusters where", (int) circle_clusters.size());
+    for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
       ROS_WARN ("       cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
     ROS_WARN (" and biggest cluster is %d with %d points", maximum_circle_clusters_index, maximum_circle_clusters_size);
 
@@ -445,9 +446,9 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointXYZ>::Ptr biggest_cluster_of_circle_inliers_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
     ROS_WARN ("   before:");
-    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", biggest_cluster_of_circle_inliers_cloud->points.size ());
-    ROS_WARN ("   circle_inliers_cloud has %d inliers", circle_inliers_cloud->points.size ());
-    ROS_INFO ("   %d points remain after extraction", filtered_cloud->points.size ());
+    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", (int) biggest_cluster_of_circle_inliers_cloud->points.size ());
+    ROS_WARN ("   circle_inliers_cloud has %d inliers", (int) circle_inliers_cloud->points.size ());
+    ROS_INFO ("   %d points remain after extraction", (int) filtered_cloud->points.size ());
 
     // Extract the circular inliers from the input cloud
     pcl::ExtractIndices<pcl::PointXYZ> circle_clusters_extraction;
@@ -477,9 +478,9 @@ int main (int argc, char** argv)
     circle_extraction.filter (*filtered_cloud);
 
     ROS_WARN ("   after:");
-    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", biggest_cluster_of_circle_inliers_cloud->points.size ());
-    ROS_WARN ("   circle_inliers_cloud has %d inliers left", circle_inliers_cloud->points.size ());
-    ROS_INFO ("   %d points remain after extraction", filtered_cloud->points.size ());
+    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", (int) biggest_cluster_of_circle_inliers_cloud->points.size ());
+    ROS_WARN ("   circle_inliers_cloud has %d inliers left", (int) circle_inliers_cloud->points.size ());
+    ROS_INFO ("   %d points remain after extraction", (int) filtered_cloud->points.size ());
 
     // -------------------------------------------------------------------------------------------------------------------------------
 
@@ -487,7 +488,7 @@ int main (int argc, char** argv)
     if ((int) circle_inliers->indices.size () == 0)
     {
       ROS_ERROR ("Could not estimate a circular model for the given dataset.");
-      ROS_ERROR (" %d points remain unfitted.", filtered_cloud->points.size ());
+      ROS_ERROR (" %d points remain unfitted.", (int) filtered_cloud->points.size ());
 
       // Points which remain unfitted
       pcl::PointCloud<pcl::PointXYZ>::Ptr circle_unfitted_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
@@ -521,7 +522,7 @@ int main (int argc, char** argv)
     if ((int) circle_inliers->indices.size () < minimum_circle_inliers)
     {
       ROS_ERROR ("NOT ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                 circle_fit, circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+                 circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
 
       // No need for fitting circles anymore
       stop_circles = true;
@@ -529,7 +530,7 @@ int main (int argc, char** argv)
     else
     {
       ROS_INFO ("ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                circle_fit, circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+                circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
 
       // Build the space of parameters for circles //
 
@@ -580,12 +581,12 @@ int main (int argc, char** argv)
 
     // Print the number of points left for model fitting
     if ( (int) filtered_cloud->points.size () < minimum_circle_inliers )
-      ROS_ERROR (" %d < %d | Stop !", filtered_cloud->points.size (), minimum_circle_inliers);
+      ROS_ERROR (" %d < %d | Stop !", (int) filtered_cloud->points.size (), minimum_circle_inliers);
     else
       if ( (int) filtered_cloud->points.size () > minimum_circle_inliers )
-        ROS_WARN (" %d > %d | Continue... ", filtered_cloud->points.size (), minimum_circle_inliers);
+        ROS_WARN (" %d > %d | Continue... ", (int) filtered_cloud->points.size (), minimum_circle_inliers);
       else
-        ROS_WARN (" %d = %d | Continue... ", filtered_cloud->points.size (), minimum_circle_inliers);
+        ROS_WARN (" %d = %d | Continue... ", (int) filtered_cloud->points.size (), minimum_circle_inliers);
 
   } while ((int) filtered_cloud->points.size () > minimum_circle_inliers && stop_circles == false);
 
@@ -709,7 +710,7 @@ int main (int argc, char** argv)
     if ((int) line_inliers->indices.size () == 0)
     {
       ROS_ERROR ("Could not estimate a liniar model for the given dataset.");
-      ROS_ERROR (" %d points remain unfitted.", filtered_cloud->points.size ());
+      ROS_ERROR (" %d points remain unfitted.", (int) filtered_cloud->points.size ());
 
       // Points which remain unfitted
       pcl::PointCloud<pcl::PointXYZ>::Ptr line_unfitted_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
@@ -742,7 +743,7 @@ int main (int argc, char** argv)
     // Check if the fitted lines has enough inliers in order to be accepted
     if ((int) line_inliers->indices.size () < minimum_line_inliers)
     {
-      ROS_ERROR ("NOT ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, line_inliers->indices.size (),
+      ROS_ERROR ("NOT ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, (int) line_inliers->indices.size (),
                  line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
 
       // No need for fitting lines anymore
@@ -751,7 +752,7 @@ int main (int argc, char** argv)
     else
     {
 
-      ROS_INFO ("ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, line_inliers->indices.size (),
+      ROS_INFO ("ACCEPTED ! Line [%2d] has %3d inliers with Point = (%6.3f,%6.3f,%6.3f) and Direction = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations", line_fit, (int) line_inliers->indices.size (),
                 line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3], line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
 
       // Build the space of parameters for lines //
@@ -852,9 +853,9 @@ int main (int argc, char** argv)
 
     ///*
 
-    ROS_WARN (" has %d clusters where", line_clusters.size() );
+    ROS_WARN (" has %d clusters where", (int) line_clusters.size() );
     for (int c = 0; c < (int) line_clusters.size(); c++)
-      ROS_WARN ("       cluster %d has %d points", c, line_clusters.at(c).indices.size() );
+      ROS_WARN ("       cluster %d has %d points", c, (int) line_clusters.at(c).indices.size() );
 
     //*/
 
@@ -874,12 +875,12 @@ int main (int argc, char** argv)
 
     // Print the number of points left for model fitting
     if ( (int) filtered_cloud->points.size () < minimum_line_inliers )
-      ROS_ERROR (" %d < %d | Stop !", filtered_cloud->points.size (), minimum_line_inliers);
+      ROS_ERROR (" %d < %d | Stop !", (int) filtered_cloud->points.size (), minimum_line_inliers);
     else
       if ( (int) filtered_cloud->points.size () > minimum_line_inliers )
-        ROS_WARN (" %d > %d | Continue... ", filtered_cloud->points.size (), minimum_line_inliers);
+        ROS_WARN (" %d > %d | Continue... ", (int) filtered_cloud->points.size (), minimum_line_inliers);
       else
-        ROS_WARN (" %d = %d | Continue... ", filtered_cloud->points.size (), minimum_line_inliers);
+        ROS_WARN (" %d = %d | Continue... ", (int) filtered_cloud->points.size (), minimum_line_inliers);
 
   } while ((int) filtered_cloud->points.size () > minimum_line_inliers && stop_lines == false);
 
