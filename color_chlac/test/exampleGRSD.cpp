@@ -31,7 +31,7 @@ double my_clock()
 #define EDGE 4 
 #define EMPTY 5 
 
-#define NR_DIV 5 // number of normal angle divisions
+#define NR_DIV 7 // number of normal angle divisions
 
 double min_radius_plane_;
 double min_radius_edge_;
@@ -194,10 +194,14 @@ int main( int argc, char** argv )
   for (size_t idx = 0; idx < radii.points.size (); ++idx)
     types[idx] = get_type(radii.points[idx].r_min, radii.points[idx].r_max);
   
+  // TODO voxelization does not re-normalize the normals!
+  for (size_t idx = 0; idx < cloud_downsampled_ptr->points.size (); ++idx)
+    cloud_downsampled.points[idx].getNormalVector3fMap ().normalize ();
+
   // TODO use consts and iterators
   std::vector<Eigen::MatrixXi> transition_matrix_list (NR_DIV, Eigen::MatrixXi::Zero (NR_CLASS, NR_CLASS));
   Eigen::VectorXi transitions_to_empty = Eigen::VectorXi::Zero (NR_CLASS);
-  double unit_angle = (M_PI/2) / NR_DIV;
+//  double unit_angle = (M_PI/2) / NR_DIV;
   for (size_t idx = 0; idx < cloud_downsampled_ptr->points.size (); ++idx)
   {
     int source_type = types[idx];
@@ -205,12 +209,14 @@ int main( int argc, char** argv )
     Eigen::Vector3f source_normal = cloud_downsampled.points[idx].getNormalVector3fMap ();
     for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
     {
+      // TODO merge into PlusGRSD computation code
       int neighbor_type;
       if (neighbors[id_n] == -1)
         neighbor_type = EMPTY;
       else
         neighbor_type = types[neighbors[id_n]];
 
+      // TODO remove
       transition_matrix(source_type, neighbor_type)++;
 
       // count transitions: TODO optimize Asako style :)  but what about empty?
@@ -218,13 +224,16 @@ int main( int argc, char** argv )
         transitions_to_empty(source_type)++;
       else
       {
-        assert (source_type != EMPTY);
         // compute angle between average normals of voxels
-        double unsigned_cosine = fabs(source_normal.dot (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()));
-        if (unsigned_cosine > 1) unsigned_cosine = 1;
-        int angle_bin = std::min (NR_DIV-1, (int) floor (acos (unsigned_cosine) / unit_angle));
+        assert (source_type != EMPTY);
+//        double sine = source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ();
+//        int angle_bin = std::min (NR_DIV-1, (int) floor (sine * NR_DIV));
+//        transition_matrix_list[angle_bin](source_type, neighbor_type)++;
+        transition_matrix_list[std::min (NR_DIV-1, (int) floor (sqrt (source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ()) * NR_DIV))](source_type, neighbor_type)++;
+//        double unsigned_cosine = fabs(source_normal.dot (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()));
+//        if (unsigned_cosine > 1) unsigned_cosine = 1;
+//        int angle_bin = std::min (NR_DIV-1, (int) floor (acos (unsigned_cosine) / unit_angle));
         //std::cerr << "angle difference = " << acos (unsigned_cosine) << "(" << unsigned_cosine << ") => index: " << angle_bin << std::endl;
-        transition_matrix_list.at (angle_bin)(source_type, neighbor_type)++;
       }
     }
   }
@@ -233,19 +242,26 @@ int main( int argc, char** argv )
   std::cerr << "Transitions to empty: " << transitions_to_empty.transpose () << std::endl;
 
   int nrf = 0;
-  pcl::PointCloud<pcl::GRSDSignature21> cloud_grsd;
+  pcl::PointCloud<pcl::PlusGRSDSignature110> cloud_grsd;
   cloud_grsd.points.resize(1);
   
-  for (int i=0; i<NR_CLASS+1; i++)
+  //std::cerr << "Number of transitions by normal angle:";
+  for (std::vector<Eigen::MatrixXi>::const_iterator it = transition_matrix_list.begin ();
+      it != transition_matrix_list.end (); ++it)
   {
-    for (int j=i; j<NR_CLASS+1; j++)
-    {
-      cloud_grsd.points[0].histogram[nrf++] = transition_matrix(i, j); //@TODO: resize point cloud
-    }
+    //std::cerr << " " << (*it).sum ();
+    for (int i=0; i<NR_CLASS; i++)
+      for (int j=i; j<NR_CLASS; j++)
+        cloud_grsd.points[0].histogram[nrf++] = (*it)(i, j);
   }
+  for (int it = 0; it < transitions_to_empty.rows (); ++it)
+    cloud_grsd.points[0].histogram[nrf++] = transitions_to_empty[it];
+  //std::cerr << std::endl;
+  std::cerr << "PlusGRSDS: " << cloud_grsd.points[0] << std::endl;
+
   if (save_to_disk)
     writer.write("grsd.pcd", cloud_grsd, false);
-  std::cerr << "transition matrix" << std::endl << transition_matrix << std::endl;
+  std::cerr << "Complete (old) transition matrix" << std::endl << transition_matrix << std::endl;
   ROS_INFO("GRSD compute done in %f seconds.", my_clock()-t1);
   return(0);
 }
