@@ -31,6 +31,8 @@ double my_clock()
 #define EDGE 4 
 #define EMPTY 5 
 
+#define NR_DIV 5 // number of normal angle divisions
+
 double min_radius_plane_;
 double min_radius_edge_;
 double min_radius_noise_, max_radius_noise_;
@@ -192,10 +194,15 @@ int main( int argc, char** argv )
   for (size_t idx = 0; idx < radii.points.size (); ++idx)
     types[idx] = get_type(radii.points[idx].r_min, radii.points[idx].r_max);
   
+  // TODO use consts and iterators
+  std::vector<Eigen::MatrixXi> transition_matrix_list (NR_DIV, Eigen::MatrixXi::Zero (NR_CLASS, NR_CLASS));
+  Eigen::VectorXi transitions_to_empty = Eigen::VectorXi::Zero (NR_CLASS);
+  double unit_angle = (M_PI/2) / NR_DIV;
   for (size_t idx = 0; idx < cloud_downsampled_ptr->points.size (); ++idx)
   {
     int source_type = types[idx];
     std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud_downsampled_ptr->points[idx], relative_coordinates_all);
+    Eigen::Vector3f source_normal = cloud_downsampled.points[idx].getNormalVector3fMap ();
     for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
     {
       int neighbor_type;
@@ -205,8 +212,25 @@ int main( int argc, char** argv )
         neighbor_type = types[neighbors[id_n]];
 
       transition_matrix(source_type, neighbor_type)++;
+
+      // count transitions: TODO optimize Asako style :)  but what about empty?
+      if (neighbors[id_n] == -1)
+        transitions_to_empty(source_type)++;
+      else
+      {
+        assert (source_type != EMPTY);
+        // compute angle between average normals of voxels
+        double unsigned_cosine = fabs(source_normal.dot (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()));
+        if (unsigned_cosine > 1) unsigned_cosine = 1;
+        int angle_bin = std::min (NR_DIV-1, (int) floor (acos (unsigned_cosine) / unit_angle));
+        //std::cerr << "angle difference = " << acos (unsigned_cosine) << "(" << unsigned_cosine << ") => index: " << angle_bin << std::endl;
+        transition_matrix_list.at (angle_bin)(source_type, neighbor_type)++;
+      }
     }
   }
+  std::cerr << "List of transition matrices by normal angle:" << std::endl;
+  std::copy (transition_matrix_list.begin (), transition_matrix_list.end (), std::ostream_iterator<Eigen::MatrixXi> (std::cerr, "\n---\n"));
+  std::cerr << "Transitions to empty: " << transitions_to_empty.transpose () << std::endl;
 
   int nrf = 0;
   pcl::PointCloud<pcl::GRSDSignature21> cloud_grsd;
