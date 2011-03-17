@@ -89,6 +89,8 @@ void AutonomousExploration::spin()
 		loop.sleep();
 		if(received_pose_ )
 		{
+                   move_robot_=false;
+                   geometry_msgs::Pose new_pose;
 			for (int i=0;i<pose_msg_.poses.size();i++)
 			{
 				if (!move_robot_)
@@ -97,21 +99,18 @@ void AutonomousExploration::spin()
 					ROS_INFO("Moving the robot");
 					moveRobot(pose_msg_.poses[i]);
 					ROS_INFO("End of Moving the robot");
+                                        new_pose = pose_msg_.poses[i];
 				}
 				else break;
+                              }
 
-				if (!move_robot_)
-				{
-					ROS_INFO("no good pose to navigate to");
-					exit(1);
-				}
 				//rise the spine up to scan
 				setLaserProfile("scan");
 				moveTorso(0.3, 1.0, "up");
 				double angles = 0.0;
 				while(angles <= 360)
 				{
-					geometry_msgs::Pose new_pose = pose_msg_.poses[i];
+					
 					btQuaternion q ( pcl::deg2rad(angles), 0, 0);
 
 					new_pose.orientation.x = q.x();
@@ -134,8 +133,14 @@ void AutonomousExploration::spin()
 					//get a point cloud
 					get_pointcloud_ = true;
 					angles += 30.0;
+				}//end while
+                           
+                            if (!move_robot_)
+				{
+					ROS_INFO("no good pose to navigate to");
+					exit(1);
 				}
-			}
+			
 			while (!get_pointcloud_)
 			{
 				loop.sleep();

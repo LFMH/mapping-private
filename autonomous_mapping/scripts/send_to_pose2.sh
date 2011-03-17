@@ -1,5 +1,5 @@
 #!/bin/bash
-rostopic pub /robot_pose geometry_msgs/PoseArray """
+rostopic pub /nbv_pose geometry_msgs/PoseArray """
 header:
  seq : 13
  frame_id : \"/map\"

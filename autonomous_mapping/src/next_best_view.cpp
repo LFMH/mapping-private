@@ -569,7 +569,8 @@ geometry_msgs::Pose NextBestView::sample_from_costmap (std::vector<std::vector<s
 	double real_y = min.y + (y + 0.5) * costmap_grid_cell_size_;
 	double theta = pi+((double)dir)*2.0*pi/(double)nr_costmap_dirs_;
 	score = compute_overlap_score (real_x, real_y, theta, reward);
-	pose.position.z = (double)score / 100;
+     pose.position.z = (double)score / 100;
+        //pose.position.z=0;
 	return (pose);
 }
 double NextBestView::compute_overlap_score(double x, double y, double theta, int reward)
@@ -658,7 +659,7 @@ void NextBestView::grid_cb(const nav_msgs::OccupancyGridConstPtr& grid_msg)
 	map_.data.resize(grid_msg->data.size());
 
 	// dilate the map..
-	double dilation_radius = 0.5;
+	double dilation_radius = 0.75;
 	int dilation_radius_grid_cells = (dilation_radius / map_.info.resolution);
 	int n = dilation_radius_grid_cells * 2 + 1;
 
@@ -758,20 +759,21 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	ros::Time start_time = ros::Time::now();
 	pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl;
 	pcl::fromROSMsg(*pointcloud2_msg, pointcloud2_pcl);
-	pointcloud2_pcl_total.header.frame_id="/map";
-	pointcloud2_pcl_total.header.stamp=start_time;
-	pointcloud2_pcl_total+=pointcloud2_pcl;
-	number+=pointcloud2_pcl.points.size();
-    pointcloud2_pcl_total.points.resize(number);
-	if (counter<14)
-		return;
+	//pointcloud2_pcl_total.header.frame_id="/map";
+	//pointcloud2_pcl_total.header.stamp=start_time;
+	//pointcloud2_pcl_total+=pointcloud2_pcl;
+	//number+=pointcloud2_pcl.points.size();
+    //pointcloud2_pcl_total.points.resize(number);
+//uncommnet if you want to get clouds incrementally
+	//if (counter<14)
+		//return;
 
 
 	//pointcloud2_pcl_total.points.resize(number);
 
 
-    aggregated_pub_.publish(pointcloud2_pcl_total);
-	ROS_INFO("Number is %d, %d",number,counter);
+    //aggregated_pub_.publish(pointcloud2_pcl_total);
+	//ROS_INFO("Number is %d, %d",number,counter);
 	octomap::point3d octomap_point3d;
 	ROS_INFO("Received point cloud");
 	//get the latest parameters
@@ -809,12 +811,12 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 		octomap_graph_ = new octomap::ScanGraph();
 		octree_ = new octomap::OcTreePCL(octree_res_);
 	}
-	createOctree(pointcloud2_pcl_total, laser_pose);
+	createOctree(pointcloud2_pcl, laser_pose);
 
 	/*
 	 * assign new points to Leaf Nodes  and cast rays from laser pos to point
 	 */
-	castRayAndLabel(pointcloud2_pcl_total, laser_pose);
+	castRayAndLabel(pointcloud2_pcl, laser_pose);
 
 	/*
 	 * find unknown voxels with free neighbors and add them to a pointcloud
@@ -875,9 +877,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 					bound_occ_costmap[i][j][k] =  occupied_costmap[i][j][k];
 			}
 
-	save_costmaps (nr_costmap_dirs_, boundary_costmap, "boundary", pointcloud2_msg->header.stamp);
-	save_costmaps (nr_costmap_dirs_, occupied_costmap, "occupied", pointcloud2_msg->header.stamp);
-	save_costmaps (nr_costmap_dirs_, bound_occ_costmap, "combined", pointcloud2_msg->header.stamp);
+	//save_costmaps (nr_costmap_dirs_, boundary_costmap, "boundary", pointcloud2_msg->header.stamp);
+	//save_costmaps (nr_costmap_dirs_, occupied_costmap, "occupied", pointcloud2_msg->header.stamp);
+	//save_costmaps (nr_costmap_dirs_, bound_occ_costmap, "combined", pointcloud2_msg->header.stamp);
 	//save_kernel  (nr_costmap_dirs_, vis_kernel, "vis_kernel", pointcloud2_msg->header.stamp);
 	// also publish the best found pose(s)
 	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
@@ -894,7 +896,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	int reward;
 	double score;
 
-  marker.markers.resize(nr_pose_samples_);
+         marker.markers.resize(nr_pose_samples_);
 	bound_occ_costmap=reduced_costmap(bound_occ_costmap,best_combined_j,best_combined_k,min,max,x_dim,y_dim);
 	for (int i = 0; i < nr_pose_samples_; i++)
 	{
@@ -905,6 +907,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 		if (scores.size () == 0)
 		{
 			scores.insert (scores.begin(), score);
+                        
 			nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin(), pose);
 		}
 		else
@@ -913,6 +916,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 			if (scores[j] < score)
 			{
 				scores.insert (scores.begin() + j, score);
+                              
 				nbv_pose_array_.poses.insert (nbv_pose_array_.poses.begin() + j, pose);
 				break;
 			}
@@ -939,6 +943,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
     	marker.markers[i].action = visualization_msgs::Marker::ADD;
     	marker.markers[i].ns="autonomous_mapping";
     	marker.markers[i].pose= nbv_pose_array_.poses[i];
+        nbv_pose_array_.poses[i].position.z=0;
     	marker.markers[i].scale.x=0.5;
     	marker.markers[i].scale.y=4.0;
     	marker.markers[i].id = i;
@@ -950,7 +955,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
     	marker.markers[i].lifetime = ros::Duration::Duration();
     }
 	ROS_INFO("populated marker array for goto poses");
-    //pose_pub_.publish(nbv_pose_array_);
+    
+    pose_pub_.publish(nbv_pose_array_);
 	ROS_INFO("publishing marker array for goto poses");
     pose_marker_array_pub_.publish(marker);
     ROS_INFO("published marker array for goto poses,%ld",marker.markers.size());

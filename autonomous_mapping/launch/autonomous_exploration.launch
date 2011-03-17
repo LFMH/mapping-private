@@ -6,8 +6,8 @@
  <node pkg="nodelet" type="nodelet" name="autonomous_exploration" output="screen"  args="load autonomous_mapping/AutonomousExploration    autonomous_exploration_pcl_manager">
     
     <!-- Topic to subscribe for the pose --> 
-    <param name="subscribe_pose_topic" value="/robot_pose"/>
-    <param name="publish_cloud_incrementally" value="true"/>
+    <param name="subscribe_pose_topic" value="/nbv_pose"/>
+    <param name="publish_cloud_incrementally" value="false"/>
  
  </node>
 
