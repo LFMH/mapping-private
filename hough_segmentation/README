@@ -5,5 +5,7 @@ Commands for running the code
 
 hough_segmentation_node data/a-1224512906-dsn-objects.pcd -cam 0.00397983,3.97983/1.27166,0.253029,0.870316/0.701901,-0.149322,2.05845/0.761754,0.407822,0.5034/840,525/2,71 -circle_step 1 -circle_threshold 0.010 -circle_inliers_clustering_tolerance 0.025 -line_step 1 -line_inliers_clustering_tolerance 0.025
 
+hough_segmentation_node data/a-1224512906-dsn-objects.pcd -cam 0.00397983,3.97983/1.27166,0.253029,0.870316/0.701901,-0.149322,2.05845/0.761754,0.407822,0.5034/840,525/2,71 -step_circle 1 -line_step 1 -size_of_points 5 -verbose 1 -minimum_size_of_objects_clusters 50 -clustering_tolerance_of_objects 0.025 -circle_step 1 -circle_threshold 0.010 -circle_inliers_clustering_tolerance 0.025 -line_step 1 -line_inliers_clustering_tolerance 0.025
+
 ============================================================
 
