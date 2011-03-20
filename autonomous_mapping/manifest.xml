@@ -4,10 +4,11 @@
      autonomous_mapping
 
   </description>
-  <author>ghitzarus</author>
+  <author> Gheorghe Rus </author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/autonomous_mapping</url>
+
   <depend package="roscpp"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
@@ -25,12 +26,15 @@
   <depend package="terminal_tools"/>
   <depend package="pcl_visualization"/>
   <depend package="pcl_ias_sample_consensus"/>
+  <depend package="mod_semantic_map"/>
+  <depend package="dos_pcl"/>
+
+  <!--<depend package="dos_pcl_ros"/>-->
+
   <!--<depend package="pcl_cloud_algos"/>-->
+
   <export>
     <nodelet plugin="${prefix}/nodelets.xml" />
     <nodelet plugin="${prefix}/nodelets_exploration.xml" />
   </export>
-
 </package>
-
-

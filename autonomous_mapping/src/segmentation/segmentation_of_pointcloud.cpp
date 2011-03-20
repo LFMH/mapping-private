@@ -57,17 +57,23 @@
 #include "pcl_visualization/pcl_visualizer.h"
 
 // pcl ias sample consensus dependencies
-#include <pcl_ias_sample_consensus/pcl_sac_model_orientation.h>
-
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/kdtree/tree_types.h>
-#include <pcl/kdtree/organized_data.h>
+#include "pcl_ias_sample_consensus/pcl_sac_model_orientation.h"
 
 
 
-// TODO from PointXYZINormal to pcl::PointXYZRGBNormal
+//#include "pcl_ros/segmentation/sac_segmentation.h"
+//#include "pcl_ros/segmentation/extract_clusters.h"
+//#include "pcl_ros/segmentation/extract_polygonal_prism_data.h"
 
-typedef pcl::PointXYZINormal PointT;
+#include "pcl/features/normal_3d.h"
+#include "mod_semantic_map/SemMap.h"
+#include "dos_pcl/segmentation/door_detection_by_color_and_fixture.h"
+
+
+
+typedef pcl::PointXYZRGB PointT;
+//typedef pcl::PointXYZINormal PointT;
+//typedef pcl::PointXYZRGBNormal PointT;
 
 
 
@@ -94,10 +100,12 @@ bool clean = false;
 bool verbose = false;
 int size_of_points = 1;
 
-//Optional parameters
+// Optional parameters
 bool find_box_model = false;
 
 
+
+/*
 
 void getMinAndMax (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud_, Eigen::VectorXf model_coefficients, boost::shared_ptr<pcl::SACModelOrientation<pcl::Normal> > model, std::vector<int> &min_max_indices, std::vector<float> &min_max_distances)
 {
@@ -140,12 +148,15 @@ void getMinAndMax (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud_, Ei
 
 }
 
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * actual model fitting happens here
  */
+
+/*
+
 bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::vector<double> &coeff, double eps_angle_ = 0.1, double success_probability_ = 0.99, int verbosity_level_ = 1)
 {
 
@@ -299,10 +310,10 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::
   coeff[6+1] = refined[1];
   coeff[6+2] = refined[2];
 
-  /*// Save complementary axis (AGIAN, JUST TO MAKE SURE)
-  coeff[9+0] = model->axis_[1]*refined[2] - model->axis_[2]*refined[1];
-  coeff[9+1] = model->axis_[2]*refined[0] - model->axis_[0]*refined[2];
-  coeff[9+2] = model->axis_[0]*refined[1] - model->axis_[1]*refined[0];*/
+//  // Save complementary axis (AGIAN, JUST TO MAKE SURE)
+//  coeff[9+0] = model->axis_[1]*refined[2] - model->axis_[2]*refined[1];
+//  coeff[9+1] = model->axis_[2]*refined[0] - model->axis_[0]*refined[2];
+//  coeff[9+2] = model->axis_[0]*refined[1] - model->axis_[1]*refined[0];
 
   // Compute minimum and maximum along each dimension for the whole cluster
   std::vector<int> min_max_indices;
@@ -350,7 +361,7 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::
   return true;
 }
 
-
+*/
 
 void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
                             pcl::PointCloud<pcl::Normal> &normals_cloud,
@@ -417,7 +428,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
 
       // TODO limit the number of re-fitting for better computation time
  
-      if ( counter == 25 )
+      if ( counter == 100 )
       {
         // No need for fitting planes anymore
         stop_planes = true;
@@ -868,7 +879,7 @@ int main (int argc, char** argv)
   // Save the filtered cloud to the working cloud
   *input_cloud = *filtered_cloud;
 
-*/
+  */
 
 
   
@@ -1087,7 +1098,7 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
-
+  /* 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Find Box Model of a point cloud
@@ -1104,6 +1115,8 @@ int main (int argc, char** argv)
     if (yes_found_model)
       ROS_INFO("Box Model found");
   }
+
+  */   
 
   /*
 
@@ -1169,14 +1182,17 @@ int main (int argc, char** argv)
 
   ROS_ERROR ("Z axis aligned planes");
   Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
+//  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("Y axis aligned planes");
-  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
+  Eigen::Vector3f Y = Eigen::Vector3f (0.0, 1.0, 0.0); 
+//  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("X axis aligned planes");
-  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
+  Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0); 
+//  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
 
@@ -1227,6 +1243,12 @@ int main (int argc, char** argv)
   // String ids for surfaces of walls
   std::vector<std::string> surfaces_of_walls_ids;
 
+  // Point clouds which represent the horizontal surfaces of furniture
+  std::vector<pcl::PointCloud<PointT>::Ptr> horizontal_furniture_surfaces;
+
+  // Point clouds which represent the vertical surfaces of furniture
+  std::vector<pcl::PointCloud<PointT>::Ptr> vertical_furniture_surfaces;
+
   for (int surface = 0; surface < (int) planar_surfaces.size(); surface++)
   {
     // The minimum and maximum height of each planar surface
@@ -1264,11 +1286,17 @@ int main (int argc, char** argv)
       {
         type_of_furniture.push_back ("HORIZONTAL");
         ROS_WARN ("HORIZONTAL");
+
+        // Save the surface furniture as horizontal
+        horizontal_furniture_surfaces.push_back (planar_surfaces.at (surface));
       }
       else
       {
         type_of_furniture.push_back ("VERTICAL");
         ROS_WARN ("VERTICAL");
+
+        // Save the surface furniture as vertical
+        vertical_furniture_surfaces.push_back (planar_surfaces.at (surface));
       }
 
       ROS_INFO ("  planar surfaces indices size: %d ", (int) planar_surfaces_indices.at (surface)->indices.size());
@@ -1332,6 +1360,10 @@ int main (int argc, char** argv)
   // ------------------ Extraction of polygon prism data ------------------ //
   // ---------------------------------------------------------------------- //
 
+  // // //
+  std::vector<pcl::PointIndices::Ptr> indices_of_points_on_the_surfaces;
+  // // //
+
   for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
   {
 
@@ -1375,6 +1407,10 @@ int main (int argc, char** argv)
       prism_.setInputPlanarHull (cloud_hull.makeShared());
       prism_.setViewPoint (0.0, 0.0, 1.5);
       prism_.segment (*cloud_object_indices);
+
+      // // //  
+      indices_of_points_on_the_surfaces.push_back (cloud_object_indices);
+      // // //
 
       ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
@@ -1501,6 +1537,72 @@ int main (int argc, char** argv)
   }
 
 
+
+  if ( verbose )
+  {
+    ROS_INFO (" ");
+    ROS_INFO ("THERE ARE %d FURNITURE SURFACES OUT OF WHICH", (int) furniture_surfaces.size());
+    ROS_INFO ("%d ARE HORIZONTAL AND", (int) horizontal_furniture_surfaces.size());
+    ROS_INFO ("%d ARE VERTICAL", (int) indices_of_points_on_the_surfaces.size());
+    ROS_INFO (" ");
+  }
+
+// // //
+
+/*
+
+  for (int s = 0; s < (int) indices_of_points_on_the_surfaces.size(); s++)
+  {
+
+    //
+    //parameters:
+    //
+    //max_queue_size: 20
+    //max_clusters: 20
+    //use_indices: true
+    //publish_indices: false
+    //cluster_tolerance: 0.02
+    //fixture_cluster_tolerance: 0.025
+    //center_radius: 0.085
+    //init_radius: 0.035
+    //color_radius: 0.05
+    //std_limit: 2
+    //min_pts_per_cluster: 150
+    //fixture_min_pts_per_cluster: 150
+    //
+    //then load PCD and indices of points on the plane + indices of points on handles
+    //
+
+    // Clusters segmented by color and fixture
+    std::vector<pcl::PointIndices> clusters;
+
+    // Declare the fixture indices 
+    pcl::PointIndices::Ptr indices_of_points_of_surfaces;
+
+    // Create the object for segmenting by color and fixture
+    dos_pcl::DoorDetectionByColorAndFixture<PointT> segmentation_by_color_and_fixture;
+
+    segmentation_by_color_and_fixture.setInputCloud (auxiliary_input_cloud);
+    segmentation_by_color_and_fixture.setIndices (indices_of_points_of_surfaces);
+    segmentation_by_color_and_fixture.setFixtureIndices (indices_of_points_on_the_surfaces.at (s));
+
+    segmentation_by_color_and_fixture.setClusterTolerance (0.020);
+    segmentation_by_color_and_fixture.setFixtureClusterTolerance (0.025);
+    segmentation_by_color_and_fixture.setCenterRadius (0.085);
+    segmentation_by_color_and_fixture.setInitRadius (0.035);
+    segmentation_by_color_and_fixture.setColorRadius (0.050);
+    segmentation_by_color_and_fixture.setSTDLimit (2);
+    segmentation_by_color_and_fixture.setMinClusterSize (150);
+    segmentation_by_color_and_fixture.setFixtureMinClusterSize (150);
+
+    // Extract the clusters by color and fixture
+    segmentation_by_color_and_fixture.extract (clusters);
+
+  }
+
+*/
+
+// // //
 
   // Displaying the overall time
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
