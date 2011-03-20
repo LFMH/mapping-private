@@ -173,7 +173,7 @@ protected:
 	octomap::ScanGraph* octomap_graph_;
 
 	octomap::KeyRay ray;
-	pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl_total;
+	//pcl::PointCloud<pcl::PointXYZ> pointcloud2_pcl_total;
 	sensor_msgs::PointCloud2 cloud_in_;
 	geometry_msgs::PoseArray nbv_pose_array_;
 	visualization_msgs::MarkerArray marker;
@@ -311,21 +311,21 @@ void NextBestView::onInit()
 
 	// create subs and pubs
 	cloud_sub_ = pnh_->subscribe (input_cloud_topic_, 1, &NextBestView::cloud_cb, this);
-	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1,true);
-	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1,true);
+	octree_pub_ = pnh_->advertise<octomap_ros::OctomapBinary> (output_octree_topic_, 1);
+	ogrid_pub_ = pnh_->advertise<nav_msgs::OccupancyGrid> (ogrid_topic_, 1);
 	grid_sub_=pnh_->subscribe(ogrid_sub_topic_,1,&NextBestView::grid_cb,this);
 	//border_cloud_pub_ = pcl_ros::Publisher<pcl::PointXYZ> (*pnh_, "border_cloud", 1);
-	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1,true);
-	pose_marker_pub_=pnh_->advertise<visualization_msgs::Marker>("pose_marker", 100,true);
-	pose_marker_array_pub_=pnh_->advertise<visualization_msgs::MarkerArray>("pose_marker_array", 100,true);
-	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundary_pose", 1,true);
-	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1,true);
-	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100,true);
-	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100,true);
-	marker_bound_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_boundary_marker", 100,true);
-	marker_occ_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_occupancy_marker", 100,true);
-	aggregated_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("aggregated_point_cloud",1,true);
-	border_cloud_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("border_cloud",1,true);
+	pose_pub_ = pnh_->advertise<geometry_msgs::PoseArray> (output_pose_topic_, 1);
+	pose_marker_pub_=pnh_->advertise<visualization_msgs::Marker>("pose_marker", 100);
+	pose_marker_array_pub_=pnh_->advertise<visualization_msgs::MarkerArray>("pose_marker_array", 100);
+	pose_boundary_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("boundary_pose", 1);
+	pose_occupied_pub_ = pnh_->advertise<geometry_msgs::PoseArray> ("occupied_pose", 1);
+	octree_marker_array_publisher_ = pnh_->advertise<visualization_msgs::MarkerArray>("visualization_marker_array",100);
+	octree_marker_publisher_ = pnh_->advertise<visualization_msgs::Marker>("visualization_marker", 100);
+	marker_bound_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_boundary_marker", 100);
+	marker_occ_pub_=pnh_->advertise<visualization_msgs::Marker>("visualization_occupancy_marker", 100);
+	aggregated_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("aggregated_point_cloud",1);
+	border_cloud_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("border_cloud",1);
 	octree_ = NULL;
 
 	// finally, precompute visibility kernel points
@@ -773,9 +773,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 
     //aggregated_pub_.publish(pointcloud2_pcl_total);
-	//ROS_INFO("Number is %d, %d",number,counter);
+	//ROS_INFO("Number is %d);
 	octomap::point3d octomap_point3d;
-	ROS_INFO("Received point cloud");
+	ROS_INFO("Received point cloud with number of points %ld",pointcloud2_pcl.points.size());
 	//get the latest parameters
 	pnh_->getParam("normal_search_radius", normal_search_radius_);
 	pnh_->getParam("min_pts_per_cluster", min_pts_per_cluster_);
@@ -787,13 +787,13 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	tf::StampedTransform transform;
 	try {
 
-		ros::Time acquisition_time = pointcloud2_pcl_total.header.stamp;
+		ros::Time acquisition_time = pointcloud2_pcl.header.stamp;
 
 		ros::Duration timeout(1.0 / 30);
 
-		tf_listener_.waitForTransform(pointcloud2_pcl_total.header.frame_id, laser_frame_, acquisition_time, timeout);
+		tf_listener_.waitForTransform(pointcloud2_pcl.header.frame_id, laser_frame_, acquisition_time, timeout);
 
-		tf_listener_.lookupTransform(pointcloud2_pcl_total.header.frame_id, laser_frame_, acquisition_time, transform);
+		tf_listener_.lookupTransform(pointcloud2_pcl.header.frame_id, laser_frame_, acquisition_time, transform);
 	}
 	catch (tf::TransformException& ex) {
 		ROS_WARN("[next_best_view] TF exception:\n%s", ex.what());
@@ -821,11 +821,11 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	/*
 	 * find unknown voxels with free neighbors and add them to a pointcloud
 	 */
-	pcl::PointCloud<pcl::PointXYZ> border_cloud;
+	pcl::PointCloud<pcl::PointXYZ> border_cloud,border_cloud_filtered;
 
 	findBorderPoints(border_cloud,pointcloud2_msg->header.frame_id);
 
-	pcl::PointCloud<pcl::PointXYZ> occupied_cloud;
+	pcl::PointCloud<pcl::PointXYZ> occupied_cloud,occupied_cloud_filtered;
 	findOccupiedPoints(occupied_cloud,pointcloud2_msg->header.frame_id);
 
 	// Create the filtering objects
@@ -838,9 +838,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	pass.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (border_cloud));
 	pass.setFilterFieldName ("z");
 	pass.setFilterLimits (0, 2.2);
-	pass.filter(border_cloud);
+	pass.filter(border_cloud_filtered);
 	pass.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (occupied_cloud));
-	pass.filter(occupied_cloud);
+	pass.filter(occupied_cloud_filtered);
 
     geometry_msgs::Point min,max;
 	min.x=FLT_MAX;
@@ -848,8 +848,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	max.x=-FLT_MAX;
 	max.y=-FLT_MAX;
 
-	find_min_max(border_cloud,min,max);
-	find_min_max(occupied_cloud,min,max);
+	find_min_max(border_cloud_filtered,min,max);
+	find_min_max(occupied_cloud_filtered,min,max);
 
 	min.x -= sensor_d_max_;
 	min.y -= sensor_d_max_;
@@ -861,8 +861,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	ROS_INFO("X,Y min, max: %f, %f, %f, %f", min.x, min.y, max.x, max.y);
 	ROS_INFO("X,Y DIMENSIONS OF THE COSTMAP: %f, %f",x_dim,y_dim);
 	std::vector<std::vector<std::vector<int> > > boundary_costmap, occupied_costmap;
-	boundary_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, border_cloud, min, max);
-	occupied_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, occupied_cloud, min, max);
+	boundary_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, border_cloud_filtered, min, max);
+	occupied_costmap = create_costmap(x_dim, y_dim, nr_costmap_dirs_, occupied_cloud_filtered, min, max);
 
 	// combine both costmaps using histogram intersection
 	std::vector<std::vector<std::vector<int> > > bound_occ_costmap = create_empty_costmap(x_dim, y_dim, nr_costmap_dirs_);
@@ -882,7 +882,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	//save_costmaps (nr_costmap_dirs_, bound_occ_costmap, "combined", pointcloud2_msg->header.stamp);
 	//save_kernel  (nr_costmap_dirs_, vis_kernel, "vis_kernel", pointcloud2_msg->header.stamp);
 	// also publish the best found pose(s)
-	nbv_pose_array_.header.frame_id = border_cloud.header.frame_id;
+	nbv_pose_array_.header.frame_id = border_cloud_filtered.header.frame_id;
 	nbv_pose_array_.header.stamp = ros::Time::now();
 
 	// find best scanning pose -- simply the maximum
@@ -1392,6 +1392,7 @@ void NextBestView::createOctree (pcl::PointCloud<pcl::PointXYZ>& pointcloud2_pcl
 	}
 
 	// Converting from octomap point cloud to octomap graph
+        ROS_INFO ("Number ofpoints in octomap_pointcloud %ld",octomap_pointcloud.size());
 	octomap_pointcloud.transform(laser_pose.inv());
 	octomap::ScanNode* scan_node = octomap_graph_->addNode(&octomap_pointcloud, laser_pose);
 

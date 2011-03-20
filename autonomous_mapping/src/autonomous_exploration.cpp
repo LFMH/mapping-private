@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+
 #include "sensor_msgs/PointCloud.h"
 #include "geometry_msgs/Pose.h"
 #include "move_base_msgs/MoveBaseAction.h"
@@ -17,10 +18,11 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/filters/voxel_grid.h"
 #include <geometry_msgs/PoseArray.h>
-
+#include <visualization_msgs/Marker.h>
 
 namespace autonomous_exploration
 {
+
 class AutonomousExploration:public pcl_ros::PCLNodelet
 {
 public:
@@ -44,9 +46,11 @@ private:
 	ros::Publisher pointcloud_publisher_;
 	ros::Publisher tilt_laser_publisher_;
 	ros::Publisher tilt_laser_traj_cmd_publisher_;
+        ros::Publisher goal_pub_;
 	std::string subscribe_pose_topic_;
 	boost::thread spin_thread_;
 	geometry_msgs::PoseArray pose_msg_;
+        visualization_msgs::Marker marker_;
 	bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_, publish_cloud_incrementally_;
 	//ros::ServiceClient tilt_laser_client_;
 	pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
@@ -73,6 +77,7 @@ void AutonomousExploration::onInit()
 	received_laser_signal_ = false;
 	pose_subscriber_ = pnh_->subscribe(subscribe_pose_topic_, 100, &AutonomousExploration::autonomousExplorationCallBack, this);
 	pointcloud_publisher_ = pnh_->advertise<sensor_msgs::PointCloud2>("pointcloud", 100);
+        goal_pub_=pnh_->advertise<visualization_msgs::Marker>("goal_pose",100,true);
 	tilt_laser_publisher_ = pnh_->advertise<pr2_msgs::PeriodicCmd>("/laser_tilt_controller/set_periodic_cmd", 1);
 	pointcloud_subscriber_ = pnh_->subscribe("/points2_out", 100, &AutonomousExploration::pointcloudCallBack, this);
 	laser_signal_subscriber_ = pnh_->subscribe("/laser_tilt_controller/laser_scanner_signal", 1, &AutonomousExploration::laserScannerSignalCallBack, this);
@@ -80,6 +85,8 @@ void AutonomousExploration::onInit()
 	tilt_laser_traj_cmd_publisher_ = pnh_->advertise<pr2_msgs::LaserTrajCmd>("/laser_tilt_controller/set_traj_cmd", 1);
 	spin_thread_ = boost::thread (boost::bind (&AutonomousExploration::spin, this));
 	//ros::spin();
+        moveTorso(0.01, 1.0, "down");
+        setLaserProfile("navigation");
 }
 void AutonomousExploration::spin()
 {
@@ -100,6 +107,7 @@ void AutonomousExploration::spin()
 					moveRobot(pose_msg_.poses[i]);
 					ROS_INFO("End of Moving the robot");
                                         new_pose = pose_msg_.poses[i];
+                                        
 				}
 				else break;
                               }
@@ -107,12 +115,16 @@ void AutonomousExploration::spin()
 				//rise the spine up to scan
 				setLaserProfile("scan");
 				moveTorso(0.3, 1.0, "up");
-				double angles = 0.0;
+				double angles =0.0 ;
+                                btQuaternion initial_rotation( new_pose.orientation.x,new_pose.orientation.y,new_pose.orientation.z,new_pose.orientation.w);
+                                btScalar angle = initial_rotation.getAngle();
+                                std::cerr<<"initial angle: "<<angle<<std::endl;
 				while(angles <= 360)
-				{
-					
-					btQuaternion q ( pcl::deg2rad(angles), 0, 0);
-
+				{       
+                                        std::cerr<<"angle before: "<<angle<<std::endl; 
+					btQuaternion q (angle, 0, 0);
+                                        angle= angle + pcl::deg2rad(30.0);
+                                        
 					new_pose.orientation.x = q.x();
 					new_pose.orientation.y = q.y();
 					new_pose.orientation.z = q.z();
@@ -150,9 +162,9 @@ void AutonomousExploration::spin()
 			pointcloud_publisher_.publish(cloud_merged_);
 
 			//Clear points for the next round
-			cloud_merged_.points.clear();
-			cloud_merged_.width = 0;
-			cloud_merged_.height = 0;
+			//cloud_merged_.points.clear();
+			//cloud_merged_.width = 0;
+			//cloud_merged_.height = 0;
 			received_pose_ = false;
 			//lower the spine to navigate some place else
 			moveTorso(0.01, 1.0, "down");
@@ -176,7 +188,26 @@ void AutonomousExploration::moveRobot(geometry_msgs::Pose goal_pose)
 	goal.target_pose.header.stamp = ros::Time::now();
 
 	goal.target_pose.pose = goal_pose;
-
+        //goal_pose.position.z=0.01;
+        marker_.header.frame_id="/map";
+        marker_.header.stamp=ros::Time::now();
+        marker_.type=visualization_msgs::Marker::ARROW;
+        marker_.action=visualization_msgs::Marker::ADD;
+        marker_.ns="autonomosu_exploration";
+        marker_.pose=goal_pose;
+         //marker_.pose.position.x=1.0;
+        //marker_.pose.position.y=1.0;
+        //marker_.pose.position.z=1.0;
+        marker_.id= 0;
+        marker_.scale.x= 1.0;
+        marker_.scale.y= 4.0;
+        marker_.scale.z= 1.0;
+        marker_.color.r= 1.0f;
+        marker_.color.g= 1.0f;
+        marker_.color.b= 0.0f;
+        marker_.color.a = 1.0f;
+        marker_.lifetime= ros::Duration::Duration();
+        goal_pub_.publish(marker_);
 	ROS_INFO("Sending goal");
 	ac.sendGoal(goal);
 	ac.waitForResult();
