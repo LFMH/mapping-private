@@ -81,6 +81,7 @@ typedef pcl::PointXYZRGB PointT;
 double threshold = 0.075; /// [percentage]
 double floor_limit = 0.050; /// [percentage]
 double ceiling_limit = 0.100; /// [percentage]
+//TODO  double wall_limit = 2.0 /// [meters]
 
 // Segmentation's Parameters
 double epsilon_angle = 0.010; /// [radians]
@@ -379,6 +380,8 @@ void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
                             pcl_visualization::PCLVisualizer &viewer)
 {
 
+// bool wtf = true;
+
   // Count number of fitted planes 
   int plane_fit = 0;
 
@@ -584,6 +587,21 @@ void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
         // Save planar surface
         planar_surfaces.push_back (cluster);
 
+
+
+
+//        pcl::PointCloud<PointT>::Ptr furniture (new pcl::PointCloud<PointT> ());
+
+//        if ( surface == 0 )
+//          *furniture = *planar_surfaces.at (surface);
+//        else
+
+//          if ( wtf ) 
+//            *furniture = *cluster;
+
+
+
+
         // Save indices of planar surfaces
         planar_surfaces_indices.push_back (pointer_of_plane_cluster);
 
@@ -724,7 +742,7 @@ int main (int argc, char** argv)
   std::vector<int> pFileIndicesPCD = terminal_tools::parse_file_extension_argument (argc, argv, ".pcd");
   if (pFileIndicesPCD.size () == 0)
   {
-    ROS_INFO ("No .pcd file given as input!");
+    ROS_ERROR ("No .pcd file given as input!");
     return (-1);
   }
 
@@ -753,8 +771,6 @@ int main (int argc, char** argv)
 
   // Parsing the optional arguments
   terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
-
-
 
   ROS_WARN ("Timer started !");
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
@@ -894,17 +910,19 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    /*
 
-    ROS_INFO ("     floor limit = %5.3f meters", floor_limit);
-    ROS_INFO ("   ceiling limit = %5.3f meters", ceiling_limit);
-    ROS_INFO (" threshold limit = %5.3f meters", threshold);
+    ///*
 
-    */
+    ROS_INFO ("      floor = %5.3f meters", floor_limit);
+    ROS_INFO ("    ceiling = %5.3f meters", ceiling_limit);
+    ROS_INFO ("  threshold = %5.3f meters", threshold);
+
+    //*/
 
     ROS_INFO ("Minimum point is (%6.3f,%6.3f,%6.3f)", minimum_point.x, minimum_point.y, minimum_point.z);
     ROS_INFO ("Maximum point is (%6.3f,%6.3f,%6.3f)", maximum_point.x, maximum_point.y, maximum_point.z);
     ROS_INFO ("Height is %5.3f meters", height_of_cloud);
+
   } 
 
 
@@ -1220,6 +1238,11 @@ int main (int argc, char** argv)
   // ------------------ Sort out furniture and walls surfaces ------------------ //
   // --------------------------------------------------------------------------- //
 
+  // // // // // //
+  // Save all points of planar patches and handles which make up the furniture
+  // // // // // //
+  pcl::PointCloud<PointT>::Ptr furniture (new pcl::PointCloud<PointT> ());
+
   // Type of furniture 
   std::vector<std::string> type_of_furniture;
 
@@ -1260,7 +1283,7 @@ int main (int argc, char** argv)
       ROS_INFO ("FOR PLANAR SURFACE %2d MIN HEIGHT IS %f AND MAX IS %f METERS", surface, point_with_minimum_3D_values.z, point_with_maximum_3D_values.z);
     }
 
-    if ( point_with_maximum_3D_values.z > 2.0 )
+    if ( point_with_maximum_3D_values.z > 1.75 )
     {
       // Save surface of wall
       surfaces_of_walls.push_back (planar_surfaces.at (surface));
@@ -1280,6 +1303,14 @@ int main (int argc, char** argv)
     }
     else
     {
+
+      // // // // // //
+      // Save all points of planar patches and handles which make up the furniture
+      // // // // // //
+      *furniture += *planar_surfaces.at (surface);
+
+//std::cerr << " planar surface : " << planar_surfaces.at (surface)->points.size() << std::endl ;
+//std::cerr << " furniture : " << furniture->points.size() << std::endl ;
 
       // Sort horizontal and vertical pieces of furniture
       if ( std::abs(planar_surfaces_coefficients.at (surface)->values[2]) > std::max (std::abs(planar_surfaces_coefficients.at (surface)->values[0]), std::abs(planar_surfaces_coefficients.at (surface)->values[1])) )
@@ -1312,6 +1343,12 @@ int main (int argc, char** argv)
       proj_.setInputCloud (planar_surfaces.at (surface));
       proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
       proj_.filter (cloud_projected);
+
+      // // // // // //
+      // Save all points of planar patches and handles which make up the furniture
+      // // // // // //
+//      *furniture += cloud_projected;
+      // pcl::ProjectInliers DOES NOT KEEP RGB INFORMATION
 
       // Remove the point cloud data
       viewer.removePointCloud (planar_surfaces_ids.at (surface));
@@ -1364,25 +1401,34 @@ int main (int argc, char** argv)
   std::vector<pcl::PointIndices::Ptr> indices_of_points_on_the_surfaces;
   // // //
 
+  // // // // // //
+  // Save all points of furniture fixtures
+  // // // // // //
+  pcl::PointCloud<PointT> fixtures;
+ 
   for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
   {
-
+    
     // Select only the vertical furniture pieces
     if ( type_of_furniture. at (furniture) == "VERTICAL" )
     { 
-
+ 
       ROS_WARN ("VERTICAL");
 
       ROS_INFO ("Furniture surface %d has %d points", furniture, (int) furniture_surfaces.at (furniture)->points.size ());
-
+                             ROS_ERROR ("bla1");
       pcl::PointCloud<PointT> cloud_hull;
-
+      
       // Create a Convex Hull representation of the projected inliers
       pcl::ConvexHull<PointT> chull_;  
+       ROS_ERROR ("bla2");
       chull_.setInputCloud (furniture_surfaces.at (furniture));
-      chull_.reconstruct (cloud_hull);
+      ROS_ERROR ("bla3");
+      chull_.reconstruct (cloud_hull);      
+      ROS_ERROR ("bla4");
 
       ROS_INFO ("Convex hull %d has %d data points.", furniture, (int) cloud_hull.points.size ());
+
       /*
       // Visualize Convex Hulls
       std::stringstream id_of_hull;
@@ -1407,11 +1453,11 @@ int main (int argc, char** argv)
       prism_.setInputPlanarHull (cloud_hull.makeShared());
       prism_.setViewPoint (0.0, 0.0, 1.5);
       prism_.segment (*cloud_object_indices);
-
+      
       // // //  
       indices_of_points_on_the_surfaces.push_back (cloud_object_indices);
       // // //
-
+                             
       ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
       // Extract handles
@@ -1425,6 +1471,16 @@ int main (int argc, char** argv)
       extraction_of_handle_inliers.setNegative (false);
       // Call the extraction function
       extraction_of_handle_inliers.filter (handle_cloud);
+
+      // // // // // //
+      // Save all points of furniture fixtures
+      // // // // // //
+//      *furniture += handle_cloud;
+      fixtures += handle_cloud;
+
+      ROS_ERROR (" NOW ");
+//      ROS_INFO (" 1 handle cloud : %d ", (int) handle_cloud.points.size ());
+      std::cerr << " 2 handle cloud : "  << handle_cloud.points.size () << std::endl ;  
 
       // Visualize handles
       std::stringstream id_of_handle;
@@ -1446,6 +1502,10 @@ int main (int argc, char** argv)
       std::vector<pcl::PointIndices> handle_clusters;
       // Build kd-tree structure for clusters
       pcl::KdTreeFLANN<PointT>::Ptr handle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+      ROS_ERROR (" NOW ");
+//      ROS_INFO (" 3 handle cloud : %d ", (int) handle_cloud.points.size ());
+      std::cerr << " 4 handle cloud : "  << handle_cloud.points.size () << std::endl ;  
 
       // Instantiate cluster extraction object
       pcl::EuclideanClusterExtraction<PointT> clustering_of_handles;
@@ -1485,6 +1545,12 @@ int main (int argc, char** argv)
         extraction_of_handle_clusters.setNegative (false);
         // Call the extraction function
         extraction_of_handle_clusters.filter (*cluster_of_handle);
+
+        // // // // // //
+        // Save all points of furniture fixtures
+        // // // // // //
+//        *furniture += *cluster_of_handle;
+//        fixtures += *cluster_of_handle;
 
         if ( verbose )
         {
@@ -1535,6 +1601,26 @@ int main (int argc, char** argv)
 
     }
   }
+
+
+
+  // // // // // //
+  // Save cloud with furniture to disk
+  // // // // // //
+  pcl::io::savePCDFile ("data/furniture.pcd", *furniture);
+
+  // // // // // //
+  // Save cloud with fixtures to disk
+  // // // // // //
+  pcl::io::savePCDFile ("data/fixtures.pcd", fixtures);
+
+  // // // // // //
+  // Save furniture and fixtures to disk
+  // // // // // //
+  pcl::PointCloud<PointT>::Ptr furniture_and_fixtures (new pcl::PointCloud<PointT> ());
+  *furniture_and_fixtures += *furniture;
+  *furniture_and_fixtures += fixtures;
+   pcl::io::savePCDFile ("data/everything.pcd", *furniture_and_fixtures);
 
 
 
