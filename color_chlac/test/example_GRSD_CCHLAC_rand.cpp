@@ -45,14 +45,14 @@ int main( int argc, char** argv ){
   getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 
 #ifdef DIVID_TEST
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, 10, true );
+  extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, 10, true );
 
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  //extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* concatenate
   std::vector< std::vector<float> > feature;
@@ -70,14 +70,14 @@ int main( int argc, char** argv ){
   writeFeature( "debug.pcd", debug );
 
 #else
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector<float> grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, true);
+  extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, true);
 
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  //extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 
   //* write
   writeFeature( "test_GRSD_CCHLAC_rand.pcd", conc_vector( grsd, colorCHLAC ) );

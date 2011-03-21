@@ -41,20 +41,20 @@ int main( int argc, char** argv ){
   getVoxelGrid( grid, input_cloud, cloud_downsampled, voxel_size );
 
 #ifdef DIVID_TEST
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
-  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  //extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* write
   writeFeature( "test_colorCHLAC_rand.pcd", colorCHLAC );
   writeFeature( "debug.pcd", debug );
 
 #else
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
-  //computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  //extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 
   //* write
   writeFeature( "test_colorCHLAC_rand.pcd", colorCHLAC );

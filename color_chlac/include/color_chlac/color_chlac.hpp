@@ -147,7 +147,13 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::binarize_b ( int val )
 
 template <typename PointT, typename PointOutT> inline void
 pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ ){
-#ifdef C3_HLAC
+  r_ = 255 - r;
+  g_ = 255 - g;
+  b_ = 255 - b;
+}
+
+template <typename PointT, typename PointOutT> inline void
+pcl::C3HLAC_RI_Estimation<PointT, PointOutT>::setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ ){
   const int val1 = r;
   const int val2 = g;
   const int val3 = b;
@@ -157,11 +163,19 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::setColor( int &r, int &g, int 
   r_ = 255 * cos( val1 * angle_norm );
   g_ = 255 * cos( val2 * angle_norm );
   b_ = 255 * cos( val3 * angle_norm );
-#else
-  r_ = 255 - r;
-  g_ = 255 - g;
-  b_ = 255 - b;
-#endif
+}
+
+template <typename PointT, typename PointOutT> inline void
+pcl::C3HLACEstimation<PointT, PointOutT>::setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ ){
+  const int val1 = r;
+  const int val2 = g;
+  const int val3 = b;
+  r  = 255 * sin( val1 * angle_norm );
+  g  = 255 * sin( val2 * angle_norm );
+  b  = 255 * sin( val3 * angle_norm );
+  r_ = 255 * cos( val1 * angle_norm );
+  g_ = 255 * cos( val2 * angle_norm );
+  b_ = 255 * cos( val3 * angle_norm );
 }
 
 template <typename PointT, typename PointOutT> inline bool
@@ -1518,15 +1532,31 @@ pcl::ColorCHLACEstimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOu
 {
   for( int h=0; h<hist_num; h++ ){
     for(int i=0; i<6; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_0;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_0;
     for(int i=6; i<DIM_COLOR_1_3; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_1;
     for(int i=DIM_COLOR_1_3; i<501; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_0_BIN;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_0_BIN;
     for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_1_BIN;
   }
 }
+
+template <typename PointT, typename PointOutT> inline void
+pcl::C3HLACEstimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOut &output )
+{
+  for( int h=0; h<hist_num; h++ ){
+    for(int i=0; i<6; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_0;
+    for(int i=6; i<DIM_COLOR_1_3; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_1;
+    for(int i=DIM_COLOR_1_3; i<501; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_0_BIN;
+    for(int i=501; i<DIM_COLOR_1_3_ALL; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_1_BIN;
+  }
+}
+
 
 //*************************************************************//
 //* functions for ColorCHLACSignature117 (rotation-invariant) *//
@@ -1717,17 +1747,36 @@ pcl::ColorCHLAC_RI_Estimation<PointT, PointOutT>::normalizeColorCHLAC ( PointClo
 {
   for( int h=0; h<hist_num; h++ ){
     for(int i=0; i<6; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_0;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_RI_0;
     for(int i=6; i<42; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_1;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_RI_1;
     for(int i=42; i<DIM_COLOR_RI_1_3; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1; // not divided by 13.
+      output.points[h].histogram[ i ] *= color_NORMALIZE_1; // not divided by 13.
     for(int i=DIM_COLOR_RI_1_3; i<69; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_0_BIN;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_RI_0_BIN;
     for(int i=69; i<105; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_1_BIN;
+      output.points[h].histogram[ i ] *= color_NORMALIZE_RI_1_BIN;
     for(int i=105; i<DIM_COLOR_RI_1_3_ALL; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN; // not divided by 13.
+      output.points[h].histogram[ i ] *= color_NORMALIZE_1_BIN; // not divided by 13.
+  }
+}
+
+template <typename PointT, typename PointOutT> inline void
+pcl::C3HLAC_RI_Estimation<PointT, PointOutT>::normalizeColorCHLAC ( PointCloudOut &output )
+{
+  for( int h=0; h<hist_num; h++ ){
+    for(int i=0; i<6; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_RI_0;
+    for(int i=6; i<42; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_RI_1;
+    for(int i=42; i<DIM_COLOR_RI_1_3; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_1; // not divided by 13.
+    for(int i=DIM_COLOR_RI_1_3; i<69; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_RI_0_BIN;
+    for(int i=69; i<105; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_RI_1_BIN;
+    for(int i=105; i<DIM_COLOR_RI_1_3_ALL; ++i)
+      output.points[h].histogram[ i ] *= c3_NORMALIZE_1_BIN; // not divided by 13.
   }
 }
 

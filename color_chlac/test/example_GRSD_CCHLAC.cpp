@@ -31,14 +31,15 @@ int main( int argc, char** argv ){
   getVoxelGrid( grid, cloud, cloud_downsampled, voxel_size );
 
 #ifdef DIVID_TEST
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, 10 );
+  extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, 10 );
+  //extractPlusGRSDSignature110( grid, cloud, cloud_downsampled, grsd, voxel_size, 10 );
 
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector< std::vector<float> > colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
+  //extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size, 10 );
 
   //* concatenate
   std::vector< std::vector<float> > feature;
@@ -60,14 +61,15 @@ int main( int argc, char** argv ){
   writeFeature( "debug.pcd", debug );
 
 #else
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector<float> grsd;
-  computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size);
+  extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size);
+  //extractPlusGRSDSignature110( grid, cloud, cloud_downsampled, grsd, voxel_size);
 
-  //* compute - ColorCHLAC -
+  //* extract - ColorCHLAC -
   std::vector<float> colorCHLAC;
-  //computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  extractColorCHLACSignature981( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
+  //extractColorCHLACSignature117( grid, cloud_downsampled, colorCHLAC, 127, 127, 127, voxel_size );
 #ifdef VERBOSE
   //  ROS_INFO("VOSCH %10f", (my_clock()-t1)/input_cloud.points.size());
   ROS_INFO("VOSCH %ld", input_cloud.points.size());

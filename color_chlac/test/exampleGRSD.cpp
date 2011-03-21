@@ -10,6 +10,7 @@
 #include <pcl/features/normal_3d.h>
 #include <terminal_tools/parse.h>
 #include <pcl/surface/mls.h>
+#include <cmath>
 
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 using namespace terminal_tools;
@@ -33,27 +34,38 @@ double my_clock()
 
 #define NR_DIV 7 // number of normal angle divisions
 
-double min_radius_plane_;
-double min_radius_edge_;
-double min_radius_noise_, max_radius_noise_;
-double max_min_radius_diff_;
+// double min_radius_plane_;
+// double min_radius_edge_;
+// double min_radius_noise_, max_radius_noise_;
+// double max_min_radius_diff_;
 
 int get_type (float min_radius, float max_radius)
 {    
-  //               0.066
-  if (min_radius > min_radius_plane_) 
-    return PLANE; 
-  //                     0.030                               0.050
-  else if ((min_radius < min_radius_noise_) && (max_radius < max_radius_noise_))
-    return NOISE; 
-  //                                 0.02
-  else if (max_radius - min_radius < max_min_radius_diff_) 
-    return SPHERE;
-  //                    0.030
-  else if (min_radius < min_radius_edge_) 
-    return EDGE;
-  else
+  if (min_radius > 0.100)
+    return PLANE;
+  else if (max_radius > 0.175)
     return CYLINDER;
+  else if (min_radius < 0.015)
+    return NOISE;
+  else if (max_radius - min_radius < 0.050)
+    return SPHERE;
+  else
+    return EDGE;
+
+  // //               0.066
+  // if (min_radius > min_radius_plane_) 
+  //   return PLANE; 
+  // //                     0.030                               0.050
+  // else if ((min_radius < min_radius_noise_) && (max_radius < max_radius_noise_))
+  //   return NOISE; 
+  // //                                 0.02
+  // else if (max_radius - min_radius < max_min_radius_diff_) 
+  //   return SPHERE;
+  // //                    0.030
+  // else if (min_radius < min_radius_edge_) 
+  //   return EDGE;
+  // else
+  //   return CYLINDER;
 }
 
 int main( int argc, char** argv )
@@ -63,10 +75,10 @@ int main( int argc, char** argv )
     ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
     return(-1);
   }
-  min_radius_plane_ = 0.066;
-  min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
-  max_min_radius_diff_ = 0.02;
-  min_radius_edge_ = 0.030;
+  // min_radius_plane_ = 0.066;
+  // min_radius_noise_ = 0.030, max_radius_noise_ = 0.050;
+  // max_min_radius_diff_ = 0.02;
+  // min_radius_edge_ = 0.030;
   bool save_to_disk = true;
   
   double rsd_radius_search = 0.01;
@@ -112,7 +124,13 @@ int main( int argc, char** argv )
 //   mls.setSearchRadius (normals_radius_search);
 //   mls.reconstruct (cloud_normals);
 
-
+  // const int p_num = cloud_normals.points.size();
+  // for(int i=0; i<p_num; i++){
+  //   if( !std::isfinite( cloud_normals.points[i].normal_x ) || !std::isfinite( cloud_normals.points[i].normal_y ) || !std::isfinite( cloud_normals.points[i].normal_z ) ){
+  //     std::cout<< "nan!" << std::endl;
+  //     exit(1);
+  //   }
+  // }
 
   pcl::PointCloud<pcl::PointNormal> cloud_xyz_normals;
   pcl::concatenateFields (input_cloud, cloud_normals, cloud_xyz_normals);

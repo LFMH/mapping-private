@@ -5,14 +5,10 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl_cloud_algos/pcl_cloud_algos_point_types.h>
 
-//#define ENABLE_NORMALIZATION
-#define C3_HLAC
-#ifdef C3_HLAC
+//#define ENABLE_THEORY_NORMALIZATION
 const float angle_norm = M_PI / 510;
-const float AVERAGE_COLOR_VAL = 0.7;
-#else
-const float AVERAGE_COLOR_VAL = 0.5;
-#endif
+const float c3_AVERAGE_COLOR_VAL = 0.7;
+const float color_AVERAGE_COLOR_VAL = 0.5;
 const float AVERAGE_COLOR_VAL_BIN = 0.5;
 
 const int DIM_COLOR_1_3 = 495;        // Dimension of feature vector (without RGB binalize)
@@ -22,24 +18,40 @@ const int DIM_COLOR_RI_1_3 = 63;      // Dimension of feature vector (without RG
 const int DIM_COLOR_RI_BIN_1_3 = 54;  // Dimension of feature vector (with RGB binalize) - rotation-invariant -
 const int DIM_COLOR_RI_1_3_ALL = 117; // = DIM_COLOR_RI_1_3 + DIM_COLOR_RI_BIN_1_3
 
-#ifdef ENABLE_NORMALIZATION
-const float NORMALIZE_0 = 1/(255.0*AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_1 = 1/(65025.0*AVERAGE_COLOR_VAL*AVERAGE_COLOR_VAL);  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_1_BIN = 1/(AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN);    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_RI_0 = 1/(255.0*AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_1 = 1/(845325.0*AVERAGE_COLOR_VAL*AVERAGE_COLOR_VAL); // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_1_BIN = 1/(13.0*AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN); // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+#ifdef ENABLE_THEORY_NORMALIZATION
+const float color_NORMALIZE_0 = 1/(255.0*color_AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float color_NORMALIZE_1 = 1/(65025.0*color_AVERAGE_COLOR_VAL*color_AVERAGE_COLOR_VAL);  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float color_NORMALIZE_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float color_NORMALIZE_1_BIN = 1/(AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN);    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float color_NORMALIZE_RI_0 = 1/(255.0*color_AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_1 = 1/(845325.0*color_AVERAGE_COLOR_VAL*color_AVERAGE_COLOR_VAL); // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_1_BIN = 1/(13.0*AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN); // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_0 = 1/(255.0*c3_AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float c3_NORMALIZE_1 = 1/(65025.0*c3_AVERAGE_COLOR_VAL*c3_AVERAGE_COLOR_VAL);  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float c3_NORMALIZE_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float c3_NORMALIZE_1_BIN = 1/(AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN);    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float c3_NORMALIZE_RI_0 = 1/(255.0*c3_AVERAGE_COLOR_VAL);    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_1 = 1/(845325.0*c3_AVERAGE_COLOR_VAL*c3_AVERAGE_COLOR_VAL); // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_0_BIN = 1/AVERAGE_COLOR_VAL_BIN;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_1_BIN = 1/(13.0*AVERAGE_COLOR_VAL_BIN*AVERAGE_COLOR_VAL_BIN); // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
 #else
-const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
-const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
-const float NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_1 = 1/845325.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
-const float NORMALIZE_RI_1_BIN = 1/13.0; // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float color_NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float color_NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float color_NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float color_NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_1 = 1/845325.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float color_NORMALIZE_RI_1_BIN = 1/13.0; // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize)
+const float c3_NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order Color-CHLAC (without RGB binalize)
+const float c3_NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize)
+const float c3_NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order Color-CHLAC (with RGB binalize)
+const float c3_NORMALIZE_RI_0 = 1/255.0;    // value for normalizing 0th-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_1 = 1/845325.0; // value for normalizing 1st-order Color-CHLAC (without RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_0_BIN = 1;    // value for normalizing 0th-order Color-CHLAC (with RGB binalize) - rotation-invariant -
+const float c3_NORMALIZE_RI_1_BIN = 1/13.0; // value for normalizing 1st-order Color-CHLAC (with RGB binalize) - rotation-invariant -
 #endif
 
 namespace pcl
@@ -105,7 +117,7 @@ namespace pcl
       inline int binarize_r ( int val );
       inline int binarize_g ( int val );
       inline int binarize_b ( int val );
-      inline void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
+      virtual inline void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
 
       //* functions for ColorCHLACSignature981 (rotation-variant) *//
       virtual inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
@@ -121,7 +133,7 @@ namespace pcl
         * \note In situations where not enough neighbors are found, the normal and curvature values are set to -1.
         * \param output the resultant point cloud model dataset that contains surface normals and curvatures
         */
-      void computeFeature (PointCloudOut &output);
+      virtual void computeFeature (PointCloudOut &output);
 
     protected:
       float voxel_size;
@@ -178,11 +190,11 @@ namespace pcl
     protected:
 
       //* functions for ColorCHLACSignature117 (rotation-invariant) *//
-      inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
-      inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
-      inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
-      inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
-      inline void normalizeColorCHLAC ( PointCloudOut &output );
+      virtual inline void addColorCHLAC_0 ( const int idx, PointCloudOut &output );
+      virtual inline void addColorCHLAC_0_bin ( const int idx, PointCloudOut &output );
+      virtual inline void addColorCHLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
+      virtual inline void addColorCHLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
+      virtual inline void normalizeColorCHLAC ( PointCloudOut &output );
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Estimate normals for all points given in <setInputCloud (), setIndices ()> using the surface in
@@ -190,7 +202,7 @@ namespace pcl
         * \note In situations where not enough neighbors are found, the normal and curvature values are set to -1.
         * \param output the resultant point cloud model dataset that contains surface normals and curvatures
         */
-      void computeFeature (PointCloudOut &output);
+      virtual void computeFeature (PointCloudOut &output);
 
     protected:
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::voxel_size;
@@ -218,6 +230,102 @@ namespace pcl
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thR;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thG;
       using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thB;
+  };
+
+  template <typename PointT, typename PointOutT>
+  class C3HLAC_RI_Estimation: public ColorCHLAC_RI_Estimation<PointT, PointOutT>
+    {
+    public:
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::feature_name_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::indices_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::surface_;
+      typedef typename ColorCHLAC_RI_Estimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Empty constructor. */
+      C3HLAC_RI_Estimation ()
+      {
+        feature_name_ = "C3HLAC_RI_Estimation";
+      };
+
+    protected:
+      inline void normalizeColorCHLAC ( PointCloudOut &output );
+      inline void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
+
+    protected:
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::voxel_size;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::grid;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::relative_coordinates;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::hist_num;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::inverse_subdivision_size;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_x;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_y;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::offset_z;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::div_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::min_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdiv_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::subdivb_mul_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_r;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_g;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_b;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_r_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_g_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_b_;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_r;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_g;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::center_bin_b;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thR;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thG;
+      using ColorCHLAC_RI_Estimation<PointT, PointOutT>::color_thB;
+  };
+
+  template <typename PointT, typename PointOutT>
+  class C3HLACEstimation: public ColorCHLACEstimation<PointT, PointOutT>
+    {
+    public:
+      using ColorCHLACEstimation<PointT, PointOutT>::feature_name_;
+      using ColorCHLACEstimation<PointT, PointOutT>::indices_;
+      using ColorCHLACEstimation<PointT, PointOutT>::surface_;
+      typedef typename ColorCHLACEstimation<PointT, PointOutT>::PointCloudOut PointCloudOut;
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Empty constructor. */
+      C3HLACEstimation ()
+      {
+        feature_name_ = "C3HLACEstimation";
+      };
+
+    protected:
+      inline void normalizeColorCHLAC ( PointCloudOut &output );
+      inline void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
+
+    protected:
+      using ColorCHLACEstimation<PointT, PointOutT>::voxel_size;
+      using ColorCHLACEstimation<PointT, PointOutT>::grid;
+      using ColorCHLACEstimation<PointT, PointOutT>::relative_coordinates;
+      using ColorCHLACEstimation<PointT, PointOutT>::hist_num;
+      using ColorCHLACEstimation<PointT, PointOutT>::inverse_subdivision_size;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_x;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_y;
+      using ColorCHLACEstimation<PointT, PointOutT>::offset_z;
+      using ColorCHLACEstimation<PointT, PointOutT>::div_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::min_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::subdiv_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::subdivb_mul_;
+      using ColorCHLACEstimation<PointT, PointOutT>::color;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_r;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_g;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_b;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_r_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_g_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_b_;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_r;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_g;
+      using ColorCHLACEstimation<PointT, PointOutT>::center_bin_b;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thR;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thG;
+      using ColorCHLACEstimation<PointT, PointOutT>::color_thB;
   };
 }
 
