@@ -1309,9 +1309,6 @@ int main (int argc, char** argv)
       // // // // // //
       *furniture += *planar_surfaces.at (surface);
 
-//std::cerr << " planar surface : " << planar_surfaces.at (surface)->points.size() << std::endl ;
-//std::cerr << " furniture : " << furniture->points.size() << std::endl ;
-
       // Sort horizontal and vertical pieces of furniture
       if ( std::abs(planar_surfaces_coefficients.at (surface)->values[2]) > std::max (std::abs(planar_surfaces_coefficients.at (surface)->values[0]), std::abs(planar_surfaces_coefficients.at (surface)->values[1])) )
       {
@@ -1416,16 +1413,15 @@ int main (int argc, char** argv)
       ROS_WARN ("VERTICAL");
 
       ROS_INFO ("Furniture surface %d has %d points", furniture, (int) furniture_surfaces.at (furniture)->points.size ());
-                             ROS_ERROR ("bla1");
+
       pcl::PointCloud<PointT> cloud_hull;
       
       // Create a Convex Hull representation of the projected inliers
       pcl::ConvexHull<PointT> chull_;  
-       ROS_ERROR ("bla2");
       chull_.setInputCloud (furniture_surfaces.at (furniture));
-      ROS_ERROR ("bla3");
+      ROS_ERROR (" BEFORE IT WORKS ");
       chull_.reconstruct (cloud_hull);      
-      ROS_ERROR ("bla4");
+      ROS_ERROR (" AFTERWARDS NOT ");
 
       ROS_INFO ("Convex hull %d has %d data points.", furniture, (int) cloud_hull.points.size ());
 
@@ -1478,9 +1474,9 @@ int main (int argc, char** argv)
 //      *furniture += handle_cloud;
       fixtures += handle_cloud;
 
-      ROS_ERROR (" NOW ");
-//      ROS_INFO (" 1 handle cloud : %d ", (int) handle_cloud.points.size ());
-      std::cerr << " 2 handle cloud : "  << handle_cloud.points.size () << std::endl ;  
+      ROS_ERROR (" TEST IT ");
+      std::cerr << " TEST 1 handle cloud: %d " << handle_cloud.points.size () << std::endl ;  
+      ROS_INFO (" TEST 2 handle cloud: %d ", (int) handle_cloud.points.size ());
 
       // Visualize handles
       std::stringstream id_of_handle;
@@ -1503,9 +1499,9 @@ int main (int argc, char** argv)
       // Build kd-tree structure for clusters
       pcl::KdTreeFLANN<PointT>::Ptr handle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
 
-      ROS_ERROR (" NOW ");
-//      ROS_INFO (" 3 handle cloud : %d ", (int) handle_cloud.points.size ());
-      std::cerr << " 4 handle cloud : "  << handle_cloud.points.size () << std::endl ;  
+      ROS_ERROR (" TEST IT ");
+      std::cerr << " TEST 3 handle cloud: %d " << handle_cloud.points.size () << std::endl ;  
+      ROS_INFO (" TEST 4 handle cloud: %d ", (int) handle_cloud.points.size ());
 
       // Instantiate cluster extraction object
       pcl::EuclideanClusterExtraction<PointT> clustering_of_handles;
@@ -1620,7 +1616,7 @@ int main (int argc, char** argv)
   pcl::PointCloud<PointT>::Ptr furniture_and_fixtures (new pcl::PointCloud<PointT> ());
   *furniture_and_fixtures += *furniture;
   *furniture_and_fixtures += fixtures;
-   pcl::io::savePCDFile ("data/everything.pcd", *furniture_and_fixtures);
+  pcl::io::savePCDFile ("data/furniture_and_fixtures.pcd", *furniture_and_fixtures);
 
 
 
