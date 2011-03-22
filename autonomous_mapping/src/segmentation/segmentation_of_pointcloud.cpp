@@ -95,6 +95,17 @@ double plane_inliers_clustering_tolerance = 0.100; /// [meters]
 int minimum_size_of_handle_cluster = 10; /// [points]
 double handle_clustering_tolerance = 0.050; /// [meters]
 
+// Segmentation's Parameters
+double cluster_tolerance = 0.020; /// [meters]
+double fixture_cluster_tolerance = 0.025; /// [meters]
+double center_radius = 0.085; /// 
+double init_radius = 0.035; ///
+double color_radius = 0.050; ///
+
+int std_limit = 2; ///
+int min_pts_per_cluster = 150; /// [points]
+int fixture_min_pts_per_cluster = 150; /// [points]
+
 // Visualization's Parameters
 bool step = false;
 bool clean = false;
@@ -103,8 +114,16 @@ int size_of_points = 1;
 
 // Optional parameters
 bool find_box_model = false;
+bool segmentation_by_color_and_fixture = false;
 
 
+
+double getRGB (float r, float g, float b)
+{
+  int res = (int (r * 255) << 16) | (int (g * 255) << 8) | int (b * 255);
+  double rgb = *(float*)(&res);
+  return (rgb);
+}
 
 /*
 
@@ -763,6 +782,18 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_handle_cluster", minimum_size_of_handle_cluster);
   terminal_tools::parse_argument (argc, argv, "-handle_clustering_tolerance", handle_clustering_tolerance);
 
+  // Parse the arguments for segmenting by color and fixture
+  terminal_tools::parse_argument (argc, argv, "-cluster_tolerance", cluster_tolerance);
+  terminal_tools::parse_argument (argc, argv, "-fixture_cluster_tolerance", fixture_cluster_tolerance);
+  terminal_tools::parse_argument (argc, argv, "-center_radius", center_radius);
+  terminal_tools::parse_argument (argc, argv, "-init_radius", init_radius);
+  terminal_tools::parse_argument (argc, argv, "-color_radius", color_radius);
+
+  terminal_tools::parse_argument (argc, argv, "-std_limit", std_limit);
+  terminal_tools::parse_argument (argc, argv, "-min_pts_per_cluster", min_pts_per_cluster);
+  terminal_tools::parse_argument (argc, argv, "-fixture_min_pts_per_cluster", fixture_min_pts_per_cluster);
+
+
   // Parse arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-step", step);
   terminal_tools::parse_argument (argc, argv, "-clean", clean);
@@ -771,6 +802,7 @@ int main (int argc, char** argv)
 
   // Parsing the optional arguments
   terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
+  terminal_tools::parse_argument (argc, argv, "-segmentation_by_color_and_fixture", segmentation_by_color_and_fixture);
 
   ROS_WARN ("Timer started !");
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
@@ -1272,6 +1304,9 @@ int main (int argc, char** argv)
   // Point clouds which represent the vertical surfaces of furniture
   std::vector<pcl::PointCloud<PointT>::Ptr> vertical_furniture_surfaces;
 
+  // Vector of ids of projected surfaces
+  std::vector<std::string> projs_ids;
+
   for (int surface = 0; surface < (int) planar_surfaces.size(); surface++)
   {
     // The minimum and maximum height of each planar surface
@@ -1364,6 +1399,9 @@ int main (int argc, char** argv)
       // Set the size of points for cloud
       viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, id_of_proj.str());
 
+      // Save id of handle
+      projs_ids.push_back (id_of_proj.str());
+
       // Wait or not wait
       if ( step )
       {
@@ -1394,15 +1432,17 @@ int main (int argc, char** argv)
   // ------------------ Extraction of polygon prism data ------------------ //
   // ---------------------------------------------------------------------- //
 
-  // // //
-  std::vector<pcl::PointIndices::Ptr> indices_of_points_on_the_surfaces;
-  // // //
-
   // // // // // //
   // Save all points of furniture fixtures
   // // // // // //
   pcl::PointCloud<PointT> fixtures;
- 
+
+  // Vector of ids of handles
+  std::vector<std::string> handle_ids;
+
+  // Vector of ids of handles clusters
+  std::vector<std::string> handles_clusters_ids;
+
   for (int furniture = 0; furniture < (int) furniture_surfaces.size(); furniture++)
   {
     
@@ -1450,10 +1490,6 @@ int main (int argc, char** argv)
       prism_.setViewPoint (0.0, 0.0, 1.5);
       prism_.segment (*cloud_object_indices);
       
-      // // //  
-      indices_of_points_on_the_surfaces.push_back (cloud_object_indices);
-      // // //
-                             
       ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
       // Extract handles
@@ -1522,8 +1558,6 @@ int main (int argc, char** argv)
       // Vector of the indices of handles
       std::vector<pcl::PointIndices::Ptr> handle_indices;
 
-      // Vector of ids of handles
-      std::vector<std::string> handle_ids;
 
       for (int c = 0; c < (int) handle_clusters.size(); c++)
       {
@@ -1590,6 +1624,9 @@ int main (int argc, char** argv)
 
         // Save id of handle
         handle_ids.push_back (id_of_handle.str());
+
+        // Save id of handles clusters
+        handles_clusters_ids.push_back (id_of_handle_cluster.str());
       }
 
       // Remove the cloud of handle
@@ -1610,6 +1647,25 @@ int main (int argc, char** argv)
   // // // // // //
   pcl::io::savePCDFile ("data/fixtures.pcd", fixtures);
 
+  /*
+
+  double red24bit = getRGB (1.0, 0.0, 0.0);
+  ROS_INFO (" red24bit = %.50f ", red24bit);
+
+  for (int p = 0; p < (int) fixtures.points.size (); p++)
+  {
+    ROS_INFO (" RGB %.50f ", fixtures.points[p].rgb);
+
+    ROS_INFO (" RGB %f ", floor (fixtures.points[p].rgb * pow(10, 40)));
+
+    if ( furniture->points[p].rgb == red24bit )
+    {
+      ROS_INFO (" RGB %.100f ", fixtures.points[p].rgb);
+    }
+  }
+
+  */
+
   // // // // // //
   // Save furniture and fixtures to disk
   // // // // // //
@@ -1618,16 +1674,245 @@ int main (int argc, char** argv)
   *furniture_and_fixtures += fixtures;
   pcl::io::savePCDFile ("data/furniture_and_fixtures.pcd", *furniture_and_fixtures);
 
+  if ( verbose )
+  {
+    ROS_WARN (" ");
+    ROS_WARN ("FURNITURE HAS %d POINTS", (int) furniture->points.size());
+    ROS_WARN ("FIXTURES HAVE %d POINTS", (int) fixtures.points.size());
+    ROS_WARN (" ");
+  }
 
+
+
+  ///////////////////////////////////////////////////////////////////
+  // Clean the 3D viewer for the segmentation by color and fixture //
+  //////////////////////////////////////////////////////////////////
+
+  for (int id = 0; id < (int) handles_clusters_ids.size (); id++)
+  {
+    // Remove the cloud of handle
+    viewer.removePointCloud (handles_clusters_ids.at(id));
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+  }
+
+  for (int id = 0; id < (int) projs_ids.size (); id++)
+  {
+    // Remove the cloud of handle
+    viewer.removePointCloud (projs_ids.at(id));
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+  }
+
+  ////////////////////////////////
+  // The 3D viewer is now clean //
+  ////////////////////////////////
+
+
+
+//  if ( verbose )
+//  {
+//    ROS_INFO (" ");
+//    ROS_INFO ("THERE ARE %d FURNITURE SURFACES OUT OF WHICH", (int) furniture_surfaces.size());
+//    ROS_INFO ("%d ARE HORIZONTAL AND", (int) horizontal_furniture_surfaces.size());
+//    ROS_INFO ("%d ARE VERTICAL", (int) indices_of_points_on_the_surfaces.size());
+//    ROS_INFO (" ");
+//  }
+
+
+
+  // Add the input cloud
+  viewer.addPointCloud (*furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
+
+  // Color the cloud in white
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "FURNITURE_AND_FIXTURES");
+
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FURNITURE_AND_FIXTURES"); 
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Remove or not remove the cloud from viewer
+  if ( clean )
+  {
+    // Remove the point cloud data
+    viewer.removePointCloud ("FURNITURE_AND_FIXTURES");
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+  }
+
+
+
+  int number_of_furniture_points = furniture->points.size ();
+ 
+  // Declare the indices of furniture points
+  pcl::PointIndices furniture_indices;
+
+  for (int idx = 0; idx < number_of_furniture_points; idx++)
+    furniture_indices.indices.push_back (idx);
+
+  // Pointer of the indices of furniture points
+  pcl::PointIndices::Ptr furniture_indices_pointer (new pcl::PointIndices (furniture_indices));
+
+  // Declare the indices of fixture points
+  pcl::PointIndices fixtures_indices;
+
+  for (int idx = number_of_furniture_points; idx < (int) furniture_and_fixtures->points.size(); idx++)
+    fixtures_indices.indices.push_back (idx);
+
+  // Pointer of the indices of fixture points
+  pcl::PointIndices::Ptr fixtures_indices_pointer (new pcl::PointIndices (fixtures_indices));
 
   if ( verbose )
   {
-    ROS_INFO (" ");
-    ROS_INFO ("THERE ARE %d FURNITURE SURFACES OUT OF WHICH", (int) furniture_surfaces.size());
-    ROS_INFO ("%d ARE HORIZONTAL AND", (int) horizontal_furniture_surfaces.size());
-    ROS_INFO ("%d ARE VERTICAL", (int) indices_of_points_on_the_surfaces.size());
-    ROS_INFO (" ");
+    ROS_INFO ("The number of furniture points is %d", number_of_furniture_points);
+    ROS_INFO ("Size of furniture indices is %d", (int) furniture_indices.indices.size ());
+    ROS_INFO ("Size of fixture %d", (int) fixtures_indices.indices.size ());
   }
+
+
+
+/*
+
+  // Segmentation's Parameters
+  double cluster_tolerance = 0.020; /// [meters]
+  double fixture_cluster_tolerance = 0.025; /// [meters]
+  double center_radius = 0.085; /// 
+  double init_radius = 0.035; ///
+  double color_radius = 0.050; ///
+
+  int std_limit = 2; ///
+  int min_pts_per_cluster = 150; /// [points]
+  int fixture_min_pts_per_cluster = 150; /// [points]
+
+*/
+
+
+
+  // Clusters segmented by color and fixture
+  std::vector<pcl::PointIndices> clusters;
+
+  // Create the object for segmenting by color and fixture
+  dos_pcl::DoorDetectionByColorAndFixture<PointT> segmentation_by_color_and_fixture;
+
+  segmentation_by_color_and_fixture.setInputCloud (furniture_and_fixtures);
+  segmentation_by_color_and_fixture.setIndices (furniture_indices_pointer);
+  segmentation_by_color_and_fixture.setFixtureIndices (fixtures_indices_pointer);
+
+  segmentation_by_color_and_fixture.setClusterTolerance (cluster_tolerance);
+  segmentation_by_color_and_fixture.setFixtureClusterTolerance (fixture_cluster_tolerance);
+  segmentation_by_color_and_fixture.setCenterRadius (center_radius);
+  segmentation_by_color_and_fixture.setInitRadius (init_radius);
+  segmentation_by_color_and_fixture.setColorRadius (color_radius);
+
+  segmentation_by_color_and_fixture.setSTDLimit (std_limit);
+  segmentation_by_color_and_fixture.setMinClusterSize (min_pts_per_cluster);
+  segmentation_by_color_and_fixture.setFixtureMinClusterSize (fixture_min_pts_per_cluster);
+
+  // Extract the clusters by color and fixture
+  segmentation_by_color_and_fixture.extract (clusters);
+
+
+
+  // Save the clouds which represet the individual clusters
+  std::vector<pcl::PointCloud<PointT>::Ptr > clusters_clouds;
+
+  for (int c = 0; c < (int) clusters.size(); c++)
+  {
+    pcl::PointCloud<PointT>::Ptr cluster_cloud (new pcl::PointCloud<PointT>);
+    pcl::PointIndices::Ptr cluster_pointer (new pcl::PointIndices (clusters.at (c)));
+
+    // Extract handle points from the input cloud
+    pcl::ExtractIndices<PointT> extraction_of_clusters;
+    // Set point cloud from where to extract
+    extraction_of_clusters.setInputCloud (furniture_and_fixtures);
+    // Set which indices to extract
+    extraction_of_clusters.setIndices (cluster_pointer);
+    // Return the points which represent the inliers
+    extraction_of_clusters.setNegative (false);
+    // Call the extraction function
+    extraction_of_clusters.filter (*cluster_cloud);
+
+    // Save the clouds which represet the individual clusters
+    clusters_clouds.push_back (cluster_cloud);
+
+    if ( verbose )
+    {
+      ROS_INFO ("  Cluster %d has %5d points", c, (int) cluster_cloud->points.size());
+    }
+
+    // Create id for visualization
+    std::stringstream id_of_cluster;
+    id_of_cluster << "CLUSTER_" << ros::Time::now();
+
+    // Add point cloud to viewer
+    viewer.addPointCloud (*cluster_cloud, id_of_cluster.str());
+
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points + 1, id_of_cluster.str()); 
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+
+    // Remove or not remove the cloud from viewer
+    if ( clean )
+    {
+      // Remove the point cloud data
+      viewer.removePointCloud (id_of_cluster.str());
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+    }
+  }
+
+
+
+  //for (int c = 0; c < (int) clusters_clouds.size(); c++)
+  //{
+
+    //pcl::PointCloud<PointT> cloud_projected;
+
+    //// Project the table inliers using the planar model coefficients    
+    //pcl::ProjectInliers<PointT> proj_;   
+    //proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+    //proj_.setInputCloud (planar_surfaces.at (surface));
+    //proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
+    //proj_.filter (cloud_projected);
+
+
+
+  //}
+
+
+
+
 
 // // //
 
