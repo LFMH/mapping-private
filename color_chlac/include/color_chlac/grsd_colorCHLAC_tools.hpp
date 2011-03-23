@@ -584,34 +584,36 @@ Eigen::Vector3i extractPlusGRSDSignature110(pcl::VoxelGrid<T> grid, pcl::PointCl
     int source_type = types[idx];
     std::vector<int> neighbors = grid.getNeighborCentroidIndices ( cloud_downsampled_ptr->points[idx], relative_coordinates_all);
     Eigen::Vector3f source_normal = cloud_downsampled.points[idx].getNormalVector3fMap ();
-    for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
-    {
-      int neighbor_type;
-      if (neighbors[id_n] == -1)
-        neighbor_type = EMPTY;
-      else
-        neighbor_type = types[neighbors[id_n]];
-
-      // count transitions: TODO optimize Asako style :)  but what about empty?
-      if (neighbors[id_n] == -1)
-        transitions_to_empty[ hist_idx ](source_type)++;
-      else{
-	// compute angle between average normals of voxels
-	assert (source_type != EMPTY);
-	//        double sine = source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ();
-	//        int angle_bin = std::min (NR_DIV-1, (int) floor (sine * NR_DIV));
-	//        transition_matrix_list[angle_bin](source_type, neighbor_type)++;
-	//std::cout << cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap () << std::endl;
-	//std::cout << cloud_downsampled.points[neighbors[id_n]].normal_x << " " << cloud_downsampled.points[neighbors[id_n]].normal_y << " " << cloud_downsampled.points[neighbors[id_n]].normal_z << std::endl;
-	if( std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_x ) && std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_y ) && std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_z ) ) 
-	  transition_matrix_list[ (std::min (NR_DIV-1, (int) floor (sqrt (source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ()) * NR_DIV)) )*hist_num + hist_idx ](source_type, neighbor_type)++;
-	else
-	  transitions_to_empty[ hist_idx ](source_type)++;
-	//        double unsigned_cosine = fabs(source_normal.dot (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()));
-	//        if (unsigned_cosine > 1) unsigned_cosine = 1;
-	//        int angle_bin = std::min (NR_DIV-1, (int) floor (acos (unsigned_cosine) / unit_angle));
-        //std::cerr << "angle difference = " << acos (unsigned_cosine) << "(" << unsigned_cosine << ") => index: " << angle_bin << std::endl;
-      }
+    if( std::isfinite( cloud_downsampled.points[idx].normal_x ) && std::isfinite( cloud_downsampled.points[idx].normal_y ) && std::isfinite( cloud_downsampled.points[idx].normal_z ) ){
+      for (unsigned id_n = 0; id_n < neighbors.size(); id_n++)
+	{
+	  int neighbor_type;
+	  if (neighbors[id_n] == -1)
+	    neighbor_type = EMPTY;
+	  else
+	    neighbor_type = types[neighbors[id_n]];
+	  
+	  // count transitions: TODO optimize Asako style :)  but what about empty?
+	  if (neighbors[id_n] == -1)
+	    transitions_to_empty[ hist_idx ](source_type)++;
+	  else{
+	    // compute angle between average normals of voxels
+	    assert (source_type != EMPTY);
+	    //        double sine = source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ();
+	    //        int angle_bin = std::min (NR_DIV-1, (int) floor (sine * NR_DIV));
+	    //        transition_matrix_list[angle_bin](source_type, neighbor_type)++;
+	    //std::cout << cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap () << std::endl;
+	    //std::cout << cloud_downsampled.points[neighbors[id_n]].normal_x << " " << cloud_downsampled.points[neighbors[id_n]].normal_y << " " << cloud_downsampled.points[neighbors[id_n]].normal_z << std::endl;
+	    if( std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_x ) && std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_y ) && std::isfinite( cloud_downsampled.points[neighbors[id_n]].normal_z ) ) 
+	      transition_matrix_list[ (std::min (NR_DIV-1, (int) floor (sqrt (source_normal.cross (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()).norm ()) * NR_DIV)) )*hist_num + hist_idx ](source_type, neighbor_type)++;
+	    else
+	      transitions_to_empty[ hist_idx ](source_type)++;
+	    //        double unsigned_cosine = fabs(source_normal.dot (cloud_downsampled.points[neighbors[id_n]].getNormalVector3fMap ()));
+	    //        if (unsigned_cosine > 1) unsigned_cosine = 1;
+	    //        int angle_bin = std::min (NR_DIV-1, (int) floor (acos (unsigned_cosine) / unit_angle));
+	    //std::cerr << "angle difference = " << acos (unsigned_cosine) << "(" << unsigned_cosine << ") => index: " << angle_bin << std::endl;
+	  }
+	}
     }
   }
 

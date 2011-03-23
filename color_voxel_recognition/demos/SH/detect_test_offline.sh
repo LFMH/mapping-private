@@ -11,7 +11,7 @@ DIR=`pwd` #`rospack find color_voxel_recognition`/demos
 rank_num=1 #5
 
 # If the number of occupied voxels in a detection area is less than this value, the system will skip this area.
-exist_voxel_num_threshold=80 #50
+exist_voxel_num_threshold=50
 
 # The number of the dimension of the objects's subspace
 r_dim=15 
@@ -20,12 +20,12 @@ r_dim=15
 detection_box_size=0.20 # unit: meter
 
 # The distance threshold of target points in scene.
-distance_th=1.1 # unit: meter
+distance_th=1.5 # unit: meter
 
 ##################################
 
 rm models
-ln -s $DIR/models_offline_g $DIR/models
+ln -s $DIR/models_offline_r $DIR/models
 pca=$(echo $DIR/models/$(printf "%03d" $1)/pca_result)
-#rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle
-rosrun color_voxel_recognition detectObj_GRSD $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle
+rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle
+#rosrun color_voxel_recognition detectObj_GRSD $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle

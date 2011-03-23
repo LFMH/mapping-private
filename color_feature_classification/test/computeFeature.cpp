@@ -62,13 +62,11 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
 	  //* extract - GRSD -
 	  std::vector< std::vector<float> > grsd;
 	  // if( feature_type == 'r' )
-	  //   extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	  //   extractPlusGRSDSignature110( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	  // else
-	  //   extractGRSDSignature325( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-	  
-	  extractPlusGRSDSignature110( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	    extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	  const int hist_num = grsd.size(); // number of subdivisions
-		
+	  
 	  if( feature_type == 'g' ){
 	    for( int h=0; h<hist_num; h++ )
 	      feature.push_back ( grsd[ h ] );
@@ -224,10 +222,9 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
 		//* extract - GRSD -
 		// if( feature_type == 'r' )
-		//   extractGRSDSignature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+		//   extractPlusGRSDSignature110( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 		// else
-		//   extractGRSDSignature325( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-		extractGRSDSignature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+		  extractGRSDSignature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 		const int hist_num = grsd.size();
 
 		if( feature_type == 'g' ){

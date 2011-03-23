@@ -36,7 +36,7 @@ void computeFeature( const PointCloud<PointNormal> input_cloud, std::vector< std
 	//* extract - GRSD -
 	std::vector< std::vector<float> > grsd;
 	//extractGRSDSignature21( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-	extractGRSDSignature325( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	extractPlusGRSDSignature110( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	const int hist_num = grsd.size(); // number of subdivisions
 	
 	for( int h=0; h<hist_num; h++ )
@@ -75,7 +75,7 @@ void computeFeature_with_rotate( const PointCloud<PointNormal> input_cloud, std:
 	    for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	      //* extract - GRSD -
 	      //extractGRSDSignature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-	      extractGRSDSignature325( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	      extractPlusGRSDSignature110( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	      const int hist_num = grsd.size();
 	      
 	      for( int h=0; h<hist_num; h++ )

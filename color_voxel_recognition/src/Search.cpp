@@ -688,29 +688,29 @@ void SearchObj::cleanData(){
 }
 
 void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* compute - ColorCHLAC -
-  std::vector< std::vector<float> > colorCHLAC;
-  computeColorCHLAC_RI( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  //* extract - C3HLAC -
+  std::vector< std::vector<float> > c3hlac;
+  extractC3HLACSignature117( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
 
   std::vector< std::vector<float> > feature;
-  const int h_num = colorCHLAC.size();
+  const int h_num = c3hlac.size();
   exist_voxel_num = new int[ h_num ];
   nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
-    feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
-    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+    feature.push_back( conc_vector( grsd[ h ], c3hlac[ h ] ) );
+    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
   }
 
   setData( subdiv_b_, feature );
 }
 
 void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
 
   std::vector< std::vector<float> > feature;
   const int h_num = grsd.size();
@@ -727,34 +727,34 @@ void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl
 }
 
 void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* compute - GRSD -
+  //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = computeGRSD( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* compute - ColorCHLAC -
-  std::vector< std::vector<float> > colorCHLAC;
-  computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
+  //* extract - C3HLAC -
+  std::vector< std::vector<float> > c3hlac;
+  extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
 
   std::vector< std::vector<float> > feature;
-  const int h_num = colorCHLAC.size();
+  const int h_num = c3hlac.size();
   exist_voxel_num = new int[ h_num ];
   nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
-    feature.push_back( conc_vector( grsd[ h ], colorCHLAC[ h ] ) );
-    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+    feature.push_back( conc_vector( grsd[ h ], c3hlac[ h ] ) );
+    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
   }
   setData( subdiv_b_, feature );
 }
 
 void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  std::vector< std::vector<float> > colorCHLAC;
-  Eigen::Vector3i subdiv_b_ = computeColorCHLAC( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size );
+  std::vector< std::vector<float> > c3hlac;
+  Eigen::Vector3i subdiv_b_ = extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
 
-  const int h_num = colorCHLAC.size();
+  const int h_num = c3hlac.size();
   exist_voxel_num = new int[ h_num ];
   nFeatures = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ )
-    exist_voxel_num[ h ] = ( colorCHLAC[h][0] + colorCHLAC[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  setData( subdiv_b_, colorCHLAC );
+    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
+  setData( subdiv_b_, c3hlac );
 }
 
 const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
