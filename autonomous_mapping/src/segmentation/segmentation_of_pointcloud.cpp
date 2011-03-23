@@ -71,8 +71,8 @@
 
 
 
-typedef pcl::PointXYZRGB PointT;
-//typedef pcl::PointXYZINormal PointT;
+//typedef pcl::PointXYZRGB PointT;
+typedef pcl::PointXYZINormal PointT;
 //typedef pcl::PointXYZRGBNormal PointT;
 
 
@@ -1231,18 +1231,18 @@ int main (int argc, char** argv)
   *pivot_auxiliary_input_cloud = *input_cloud;
 
   ROS_ERROR ("Z axis aligned planes");
-  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
 //  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
+  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("Y axis aligned planes");
-  Eigen::Vector3f Y = Eigen::Vector3f (0.0, 1.0, 0.0); 
-//  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
+//  Eigen::Vector3f Y = Eigen::Vector3f (0.0, 1.0, 0.0); 
+  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("X axis aligned planes");
-  Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0); 
-//  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
+//  Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0); 
+  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
   getAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
 
@@ -1558,7 +1558,6 @@ int main (int argc, char** argv)
       // Vector of the indices of handles
       std::vector<pcl::PointIndices::Ptr> handle_indices;
 
-
       for (int c = 0; c < (int) handle_clusters.size(); c++)
       {
         // Local variables
@@ -1682,7 +1681,7 @@ int main (int argc, char** argv)
     ROS_WARN (" ");
   }
 
-
+/*
 
   ///////////////////////////////////////////////////////////////////
   // Clean the 3D viewer for the segmentation by color and fixture //
@@ -1718,7 +1717,7 @@ int main (int argc, char** argv)
   // The 3D viewer is now clean //
   ////////////////////////////////
 
-
+*/
 
 //  if ( verbose )
 //  {
@@ -1729,7 +1728,7 @@ int main (int argc, char** argv)
 //    ROS_INFO (" ");
 //  }
 
-
+/*
 
   // Add the input cloud
   viewer.addPointCloud (*furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
@@ -1790,7 +1789,7 @@ int main (int argc, char** argv)
     ROS_INFO ("Size of fixture %d", (int) fixtures_indices.indices.size ());
   }
 
-
+*/
 
 /*
 
@@ -1807,7 +1806,7 @@ int main (int argc, char** argv)
 
 */
 
-
+/*
 
   // Clusters segmented by color and fixture
   std::vector<pcl::PointIndices> clusters;
@@ -1892,7 +1891,7 @@ int main (int argc, char** argv)
     }
   }
 
-
+*/
 
   //for (int c = 0; c < (int) clusters_clouds.size(); c++)
   //{

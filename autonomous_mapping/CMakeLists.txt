@@ -33,4 +33,6 @@ rosbuild_add_executable(segmentation_of_pointcloud src/segmentation/segmentation
 
 rosbuild_add_executable(segment_difference src/segmentation/segment_differences.cpp)
 
+rosbuild_add_executable(handle_removal src/segmentation/handle_removal.cpp)
+
 #target_link_libraries(example ${PROJECT_NAME})
