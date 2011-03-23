@@ -831,10 +831,10 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 	findBorderPoints(border_cloud,pointcloud2_msg->header.frame_id);
 	fringe_nr_=border_cloud.points.size();
-    ROS_INFO("Number of free points is: %d and number of fringe points is: %d",free_nr_,fringe_nr_);
+    ROS_WARN("Number of free points is: %d and number of fringe points is: %d",free_nr_,fringe_nr_);
 	pcl::PointCloud<pcl::PointXYZ> occupied_cloud,occupied_cloud_filtered;
 	findOccupiedPoints(occupied_cloud,pointcloud2_msg->header.frame_id);
-    ROS_INFO("Number of occupied points is: %d ",occupied_nr_);
+    ROS_WARN("Number of occupied points is: %d ",occupied_nr_);
     // the fringe_threashold_ value was determined after counting the number of fringe points  from IROS01.bag file (1707),
     // then the number of fringe points from IROS01.bag + IROS02.bag (1224), and in the and the number of fringe points
     // from IROS01.bag + IROS02.bag + IROS.03.bag (955)
@@ -1089,7 +1089,8 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
     }
     else
     	{
-    	ROS_INFO("The number of fringe points is to small to continue scanning");
+         
+    	ROS_WARN("The number of fringe points is to small to continue scanning");
     	exit(1);
     	}
 

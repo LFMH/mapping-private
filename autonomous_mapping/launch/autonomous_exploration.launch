@@ -7,7 +7,7 @@
     
     <!-- Topic to subscribe for the pose --> 
     <param name="subscribe_pose_topic" value="/nbv_pose"/>
-    <param name="publish_cloud_incrementally" value="false"/>
+    <param name="publish_cloud_incrementally" value="true"/>
  
  </node>
 

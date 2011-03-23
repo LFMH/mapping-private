@@ -47,6 +47,7 @@ private:
 	ros::Publisher tilt_laser_publisher_;
 	ros::Publisher tilt_laser_traj_cmd_publisher_;
         ros::Publisher goal_pub_;
+        ros::Publisher incremental_pointcloud_pub_;
 	std::string subscribe_pose_topic_;
 	boost::thread spin_thread_;
 	geometry_msgs::PoseArray pose_msg_;
@@ -77,10 +78,12 @@ void AutonomousExploration::onInit()
 	received_laser_signal_ = false;
 	pose_subscriber_ = pnh_->subscribe(subscribe_pose_topic_, 100, &AutonomousExploration::autonomousExplorationCallBack, this);
 	pointcloud_publisher_ = pnh_->advertise<sensor_msgs::PointCloud2>("pointcloud", 100);
+        incremental_pointcloud_pub_ = pnh_->advertise<sensor_msgs::PointCloud2>("incremental_pointcloud",100);
         goal_pub_=pnh_->advertise<visualization_msgs::Marker>("goal_pose",100,true);
 	tilt_laser_publisher_ = pnh_->advertise<pr2_msgs::PeriodicCmd>("/laser_tilt_controller/set_periodic_cmd", 1);
 	pointcloud_subscriber_ = pnh_->subscribe("/points2_out", 100, &AutonomousExploration::pointcloudCallBack, this);
-	laser_signal_subscriber_ = pnh_->subscribe("/laser_tilt_controller/laser_scanner_signal", 1, &AutonomousExploration::laserScannerSignalCallBack, this);
+	laser_signal_subscriber_ = pnh_->subscribe(
+"/laser_tilt_controller/laser_scanner_signal", 1, &AutonomousExploration::laserScannerSignalCallBack, this);
 	// tilt_laser_client_ = pnh_->serviceClient<pr2_msgs::SetPeriodicCmd>("laser_tilt_controller/set_periodic_cmd");
 	tilt_laser_traj_cmd_publisher_ = pnh_->advertise<pr2_msgs::LaserTrajCmd>("/laser_tilt_controller/set_traj_cmd", 1);
 	spin_thread_ = boost::thread (boost::bind (&AutonomousExploration::spin, this));
@@ -117,7 +120,7 @@ void AutonomousExploration::spin()
 				moveTorso(0.3, 1.0, "up");
 				double angles =0.0 ;
                                 btQuaternion initial_rotation( new_pose.orientation.x,new_pose.orientation.y,new_pose.orientation.z,new_pose.orientation.w);
-                                btScalar angle = initial_rotation.getAngle();
+                                btScalar angle = - initial_rotation.getAngle();
                                 std::cerr<<"initial angle: "<<angle<<std::endl;
 				while(angles <= 360)
 				{       
@@ -341,7 +344,7 @@ void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& p
 
 		if (publish_cloud_incrementally_)
 		{
-			pointcloud_publisher_.publish(pointcloud_msg);
+			incremental_pointcloud_pub_.publish(pointcloud_msg);
 		}
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZ> ());
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
