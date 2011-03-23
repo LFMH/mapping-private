@@ -57,7 +57,6 @@ namespace autonomous_mapping
 
 double pi=3.141;
 int counter=0;
-int number;
 typedef struct
 {
 	double x,y;
@@ -159,6 +158,9 @@ protected:
 	double sensor_preferred_d_max_;
 	double nr_pose_samples_;
 	bool received_map_;
+	int number;
+	int fringe_nr_,free_nr_,occupied_nr_;
+	int fringe_threashhold_;
 	//geometry_msgs::Point min,max,minoc,maxoc;
 	geometry_msgs::Pose p;
 	//std::vector<std::vector<std::vector<int> > > border_costmap;
@@ -308,6 +310,8 @@ void NextBestView::onInit()
 	pnh_->param("eps_angle", eps_angle_, 0.25);
 	pnh_->param("tolerance", tolerance_, 0.3);
 	pnh_->param("boundary_angle_threshold", boundary_angle_threshold_, 2.5);
+	//ending criterion stuff
+	pnh_->param("fringe_threashold",fringe_threashhold_,1000);
 
 	// create subs and pubs
 	cloud_sub_ = pnh_->subscribe (input_cloud_topic_, 1, &NextBestView::cloud_cb, this);
@@ -327,8 +331,7 @@ void NextBestView::onInit()
 	aggregated_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("aggregated_point_cloud",1);
 	border_cloud_pub_=pnh_->advertise<sensor_msgs::PointCloud2>("border_cloud",1);
 	octree_ = NULL;
-
-	// finally, precompute visibility kernel points
+   	// finally, precompute visibility kernel points
 	create_kernels ();
 }
 
@@ -659,7 +662,7 @@ void NextBestView::grid_cb(const nav_msgs::OccupancyGridConstPtr& grid_msg)
 	map_.data.resize(grid_msg->data.size());
 
 	// dilate the map..
-	double dilation_radius = 0.75;
+	double dilation_radius = 0.5;
 	int dilation_radius_grid_cells = (dilation_radius / map_.info.resolution);
 	int n = dilation_radius_grid_cells * 2 + 1;
 
@@ -754,6 +757,9 @@ void NextBestView::create_kernels ()
 
 void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg)
 {
+	fringe_nr_=0;
+	free_nr_=0;
+	occupied_nr_=0;
 	counter++;
 	//sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg_total;
 	ros::Time start_time = ros::Time::now();
@@ -765,7 +771,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	//number+=pointcloud2_pcl.points.size();
     //pointcloud2_pcl_total.points.resize(number);
 //uncommnet if you want to get clouds incrementally
-	//if (counter<14)
+	//if (counter<13)
 		//return;
 
 
@@ -824,11 +830,17 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	pcl::PointCloud<pcl::PointXYZ> border_cloud,border_cloud_filtered;
 
 	findBorderPoints(border_cloud,pointcloud2_msg->header.frame_id);
-
+	fringe_nr_=border_cloud.points.size();
+    ROS_INFO("Number of free points is: %d and number of fringe points is: %d",free_nr_,fringe_nr_);
 	pcl::PointCloud<pcl::PointXYZ> occupied_cloud,occupied_cloud_filtered;
 	findOccupiedPoints(occupied_cloud,pointcloud2_msg->header.frame_id);
-
-	// Create the filtering objects
+    ROS_INFO("Number of occupied points is: %d ",occupied_nr_);
+    // the fringe_threashold_ value was determined after counting the number of fringe points  from IROS01.bag file (1707),
+    // then the number of fringe points from IROS01.bag + IROS02.bag (1224), and in the and the number of fringe points
+    // from IROS01.bag + IROS02.bag + IROS.03.bag (955)
+    if (fringe_nr_>=fringe_threashhold_)
+    {
+	// Create the filterin objects
 	pcl::PassThrough<pcl::PointXYZ> pass;
 
 	//creating datasets
@@ -946,6 +958,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
         nbv_pose_array_.poses[i].position.z=0;
     	marker.markers[i].scale.x=0.5;
     	marker.markers[i].scale.y=4.0;
+    	marker.markers[i].scale.z=1.0;
     	marker.markers[i].id = i;
     	marker.markers[i].color.r = 0.0f;
     	marker.markers[i].color.g = 0.0f;
@@ -989,6 +1002,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	marker_bound_.pose=find_best_pose(best_boundary_i,best_boundary_j,best_boundary_k,max_reward,min,max);
 	marker_bound_.scale.x=0.5;
 	marker_bound_.scale.y=4.0;
+	marker_bound_.scale.z=1.0;
 	marker_bound_.id =0;
 	marker_bound_.color.r = 0.0f;
 	marker_bound_.color.g = 1.0f;
@@ -1010,6 +1024,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	marker_occ_.pose=find_best_pose(best_occupied_i,best_occupied_j,best_occupied_k,max_reward,min,max);
 	marker_occ_.scale.x=0.5;
 	marker_occ_.scale.y=4.0;
+	marker_occ_.scale.z=1.0;
 	marker_occ_.id =0;
 	marker_occ_.color.r = 1.0f;
 	marker_occ_.color.g = 0.0f;
@@ -1070,6 +1085,13 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	}
 
 	ROS_INFO("All computed and published in %f seconds.", (ros::Time::now () - start_time).toSec());
+	counter=0;
+    }
+    else
+    	{
+    	ROS_INFO("The number of fringe points is to small to continue scanning");
+    	exit(1);
+    	}
 
 	//**********************************************************************************
 	//Visualization
@@ -1316,6 +1338,7 @@ void NextBestView::findOccupiedPoints(pcl::PointCloud<pcl::PointXYZ>& occupied_c
 			// if occupied voxel
 			if (octree_node != NULL && octree_node->getLabel() == occupied_label_)
 			{
+				occupied_nr_++;
 				pcl::PointXYZ occupied_pt (centroid.x(), centroid.y(), centroid.z());
 		        occupied_cloud.points.push_back(occupied_pt);
 			}
@@ -1337,6 +1360,8 @@ void NextBestView::findBorderPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud
 		// if free voxel -> check for unknown neighbors
 		if (octree_node != NULL && octree_node->getLabel() == free_label_)
 		{
+
+			free_nr_++;
 			for (int x = -1; x <= 1; x++)
 			{
 				for (int y = -1; y <= 1; y++)
@@ -1360,6 +1385,7 @@ void NextBestView::findBorderPoints(pcl::PointCloud<pcl::PointXYZ>& border_cloud
 								border_cloud.points.push_back(border_pt);
 								octree_node->setLogOdds (CLAMPING_THRES_MAX);
 								octree_node->setLabel(fringe_label_);
+
 								break;
 							}
 						}
@@ -1396,7 +1422,7 @@ void NextBestView::createOctree (pcl::PointCloud<pcl::PointXYZ>& pointcloud2_pcl
 	octomap_pointcloud.transform(laser_pose.inv());
 	octomap::ScanNode* scan_node = octomap_graph_->addNode(&octomap_pointcloud, laser_pose);
 
-	ROS_INFO("Number of points in scene graph: %d", octomap_graph_->getNumPoints());
+	//ROS_INFO("Number of points in scene graph: %d", octomap_graph_->getNumPoints());
 
 	// Converting from octomap graph to octomap tree (octree)
 	octree_->insertScan(*scan_node, octree_maxrange_, false);
