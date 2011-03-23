@@ -17,7 +17,7 @@ exist_voxel_num_threshold=200 #50
 r_dim=70 #15 
 
 # The size of detection box
-detection_box_size=0.20 # unit: meter
+detection_box_size=0.15 # unit: meter
 
 # The distance threshold of target points in scene.
 distance_th=1.1 # unit: meter
@@ -27,5 +27,5 @@ distance_th=1.1 # unit: meter
 rm models
 ln -s $DIR/models_offline_r $DIR/models
 pca=$(echo $DIR/models/$(printf "%03d" $1)/pca_result)
-rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle
+rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/rgb/points_throttle
 #rosrun color_voxel_recognition detectObj_GRSD $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size $detection_box_size $detection_box_size $2 $distance_th /input:=/camera/depth/points2_throttle
