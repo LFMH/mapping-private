@@ -53,6 +53,7 @@ private:
 	geometry_msgs::PoseArray pose_msg_;
         visualization_msgs::Marker marker_;
 	bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_, publish_cloud_incrementally_;
+        double angle_step_, wait_for_scan_, downsample_leaf_size_, rotate_amount_;
 	//ros::ServiceClient tilt_laser_client_;
 	pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
 };
@@ -72,6 +73,10 @@ void AutonomousExploration::onInit()
 	move_robot_=false;
 	pnh_->param("subscribe_pose_topic", subscribe_pose_topic_, std::string("/robot_pose"));
 	pnh_->param("publish_cloud_incrementally", publish_cloud_incrementally_, false);
+	pnh_->param("angle_step", angle_step_, 30.0);
+	pnh_->param("wait_for_scan", wait_for_scan_, 11.0);
+	pnh_->param("downsample_leaf_size", downsample_leaf_size_, 0.02);
+	pnh_->param("rotate_amount_", rotate_amount_, 360.0);
 	ROS_INFO("autonomous_exploration node is up and running.");
 	get_pointcloud_ = false;
 	received_pose_ = false;
@@ -116,7 +121,7 @@ void AutonomousExploration::spin()
                               }
                                  if (!move_robot_)
                                 {
-                                        ROS_INFO("no good pose to navigate to");
+                                        ROS_WARN("No good pose to navigate to. Exiting.");
                                         exit(1);
                                 }
 
@@ -127,11 +132,11 @@ void AutonomousExploration::spin()
                                 btQuaternion initial_rotation( new_pose.orientation.x,new_pose.orientation.y,new_pose.orientation.z,new_pose.orientation.w);
                                 btScalar angle = - initial_rotation.getAngle();
                                 std::cerr<<"initial angle: "<<angle<<std::endl;
-				while(angles <= 360)
+				while(angles <= rotate_amount_)
 				{       
                                         std::cerr<<"angle before: "<<angle<<std::endl; 
 					btQuaternion q (angle, 0, 0);
-                                        angle= angle + pcl::deg2rad(30.0);
+                                        angle= angle + pcl::deg2rad(angle_step_);
                                         
 					new_pose.orientation.x = q.x();
 					new_pose.orientation.y = q.y();
@@ -149,10 +154,10 @@ void AutonomousExploration::spin()
 
 					//TODO: Use laser service to sync
 					//Wait 11 seconds before taking a scan
-					sleep(11);
+					sleep(wait_for_scan_);
 					//get a point cloud
 					get_pointcloud_ = true;
-					angles += 30.0;
+					angles += angle_step_;
 				}//end while                          		
 				
 					
@@ -165,10 +170,6 @@ void AutonomousExploration::spin()
 			cloud_merged_.header.stamp = ros::Time::now();
 			pointcloud_publisher_.publish(cloud_merged_);
 
-			//Clear points for the next round
-			//cloud_merged_.points.clear();
-			//cloud_merged_.width = 0;
-			//cloud_merged_.height = 0;
 			received_pose_ = false;
 			//lower the spine to navigate some place else
 			moveTorso(0.01, 1.0, "down");
@@ -190,18 +191,13 @@ void AutonomousExploration::moveRobot(geometry_msgs::Pose goal_pose)
 	move_base_msgs::MoveBaseGoal goal;
 	goal.target_pose.header.frame_id = "/map";
 	goal.target_pose.header.stamp = ros::Time::now();
-
 	goal.target_pose.pose = goal_pose;
-        //goal_pose.position.z=0.01;
         marker_.header.frame_id="/map";
         marker_.header.stamp=ros::Time::now();
         marker_.type=visualization_msgs::Marker::ARROW;
         marker_.action=visualization_msgs::Marker::ADD;
         marker_.ns="autonomosu_exploration";
         marker_.pose=goal_pose;
-         //marker_.pose.position.x=1.0;
-        //marker_.pose.position.y=1.0;
-        //marker_.pose.position.z=1.0;
         marker_.id= 0;
         marker_.scale.x= 1.0;
         marker_.scale.y= 4.0;
@@ -263,19 +259,6 @@ void AutonomousExploration::moveTorso(double position, double velocity, std::str
 
 void AutonomousExploration::setLaserProfile(std::string mode)
 {
-	//while ( !ros::service::waitForService("laser_tilt_controller/set_periodic_cmd", ros::Duration(2.0)) && pnh_->ok() )
-	//{
-	//  ROS_INFO("Waiting for tilt laser periodic command service to come up");
-	//}
-
-	//pr2_msgs::SetPeriodicCmd::Request req;
-	//pr2_msgs::SetPeriodicCmd::Response res;
-	//req.command.header.frame_id = "/map";
-	//req.command.header.stamp = ros::Time::now();
-	//req.command.header.seq = 0;
-
-	//req.command.profile = "linear";
-
 	if(mode == "scan")
 	{
 		pr2_msgs::PeriodicCmd periodic_cmd_msg;
@@ -320,15 +303,6 @@ void AutonomousExploration::setLaserProfile(std::string mode)
 		ROS_INFO("Tilt Laser Traj Command successfully called. Mode: %s\n", mode.c_str());
 
 	}
-	//if(!tilt_laser_client_.call(req,res))
-	//{
-	//  ROS_ERROR("Tilt laser service call failed.\n");
-	//  exit(1);
-	//}
-	//else
-	//{
-	//  ROS_INFO("Tilt laser service successfully called.\n");
-	//}
 }
 void AutonomousExploration::laserScannerSignalCallBack(const pr2_msgs::LaserScannerSignal laser_scanner_signal_msg)
 {
@@ -352,7 +326,7 @@ void AutonomousExploration::pointcloudCallBack(const sensor_msgs::PointCloud2& p
 		pcl::fromROSMsg(pointcloud_msg, *cloud_tmp);
 		pcl::VoxelGrid<pcl::PointXYZ> sor;
 		sor.setInputCloud (cloud_tmp);
-		sor.setLeafSize (0.02, 0.02, 0.02);
+		sor.setLeafSize (downsample_leaf_size_, downsample_leaf_size_, downsample_leaf_size_);
 		sor.filter (*cloud_tmp_filtered);
 
 
