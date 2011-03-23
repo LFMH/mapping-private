@@ -11,16 +11,16 @@ DIR=`pwd` #`rospack find color_voxel_recognition`/demos
 rank_num=1 #5
 
 # If the number of occupied voxels in a detection area is less than this value, the system will skip this area.
-exist_voxel_num_threshold=50
+exist_voxel_num_threshold=200 #50
 
 # The number of the dimension of the objects's subspace
-r_dim=15 
+r_dim=70 #15 
 
 # The size of detection box
 detection_box_size=0.20 # unit: meter
 
 # The distance threshold of target points in scene.
-distance_th=1.5 # unit: meter
+distance_th=1.1 # unit: meter
 
 ##################################
 
