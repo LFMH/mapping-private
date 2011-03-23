@@ -114,6 +114,11 @@ void AutonomousExploration::spin()
 				}
 				else break;
                               }
+                                 if (!move_robot_)
+                                {
+                                        ROS_INFO("no good pose to navigate to");
+                                        exit(1);
+                                }
 
 				//rise the spine up to scan
 				setLaserProfile("scan");
@@ -148,13 +153,9 @@ void AutonomousExploration::spin()
 					//get a point cloud
 					get_pointcloud_ = true;
 					angles += 30.0;
-				}//end while
-                           
-                            if (!move_robot_)
-				{
-					ROS_INFO("no good pose to navigate to");
-					exit(1);
-				}
+				}//end while                          		
+				
+					
 			
 			while (!get_pointcloud_)
 			{
