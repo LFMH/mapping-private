@@ -81,7 +81,7 @@ public:
   double rate_;
   int counter_;
   double distance_threshold_;
-  bool segment_, take_first_cloud_;
+  bool segment_, take_first_cloud_, save_segmented_cloud_;
   double object_cluster_tolerance_;
   int object_cluster_min_size_, object_cluster_max_size_;
   tf::TransformListener listener_; 
@@ -110,6 +110,7 @@ public:
     rate_ = 1;
     counter_ = 0;
     segment_ = take_first_cloud_ = false;
+    save_segmented_cloud_ = false;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -196,6 +197,13 @@ public:
 	  pcl::copyPointCloud (output_filtered, clusters[closest_cluster], cloud_object_clustered);
 	  ROS_INFO("Publishing difference cloud with %ld points to topic %s", cloud_object_clustered.points.size(), output_filtered_cloud_topic_.c_str());
 	  pub_filtered_.publish (cloud_object_clustered);
+	  if (save_segmented_cloud_)
+	    {
+	      pcl::PCDWriter writer;
+	      std::stringstream furniture_face;
+	      furniture_face << "furniture_face_" << ros::Time::now() << ".pcd";
+	      writer.write (furniture_face.str(), cloud_object_clustered, false);
+	    }
 	}
       //ROS_INFO("Publishing difference cloud with %ld points to topic %s", output.points.size(), output_filtered_cloud_topic_.c_str());
       //pub_filtered_.publish (output);
