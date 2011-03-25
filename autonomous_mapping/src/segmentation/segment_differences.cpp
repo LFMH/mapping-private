@@ -55,6 +55,7 @@
 #include "pcl/segmentation/extract_clusters.h"
 #include <tf/transform_listener.h>
 #include "pcl/common/common.h"
+#include "pcl_ros/transforms.h"
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
@@ -93,6 +94,7 @@ public:
     nh_.param("output_cloud_topic", output_cloud_topic_, std::string("difference"));
     nh_.param("output_filtered_cloud_topic", output_filtered_cloud_topic_, std::string("difference_filtered"));
     nh_.param("distance_threshold", distance_threshold_, 0.01);
+    nh_.param("save_segmented_cloud_", save_segmented_cloud_, true);
     ROS_INFO ("Distance threshold set to %lf.", distance_threshold_);
     pub_diff_.advertise (nh_, output_cloud_topic_.c_str (), 1);
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_cloud_topic_).c_str ());
@@ -100,7 +102,7 @@ public:
     ROS_INFO ("Publishing data on topic %s.", nh_.resolveName (output_filtered_cloud_topic_).c_str ());
     sub_ = nh_.subscribe (input_cloud_topic_, 1,  &SegmentDifferencesNode::cloud_cb, this);
     ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (input_cloud_topic_).c_str ());
-    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.08);
+    nh_.param("object_cluster_tolerance", object_cluster_tolerance_, 0.1);
     //min 100 points
     nh_.param("object_cluster_min_size", object_cluster_min_size_, 500);
     //set PCL classes
@@ -110,7 +112,6 @@ public:
     rate_ = 1;
     counter_ = 0;
     segment_ = take_first_cloud_ = false;
-    save_segmented_cloud_ = false;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +203,21 @@ public:
 	      pcl::PCDWriter writer;
 	      std::stringstream furniture_face;
 	      furniture_face << "furniture_face_" << ros::Time::now() << ".pcd";
-	      writer.write (furniture_face.str(), cloud_object_clustered, false);
+	      ROS_INFO("Writing to file: %s", furniture_face.str().c_str());
+
+	      bool found_transform = listener_.waitForTransform(cloud_object_clustered.header.frame_id, "map",
+							  cloud_object_clustered.header.stamp, ros::Duration(10.0));
+	      if (found_transform)
+		{
+		  pcl::PointCloud<pcl::PointXYZ> output_cloud;
+		  //ROS_ASSERT_MSG(found_transform, "Could not transform to camera frame");
+		  tf::StampedTransform transform;
+		  listener_.lookupTransform("map", cloud_object_clustered.header.frame_id, cloud_object_clustered.header.stamp, transform);
+		  Eigen::Matrix4f transform_matrix;                                                                                                      
+		  pcl_ros::transformAsMatrix (transform, transform_matrix);    
+		  pcl::transformPointCloud(cloud_object_clustered, output_cloud, transform_matrix);
+		  writer.write (furniture_face.str(), output_cloud, false);
+		}
 	    }
 	}
       //ROS_INFO("Publishing difference cloud with %ld points to topic %s", output.points.size(), output_filtered_cloud_topic_.c_str());
