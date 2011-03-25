@@ -650,7 +650,7 @@ double NextBestView::compute_overlap_score(double x, double y, double theta, int
 		if (p_f == 0 || p_k == 0)
 			entropy = 0;
 		else
-			entropy = - p_f * log (p_f) - p_k * log (p_k);
+			entropy = pow((-0.5*p_f * log (p_f) -1.5*p_k * log (p_k)),1);
 		ROS_INFO ("found %i fringe points, %i occupied points, ratios: %f, %f, Entropy = %f, score = %f",
 				fringe, known, p_f, p_k, entropy, reward * entropy);
 		return reward * entropy;

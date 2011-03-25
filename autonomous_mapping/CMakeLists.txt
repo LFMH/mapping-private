@@ -32,6 +32,7 @@ rosbuild_add_library(AutonomousExploration src/autonomous_exploration.cpp)
 rosbuild_add_executable(segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
 
 rosbuild_add_executable(segment_difference src/segmentation/segment_differences.cpp)
+rosbuild_add_executable(project_segments src/segmentation/project_segments.cpp)
 
 rosbuild_add_executable(handle_removal src/segmentation/handle_removal.cpp)
 
