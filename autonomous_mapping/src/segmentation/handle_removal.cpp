@@ -86,10 +86,10 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("  where <options> are: ");
-    ROS_INFO ("   -epsilon_angle X                        = ");
-    ROS_INFO ("   -plane_threshold X                      = ");
-    ROS_INFO ("   -minimum_plane_inliers X                = ");
-    ROS_INFO ("   -maximum_plane_iterations X             = ");
+    ROS_INFO ("    -epsilon_angle X                        = ");
+    ROS_INFO ("    -plane_threshold X                      = ");
+    ROS_INFO ("    -minimum_plane_inliers X                = ");
+    ROS_INFO ("    -maximum_plane_iterations X             = ");
     ROS_INFO (" ");
     ROS_INFO ("    -step B                                 = wait or not wait");
     ROS_INFO ("    -clean B                                = remove or not remove");
@@ -244,7 +244,6 @@ int main (int argc, char** argv)
   pcl::SACSegmentationFromNormals<PointT, pcl::Normal> segmentation_of_plane;
   pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices ());
   pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients ());
-  Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0); 
 
   // Set all the parameters for segmenting vertical planes
   segmentation_of_plane.setOptimizeCoefficients (true);
@@ -253,7 +252,9 @@ int main (int argc, char** argv)
   segmentation_of_plane.setMethodType (pcl::SAC_RANSAC);
   segmentation_of_plane.setDistanceThreshold (plane_threshold);
   segmentation_of_plane.setMaxIterations (maximum_plane_iterations);
-  segmentation_of_plane.setAxis (X);
+//  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
+//  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
+//  segmentation_of_plane.setAxis ();
   segmentation_of_plane.setEpsAngle (epsilon_angle);
   segmentation_of_plane.setInputCloud (working_cloud);
   segmentation_of_plane.setInputNormals (normals_cloud);
@@ -283,7 +284,7 @@ int main (int argc, char** argv)
     }
 
     // ------------------------------------------------------------------------
-    
+
     // Point cloud of plane inliers
     pcl::PointCloud<PointT>::Ptr plane_cloud (new pcl::PointCloud<PointT> ());
 
@@ -310,14 +311,14 @@ int main (int argc, char** argv)
     }
 
     // Create id for visualization
-    std::stringstream id_of_surface;
-    id_of_surface << "SURFACE_" << ros::Time::now ();
+    std::stringstream id_of_plane;
+    id_of_plane << "PLANE_" << ros::Time::now ();
 
     // Add point cloud to viewer
-    viewer.addPointCloud (*plane_cloud, id_of_surface.str());
+    viewer.addPointCloud (*plane_cloud, id_of_plane.str());
 
     // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_surface.str()); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_plane.str()); 
 
     // Wait or not wait
     if ( step )
@@ -326,12 +327,10 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
 
-    // ------------------------------------------------------------------------
-
     if ( clean )
     {
       // Remove the point cloud data
-      viewer.removePointCloud (id_of_surface.str());
+      viewer.removePointCloud (id_of_plane.str());
 
       // Wait or not wait
       if ( step )
@@ -340,6 +339,14 @@ int main (int argc, char** argv)
         viewer.spin ();
       } 
     }
+
+    // Create id for saving
+    std::string file_of_plane = argv [pFileIndicesPCD[0]];
+    size_t dot_of_plane = file_of_plane.find (".");
+    file_of_plane.insert (dot_of_plane, "-plane");
+
+    // Save these points to disk
+    pcl::io::savePCDFile (file_of_plane, *plane_cloud);
 
     // ------------------------------------------------------------------------
 
@@ -357,7 +364,7 @@ int main (int argc, char** argv)
     {
       ROS_INFO ("Furniture surface has %d points", (int) projected_cloud.points.size ());
     }
-   
+
     // Create id for visualization
     std::stringstream id_of_projected;
     id_of_projected << "PROJECTED_" << ros::Time::now ();
@@ -375,8 +382,15 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
 
-    // ------------------------------------------------------------------------
+    // Create id for saving
+    std::string file_of_projected = argv [pFileIndicesPCD[0]];
+    size_t dot_of_projected = file_of_projected.find (".");
+    file_of_projected.insert (dot_of_projected, "-projected");
 
+    // Save these points to disk
+    pcl::io::savePCDFile (file_of_projected, projected_cloud);
+
+    // ------------------------------------------------------------------------
 
     // Declare the hull of cloud
     pcl::PointCloud<PointT> hull_cloud;
@@ -393,8 +407,45 @@ int main (int argc, char** argv)
       ROS_INFO ("Convex hull has %d points.", (int) hull_cloud.points.size ());
     }
 
-    // ------------------------------------------------------------------------
+    // Create id for visualization
+    std::stringstream id_of_hull;
+    id_of_hull << "HULL_" << ros::Time::now ();
 
+    // Add point cloud to viewer
+    viewer.addPointCloud (hull_cloud, id_of_hull.str());
+
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_hull.str());
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+
+    if ( clean )
+    {
+      // Remove the point cloud data
+      viewer.removePointCloud (id_of_hull.str());
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      } 
+    }
+
+    // Create id for saving
+    std::string file_of_hull = argv [pFileIndicesPCD[0]];
+    size_t dot_of_hull = file_of_hull.find (".");
+    file_of_hull.insert (dot_of_hull, "-hull");
+
+    // Save these points to disk
+    pcl::io::savePCDFile (file_of_hull, hull_cloud);
+
+    // ------------------------------------------------------------------------
 
     // Declare the indices od handle
     pcl::PointIndices::Ptr handle_indices (new pcl::PointIndices ());
@@ -422,8 +473,6 @@ int main (int argc, char** argv)
     extraction_of_handle.setNegative (false);
     extraction_of_handle.filter (handle_cloud);
 
-    // ------------------------------------------------------------------------
-
     // Create id for visualization
     std::stringstream id_of_handle;
     id_of_handle << "HANDLE_" << ros::Time::now ();
@@ -441,20 +490,17 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
 
-    // ------------------------------------------------------------------------
-
     // Create id for saving
-    std::stringstream id_of_file;
-    id_of_file << "data/" << ros::Time::now() << ".pcd" ;
+    std::string file_of_handle = argv [pFileIndicesPCD[0]];
+    size_t dot_of_handle = file_of_handle.find (".");
+    file_of_handle.insert (dot_of_handle, "-handle");
 
     // Save these points to disk
-    pcl::io::savePCDFile (id_of_file.str (), *plane_cloud);
+    pcl::io::savePCDFile (file_of_handle, handle_cloud);
 
-
+    // ------------------------------------------------------------------------
 
   }
-
-
 
   if ( verbose )
   {
