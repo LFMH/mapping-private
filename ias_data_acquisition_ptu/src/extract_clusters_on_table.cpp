@@ -94,11 +94,11 @@ public:
   ExtractClusters (const ros::NodeHandle &nh) : nh_ (nh)
   {
     nh_.param("sac_distance", sac_distance_, 0.03);
-    nh_.param("z_min_limit", z_min_limit_, 0.0);
+    nh_.param("z_min_limit", z_min_limit_, 0.3);
     nh_.param("z_max_limit", z_max_limit_, 1.5);
     nh_.param("max_iter", max_iter_, 500);
     nh_.param("normal_distance_weight", normal_distance_weight_, 0.1);
-    nh_.param("eps_angle", eps_angle_, 15.0);
+    nh_.param("eps_angle", eps_angle_, 20.0);
     nh_.param("seg_prob", seg_prob_, 0.99);
     nh_.param("normal_search_radius", normal_search_radius_, 0.05);
     //what area size of the table are we looking for?
@@ -116,6 +116,7 @@ public:
     nh_.param("voxel_size", voxel_size_, 0.01);
     nh_.param("save_to_files", save_to_files_, false);
     nh_.param("point_cloud_topic", point_cloud_topic, std::string("/camera/depth/points2"));
+    nh_.param("publish_token", publish_token_, false);
 
     cloud_pub_.advertise (nh_, "table_inliers", 1);
     cloud_extracted_pub_.advertise (nh_, "cloud_extracted", 1);
@@ -123,8 +124,8 @@ public:
 
     vgrid_.setFilterFieldName ("z");
     vgrid_.setFilterLimits (z_min_limit_, z_max_limit_);
-    //if (downsample_)
-      //vgrid_.setLeafSize (0.015, 0.015, 0.015);
+    if (downsample_)
+      vgrid_.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
 
     seg_.setDistanceThreshold (sac_distance_);
     seg_.setMaxIterations (max_iter_);
@@ -297,7 +298,28 @@ private:
           }
           cloud_objects_pub_.publish (cloud_object_clustered);
         }
+
         ROS_INFO("Published %ld clusters.", clusters.size());
+	//cloud_object_clustered.width = 1;
+	//cloud_object_clustered.height = 1;
+	// cloud_object_clustered.points.resize(1);
+	// cloud_objects_pub_.publish (cloud_object_clustered);
+	pcl::PointCloud<Point> token;
+	Point p0;
+	p0.x = p0.y = p0.z = p0.rgb = 100.0;
+	token.width = 1;
+	token.height = 1;
+	token.is_dense = false;
+	token.points.resize(token.width * token.height);
+	token.points[0] = p0;
+	token.header.frame_id = cloud_object_clustered.header.frame_id;
+	token.header.stamp = ros::Time::now();
+	ROS_INFO("bla");
+	if (publish_token_)
+	  cloud_objects_pub_.publish (token);
+	//token_pub_.publish(cloud_object_clustered);
+
+	ROS_INFO("Published token cluster with size %ld.", token.width * token.height);
       }
       else
       {
@@ -313,6 +335,7 @@ private:
       //want to save only once
       if (save_to_files_)
         exit(2);
+      sleep(1);
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,7 +376,7 @@ private:
   ros::NodeHandle nh_;  // Do we need to keep it?
   tf::TransformBroadcaster transform_broadcaster_;
   tf::TransformListener tf_listener_;
-  bool save_to_files_, downsample_;
+  bool save_to_files_, downsample_, publish_token_;
 
   double normal_search_radius_;
   double voxel_size_;
@@ -374,10 +397,11 @@ private:
   pcl_ros::Publisher<Point> cloud_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
   pcl_ros::Publisher<Point> cloud_objects_pub_;
+  pcl_ros::Publisher<Point> token_pub_;
 
   // PCL objects
-  pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
-//  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
+  //pcl::PassThrough<Point> vgrid_;                   // Filtering + downsampling object
+  pcl::VoxelGrid<Point> vgrid_;                   // Filtering + downsampling object
   pcl::NormalEstimation<Point, pcl::Normal> n3d_;   //Normal estimation
   // The resultant estimated point cloud normals for \a cloud_filtered_
   pcl::PointCloud<pcl::Normal>::ConstPtr cloud_normals_;
