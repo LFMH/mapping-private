@@ -90,3 +90,9 @@ bin/segmentation_of_pointcloud data/rgb/high_res_rgb_right_of_oven.pcd -cam 0.53
 bin/handle_removal data/segments/00.pcd -cam 3.67558,8.15058/0.432341,0.705564,0.552034/-3.28993,0.908519,4.92203/0.761482,0.0487219,0.646352/1680,977/0,71 -step 1 -clean 1 -verbose 1 -size_of_points 3 -maximum_plane_iterations 1000 -minimum_plane_inliers 1000 -minimum_size_of_plane_cluster 2500 -plane_inliers_clustering_tolerance 0.025 -plane_threshold 0.050 -epsilon_angle 0.050 -minimum_size_of_handle_cluster 100 -handle_clustering_tolerance 0.050
 
 =============================================================
+
+================== Run visualize segments ===================
+
+bin/visualize_segments data/segments/*.pcd -cam 3.23961,6.68576/0.441631,0.730633,0.669062/-4.23399,0.329129,1.09392/0.0898138,0.00794977,0.995927/1678,973/2,71 -step 1 -clean 1 -verbose 1 -size_of_hull 6 -size_of_projected 1
+
+=============================================================
