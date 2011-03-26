@@ -240,7 +240,7 @@ private:
           //todo: get angle automatically
           btVector3 axis2 = axis.rotate(btVector3(1.0, 0.0, 0.0), btScalar(base_link_head_tilt_link_angle_ + pcl::deg2rad(90.0)));
           //std::cerr << "axis: " << fabs(axis2.getX()) << " " << fabs(axis2.getY()) << " " << fabs(axis2.getZ()) << std::endl;
-          seg_.setAxis (Eigen3::Vector3f(fabs(axis2.getX()), fabs(axis2.getY()), fabs(axis2.getZ())));
+          seg_.setAxis (Eigen::Vector3f(fabs(axis2.getX()), fabs(axis2.getY()), fabs(axis2.getZ())));
           // seg_.setIndices (boost::make_shared<pcl::PointIndices> (selection));
           seg_.segment (table_inliers, table_coeff);
           ROS_INFO ("[%s] Table model: [%f, %f, %f, %f] with %d inliers.", getName ().c_str (), 
@@ -408,7 +408,7 @@ private:
   message_filters::Subscriber<dp_ptu47_pan_tilt_stage::PanTiltStamped> pan_tilt_sub_;
   message_filters::Synchronizer<SyncPolicy> cloud_pantilt_sync_;
 
-  std::vector<Eigen3::Vector4d *> table_coeffs_;
+  std::vector<Eigen::Vector4d *> table_coeffs_;
 
   pcl_ros::Publisher<Point> cloud_pub_;
   pcl_ros::Publisher<Point> cloud_extracted_pub_;
@@ -423,7 +423,7 @@ private:
   pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;               // Planar segmentation object
   pcl::ProjectInliers<Point> proj_;               // Inlier projection object
   pcl::ExtractIndices<Point> extract_;            // Extract (too) big tables
-  pcl::ConvexHull2D<Point> chull_;  
+  pcl::ConvexHull<Point> chull_;  
   pcl::ExtractPolygonalPrismData<Point> prism_;
   pcl::PointCloud<Point> cloud_objects_;
   pcl::EuclideanClusterExtraction<Point> cluster_;
