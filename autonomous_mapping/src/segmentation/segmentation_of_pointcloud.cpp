@@ -59,29 +59,26 @@
 // pcl ias sample consensus dependencies
 #include "pcl_ias_sample_consensus/pcl_sac_model_orientation.h"
 
-
-
 //#include "pcl_ros/segmentation/sac_segmentation.h"
 //#include "pcl_ros/segmentation/extract_clusters.h"
 //#include "pcl_ros/segmentation/extract_polygonal_prism_data.h"
-
-#include "pcl/features/normal_3d.h"
-#include "mod_semantic_map/SemMap.h"
+//#include "pcl/features/normal_3d.h"
+//#include "mod_semantic_map/SemMap.h"
 #include "dos_pcl/segmentation/door_detection_by_color_and_fixture.h"
 
 
 
-//typedef pcl::PointXYZRGB PointT;
-typedef pcl::PointXYZINormal PointT;
-//typedef pcl::PointXYZRGBNormal PointT;
+// Define coresponding typedef of point 
+//typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZRGB PointT;
+//typedef pcl::PointXYZINormal PointT;
 
 
 
 // Filtering's Parameters
-double threshold = 0.075; /// [percentage]
-double floor_limit = 0.050; /// [percentage]
-double ceiling_limit = 0.100; /// [percentage]
-//TODO  double wall_limit = 2.0 /// [meters]
+double height_of_floor = 0.025; /// [percentage]
+double height_of_ceiling = 0.050; /// [percentage]
+double height_of_walls = 0.750; /// [percentage]
 
 // Segmentation's Parameters
 double epsilon_angle = 0.010; /// [radians]
@@ -117,15 +114,25 @@ bool find_box_model = false;
 bool segmentation_by_color_and_fixture = false;
 
 
+/*
 
-double getRGB (float r, float g, float b)
+float getRGB (float r, float g, float b)
 {
   int res = (int (r * 255) << 16) | (int (g * 255) << 8) | int (b * 255);
   double rgb = *(float*)(&res);
   return (rgb);
 }
 
-/*
+*/
+
+float getRGB (float r, float g, float b)
+{
+  int res = (int (r * 255) << 16) | (int (g * 255) << 8) | int (b * 255);
+  double rgb = *reinterpret_cast<float*>(&res);
+  return (rgb);
+}
+
+///*
 
 void getMinAndMax (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud_, Eigen::VectorXf model_coefficients, boost::shared_ptr<pcl::SACModelOrientation<pcl::Normal> > model, std::vector<int> &min_max_indices, std::vector<float> &min_max_distances)
 {
@@ -168,24 +175,24 @@ void getMinAndMax (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud_, Ei
 
 }
 
-*/
+//*/
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * actual model fitting happens here
  */
 
-/*
+///*
 
-bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::vector<double> &coeff, double eps_angle_ = 0.1, double success_probability_ = 0.99, int verbosity_level_ = 1)
+bool findBoxModel (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, pcl::PointCloud<pcl::Normal> nrmls, std::vector<double> &coeff, double eps_angle_ = 0.1, double success_probability_ = 0.99, int verbosity_level_ = 1)
 {
-
-  std::cerr << endl << "  A  " << endl << endl; 
 
   if (verbosity_level_ > 0) ROS_INFO ("[RobustBoxEstimation] Looking for box in a cluster of %u points", (unsigned)cloud->points.size ());
 
   // Compute center point
   //cloud_geometry::nearest::computeCentroid (*cloud, box_centroid_);
+
+/* 
   pcl::PointCloud<pcl::Normal> nrmls ;
   nrmls.header = cloud->header;
   nrmls.points.resize(cloud->points.size());
@@ -195,6 +202,7 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::
     nrmls.points[i].normal[1] = cloud->points[i].normal[1];
     nrmls.points[i].normal[2] = cloud->points[i].normal[2];
   }
+*/
 
   // Create model
   pcl::SACModelOrientation<pcl::Normal>::Ptr model = boost::make_shared<pcl::SACModelOrientation<pcl::Normal> >(nrmls.makeShared ());
@@ -381,22 +389,22 @@ bool find_model (boost::shared_ptr<const pcl::PointCloud <PointT> > cloud, std::
   return true;
 }
 
-*/
+//*/
 
-void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
-                            pcl::PointCloud<pcl::Normal> &normals_cloud,
-                            Eigen::Vector3f axis,
-                            double epsilon_angle,
-                            double plane_threshold,
-                            int minimum_plane_inliers,
-                            int maximum_plane_iterations,
-                            int minimum_size_of_plane_cluster,
-                            double plane_inliers_clustering_tolerance,
-                            std::vector<pcl::PointCloud<PointT>::Ptr> &planar_surfaces,
-                            std::vector<std::string> &planar_surfaces_ids,
-                            std::vector<pcl::PointIndices::Ptr> &planar_surfaces_indices,
-                            std::vector<pcl::ModelCoefficients::Ptr> &planar_surfaces_coefficients,
-                            pcl_visualization::PCLVisualizer &viewer)
+void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
+                              pcl::PointCloud<pcl::Normal> &normals_cloud,
+                              Eigen::Vector3f axis,
+                              double epsilon_angle,
+                              double plane_threshold,
+                              int minimum_plane_inliers,
+                              int maximum_plane_iterations,
+                              int minimum_size_of_plane_cluster,
+                              double plane_inliers_clustering_tolerance,
+                              std::vector<pcl::PointCloud<PointT>::Ptr> &planar_surfaces,
+                              std::vector<std::string> &planar_surfaces_ids,
+                              std::vector<pcl::PointIndices::Ptr> &planar_surfaces_indices,
+                              std::vector<pcl::ModelCoefficients::Ptr> &planar_surfaces_coefficients,
+                              pcl_visualization::PCLVisualizer &viewer)
 {
 
 // bool wtf = true;
@@ -449,7 +457,7 @@ void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
       cerr <<" COUNTER = " << counter << endl ;
 
       // TODO limit the number of re-fitting for better computation time
- 
+
       if ( counter == 100 )
       {
         // No need for fitting planes anymore
@@ -712,20 +720,6 @@ void getAxesOrientedPlanes (pcl::PointCloud<PointT> &input_cloud,
 int main (int argc, char** argv)
 {
 
-  // Initialize random number generator
-  srand (time(0));
-
-  // Initialize ros time
-  ros::Time::init();
-
-  // Declare the timer
-  terminal_tools::TicToc tt;
-
-  // Starting timer
-  tt.tic ();
-
-
-
   // --------------------------------------------------------------- //
   // ------------------ Check and parse arguments ------------------ //
   // --------------------------------------------------------------- //
@@ -735,24 +729,25 @@ int main (int argc, char** argv)
   {
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
-    ROS_INFO ("where <options> are: -threshold X                            = threshold for line inlier selection");
-    ROS_INFO ("                     -floor_limit X                          = ");
-    ROS_INFO ("                     -ceiling_limit X                        = ");
+    ROS_INFO ("  where <options> are:");
+    ROS_INFO ("    -height_of_floor X                       = Height of floor layer of point cloud data.");
+    ROS_INFO ("    -height_of_ceiling X                     = Height of ceiling layer of point cloud data.");
+    ROS_INFO ("    -height_of_walls X                       = Minimum height of walls in the point cloud data.");
     ROS_INFO (" ");
-    ROS_INFO ("                     -epsilon_angle X                        = ");
-    ROS_INFO ("                     -plane_threshold X                      = ");
-    ROS_INFO ("                     -minimum_plane_inliers X                = ");
-    ROS_INFO ("                     -maximum_plane_iterations X             = ");
+    ROS_INFO ("    -epsilon_angle X                         = ");
+    ROS_INFO ("    -plane_threshold X                       = ");
+    ROS_INFO ("    -minimum_plane_inliers X                 = ");
+    ROS_INFO ("    -maximum_plane_iterations X              = ");
     ROS_INFO (" ");
-    ROS_INFO ("                     -minimum_size_of_plane_cluster          = ");
-    ROS_INFO ("                     -plane_inliers_clustering_tolarence     = ");
-    ROS_INFO ("                     -minimum_size_of_handle_cluster         = ");
-    ROS_INFO ("                     -handle_clustering_tolerance            = ");
+    ROS_INFO ("    -minimum_size_of_plane_cluster           = ");
+    ROS_INFO ("    -plane_inliers_clustering_tolarence      = ");
+    ROS_INFO ("    -minimum_size_of_handle_cluster          = ");
+    ROS_INFO ("    -handle_clustering_tolerance             = ");
     ROS_INFO (" ");
-    ROS_INFO ("                     -step B                                 = wait or not wait");
-    ROS_INFO ("                     -clean B                                = remove or not remove");
-    ROS_INFO ("                     -verbose B                              = display step by step info");
-    ROS_INFO ("                     -size_of_points D                       = set the size of points");
+    ROS_INFO ("    -step B                                  = wait or not wait");
+    ROS_INFO ("    -clean B                                 = remove or not remove");
+    ROS_INFO ("    -verbose B                               = display step by step info");
+    ROS_INFO ("    -size_of_points D                        = set the size of points");
     ROS_INFO (" ");
     return (-1);
   }
@@ -766,9 +761,9 @@ int main (int argc, char** argv)
   }
 
   // Parse the arguments for filtering
-  terminal_tools::parse_argument (argc, argv, "-threshold", threshold);
-  terminal_tools::parse_argument (argc, argv, "-floor_limit", floor_limit);
-  terminal_tools::parse_argument (argc, argv, "-ceiling_limit", ceiling_limit);
+  terminal_tools::parse_argument (argc, argv, "-height_of_floor", height_of_floor);
+  terminal_tools::parse_argument (argc, argv, "-height_of_ceiling", height_of_ceiling);
+  terminal_tools::parse_argument (argc, argv, "-height_of_walls", height_of_walls);
 
   // Parse arguments for fitting plane models
   terminal_tools::parse_argument (argc, argv, "-epsilon_angle", epsilon_angle);
@@ -804,10 +799,27 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
   terminal_tools::parse_argument (argc, argv, "-segmentation_by_color_and_fixture", segmentation_by_color_and_fixture);
 
-  ROS_WARN ("Timer started !");
-  ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+  // ----------------------------------------------------- //
+  // ------------------ Initializations ------------------ //
+  // ----------------------------------------------------- //
 
+  // Initialize random number generator
+  srand (time(0));
 
+  // Initialize ros time
+  ros::Time::init();
+
+  // Declare the timer
+  terminal_tools::TicToc tt;
+
+  // Starting timer
+  tt.tic ();
+
+  if ( verbose )
+  {
+    // Displaying when the timer starts
+    ROS_WARN ("Timer started !");
+  }
 
   // ---------------------------------------------------------------- //
   // ------------------ Visualize point cloud data ------------------ //
@@ -844,10 +856,13 @@ int main (int argc, char** argv)
   }
   ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
 
+ 
   // Add the input cloud
   viewer.addPointCloud (*input_cloud, "INPUT");
+
   // Color the cloud in white
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+
   // Set the size of points for cloud
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "INPUT"); 
 
@@ -876,7 +891,13 @@ int main (int argc, char** argv)
   // TODO never modify the original input cloud
 
   // Auxiliary input cloud
-  pcl::io::loadPCDFile (argv[pFileIndicesPCD[0]], *auxiliary_input_cloud);
+  pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *auxiliary_input_cloud);
+
+  // Get position of dot in path of file 
+  std::string file = argv [pFileIndicesPCD[0]];
+  size_t dot = file.find (".");
+  size_t slash = file.find_last_of ("/");
+  std::string directory = file.substr (slash, dot - slash);
 
   // TODO insert option for statistical outlier removal -statistical_outlier_removal B alog with its parameters
 
@@ -932,29 +953,23 @@ int main (int argc, char** argv)
 
   
   // The minimum and maximum height of point cloud
-  PointT minimum_point, maximum_point;
-  pcl::getMinMax3D (*input_cloud, minimum_point, maximum_point);
-  double height_of_cloud = maximum_point.z - minimum_point.z;
+  PointT point_with_minimum_height, point_with_maximum_height;
+  pcl::getMinMax3D (*input_cloud, point_with_minimum_height, point_with_maximum_height);
+  double height_of_cloud = point_with_maximum_height.z - point_with_minimum_height.z;
 
-  threshold = height_of_cloud * threshold;
-  floor_limit = height_of_cloud * floor_limit;
-  ceiling_limit = height_of_cloud * ceiling_limit;
+  height_of_floor = height_of_cloud * height_of_floor;
+  height_of_ceiling = height_of_cloud * height_of_ceiling;
+  height_of_walls = height_of_cloud * height_of_walls;
 
   if ( verbose )
   {
+    ROS_INFO ("The point with minimum height is (%6.3f,%6.3f,%6.3f)", point_with_minimum_height.x, point_with_minimum_height.y, point_with_minimum_height.z);
+    ROS_INFO ("The point with maximum height is (%6.3f,%6.3f,%6.3f)", point_with_maximum_height.x, point_with_maximum_height.y, point_with_maximum_height.z);
+    ROS_INFO ("The height of point cloud is %5.3f meters", height_of_cloud);
 
-    ///*
-
-    ROS_INFO ("      floor = %5.3f meters", floor_limit);
-    ROS_INFO ("    ceiling = %5.3f meters", ceiling_limit);
-    ROS_INFO ("  threshold = %5.3f meters", threshold);
-
-    //*/
-
-    ROS_INFO ("Minimum point is (%6.3f,%6.3f,%6.3f)", minimum_point.x, minimum_point.y, minimum_point.z);
-    ROS_INFO ("Maximum point is (%6.3f,%6.3f,%6.3f)", maximum_point.x, maximum_point.y, maximum_point.z);
-    ROS_INFO ("Height is %5.3f meters", height_of_cloud);
-
+    ROS_INFO ("Height of floor is %5.3f meters", height_of_floor);
+    ROS_INFO ("Height of ceiling is %5.3f meters", height_of_ceiling);
+    ROS_INFO ("Height of walls is %5.3f meters", height_of_walls);
   } 
 
 
@@ -962,7 +977,7 @@ int main (int argc, char** argv)
   // -------------------------------------------------------------------- //
   // ------------------ Start with filtering the cloud ------------------ //
   // -------------------------------------------------------------------- //
-
+  
   // Create the filtering object
   pcl::PassThrough<PointT> pass;
   pass.setInputCloud (input_cloud);
@@ -972,19 +987,20 @@ int main (int argc, char** argv)
   pcl::PointCloud<PointT>::Ptr floor_cloud (new pcl::PointCloud<PointT> ());
 
   // Set floor limits
-  if ( floor_limit == 0.0 )
-    pass.setFilterLimits (minimum_point.z, minimum_point.z + threshold);
-  else
-    pass.setFilterLimits (minimum_point.z, minimum_point.z + floor_limit);
+  pass.setFilterLimits (point_with_minimum_height.z, point_with_minimum_height.z + height_of_floor);
 
   // Call the filtering function
   pass.setFilterLimitsNegative (false);
   pass.filter (*floor_cloud);
   pass.setFilterLimitsNegative (true);
   pass.filter (*input_cloud);
- 
+
+  // Create file name for saving
+  std::string floor_filename = argv [pFileIndicesPCD [0]];
+  floor_filename.insert (dot, "-floor");
+
   // Save these points to disk
-  pcl::io::savePCDFile ("data/floor.pcd", *floor_cloud);
+  pcl::io::savePCDFile (floor_filename, *floor_cloud);
 
   if ( verbose )
   {
@@ -996,10 +1012,7 @@ int main (int argc, char** argv)
   pcl::PointCloud<PointT>::Ptr ceiling_cloud (new pcl::PointCloud<PointT> ());
 
   // Set ceiling limits
-  if ( ceiling_limit == 0.0 ) 
-    pass.setFilterLimits (maximum_point.z - threshold, maximum_point.z);
-  else
-    pass.setFilterLimits (maximum_point.z - ceiling_limit, maximum_point.z);
+  pass.setFilterLimits (point_with_maximum_height.z - height_of_ceiling, point_with_maximum_height.z);
 
   // Call the filtering function
   pass.setFilterLimitsNegative (false);
@@ -1007,8 +1020,12 @@ int main (int argc, char** argv)
   pass.setFilterLimitsNegative (true);
   pass.filter (*input_cloud);
 
+  // Create file name for saving
+  std::string ceiling_filename = argv [pFileIndicesPCD [0]];
+  ceiling_filename.insert (dot, "-ceiling");
+
   // Save these points to disk
-  pcl::io::savePCDFile ("data/ceiling.pcd", *ceiling_cloud);
+  pcl::io::savePCDFile (ceiling_filename, *ceiling_cloud);
 
   if ( verbose )
   {
@@ -1022,8 +1039,12 @@ int main (int argc, char** argv)
   // Save the cloud with the walls
   *walls_cloud = *input_cloud;
 
+  // Create file name for saving
+  std::string walls_filename = argv [pFileIndicesPCD [0]];
+  walls_filename.insert (dot, "-walls");
+
   // Save these points to disk
-  pcl::io::savePCDFile ("data/walls.pcd", *walls_cloud);
+  pcl::io::savePCDFile (walls_filename, *walls_cloud);
 
   if ( verbose )
   {
@@ -1148,38 +1169,6 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
-  /* 
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Find Box Model of a point cloud
-  if (find_box_model)
-  {
-    pcl::VoxelGrid<PointT> vgrid;
-    vgrid.setLeafSize (0.05, 0.05, 0.05);
-    vgrid.setInputCloud (input_cloud);
-    pcl::PointCloud<PointT> cloud_downsampled;
-    vgrid.filter (cloud_downsampled);
-    std::vector<double> coefficients (15, 0.0);
-    bool yes_found_model = find_model (cloud_downsampled.makeShared(), coefficients);
-    
-    if (yes_found_model)
-      ROS_INFO("Box Model found");
-  }
-
-  */   
-
-  /*
-
-  // The aligment axes of the point cloud
-
-  -0.966764, -0.0782345, 0.0 
-  0.0782345, -0.966764, 0.0 
-  0.0 0.0 1.0
-
-  */
-
-
-
   // ------------------------------------------------------------------- //
   // ------------------ Estiamte 3D normals of points ------------------ //
   // ------------------------------------------------------------------- //
@@ -1206,6 +1195,105 @@ int main (int argc, char** argv)
     ROS_INFO ("With %d normals of course", (int) normals_cloud->points.size());
   }
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Find Box Model of a point cloud
+
+  Eigen::Vector3f X, Y, Z; 
+
+  if (find_box_model)
+  {
+    pcl::VoxelGrid<PointT> vgrid;
+    vgrid.setLeafSize (0.05, 0.05, 0.05);
+    vgrid.setInputCloud (auxiliary_input_cloud);
+    pcl::PointCloud<PointT> cloud_downsampled;
+    vgrid.filter (cloud_downsampled);
+    std::vector<double> coefficients (15, 0.0);
+
+    //bool yes_found_model = find_model (cloud_downsampled.makeShared(), *normals_cloud, coefficients);
+
+    if ( findBoxModel (cloud_downsampled.makeShared(), *normals_cloud, coefficients) )
+    {
+      ROS_INFO("Box Model found");
+      X = Eigen::Vector3f (coefficients [6+0], coefficients [6+1], coefficients [6+2]); 
+      Y = Eigen::Vector3f (coefficients [9+0], coefficients [9+1], coefficients [9+2]); 
+      Z = Eigen::Vector3f (coefficients[12+0], coefficients[12+1], coefficients[12+2]); 
+    }
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+
+    ///*
+    // Add the input cloud
+    viewer.addPointCloud (cloud_downsampled, "DOWNSAMPLED");
+    // Color the cloud in green
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "DOWNSAMPLED");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, "DOWNSAMPLED");
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+
+    // Remove the point cloud data
+    viewer.removePointCloud ("DOWNSAMPLED");
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+    //*/
+
+    // Create file name for saving
+    std::string downsampled_filename = argv [pFileIndicesPCD [0]];
+    downsampled_filename.insert (dot, "-downsampled");
+
+    // Save these points to disk
+    pcl::io::savePCDFile (downsampled_filename, cloud_downsampled);
+  }
+  else 
+  {
+    // If no vectors, the stick with the unit vectors
+    X = Eigen::Vector3f (1.0, 0.0, 0.0); 
+    Y = Eigen::Vector3f (0.0, 1.0, 0.0); 
+    Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
+  }
+
+  /*
+
+  // The aligment axes of that particulary point cloudi data
+
+  -0.966764, -0.0782345, 0.0 
+  0.0782345, -0.966764, 0.0 
+  0.0 0.0 1.0
+
+  */
+
+  if ( verbose )
+  {
+    ROS_INFO ("The furniture surfaces will be detected along the following axes:");
+    ROS_INFO ("  X = (%8.5f, %8.5f, %8.5f)", X[0], X[1], X[2]);
+    ROS_INFO ("  Y = (%8.5f, %8.5f, %8.5f)", Y[0], Y[1], Y[2]);
+    ROS_INFO ("  Z = (%8.5f, %8.5f, %8.5f)", Z[0], Z[1], Z[2]);
+
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+  }
+
+
+  
 
 
   // ------------------------------------------------------------------------------------- //
@@ -1232,18 +1320,18 @@ int main (int argc, char** argv)
 
   ROS_ERROR ("Z axis aligned planes");
 //  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
-  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
-  getAxesOrientedPlanes (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+//  Eigen::Vector3f Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
+  getAxesOrientedSurfaces (*input_cloud, *normals_cloud, Z, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("Y axis aligned planes");
 //  Eigen::Vector3f Y = Eigen::Vector3f (0.0, 1.0, 0.0); 
-  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
-  getAxesOrientedPlanes (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+//  Eigen::Vector3f Y = Eigen::Vector3f (0.0782345, -0.966764, 0.0);
+  getAxesOrientedSurfaces (*input_cloud, *normals_cloud, Y, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
   ROS_ERROR ("X axis aligned planes");
 //  Eigen::Vector3f X = Eigen::Vector3f (1.0, 0.0, 0.0); 
-  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
-  getAxesOrientedPlanes (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
+//  Eigen::Vector3f X = Eigen::Vector3f (-0.966764, -0.0782345, 0.0);
+  getAxesOrientedSurfaces (*input_cloud, *normals_cloud, X, epsilon_angle, plane_threshold, minimum_plane_inliers, maximum_plane_iterations, minimum_size_of_plane_cluster, plane_inliers_clustering_tolerance, planar_surfaces, planar_surfaces_ids, planar_surfaces_indices, planar_surfaces_coefficients, viewer);
 
 
 
@@ -1318,7 +1406,7 @@ int main (int argc, char** argv)
       ROS_INFO ("FOR PLANAR SURFACE %2d MIN HEIGHT IS %f AND MAX IS %f METERS", surface, point_with_minimum_3D_values.z, point_with_maximum_3D_values.z);
     }
 
-    if ( point_with_maximum_3D_values.z > 1.75 )
+    if ( point_with_maximum_3D_values.z > height_of_walls )
     {
       // Save surface of wall
       surfaces_of_walls.push_back (planar_surfaces.at (surface));
@@ -1634,17 +1722,31 @@ int main (int argc, char** argv)
     }
   }
 
-
+  /*
 
   // // // // // //
   // Save cloud with furniture to disk
   // // // // // //
-  pcl::io::savePCDFile ("data/furniture.pcd", *furniture);
+
+  // Create file name for saving
+  std::string furniture_filename = argv [pFileIndicesPCD [0]];
+  furniture_filename.insert (dot, "-furniture");
+
+  // Save these points to disk
+  pcl::io::savePCDFile (furniture_filename, *furniture);
 
   // // // // // //
   // Save cloud with fixtures to disk
   // // // // // //
-  pcl::io::savePCDFile ("data/fixtures.pcd", fixtures);
+
+  // Create file name for saving
+  std::string fixtures_filename = argv [pFileIndicesPCD [0]];
+  fixtures_filename.insert (dot, "-fixtures");
+
+  // Save these points to disk
+  pcl::io::savePCDFile (fixtures_filename, fixtures);
+
+  */
 
   /*
 
@@ -1668,10 +1770,17 @@ int main (int argc, char** argv)
   // // // // // //
   // Save furniture and fixtures to disk
   // // // // // //
+
   pcl::PointCloud<PointT>::Ptr furniture_and_fixtures (new pcl::PointCloud<PointT> ());
   *furniture_and_fixtures += *furniture;
   *furniture_and_fixtures += fixtures;
-  pcl::io::savePCDFile ("data/furniture_and_fixtures.pcd", *furniture_and_fixtures);
+
+  // Create file name for saving
+  std::string furniture_and_fixtures_filename = argv [pFileIndicesPCD [0]];
+  furniture_and_fixtures_filename.insert (dot, "-furniture_and_fixtures");
+
+  // Save these points to disk
+  pcl::io::savePCDFile (furniture_and_fixtures_filename, *furniture_and_fixtures);
 
   if ( verbose )
   {
@@ -1681,7 +1790,7 @@ int main (int argc, char** argv)
     ROS_WARN (" ");
   }
 
-/*
+  ///*
 
   ///////////////////////////////////////////////////////////////////
   // Clean the 3D viewer for the segmentation by color and fixture //
@@ -1717,7 +1826,7 @@ int main (int argc, char** argv)
   // The 3D viewer is now clean //
   ////////////////////////////////
 
-*/
+  //*/
 
 //  if ( verbose )
 //  {
@@ -1728,7 +1837,7 @@ int main (int argc, char** argv)
 //    ROS_INFO (" ");
 //  }
 
-/*
+///*
 
   // Add the input cloud
   viewer.addPointCloud (*furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
@@ -1789,7 +1898,7 @@ int main (int argc, char** argv)
     ROS_INFO ("Size of fixture %d", (int) fixtures_indices.indices.size ());
   }
 
-*/
+  //*/
 
 /*
 
@@ -1806,7 +1915,7 @@ int main (int argc, char** argv)
 
 */
 
-/*
+  ///*
 
   // Clusters segmented by color and fixture
   std::vector<pcl::PointIndices> clusters;
@@ -1891,7 +2000,7 @@ int main (int argc, char** argv)
     }
   }
 
-*/
+  //*/
 
   //for (int c = 0; c < (int) clusters_clouds.size(); c++)
   //{
@@ -1912,69 +2021,11 @@ int main (int argc, char** argv)
 
 
 
-
-// // //
-
-/*
-
-  for (int s = 0; s < (int) indices_of_points_on_the_surfaces.size(); s++)
+  if ( verbose )
   {
-
-    //
-    //parameters:
-    //
-    //max_queue_size: 20
-    //max_clusters: 20
-    //use_indices: true
-    //publish_indices: false
-    //cluster_tolerance: 0.02
-    //fixture_cluster_tolerance: 0.025
-    //center_radius: 0.085
-    //init_radius: 0.035
-    //color_radius: 0.05
-    //std_limit: 2
-    //min_pts_per_cluster: 150
-    //fixture_min_pts_per_cluster: 150
-    //
-    //then load PCD and indices of points on the plane + indices of points on handles
-    //
-
-    // Clusters segmented by color and fixture
-    std::vector<pcl::PointIndices> clusters;
-
-    // Declare the fixture indices 
-    pcl::PointIndices::Ptr indices_of_points_of_surfaces;
-
-    // Create the object for segmenting by color and fixture
-    dos_pcl::DoorDetectionByColorAndFixture<PointT> segmentation_by_color_and_fixture;
-
-    segmentation_by_color_and_fixture.setInputCloud (auxiliary_input_cloud);
-    segmentation_by_color_and_fixture.setIndices (indices_of_points_of_surfaces);
-    segmentation_by_color_and_fixture.setFixtureIndices (indices_of_points_on_the_surfaces.at (s));
-
-    segmentation_by_color_and_fixture.setClusterTolerance (0.020);
-    segmentation_by_color_and_fixture.setFixtureClusterTolerance (0.025);
-    segmentation_by_color_and_fixture.setCenterRadius (0.085);
-    segmentation_by_color_and_fixture.setInitRadius (0.035);
-    segmentation_by_color_and_fixture.setColorRadius (0.050);
-    segmentation_by_color_and_fixture.setSTDLimit (2);
-    segmentation_by_color_and_fixture.setMinClusterSize (150);
-    segmentation_by_color_and_fixture.setFixtureMinClusterSize (150);
-
-    // Extract the clusters by color and fixture
-    segmentation_by_color_and_fixture.extract (clusters);
-
+    // Displaying the overall time
+    ROS_WARN ("Finished in %5.3g [s] !", tt.toc ());
   }
-
-*/
-
-// // //
-
-  // Displaying the overall time
-  ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-  ROS_WARN ("Finished in %5.3g [s]", tt.toc ());
-
-
 
   // And wait until Q key is pressed
   viewer.spin ();

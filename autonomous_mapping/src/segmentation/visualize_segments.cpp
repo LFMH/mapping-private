@@ -51,7 +51,7 @@
 
 
 
-// Definition of point type 
+// Definition of point type
 typedef pcl::PointXYZ PointT;
 
 
@@ -158,7 +158,7 @@ int main (int argc, char** argv)
 
   for (int cloud = 0; cloud < (int) pFileIndicesPCD.size (); cloud++)
   {
-    // Set the name of file 
+    // Set the name of file
     std::string file = argv [pFileIndicesPCD [cloud]];
 
     if ( ( (int) file.find ("projected") != -1 ) || ( (int) file.find ("hull") != -1 ) )
@@ -205,7 +205,7 @@ int main (int argc, char** argv)
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "PROJECTED");
 
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_projected, "PROJECTED"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_projected, "PROJECTED");
 
   // Wait or not wait
   if ( step )
@@ -250,7 +250,7 @@ int main (int argc, char** argv)
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "HULL");
 
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_hull, "HULL"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_hull, "HULL");
 
   // Wait or not wait
   if ( step )
