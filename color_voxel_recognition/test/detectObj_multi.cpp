@@ -36,12 +36,13 @@ using namespace Eigen;
 
 //float DISTANCE_TH = 1.0;
 float distance_th;
+int model_num;
 
 //************************
 //* その他のグローバル変数など
 //Voxel voxel;
 
-SearchObj search_obj;
+SearchObj_multi search_obj;
 int color_threshold_r, color_threshold_g, color_threshold_b;
 int dim;
 int box_size;
@@ -52,6 +53,9 @@ bool exit_flg = false;
 bool start_flg = true;
 float detect_th = 0;
 int rank_num;
+float *marker_color_r;
+float *marker_color_g;
+float *marker_color_b;
 
 template <typename T>
 int limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &output_cloud, const float dis_th ){
@@ -188,6 +192,7 @@ public:
 	t1_2 = my_clock();
 	if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
 	  search_obj.search_withoutRotation();
+	search_obj.removeOverlap();
 	
 	//* 物体検出 ここまで
 	//****************************************
@@ -212,9 +217,10 @@ public:
 	marker_array_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 100);
 	visualization_msgs::MarkerArray marker_array_msg_;
 	
+#if 0
 	//* show the limited space
 	visualization_msgs::Marker marker_;
-	marker_.header.frame_id = "openni_depth_optical_frame";
+	marker_.header.frame_id = "openni_rgb_optical_frame";
 	marker_.header.stamp = ros::Time::now();
 	marker_.ns = "BoxEstimation";
 	marker_.id = -1;
@@ -231,50 +237,61 @@ public:
 	marker_.scale.y = x_max-x_min;
 	marker_.scale.z = x_max-x_min;
 	marker_.color.a = 0.1;
-	marker_.color.r = 1.0;
-	marker_.color.g = 0.0;
-	marker_.color.b = 0.0;
+	marker_.color.r = 0.8;
+	marker_.color.g = 0.2;
+	marker_.color.b = 0.5;
 	marker_.lifetime = ros::Duration();
 	// std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << " POSITION: " 
 	// 	  << marker_.pose.position.x << " " << marker_.pose.position.y << " " 
 	// 	  << marker_.pose.position.z << std::endl;
 	marker_array_msg_.markers.push_back(marker_);
+#endif
 	
-	for( int q=0; q<rank_num; q++ ){
-	  if( search_obj.maxDot( q ) < detect_th ) break;
-	  cout << search_obj.maxX( q ) << " " << search_obj.maxY( q ) << " " << search_obj.maxZ( q ) << endl;
-	  cout << "dot " << search_obj.maxDot( q ) << endl;
-	  //if( (search_obj.maxX( q )!=0)||(search_obj.maxY( q )!=0)||(search_obj.maxZ( q )!=0) ){
-	  //* publish marker
-	  visualization_msgs::Marker marker_;
-	  //marker_.header.frame_id = "base_link";
-	  marker_.header.frame_id = "openni_depth_optical_frame";
-	  marker_.header.stamp = ros::Time::now();
-	  marker_.ns = "BoxEstimation";
-	  marker_.id = q;
-	  marker_.type = visualization_msgs::Marker::CUBE;
-	  marker_.action = visualization_msgs::Marker::ADD;
-	  marker_.pose.position.x = search_obj.maxX( q ) * region_size + sliding_box_size_x/2 + x_min;
-	  marker_.pose.position.y = search_obj.maxY( q ) * region_size + sliding_box_size_y/2 + y_min;
-	  marker_.pose.position.z = search_obj.maxZ( q ) * region_size + sliding_box_size_z/2 + z_min;
-	  marker_.pose.orientation.x = 0;
-	  marker_.pose.orientation.y = 0;
-	  marker_.pose.orientation.z = 0;
-	  marker_.pose.orientation.w = 1;
-	  marker_.scale.x = sliding_box_size_x;
-	  marker_.scale.y = sliding_box_size_y;
-	  marker_.scale.z = sliding_box_size_z;
-	  marker_.color.a = 0.5;
-	  marker_.color.r = 0.0;
-	  marker_.color.g = 1.0;
-	  marker_.color.b = 0.0;
-	  marker_.lifetime = ros::Duration();
-	  // std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << " POSITION: " 
-	  // 	    << marker_.pose.position.x << " " << marker_.pose.position.y << " " 
-	  // 	    << marker_.pose.position.z << std::endl;
-	  //   marker_pub_.publish (marker_);    
-	  // }
-	  marker_array_msg_.markers.push_back(marker_);
+	int marker_id = 0;
+	for( int m=0; m<model_num; m++ ){
+	  for( int q=0; q<rank_num; q++ ){
+	    //if( search_obj.maxDot( m, q ) < detect_th ) break;
+	    cout << search_obj.maxX( m, q ) << " " << search_obj.maxY( m, q ) << " " << search_obj.maxZ( m, q ) << endl;
+	    cout << "dot " << search_obj.maxDot( m, q ) << endl;
+	    //if( (search_obj.maxX( m, q )!=0)||(search_obj.maxY( m, q )!=0)||(search_obj.maxZ( m, q )!=0) ){
+	    //* publish marker
+	    visualization_msgs::Marker marker_;
+	    //marker_.header.frame_id = "base_link";
+	    marker_.header.frame_id = "openni_rgb_optical_frame";
+	    marker_.header.stamp = ros::Time::now();
+	    marker_.ns = "BoxEstimation";
+	    marker_.id = marker_id++;
+	    marker_.type = visualization_msgs::Marker::CUBE;
+	    marker_.action = visualization_msgs::Marker::ADD;
+	    marker_.pose.position.x = search_obj.maxX( m, q ) * region_size + sliding_box_size_x/2 + x_min;
+	    marker_.pose.position.y = search_obj.maxY( m, q ) * region_size + sliding_box_size_y/2 + y_min;
+	    marker_.pose.position.z = search_obj.maxZ( m, q ) * region_size + sliding_box_size_z/2 + z_min;
+	    marker_.pose.orientation.x = 0;
+	    marker_.pose.orientation.y = 0;
+	    marker_.pose.orientation.z = 0;
+	    marker_.pose.orientation.w = 1;
+	    if( search_obj.maxDot( m, q ) < detect_th ){
+	      marker_.scale.x = 0;
+	      marker_.scale.y = 0;
+	      marker_.scale.z = 0;	      
+	    }
+	    else{
+	      marker_.scale.x = sliding_box_size_x;
+	      marker_.scale.y = sliding_box_size_y;
+	      marker_.scale.z = sliding_box_size_z;
+	    }
+	    marker_.color.a = 0.5;
+	    marker_.color.r = marker_color_r[ marker_.id ];
+	    marker_.color.g = marker_color_g[ marker_.id ];
+	    marker_.color.b = marker_color_b[ marker_.id ];
+	    marker_.lifetime = ros::Duration();
+	    // std::cerr << "BOX MARKER COMPUTED, WITH FRAME " << marker_.header.frame_id << " POSITION: " 
+	    // 	    << marker_.pose.position.x << " " << marker_.pose.position.y << " " 
+	    // 	    << marker_.pose.position.z << std::endl;
+	    //   marker_pub_.publish (marker_);    
+	    // }
+	    marker_array_msg_.markers.push_back(marker_);
+	  }
 	}
 	//std::cerr << "MARKER ARRAY published with size: " << marker_array_msg_.markers.size() << std::endl; 
 	marker_array_pub_.publish(marker_array_msg_);
@@ -292,8 +309,8 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
-  if( argc != 11 ){
-    cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_pca_filename] <dim_model> <size1> <size2> <size3> <detect_th> <distance_th> /input:=/camera/depth/points2" << endl;
+  if( argc != 12 ){
+    cerr << "usage: " << argv[0] << " <rank_num> <exist_voxel_num_threshold> [model_names_filename] <dim_model> <size1> <size2> <size3> <detect_th> <distance_th> <model_num> /input:=/camera/rgb/points" << endl;
     exit( EXIT_FAILURE );
   }
   ros::init (argc, argv, "detectObj", ros::init_options::AnonymousName);
@@ -303,7 +320,27 @@ int main(int argc, char* argv[]) {
 
   detect_th = atof( argv[8] );
   distance_th = atof( argv[9] );
+  model_num = atoi( argv[10] );
   rank_num = atoi( argv[1] );
+
+  //****************************************
+  //* set marker color
+  const int marker_model_num = 6;
+  marker_color_r = new float[ marker_model_num ];
+  marker_color_g = new float[ marker_model_num ];
+  marker_color_b = new float[ marker_model_num ];
+
+  // marker_color_r[ 0 ] = 1.0; marker_color_g[ 0 ] = 0.0; marker_color_b[ 0 ] = 0.0; 
+  // marker_color_r[ 1 ] = 0.0; marker_color_g[ 1 ] = 1.0; marker_color_b[ 1 ] = 0.0; 
+  // marker_color_r[ 2 ] = 0.0; marker_color_g[ 2 ] = 0.0; marker_color_b[ 2 ] = 1.0; 
+  // marker_color_r[ 3 ] = 1.0; marker_color_g[ 3 ] = 1.0; marker_color_b[ 3 ] = 0.0; 
+  // marker_color_r[ 4 ] = 0.0; marker_color_g[ 4 ] = 1.0; marker_color_b[ 4 ] = 1.0; 
+  // marker_color_r[ 5 ] = 1.0; marker_color_g[ 5 ] = 0.0; marker_color_b[ 5 ] = 1.0; 
+
+  marker_color_r[ 0 ] = 0.0; marker_color_g[ 0 ] = 1.0; marker_color_b[ 0 ] = 0.0; // green
+  marker_color_r[ 1 ] = 0.0; marker_color_g[ 1 ] = 0.0; marker_color_b[ 1 ] = 1.0; // blue
+  marker_color_r[ 2 ] = 0.0; marker_color_g[ 2 ] = 1.0; marker_color_b[ 2 ] = 1.0; // cyan
+  marker_color_r[ 3 ] = 1.0; marker_color_g[ 3 ] = 0.0; marker_color_b[ 3 ] = 0.0; // pink
 
   //****************************************
   //* 物体検出のための準備
@@ -332,15 +369,31 @@ int main(int argc, char* argv[]) {
   sliding_box_size_z = size3 * region_size;
 
   //* 変数をセット
+  search_obj.setModelNum( model_num );
 #ifdef CCHLAC_TEST
   search_obj.setNormalizeVal( "param/max_c.txt" );
 #else
   search_obj.setNormalizeVal( "param/max_r.txt" );
 #endif
   search_obj.setRange( size1, size2, size3 );
-  search_obj.setRank( rank_num );
+  //search_obj.setRank( rank_num );
+  search_obj.setRank( rank_num * model_num ); // for removeOverlap()
   search_obj.setThreshold( atoi(argv[2]) );
-  search_obj.readAxis( argv[3], dim, dim_model, ASCII_MODE_P, MULTIPLE_SIMILARITY );  //* 検出対象物体の部分空間の基底軸の読み込み
+  //* モデルの名前取得
+  FILE *fp = fopen( argv[3], "r" );
+  char **model_file_names = new char* [ model_num ];
+  char line[ 1000 ];
+  for( int i=0; i<model_num; i++ ){
+    model_file_names[ i ] = new char [ 1000 ];
+    fgets( line, sizeof(line), fp );
+    line[ strlen( line ) - 1 ] = '\0';
+    //fscanf( fp, "%s\n", model_file_names + i );
+    //model_file_names[ i ] = line;
+    sprintf( model_file_names[ i ], "%s", line );
+    //cout << model_file_names[ i ] << endl;
+  }
+  fclose(fp);
+  search_obj.readAxis( model_file_names, dim, dim_model, ASCII_MODE_P, MULTIPLE_SIMILARITY );  //* 検出対象物体の部分空間の基底軸の読み込み
 
   //* RGB二値化の閾値の読み込み
   Param::readColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
@@ -363,7 +416,6 @@ int main(int argc, char* argv[]) {
   //*****************************************//
   //* 以下は、saveData.cppのmain関数と同じ *//
   //*****************************************//
-  cout << "hoge" << endl;
   // ボクセル（かメッシュ）のプレビューとデータ取得の準備
   ViewAndDetect vad;
 

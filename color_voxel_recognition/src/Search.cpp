@@ -48,39 +48,39 @@ SearchObj::~SearchObj(){
 
 SearchObj_multi::SearchObj_multi() :
   model_num(0),
-  max_x(NULL),
-  max_y(NULL),
-  max_z(NULL),
-  max_mode(NULL),
-  max_dot (NULL),
-  axis_q (NULL) {
+  max_x_multi(NULL),
+  max_y_multi(NULL),
+  max_z_multi(NULL),
+  max_mode_multi(NULL),
+  max_dot_multi (NULL),
+  axis_q_multi (NULL) {
 }
 
 SearchObj_multi::~SearchObj_multi(){
-  if( max_x != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
-    delete max_x;
-    max_x = NULL;
+  if( max_x_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x_multi[i];
+    delete max_x_multi;
+    max_x_multi = NULL;
   }
-  if( max_y != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
-    delete max_y;
-    max_y = NULL;
+  if( max_y_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y_multi[i];
+    delete max_y_multi;
+    max_y_multi = NULL;
   }
-  if( max_z != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
-    delete max_z;
-    max_z = NULL;
+  if( max_z_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z_multi[i];
+    delete max_z_multi;
+    max_z_multi = NULL;
   }
-  if( max_mode != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
-    delete max_mode;
-    max_mode = NULL;
+  if( max_mode_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode_multi[i];
+    delete max_mode_multi;
+    max_mode_multi = NULL;
   }
-  if( max_dot != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
-    delete max_dot;
-    max_dot = NULL;
+  if( max_dot_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot_multi[i];
+    delete max_dot_multi;
+    max_dot_multi = NULL;
   }
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
   if( nFeatures != NULL ) delete[] nFeatures;
@@ -389,6 +389,16 @@ void SearchObj::search(){
   search_time = t2 - t1;
 }
 
+//******************************************
+//* 1つの検出モードでの物体検出（回転させない）
+void SearchObj::search_withoutRotation(){
+  double t1,t2;//時間計測用の変数
+  t1 = my_clock_();
+  search_part( S_MODE_1 );
+  t2 = my_clock_();
+  search_time = t2 - t1;
+}
+
 //*************************
 //* 引数の検出モードでの物体検出
 void SearchObj::search_part( SearchMode mode ){
@@ -688,21 +698,25 @@ void SearchObj::cleanData(){
 }
 
 void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
+  std::cout<< "hogehoge 1" << std::endl;
   //* extract - GRSD -
   std::vector< std::vector<float> > grsd;
   Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
   //* extract - C3HLAC -
   std::vector< std::vector<float> > c3hlac;
   extractC3HLACSignature117( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
+  std::cout<< "hogehoge 2" << std::endl;
 
   std::vector< std::vector<float> > feature;
   const int h_num = c3hlac.size();
   exist_voxel_num = new int[ h_num ];
   nFeatures = new Eigen::VectorXf [ h_num ];
+  std::cout<< "hogehoge 3" << std::endl;
   for( int h=0; h<h_num; h++ ){
     feature.push_back( conc_vector( grsd[ h ], c3hlac[ h ] ) );
     exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
   }
+  std::cout<< "hogehoge" << std::endl;
 
   setData( subdiv_b_, feature );
 }
@@ -773,60 +787,81 @@ void SearchObj::setNormalizeVal( const char* filename ){
 //*     SearchObj_multi    *//
 //*******************************//
 
+void SearchObj_multi::cleanData(){
+  x_num = 0;
+  y_num = 0;
+  z_num = 0;
+  xy_num = 0;
+  for( int m=0; m<model_num; m++ ){
+    for( int i=0; i<rank_num; i++ ){
+      max_x_multi[ m ][ i ] = 0;
+      max_y_multi[ m ][ i ] = 0;
+      max_z_multi[ m ][ i ] = 0;
+      //max_mode_multi[ m ][ i ] = 0;
+      max_dot_multi[ m ][ i ] = 0;
+    }
+  }
+  if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
+  if( nFeatures != NULL ) delete[] nFeatures;
+  exist_voxel_num = NULL;
+  nFeatures = NULL;
+}
+
 void SearchObj_multi::setRank( int _rank_num ){
   rank_num = _rank_num;
 
-  if( max_x != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_x[i];
-    delete max_x;
+  if( max_x_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_x_multi[i];
+    delete max_x_multi;
   }
-  if( max_y != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_y[i];
-    delete max_y;
+  if( max_y_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_y_multi[i];
+    delete max_y_multi;
   }
-  if( max_z != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_z[i];
-    delete max_z;
+  if( max_z_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_z_multi[i];
+    delete max_z_multi;
   }
-  if( max_mode != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_mode[i];
-    delete max_mode;
+  if( max_mode_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_mode_multi[i];
+    delete max_mode_multi;
   }
-  if( max_dot != NULL ){
-    for( int i=0; i<model_num; i++ ) delete[] max_dot[i];
-    delete max_dot;
+  if( max_dot_multi != NULL ){
+    for( int i=0; i<model_num; i++ ) delete[] max_dot_multi[i];
+    delete max_dot_multi;
   }
-  max_x = new int*[ model_num ];
-  max_y = new int*[ model_num ];
-  max_z = new int*[ model_num ];
-  max_mode = new SearchMode*[ model_num ];
-  max_dot = new double*[ model_num ];
+  max_x_multi = new int*[ model_num ];
+  max_y_multi = new int*[ model_num ];
+  max_z_multi = new int*[ model_num ];
+  max_mode_multi = new SearchMode*[ model_num ];
+  max_dot_multi = new double*[ model_num ];
 
   for( int m=0; m<model_num; m++ ){
-    max_x[ m ] = new int[ rank_num ];
-    max_y[ m ] = new int[ rank_num ];
-    max_z[ m ] = new int[ rank_num ];
-    max_mode[ m ] = new SearchMode[ rank_num ];
-    max_dot[ m ] = new double[ rank_num ];
-    for( int i=0; i<rank_num; i++ )  max_dot[ m ][ i ] = 0;
+    max_x_multi[ m ] = new int[ rank_num ];
+    max_y_multi[ m ] = new int[ rank_num ];
+    max_z_multi[ m ] = new int[ rank_num ];
+    max_mode_multi[ m ] = new SearchMode[ rank_num ];
+    max_dot_multi[ m ] = new double[ rank_num ];
+    for( int i=0; i<rank_num; i++ )  max_dot_multi[ m ][ i ] = 0;
   }
 }
 
-void SearchObj_multi::readAxis( const char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
-  if( axis_q != NULL ) delete[] axis_q;
-  axis_q = new Eigen::MatrixXf [ model_num ];
+void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
+  if( axis_q_multi != NULL ) delete[] axis_q_multi;
+  axis_q_multi = new Eigen::MatrixXf [ model_num ];
 
-  PCA pca_each;
   for( int m=0; m<model_num; m++ ){
+    PCA pca_each;
     pca_each.read( filename[ m ], ascii );
+    std::cout << filename[ m ] << std::endl;
     Eigen::MatrixXf tmpaxis = pca_each.Axis();
     Eigen::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
-    axis_q[ m ] = tmpaxis2.transpose();
+    axis_q_multi[ m ] = tmpaxis2.transpose();
     if( multiple_similarity ){
       Eigen::VectorXf variance = pca_each.Variance();
       for( int i=0; i<dim_model; i++ )
 	for( int j=0; j<dim; j++ )
-	  axis_q[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q[ m ]( i, j );
+	  axis_q_multi[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q_multi[ m ]( i, j );
     }
   }
 }
@@ -834,17 +869,17 @@ void SearchObj_multi::readAxis( const char **filename, int dim, int dim_model, b
 void SearchObj_multi::cleanMax(){
   for( int m=0; m<model_num; m++ ){
     for( int i=0; i<rank_num; i++ ){
-      max_x[ m ][ i ] = 0;
-      max_y[ m ][ i ] = 0;
-      max_z[ m ][ i ] = 0;
-      max_dot[ m ][ i ] = 0;
+      max_x_multi[ m ][ i ] = 0;
+      max_y_multi[ m ][ i ] = 0;
+      max_z_multi[ m ][ i ] = 0;
+      max_dot_multi[ m ][ i ] = 0;
     }
   }
 }
 
-const int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode[ m_num ][ num ] ); }
-const int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode[ m_num ][ num ] ); }
-const int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode[ m_num ][ num ] ); }
+const int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode_multi[ m_num ][ num ] ); }
+const int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode_multi[ m_num ][ num ] ); }
+const int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode_multi[ m_num ][ num ] ); }
 
 inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
   int num;
@@ -853,21 +888,21 @@ inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, Search
   getRange( xrange, yrange, zrange, mode );
 
   for( num = 0; num < rank_num-1; num++ ){
-    val1 = max_x[ m_num ][ num ] - x;
+    val1 = max_x_multi[ m_num ][ num ] - x;
     if( val1 < 0 )
-      val1 = - val1 - xRange( max_mode[ m_num ][ num ] );
+      val1 = - val1 - xRange( max_mode_multi[ m_num ][ num ] );
     else
       val1 -= xrange;
 
-    val2 = max_y[ m_num ][ num ] - y;
+    val2 = max_y_multi[ m_num ][ num ] - y;
     if( val2 < 0 )
-      val2 = - val2 - yRange( max_mode[ m_num ][ num ] );
+      val2 = - val2 - yRange( max_mode_multi[ m_num ][ num ] );
     else
       val2 -= yrange;
 
-    val3 = max_z[ m_num ][ num ] - z;
+    val3 = max_z_multi[ m_num ][ num ] - z;
     if( val3 < 0 )
-      val3 = - val3 - zRange( max_mode[ m_num ][ num ] );
+      val3 = - val3 - zRange( max_mode_multi[ m_num ][ num ] );
     else
       val3 -= zrange;
 
@@ -878,19 +913,19 @@ inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, Search
 }
 
 inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
-  max_dot[ m_num ][ dest_num ] = max_dot[ m_num ][ src_num ];
-  max_x[ m_num ][ dest_num ] = max_x[ m_num ][ src_num ];
-  max_y[ m_num ][ dest_num ] = max_y[ m_num ][ src_num ];
-  max_z[ m_num ][ dest_num ] = max_z[ m_num ][ src_num ];
-  max_mode[ m_num ][ dest_num ] = max_mode[ m_num ][ src_num ];
+  max_dot_multi[ m_num ][ dest_num ] = max_dot_multi[ m_num ][ src_num ];
+  max_x_multi[ m_num ][ dest_num ] = max_x_multi[ m_num ][ src_num ];
+  max_y_multi[ m_num ][ dest_num ] = max_y_multi[ m_num ][ src_num ];
+  max_z_multi[ m_num ][ dest_num ] = max_z_multi[ m_num ][ src_num ];
+  max_mode_multi[ m_num ][ dest_num ] = max_mode_multi[ m_num ][ src_num ];
 }
 
 inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
-  max_dot[ m_num ][ dest_num ] = dot;
-  max_x[ m_num ][ dest_num ] = x;
-  max_y[ m_num ][ dest_num ] = y;
-  max_z[ m_num ][ dest_num ] = z;
-  max_mode[ m_num ][ dest_num ] = mode;
+  max_dot_multi[ m_num ][ dest_num ] = dot;
+  max_x_multi[ m_num ][ dest_num ] = x;
+  max_y_multi[ m_num ][ dest_num ] = y;
+  max_z_multi[ m_num ][ dest_num ] = z;
+  max_mode_multi[ m_num ][ dest_num ] = mode;
 }
 
 void SearchObj_multi::search_part( SearchMode mode ){
@@ -922,13 +957,13 @@ void SearchObj_multi::search_part( SearchMode mode ){
 	    sum = sqrt(sum);
 
 	    for( int m=0; m<model_num; m++ ){
-	      tmpVector = axis_q[ m ] * feature_tmp;
+	      tmpVector = axis_q_multi[ m ] * feature_tmp;
 	      dot = tmpVector.dot( tmpVector );
 	      dot = sqrt( dot );
 	      dot /= sum ;
 	      //* 類似度が高ければ保存
 	      for( int i=0; i<rank_num; i++ ){
-		if(dot>max_dot[ m ][ i ]){
+		if(dot>max_dot_multi[ m ][ i ]){
 		  overlap_num = checkOverlap( m, x, y, z, mode );
 		  for( int j=0; j<overlap_num-i; j++ )
 		    max_cpy( m, overlap_num-1-j, overlap_num-j );		  
@@ -944,5 +979,27 @@ void SearchObj_multi::search_part( SearchMode mode ){
 	}
       }
     }
+  }
+}
+
+void SearchObj_multi::removeOverlap(){
+  for( int m=0; m<model_num; m++ ){
+    //for( int i=0; i<rank_num; i++ ){
+    for( int i=0; i<1; i++ ){
+      //for( int m2=m+1; m2<model_num; m2++ ){
+      for( int m2=0; m2<model_num; m2++ ){
+	if( m2 != m ){
+	  int overlap_num = checkOverlap( m2, maxX( m, i ), maxY( m, i ), maxZ( m, i ), maxMode( m, i ) );
+	  if( maxDot( m, i ) > maxDot( m2, overlap_num ) )
+	    for( int j=overlap_num; j<rank_num-1; j++ )
+	      max_cpy( m2, j+1, j );
+	    //max_dot_multi[ m2 ][ overlap_num ] = 0;
+	  else
+	    for( int j=i; j<rank_num-1; j++ )
+	      max_cpy( m, j+1, j );
+	    //max_dot_multi[ m ][ i ] = 0;
+	}
+      }
+    }	
   }
 }

@@ -8,7 +8,7 @@ voxel_size=`cat $INDIR/voxel_size.txt`
 
 # The number of the dimension of feature space
 # NOTE: not necessary for GRSD
-dim_feature=50
+dim_feature=100
 
 # The size of the subdivisions = The step size for sliding box. ( $subdivision_size * $voxel_size = actual length (meter) )
 subdivision_size=10 # 5 for voxel_size=0.02
