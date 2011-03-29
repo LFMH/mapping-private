@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Lucian Cosmin Goron <goron@cs.tum.edu>
+ * Copyright (c) 2011, Lucian Cosmin Goron <goron@cs.tum.edu>, Zoltan-Csaba Marton <marton@cs.tum.edu>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@
 
 
 
-// Define coresponding typedef of point 
+// Set up the right type definition of points
 //typedef pcl::PointXYZ PointT;
 typedef pcl::PointXYZRGB PointT;
 //typedef pcl::PointXYZINormal PointT;
@@ -89,7 +89,7 @@ int maximum_plane_iterations = 1000; /// [iterations]
 // Clustering's Parameters
 int minimum_size_of_plane_cluster = 100; /// [points]
 double plane_inliers_clustering_tolerance = 0.100; /// [meters]
-int minimum_size_of_handle_cluster = 10; /// [points]
+int minimum_size_of_handle_cluster = 25; /// [points]
 double handle_clustering_tolerance = 0.050; /// [meters]
 
 // Segmentation's Parameters
@@ -110,8 +110,9 @@ bool verbose = false;
 int size_of_points = 1;
 
 // Optional parameters
-bool find_box_model = false;
+bool find_box_model = true;
 bool segmentation_by_color_and_fixture = false;
+
 
 
 /*
@@ -1204,7 +1205,7 @@ int main (int argc, char** argv)
   {
     pcl::VoxelGrid<PointT> vgrid;
     vgrid.setLeafSize (0.05, 0.05, 0.05);
-    vgrid.setInputCloud (auxiliary_input_cloud);
+    vgrid.setInputCloud (input_cloud);
     pcl::PointCloud<PointT> cloud_downsampled;
     vgrid.filter (cloud_downsampled);
     std::vector<double> coefficients (15, 0.0);
@@ -1267,15 +1268,32 @@ int main (int argc, char** argv)
     Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
   }
 
-  /*
+/*
 
-  // The aligment axes of that particulary point cloudi data
-
+  // The aligment axes of that particulary point cloud data
   -0.966764, -0.0782345, 0.0 
   0.0782345, -0.966764, 0.0 
   0.0 0.0 1.0
 
-  */
+*/
+
+/*
+
+  // Already computed axes for PointXYZINormal cloud
+  X = Eigen::Vector3f (-0.99613, -0.08719,  0.00000);
+  Y = Eigen::Vector3f ( 0.08719, -0.99613,  0.00000);
+  Z = Eigen::Vector3f ( 0.00000,  0.00000,  1.00000);
+
+*/
+
+///*
+
+  // Already computed axes for PointXYRGB cloud
+  X = Eigen::Vector3f (-0.02082,  0.99978, -0.00000);
+  Y = Eigen::Vector3f (-0.99978, -0.02082,  0.00000);
+  Z = Eigen::Vector3f ( 0.00000,  0.00000,  1.00000);
+
+//*/
 
   if ( verbose )
   {
@@ -1291,10 +1309,6 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
   }
-
-
-  
-
 
   // ------------------------------------------------------------------------------------- //
   // ------------------ Segment horizontal and vertical planar surfaces ------------------ //
@@ -1580,109 +1594,33 @@ int main (int argc, char** argv)
       
       ROS_INFO ("For %d the number of object point indices is %d", furniture, (int) cloud_object_indices->indices.size ());
 
-      // Extract handles
-      pcl::PointCloud<PointT> handle_cloud;
-      pcl::ExtractIndices<PointT> extraction_of_handle_inliers;
-      // Set point cloud from where to extract
-      extraction_of_handle_inliers.setInputCloud (auxiliary_input_cloud);
-      // Set which indices to extract
-      extraction_of_handle_inliers.setIndices (cloud_object_indices);
-      // Return the points which represent the inliers
-      extraction_of_handle_inliers.setNegative (false);
-      // Call the extraction function
-      extraction_of_handle_inliers.filter (handle_cloud);
-
-      // // // // // //
-      // Save all points of furniture fixtures
-      // // // // // //
-//      *furniture += handle_cloud;
-      fixtures += handle_cloud;
-
-      ROS_ERROR (" TEST IT ");
-      std::cerr << " TEST 1 handle cloud: %d " << handle_cloud.points.size () << std::endl ;  
-      ROS_INFO (" TEST 2 handle cloud: %d ", (int) handle_cloud.points.size ());
-
-      // Visualize handles
-      std::stringstream id_of_handle;
-      id_of_handle << "HANDLE_" << ros::Time::now();
-      // Visualize handle
-      viewer.addPointCloud (handle_cloud, id_of_handle.str());
-      // Set the size of points for cloud
-      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 3, id_of_handle.str());     
-      // Wait or not wait
-      if ( step )
+      if ( (int) cloud_object_indices->indices.size () != 0 )
       {
-        // And wait until Q key is pressed
-        viewer.spin ();
-      }
-
-      // TODO extract clusters of handle clouds
-
-      // Vector of clusters from handles
-      std::vector<pcl::PointIndices> handle_clusters;
-      // Build kd-tree structure for clusters
-      pcl::KdTreeFLANN<PointT>::Ptr handle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
-
-      ROS_ERROR (" TEST IT ");
-      std::cerr << " TEST 3 handle cloud: %d " << handle_cloud.points.size () << std::endl ;  
-      ROS_INFO (" TEST 4 handle cloud: %d ", (int) handle_cloud.points.size ());
-
-      // Instantiate cluster extraction object
-      pcl::EuclideanClusterExtraction<PointT> clustering_of_handles;
-      // Set as input the cloud of handle
-      clustering_of_handles.setInputCloud (handle_cloud.makeShared());
-      // Radius of the connnectivity threshold
-      clustering_of_handles.setClusterTolerance (handle_clustering_tolerance);
-      // Minimum size of clusters
-      clustering_of_handles.setMinClusterSize (minimum_size_of_handle_cluster);
-      // Provide pointer to the search method
-      clustering_of_handles.setSearchMethod (handle_clusters_tree);
-      // Call the extraction function
-      clustering_of_handles.extract (handle_clusters);
-
-      // Point clouds which represent the clusters of the handle
-      std::vector<pcl::PointCloud<PointT>::Ptr> handle_clusters_clouds;
-
-      // Vector of the indices of handles
-      std::vector<pcl::PointIndices::Ptr> handle_indices;
-
-      for (int c = 0; c < (int) handle_clusters.size(); c++)
-      {
-        // Local variables
-        pcl::PointIndices::Ptr pointer_of_handle_cluster (new pcl::PointIndices (handle_clusters.at(c)));
-        pcl::PointCloud<PointT>::Ptr cluster_of_handle (new pcl::PointCloud<PointT>);
-
-        // Extract handle points from the input cloud
-        pcl::ExtractIndices<PointT> extraction_of_handle_clusters;
+        // Extract handles
+        pcl::PointCloud<PointT> handle_cloud;
+        pcl::ExtractIndices<PointT> extraction_of_handle_inliers;
         // Set point cloud from where to extract
-        extraction_of_handle_clusters.setInputCloud (handle_cloud.makeShared());
+        extraction_of_handle_inliers.setInputCloud (auxiliary_input_cloud);
         // Set which indices to extract
-        extraction_of_handle_clusters.setIndices (pointer_of_handle_cluster);
+        extraction_of_handle_inliers.setIndices (cloud_object_indices);
         // Return the points which represent the inliers
-        extraction_of_handle_clusters.setNegative (false);
+        extraction_of_handle_inliers.setNegative (false);
         // Call the extraction function
-        extraction_of_handle_clusters.filter (*cluster_of_handle);
+        extraction_of_handle_inliers.filter (handle_cloud);
 
         // // // // // //
         // Save all points of furniture fixtures
         // // // // // //
-//        *furniture += *cluster_of_handle;
-//        fixtures += *cluster_of_handle;
+        //      *furniture += handle_cloud;
+        fixtures += handle_cloud;
 
-        if ( verbose )
-        {
-          ROS_INFO ("  Cluster of handle %d has %d points", c, (int) cluster_of_handle->points.size());
-        }
-
-        // Create id for visualization
-        std::stringstream id_of_handle_cluster;
-        id_of_handle_cluster << "HANDLE_CLUSTER_" << ros::Time::now();
-
-        // Add point cloud to viewer
-        viewer.addPointCloud (*cluster_of_handle, id_of_handle_cluster.str());
+        // Visualize handles
+        std::stringstream id_of_handle;
+        id_of_handle << "HANDLE_" << ros::Time::now();
+        // Visualize handle
+        viewer.addPointCloud (handle_cloud, id_of_handle.str());
         // Set the size of points for cloud
-        viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_handle_cluster.str()); 
-
+        viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 3, id_of_handle.str());     
         // Wait or not wait
         if ( step )
         {
@@ -1690,35 +1628,196 @@ int main (int argc, char** argv)
           viewer.spin ();
         }
 
-        // Remove or not remove the cloud from viewer
-        if ( clean )
+        // TODO extract clusters of handle clouds
+
+        // Vector of clusters from handles
+        std::vector<pcl::PointIndices> handle_clusters;
+        // Build kd-tree structure for clusters
+        pcl::KdTreeFLANN<PointT>::Ptr handle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+        // Instantiate cluster extraction object
+        pcl::EuclideanClusterExtraction<PointT> clustering_of_handles;
+        // Set as input the cloud of handle
+        clustering_of_handles.setInputCloud (handle_cloud.makeShared());
+        // Radius of the connnectivity threshold
+        clustering_of_handles.setClusterTolerance (handle_clustering_tolerance);
+        // Minimum size of clusters
+        clustering_of_handles.setMinClusterSize (minimum_size_of_handle_cluster);
+        // Provide pointer to the search method
+        clustering_of_handles.setSearchMethod (handle_clusters_tree);
+        // Call the extraction function
+        clustering_of_handles.extract (handle_clusters);
+
+        // Point clouds which represent the clusters of the handle
+        std::vector<pcl::PointCloud<PointT>::Ptr> handle_clusters_clouds;
+
+        // Vector of the indices of handles
+        std::vector<pcl::PointIndices::Ptr> handle_indices;
+
+        for (int c = 0; c < (int) handle_clusters.size(); c++)
         {
+          // Local variables
+          pcl::PointIndices::Ptr pointer_of_handle_cluster (new pcl::PointIndices (handle_clusters.at(c)));
+          pcl::PointCloud<PointT>::Ptr cluster_of_handle (new pcl::PointCloud<PointT>);
+
+          // Extract handle points from the input cloud
+          pcl::ExtractIndices<PointT> extraction_of_handle_clusters;
+          // Set point cloud from where to extract
+          extraction_of_handle_clusters.setInputCloud (handle_cloud.makeShared());
+          // Set which indices to extract
+          extraction_of_handle_clusters.setIndices (pointer_of_handle_cluster);
+          // Return the points which represent the inliers
+          extraction_of_handle_clusters.setNegative (false);
+          // Call the extraction function
+          extraction_of_handle_clusters.filter (*cluster_of_handle);
+
+          // Fit a line to the cluster of handle //
+
+          // TODO try to cluster the inleirs of line handles, usefull for the cases where handles are clustered togheter due to noise
+
+          // Create the segmentation object and declare variables
+          pcl::SACSegmentation<PointT> segmentation_of_line;
+          pcl::PointIndices::Ptr line_inliers (new pcl::PointIndices ());
+          pcl::ModelCoefficients::Ptr line_coefficients (new pcl::ModelCoefficients ());
+
+          // Set all the parameters for segmenting vertical planes
+          segmentation_of_line.setOptimizeCoefficients (true);
+          segmentation_of_line.setModelType (pcl::SACMODEL_LINE);
+          //segmentation_of_line.setNormalDistanceWeight (0.05);
+          segmentation_of_line.setMethodType (pcl::SAC_RANSAC);
+          segmentation_of_line.setDistanceThreshold (0.025);
+          segmentation_of_line.setMaxIterations (maximum_plane_iterations);
+          //segmentation_of_line.setAxis (axis);
+          segmentation_of_line.setEpsAngle (epsilon_angle);
+          segmentation_of_line.setInputCloud (cluster_of_handle);
+          //segmentation_of_line.setInputNormals (normals_cloud.makeShared());
+
+          // Obtain the line inliers and coefficients
+          segmentation_of_line.segment (*line_inliers, *line_coefficients);
+
+          if ( verbose )
+          {
+            ROS_INFO ("Line has %3d inliers with parameters P1 = (%6.3f,%6.3f,%6.3f) and P2 = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations",
+                (int) line_inliers->indices.size (), line_coefficients->values [0], line_coefficients->values [1], line_coefficients->values [2], line_coefficients->values [3],  line_coefficients->values [4], line_coefficients->values [5], maximum_plane_iterations);
+          }
+
+          // Check if the fitted line has enough inliers in order to be accepted
+          if ((int) line_inliers->indices.size () < 10 /*minimum_size_of_handle_cluster*/)
+          {
+            ROS_WARN ("NOT ACCEPTED !");
+          }
+          else
+          {
+            ROS_WARN ("ACCEPTED !");
+
+            // ---------------------------- //
+            // Start the extraction process //
+            // ---------------------------- //
+
+            // Point cloud of line inliers
+            pcl::PointCloud<PointT>::Ptr line_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+            // Extract the circular inliers from the input cloud
+            pcl::ExtractIndices<PointT> extraction_of_line;
+            // Set point cloud from where to extract
+            extraction_of_line.setInputCloud (cluster_of_handle);
+            // Set which indices to extract
+            extraction_of_line.setIndices (line_inliers);
+
+            // Return the points which represent the inliers
+            extraction_of_line.setNegative (false);
+            // Call the extraction function
+            extraction_of_line.filter (*line_inliers_cloud);
+
+            /*
+
+               ROS_INFO ("Line has %d inliers", line_inliers_cloud->points.size());
+               ROS_INFO ("%d points remain after extraction", filtered_cloud->points.size ());
+
+*/
+
+            // --------------------------- //
+            // Start visualization process //
+            // --------------------------- //
+
+            // Create id for visualization
+            std::stringstream id_of_line;
+            id_of_line << "LINE_" << ros::Time::now();
+
+            // Add point cloud to viewer
+            viewer.addPointCloud (*line_inliers_cloud, id_of_line.str());
+            // Set the size of points for cloud
+            viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_line.str()); 
+
+            // Wait or not wait
+            if ( step )
+            {
+              // And wait until Q key is pressed
+              viewer.spin ();
+            }
+
+            // Save id of handles clusters
+            handles_clusters_ids.push_back (id_of_line.str());
+
+          }
+
+          // // // // // //
+          // Save all points of furniture fixtures
+          // // // // // //
+          //        *furniture += *cluster_of_handle;
+          //        fixtures += *cluster_of_handle;
+
+          if ( verbose )
+          {
+            ROS_INFO ("  Cluster of handle %d has %d points", c, (int) cluster_of_handle->points.size());
+          }
+
+          // Create id for visualization
+          std::stringstream id_of_handle_cluster;
+          id_of_handle_cluster << "HANDLE_CLUSTER_" << ros::Time::now();
+          /*
+          // Add point cloud to viewer
+          viewer.addPointCloud (*cluster_of_handle, id_of_handle_cluster.str());
+          // Set the size of points for cloud
+          viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_handle_cluster.str()); 
+
+          // Wait or not wait
+          if ( step )
+          {
+          // And wait until Q key is pressed
+          viewer.spin ();
+          }
+
+          // Remove or not remove the cloud from viewer
+          if ( clean )
+          {
           // Remove the point cloud data
           viewer.removePointCloud (id_of_handle.str());
           // Wait or not wait
           if ( step )
           {
-            // And wait until Q key is pressed
-            viewer.spin ();
+          // And wait until Q key is pressed
+          viewer.spin ();
           }
+          }
+          */
+          // Save cluster of handle
+          handle_clusters_clouds.push_back (cluster_of_handle);
+
+          // Save indices of handles
+          handle_indices.push_back (pointer_of_handle_cluster);
+
+          // Save id of handle
+          handle_ids.push_back (id_of_handle.str());
+
+          //  OUT OF SERVICE BEACUSE OF THE FITTING OF LINES FOR FIXTURES 
+          //        // Save id of handles clusters
+          //        handles_clusters_ids.push_back (id_of_line.str());
         }
 
-        // Save cluster of handle
-        handle_clusters_clouds.push_back (cluster_of_handle);
-
-        // Save indices of handles
-        handle_indices.push_back (pointer_of_handle_cluster);
-
-        // Save id of handle
-        handle_ids.push_back (id_of_handle.str());
-
-        // Save id of handles clusters
-        handles_clusters_ids.push_back (id_of_handle_cluster.str());
+        // Remove the cloud of handle
+        viewer.removePointCloud (id_of_handle.str());
       }
-
-      // Remove the cloud of handle
-      viewer.removePointCloud (id_of_handle.str());
-
     }
   }
 
@@ -2017,6 +2116,7 @@ int main (int argc, char** argv)
 
 
   //}
+
 
 
 

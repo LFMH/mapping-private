@@ -134,7 +134,7 @@ int main (int argc, char** argv)
   // Open a 3D viewer
   pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
-  viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  viewer.setBackgroundColor (1.0, 1.0, 1.0);
   // Parse the camera settings and update the internal camera
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render

@@ -28,15 +28,15 @@ rosbuild_add_library(AutonomousExploration src/autonomous_exploration.cpp)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
+# ------ [ Data
+rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/september2010scan_iros2011.pcd data/september2010scan_iros2011.pcd 48b159ee285daf220340c932ce12fa84)
+rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/high_res_rgb_right_of_oven.pcd data/high_res_rgb_right_of_oven.pcd d7a3739730a30edea9104417b4012270)
+
 # ------ [ Segmentation
-rosbuild_add_executable(segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
-
-rosbuild_add_executable(segment_difference src/segmentation/segment_differences.cpp)
-
-rosbuild_add_executable(project_segments src/segmentation/project_segments.cpp)
-
-rosbuild_add_executable(handle_removal src/segmentation/handle_removal.cpp)
-
-rosbuild_add_executable(visualize_segments src/segmentation/visualize_segments.cpp)
+rosbuild_add_executable (segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
+rosbuild_add_executable (segment_difference src/segmentation/segment_differences.cpp)
+rosbuild_add_executable (project_segments src/segmentation/project_segments.cpp)
+rosbuild_add_executable (handle_removal src/segmentation/handle_removal.cpp)
+rosbuild_add_executable (visualize_segments src/segmentation/visualize_segments.cpp)
 
 #target_link_libraries(example ${PROJECT_NAME})
