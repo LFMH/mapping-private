@@ -144,24 +144,7 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
  */
 int main (int argc, char** argv)
 {
-
-  // Initialize random number generator
-  srand (time(0));
-
-  // Initialize ros time
-  ros::Time::init();
-
-  // Declare the timer
-  terminal_tools::TicToc tt;
-
-  // Starting timer
-  tt.tic ();
-
-  ROS_WARN ("Timer started !");
-  ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-
-
-
+ 
   // --------------------------------------------------------------- //
   // ------------------ Check and parse arguments ------------------ //
   // --------------------------------------------------------------- //
@@ -171,25 +154,26 @@ int main (int argc, char** argv)
   {
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
-    ROS_INFO ("where <options> are: -line_threshold X                       = threshold for line inlier selection");
-    ROS_INFO ("                     -circle_threshold X                     = threshold for circle inlier selection");
-    ROS_INFO ("                     -voting_threshold X                     = threshold for Hough-based model voting");
-    ROS_INFO ("                     -minimum_radius X                       = ");
-    ROS_INFO ("                     -maximum_radius X                       = ");
-    ROS_INFO ("                     -minimum_line_inliers D                 = ");
-    ROS_INFO ("                     -minimum_circle_inliers D               = ");
-    ROS_INFO ("                     -maximum_line_iterations D              = ");
-    ROS_INFO ("                     -maximum_circle_iterations D            = ");
-    ROS_INFO ("                     -line_inliers_clustering_tolerance X    = ");
-    ROS_INFO ("                     -circle_inliers_clustering_tolerance X  = ");
+    ROS_INFO ("  where <options> are:");
+    ROS_INFO ("    -line_threshold X                          = threshold for line inlier selection");
+    ROS_INFO ("    -circle_threshold X                        = threshold for circle inlier selection");
+    ROS_INFO ("    -voting_threshold X                        = threshold for Hough-based model voting");
+    ROS_INFO ("    -minimum_radius X                          = ");
+    ROS_INFO ("    -maximum_radius X                          = ");
+    ROS_INFO ("    -minimum_line_inliers D                    = ");
+    ROS_INFO ("    -minimum_circle_inliers D                  = ");
+    ROS_INFO ("    -maximum_line_iterations D                 = ");
+    ROS_INFO ("    -maximum_circle_iterations D               = ");
+    ROS_INFO ("    -line_inliers_clustering_tolerance X       = ");
+    ROS_INFO ("    -circle_inliers_clustering_tolerance X     = ");
     ROS_INFO (" ");
-    ROS_INFO ("                     -minimum_size_of_objects_clusters X     = ");
-    ROS_INFO ("                     -clustering_tolerance_of_objects X      = ");
+    ROS_INFO ("    -minimum_size_of_objects_clusters X        = ");
+    ROS_INFO ("    -clustering_tolerance_of_objects X         = ");
     ROS_INFO (" ");
-    ROS_INFO ("                     -size_of_points B                           = ");
-    ROS_INFO ("                     -line_step B                            = wait or not wait");
-    ROS_INFO ("                     -circle_step B                          = wait or not wait");
-    ROS_INFO ("                     -verbose B                              = verbose");
+    ROS_INFO ("    -size_of_points B                          = ");
+    ROS_INFO ("    -line_step B                               = wait or not wait");
+    ROS_INFO ("    -circle_step B                             = wait or not wait");
+    ROS_INFO ("    -verbose B                                 = verbose");
     ROS_INFO (" ");
     return (-1);
   }
@@ -225,7 +209,27 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
 
+  // ----------------------------------------------------- //
+  // ------------------ Initializations ------------------ //
+  // ----------------------------------------------------- //
 
+  // Initialize random number generator
+  srand (time(0));
+
+  // Initialize ros time
+  ros::Time::init();
+
+  // Declare the timer
+  terminal_tools::TicToc tt;
+
+  // Starting timer
+  tt.tic ();
+
+  if ( verbose )
+  {
+    // Displaying when the timer starts
+    ROS_WARN ("Timer started !");
+  }
 
   // ---------------------------------------------------------------- //
   // ------------------ Load the point cloud dataa ------------------ //
@@ -235,9 +239,9 @@ int main (int argc, char** argv)
   pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
 
   // Load point cloud data
-  if (pcl::io::loadPCDFile (argv[pFileIndicesPCD[0]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *input_cloud) == -1)
   {
-    ROS_ERROR ("Couldn't read file %s", argv[pFileIndicesPCD[0]]);
+    ROS_ERROR ("Couldn't read file %s", argv [pFileIndicesPCD [0]]);
     return (-1);
   }
 
@@ -245,8 +249,6 @@ int main (int argc, char** argv)
   {
     ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
   }
-
-
 
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
@@ -272,11 +274,8 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points",
-        (int) input_cloud->points.size (),  (int) filtered_cloud->points.size (), (int) input_cloud->points.size () - (int) filtered_cloud->points.size ());
+    ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points", (int) input_cloud->points.size (),  (int) filtered_cloud->points.size (), (int) input_cloud->points.size () - (int) filtered_cloud->points.size ());
   }
-
-
 
   // ------------------------------------------------------------------- //
   // ------------------ Estiamte 3D normals of points ------------------ //
@@ -303,7 +302,7 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-
+/*
 
   // -------------------------------------------------------------- //
   // ------------------ Cluster point cloud data ------------------ //
@@ -367,11 +366,7 @@ int main (int argc, char** argv)
     objects_clusters_clouds.push_back (object_cluster_cloud);
   }
 
-
-
-
-
-
+*/
 
 
 
@@ -430,9 +425,10 @@ int main (int argc, char** argv)
   // And wait until Q key is pressed
   circle_viewer.spin ();
 
-*/
+  */
 
 
+/*
 
   // Vector of ids of handles
   std::vector<std::string> objects_clusters_ids;
@@ -456,8 +452,6 @@ int main (int argc, char** argv)
       circle_viewer.spin ();
     }
 
-/*
-
     // Remove or not remove the cloud from viewer
     if ( circle_clean )
     {
@@ -472,13 +466,11 @@ int main (int argc, char** argv)
       }
     }
 
-*/
-
     // Save id of object
     objects_clusters_ids.push_back (object_cluster_id.str());
   }
 
-
+*/
 
   // ------------------------ //
   // Start fitting 2D circles //
@@ -1064,11 +1056,11 @@ int main (int argc, char** argv)
 
 
 
-  // Displaying the overall time
-  ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-  ROS_WARN ("Finished in %5.3g [s]", tt.toc ());
-
-
+  if ( verbose )
+  {
+    // Displaying the overall time
+    ROS_WARN ("Finished in %5.3g [s] !", tt.toc ());
+  }
 
   // And wait until Q key is pressed
   circle_viewer.spin ();
@@ -1078,4 +1070,3 @@ int main (int argc, char** argv)
 
   return (0);
 }
-
