@@ -71,6 +71,7 @@ void DistanceFilter::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& pointcloud
 	}
 	output_point_cloud.points.resize(cp);
 	cloud_pub_.publish(output_point_cloud);
+	ROS_INFO("Number of filtered pointcloud is: %d ",output_point_cloud.points.size());
 
 }
 
