@@ -54,6 +54,7 @@ namespace autonomous_exploration
     visualization_msgs::Marker marker_;
     bool get_pointcloud_, received_pose_, received_laser_signal_,move_robot_, publish_cloud_incrementally_;
     double angle_step_, wait_for_scan_, downsample_leaf_size_, rotate_amount_;
+    int scans_count_;
     //ros::ServiceClient tilt_laser_client_;
     pcl::PointCloud<pcl::PointXYZ> cloud_merged_;
   };
@@ -71,6 +72,7 @@ namespace autonomous_exploration
   {
     pcl_ros::PCLNodelet::onInit ();
     move_robot_=false;
+    scans_count_=0;
     pnh_->param("subscribe_pose_topic", subscribe_pose_topic_, std::string("/robot_pose"));
     pnh_->param("publish_cloud_incrementally", publish_cloud_incrementally_, false);
     pnh_->param("angle_step", angle_step_, 30.0);
@@ -106,7 +108,7 @@ namespace autonomous_exploration
 	  {
 	    move_robot_=false;
 	    geometry_msgs::Pose new_pose;
-	    for (int i=0;i<pose_msg_.poses.size();i++)
+	    for (unsigned int i=0;i<pose_msg_.poses.size();i++)
 	      {
 		if (!move_robot_)
 		  {
@@ -124,10 +126,13 @@ namespace autonomous_exploration
 		ROS_WARN("No good pose to navigate to. Exiting.");
 		exit(1);
 	      }
+        scans_count_++;
 
 	    //rise the spine up to scan
 	    setLaserProfile("scan");
 	    moveTorso(0.3, 1.0, "up");
+	    if (scans_count_==1)
+	      {
 	    double angles =0.0 ;
 	    btQuaternion initial_rotation( new_pose.orientation.x,new_pose.orientation.y,new_pose.orientation.z,new_pose.orientation.w);
 	    btScalar angle = - initial_rotation.getAngle();
@@ -159,7 +164,20 @@ namespace autonomous_exploration
 		get_pointcloud_ = true;
 		angles += angle_step_;
 	      }//end while                          		
-				
+        }// end if
+        else
+        {
+        	btQuaternion initial_rotation( new_pose.orientation.x,new_pose.orientation.y,new_pose.orientation.z,new_pose.orientation.w);
+            btScalar angle = - initial_rotation.getAngle();
+            btQuaternion q (angle, 0, 0);
+            new_pose.orientation.x = q.x();
+            new_pose.orientation.y = q.y();
+            new_pose.orientation.z = q.z();
+            new_pose.orientation.w = q.w();
+            get_pointcloud_ = true;
+            moveRobot(new_pose);
+            //sleep(5.0);
+        }
 					
 			
 	    while (!get_pointcloud_)

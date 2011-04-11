@@ -24,6 +24,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #common commands for building c++ executables and libraries
 rosbuild_add_library(NextBestView src/next_best_view.cpp)
 rosbuild_add_library(AutonomousExploration src/autonomous_exploration.cpp)
+rosbuild_add_library(DistanceFilter src/distance_filter.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
