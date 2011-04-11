@@ -348,6 +348,7 @@ void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
 			for (int k = 0; k < y_dim; k++)
 			{
 				int reward = costmap[i][j][k];
+				ROS_INFO("The reward is: %d",reward);
 				if (reward > max_reward)
 				{
 					max_reward = reward;
@@ -357,6 +358,7 @@ void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
 				}
 			}
 	}
+	ROS_INFO("max revard is :%d ",max_reward);
 }
 void NextBestView::save_costmaps (int nr_dirs, std::vector<std::vector<std::vector<int> > > costmap, std::string file_prefix, ros::Time stamp)
 {
@@ -453,6 +455,7 @@ geometry_msgs::Pose NextBestView::find_best_pose(int best_i,int best_j,int best_
 		btQuaternion quat (axis, pi+((double)best_i)*2.0*pi/(double)nr_costmap_dirs_);
 		ROS_INFO("BEST I,J,K::: %i %i %i (reward %i)", best_i, best_j, best_k, max_reward);
 		ROS_INFO("BEST robot pose::: x,y = [%f , %f], theta = %f", p.position.x, p.position.y, best_i*2.0*pi/nr_costmap_dirs_);
+
 		geometry_msgs::Quaternion quat_msg;
 		tf::quaternionTFToMsg(quat, quat_msg);
 		p.orientation = quat_msg;
@@ -558,16 +561,19 @@ geometry_msgs::Pose NextBestView::sample_from_costmap (std::vector<std::vector<s
 	int c;
 	do
 	{
+
 		dir = rand () * ((double)nr_dirs / RAND_MAX);
 		x = rand () * ((double)x_dim / RAND_MAX);
 		y = rand () * ((double)y_dim / RAND_MAX);
 
 		c = 0.5 * (double)max_reward + rand () * ((double)max_reward * 0.5 / RAND_MAX);
 		c = sqrt((double)max_reward*max_reward - (double)c*c); // quarter circular transfer function
+		//ROS_INFO("The c value is: %d",c);
 	} while (costmap [dir][x][y] < c);
 	reward = costmap[dir][x][y];
 
 	geometry_msgs::Pose pose = find_best_pose(dir, x, y, reward, min, max);
+
 	double real_x = min.x + (x + 0.5) * costmap_grid_cell_size_;
 	double real_y = min.y + (y + 0.5) * costmap_grid_cell_size_;
 	double theta = pi+((double)dir)*2.0*pi/(double)nr_costmap_dirs_;
@@ -900,7 +906,9 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 	// find best scanning pose -- simply the maximum
 	int max_reward = 0;
 	int best_combined_i=0, best_combined_j=0, best_combined_k=0;
+
 	find_max_indices (best_combined_i, best_combined_j, best_combined_k, nr_costmap_dirs_, x_dim, y_dim, max_reward, bound_occ_costmap);
+
 	nbv_pose_array_.poses.resize(0);
 	//nbv_pose_array_.poses.push_back (find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max));
 	//geometry_msgs::Pose combined_bose=find_best_pose(best_combined_i,best_combined_j,best_combined_k,max_reward,min,max);
@@ -910,6 +918,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
          marker.markers.resize(nr_pose_samples_);
 	bound_occ_costmap=reduced_costmap(bound_occ_costmap,best_combined_j,best_combined_k,min,max,x_dim,y_dim);
+
 	for (int i = 0; i < nr_pose_samples_; i++)
 	{
 

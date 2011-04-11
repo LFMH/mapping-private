@@ -18,8 +18,10 @@ protected:
     std::string output_cloud_topic_;
     ros::Subscriber cloud_sub_;
     ros::Publisher cloud_pub_;
+    std::string laser_frame_;
     //float_t threshold_;
     float threshold_;
+    int cp;
     void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg);
 public:
 	DistanceFilter();
@@ -39,21 +41,23 @@ DistanceFilter::~DistanceFilter()
 void DistanceFilter::onInit()
 {
 	threshold_=5.0;
+	cp=0;
 	pcl_ros::PCLNodelet::onInit ();
 	pnh_->param("input_cloud_topic", input_cloud_topic_, std::string("/nbv_cloud"));
 	pnh_->param("output_cloud_topic", output_cloud_topic_, std::string("/output_nbv_cloud"));
+	pnh_->param("laser_frame", laser_frame_, std::string("/laser_tilt_link"));
 	//pnh_->param("threshold", threshold_, 5.0);
 	cloud_sub_=pnh_->subscribe(input_cloud_topic_,1, &DistanceFilter::cloud_cb, this);
 	cloud_pub_=pnh_->advertise<sensor_msgs::PointCloud2>(output_cloud_topic_,1);
 }
 void DistanceFilter::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& pointcloud2_msg)
 {
+	ros::Time start_time = ros::Time::now();
 	pcl::PointCloud<pcl::PointXYZ> input_pointcloud,output_point_cloud;
 	pcl::fromROSMsg(*pointcloud2_msg, input_pointcloud);
 	ROS_INFO("number of points in pointcloud is: %d ",input_pointcloud.points.size());
 	output_point_cloud.points.resize(input_pointcloud.points.size());
-	//float threshold=5.0;
-	int cp=0;
+	output_point_cloud.header=input_pointcloud.header;
 	geometry_msgs::Point viewpoint;
 	viewpoint.x=0.0;
 	viewpoint.y=0.0;
@@ -72,7 +76,10 @@ void DistanceFilter::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& pointcloud
 	output_point_cloud.points.resize(cp);
 	cloud_pub_.publish(output_point_cloud);
 	ROS_INFO("Number of filtered pointcloud is: %d ",output_point_cloud.points.size());
-
+	/*for (unsigned int i=0;i<output_point_cloud.points.size();i++)
+	{
+		ROS_INFO("the points from the pointcloud %f, %f, %f",output_point_cloud.points[i].x,output_point_cloud.points[i].y,output_point_cloud.points[i].z);
+	}*/
 }
 
 }
