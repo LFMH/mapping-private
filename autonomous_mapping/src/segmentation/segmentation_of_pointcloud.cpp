@@ -59,19 +59,15 @@
 // pcl ias sample consensus dependencies
 #include "pcl_ias_sample_consensus/pcl_sac_model_orientation.h"
 
-//#include "pcl_ros/segmentation/sac_segmentation.h"
-//#include "pcl_ros/segmentation/extract_clusters.h"
-//#include "pcl_ros/segmentation/extract_polygonal_prism_data.h"
-//#include "pcl/features/normal_3d.h"
-//#include "mod_semantic_map/SemMap.h"
+// dos pcl dependencies
 #include "dos_pcl/segmentation/door_detection_by_color_and_fixture.h"
 
 
 
 // Set up the right type definition of points
 //typedef pcl::PointXYZ PointT;
-typedef pcl::PointXYZRGB PointT;
-//typedef pcl::PointXYZINormal PointT;
+//typedef pcl::PointXYZRGB PointT;
+typedef pcl::PointXYZINormal PointT;
 
 
 
@@ -459,7 +455,7 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
 
       // TODO limit the number of re-fitting for better computation time
 
-      if ( counter == 100 )
+      if ( counter == 25 )
       {
         // No need for fitting planes anymore
         stop_planes = true;
@@ -1156,12 +1152,15 @@ int main (int argc, char** argv)
   // Remove the point cloud data
   viewer.removePointCloud ("INPUT");
 
-  /*
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // Remove the point cloud data
-  viewer.removePointCloud ("CEILING");
-
-  */
+  viewer.removePointCloud ("FLOOR");
 
   // Wait or not wait
   if ( step )
@@ -1268,39 +1267,33 @@ int main (int argc, char** argv)
     Z = Eigen::Vector3f (0.0, 0.0, 1.0); 
   }
 
-/*
-
-  // The aligment axes of that particulary point cloud data
-  -0.966764, -0.0782345, 0.0 
-  0.0782345, -0.966764, 0.0 
-  0.0 0.0 1.0
-
-*/
-
-/*
-
+  /*
   // Already computed axes for PointXYZINormal cloud
   X = Eigen::Vector3f (-0.99613, -0.08719,  0.00000);
   Y = Eigen::Vector3f ( 0.08719, -0.99613,  0.00000);
   Z = Eigen::Vector3f ( 0.00000,  0.00000,  1.00000);
+  */
 
-*/
-
-///*
-
+  /*
   // Already computed axes for PointXYRGB cloud
   X = Eigen::Vector3f (-0.02082,  0.99978, -0.00000);
   Y = Eigen::Vector3f (-0.99978, -0.02082,  0.00000);
   Z = Eigen::Vector3f ( 0.00000,  0.00000,  1.00000);
+  */
 
-//*/
+  /*
+  // Already computed axes for PointXYZ cloud
+  X = Eigen::Vector3f (-0.15565, -0.98777,  0.00000);
+  Y = Eigen::Vector3f ( 0.98777, -0.15565,  0.00000);
+  Z = Eigen::Vector3f ( 0.00000,  0.00000,  1.00000);
+  */
 
   if ( verbose )
   {
     ROS_INFO ("The furniture surfaces will be detected along the following axes:");
-    ROS_INFO ("  X = (%8.5f, %8.5f, %8.5f)", X[0], X[1], X[2]);
-    ROS_INFO ("  Y = (%8.5f, %8.5f, %8.5f)", Y[0], Y[1], Y[2]);
-    ROS_INFO ("  Z = (%8.5f, %8.5f, %8.5f)", Z[0], Z[1], Z[2]);
+    ROS_INFO ("  X = Eigen::Vector3f (%8.5f, %8.5f, %8.5f)", X[0], X[1], X[2]);
+    ROS_INFO ("  Y = Eigen::Vector3f (%8.5f, %8.5f, %8.5f)", Y[0], Y[1], Y[2]);
+    ROS_INFO ("  Z = Eigen::Vector3f (%8.5f, %8.5f, %8.5f)", Z[0], Z[1], Z[2]);
 
     // Wait or not wait
     if ( step )
@@ -1528,6 +1521,27 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
   }
 
+   ROS_ERROR (" OVER !!! ");
+ // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+   ROS_ERROR (" OVER !!! ");
+ // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
+   ROS_ERROR (" OVER !!! ");
+ // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
 
 
   // ---------------------------------------------------------------------- //
@@ -1734,7 +1748,7 @@ int main (int argc, char** argv)
                ROS_INFO ("Line has %d inliers", line_inliers_cloud->points.size());
                ROS_INFO ("%d points remain after extraction", filtered_cloud->points.size ());
 
-*/
+            */
 
             // --------------------------- //
             // Start visualization process //
@@ -1889,7 +1903,28 @@ int main (int argc, char** argv)
     ROS_WARN (" ");
   }
 
-  ///*
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  /*
 
   ///////////////////////////////////////////////////////////////////
   // Clean the 3D viewer for the segmentation by color and fixture //
@@ -1925,18 +1960,22 @@ int main (int argc, char** argv)
   // The 3D viewer is now clean //
   ////////////////////////////////
 
-  //*/
+  */
 
-//  if ( verbose )
-//  {
-//    ROS_INFO (" ");
-//    ROS_INFO ("THERE ARE %d FURNITURE SURFACES OUT OF WHICH", (int) furniture_surfaces.size());
-//    ROS_INFO ("%d ARE HORIZONTAL AND", (int) horizontal_furniture_surfaces.size());
-//    ROS_INFO ("%d ARE VERTICAL", (int) indices_of_points_on_the_surfaces.size());
-//    ROS_INFO (" ");
-//  }
+  /*
 
-///*
+  if ( verbose )
+  {
+    ROS_INFO (" ");
+    ROS_INFO ("THERE ARE %d FURNITURE SURFACES OUT OF WHICH", (int) furniture_surfaces.size());
+    ROS_INFO ("%d ARE HORIZONTAL AND", (int) horizontal_furniture_surfaces.size());
+    ROS_INFO ("%d ARE VERTICAL", (int) indices_of_points_on_the_surfaces.size());
+    ROS_INFO (" ");
+  }
+
+  */
+
+  /*
 
   // Add the input cloud
   viewer.addPointCloud (*furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
@@ -1968,8 +2007,6 @@ int main (int argc, char** argv)
     }
   }
 
-
-
   int number_of_furniture_points = furniture->points.size ();
  
   // Declare the indices of furniture points
@@ -1997,24 +2034,9 @@ int main (int argc, char** argv)
     ROS_INFO ("Size of fixture %d", (int) fixtures_indices.indices.size ());
   }
 
-  //*/
+  */
 
-/*
-
-  // Segmentation's Parameters
-  double cluster_tolerance = 0.020; /// [meters]
-  double fixture_cluster_tolerance = 0.025; /// [meters]
-  double center_radius = 0.085; /// 
-  double init_radius = 0.035; ///
-  double color_radius = 0.050; ///
-
-  int std_limit = 2; ///
-  int min_pts_per_cluster = 150; /// [points]
-  int fixture_min_pts_per_cluster = 150; /// [points]
-
-*/
-
-  ///*
+  /*
 
   // Clusters segmented by color and fixture
   std::vector<pcl::PointIndices> clusters;
@@ -2038,8 +2060,6 @@ int main (int argc, char** argv)
 
   // Extract the clusters by color and fixture
   segmentation_by_color_and_fixture.extract (clusters);
-
-
 
   // Save the clouds which represet the individual clusters
   std::vector<pcl::PointCloud<PointT>::Ptr > clusters_clouds;
@@ -2099,27 +2119,7 @@ int main (int argc, char** argv)
     }
   }
 
-  //*/
-
-  //for (int c = 0; c < (int) clusters_clouds.size(); c++)
-  //{
-
-    //pcl::PointCloud<PointT> cloud_projected;
-
-    //// Project the table inliers using the planar model coefficients    
-    //pcl::ProjectInliers<PointT> proj_;   
-    //proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-    //proj_.setInputCloud (planar_surfaces.at (surface));
-    //proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
-    //proj_.filter (cloud_projected);
-
-
-
-  //}
-
-
-
-
+  */
 
   if ( verbose )
   {
