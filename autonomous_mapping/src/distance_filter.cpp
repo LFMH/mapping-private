@@ -6,6 +6,7 @@
 #include <vector>
 #include <nodelet/nodelet.h>
 #include <math.h>
+#include "pcl/io/pcd_io.h"
 namespace distance_filter
 {
 class DistanceFilter : public pcl_ros::PCLNodelet
@@ -40,7 +41,7 @@ DistanceFilter::~DistanceFilter()
 }
 void DistanceFilter::onInit()
 {
-	threshold_=5.0;
+	threshold_=6.0;
 	cp=0;
 	pcl_ros::PCLNodelet::onInit ();
 	pnh_->param("input_cloud_topic", input_cloud_topic_, std::string("/nbv_cloud"));
@@ -71,9 +72,11 @@ void DistanceFilter::cloud_cb(const sensor_msgs::PointCloud2ConstPtr& pointcloud
 			output_point_cloud.points[cp].y=input_pointcloud.points[i].y;
 			output_point_cloud.points[cp].z=input_pointcloud.points[i].z;
 			cp++;
+
 		}
 	}
 	output_point_cloud.points.resize(cp);
+	//pcl::io::savePCDFileASCII ("/home/ghitzarus/Desktop/aggredated_point_cloud.pcd", output_point_cloud);
 	cloud_pub_.publish(output_point_cloud);
 	ROS_INFO("Number of filtered pointcloud is: %d ",output_point_cloud.points.size());
 	/*for (unsigned int i=0;i<output_point_cloud.points.size();i++)

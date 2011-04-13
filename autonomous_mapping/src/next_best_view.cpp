@@ -311,7 +311,7 @@ void NextBestView::onInit()
 	pnh_->param("tolerance", tolerance_, 0.3);
 	pnh_->param("boundary_angle_threshold", boundary_angle_threshold_, 2.5);
 	//ending criterion stuff
-	pnh_->param("fringe_threashold",fringe_threashhold_,1000);
+	pnh_->param("fringe_threashold",fringe_threashhold_,100);
 
 	// create subs and pubs
 	cloud_sub_ = pnh_->subscribe (input_cloud_topic_, 1, &NextBestView::cloud_cb, this);
@@ -339,6 +339,9 @@ void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
 			int nr_dirs, int x_dim, int y_dim, int &max_reward,
 			std::vector<std::vector<std::vector<int > > > costmap)
 {
+	int bla=0;
+	std::ofstream file;
+	file.open("/home/ghitzarus/Desktop/rewards.txt");
 	for (int i = 0; i < nr_dirs; ++i)
 	{
 		//		std::stringstream ss;
@@ -348,9 +351,12 @@ void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
 			for (int k = 0; k < y_dim; k++)
 			{
 				int reward = costmap[i][j][k];
-				ROS_INFO("The reward is: %d",reward);
+				if (reward!=0) bla++;
+				file<<reward<<std::endl;
+				//ROS_INFO("The reward is: %d",reward);
 				if (reward > max_reward)
 				{
+
 					max_reward = reward;
 					best_i = i;
 					best_j = j;
@@ -358,7 +364,9 @@ void NextBestView::find_max_indices (int &best_i, int &best_j, int &best_k,
 				}
 			}
 	}
-	ROS_INFO("max revard is :%d ",max_reward);
+	file.close();
+	//ROS_INFO("THE NUMBER OF REWARDS DIFFERNT THAN 0 is: %d",bla);
+	//ROS_INFO("max revard is :%d ",max_reward);
 }
 void NextBestView::save_costmaps (int nr_dirs, std::vector<std::vector<std::vector<int> > > costmap, std::string file_prefix, ros::Time stamp)
 {
@@ -561,13 +569,15 @@ geometry_msgs::Pose NextBestView::sample_from_costmap (std::vector<std::vector<s
 	int c;
 	do
 	{
-
+        //ROS_INFO("Infinite loop :(");
 		dir = rand () * ((double)nr_dirs / RAND_MAX);
 		x = rand () * ((double)x_dim / RAND_MAX);
 		y = rand () * ((double)y_dim / RAND_MAX);
-
+        //max_reward=max_reward*0.89;
 		c = 0.5 * (double)max_reward + rand () * ((double)max_reward * 0.5 / RAND_MAX);
 		c = sqrt((double)max_reward*max_reward - (double)c*c); // quarter circular transfer function
+		//c =rand () * ((double)max_reward/ RAND_MAX);
+		//c = sqrt((double)max_reward*max_reward/2 - (double)c*c);
 		//ROS_INFO("The c value is: %d",c);
 	} while (costmap [dir][x][y] < c);
 	reward = costmap[dir][x][y];
@@ -946,7 +956,7 @@ void NextBestView::cloud_cb (const sensor_msgs::PointCloud2ConstPtr& pointcloud2
 
 	for (unsigned int i = 0; i < scores.size (); i++)
 		ROS_INFO ("pose %i: %f", i, scores[i]);
-    double threshold=scores[0] *0.75;
+    double threshold=scores[0] *0.85;
     int p=0;
     for (unsigned j=0;j<scores.size ();j++)
     	if (scores[j]>threshold)
