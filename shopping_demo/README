@@ -1,0 +1,23 @@
+How to run the best location inference:
+
+- checkout and make packages:
+    -  checkout knowrob/comp_orgprinciples
+    - $ rosmake comp_orgprinciples
+    - $ rosmake shopping demo
+
+- run roscore
+    - $ roscore
+
+- launch knowrob with the comp_orgprinciples module
+    - $ cd comp_orgprinciples/launch/
+    - $ roslaunch comp_orgprinciples.launch
+
+- start test client: query_comp_orgprinciples
+    - $ cd shopping_demo/bin
+    - $ ./query_comp_orgprinciples
+
+
+- for the demo: add new product classes and instances to ontology:
+    - use e.g. Protege to edit comp_orgprinciples/owl/orgprinciples_demo.owl
+    - use "cont-InGeneric" object properties to place objects at location instances from the ccrl2_semantic_map 
+
