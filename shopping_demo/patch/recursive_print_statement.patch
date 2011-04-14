@@ -1,0 +1,384 @@
+diff --git a/stacks/dos/dos_pcl_ros/CMakeLists.txt b/stacks/dos/dos_pcl_ros/CMakeLists.txt
+index 87a7810..6f72ddb 100644
+--- a/stacks/dos/dos_pcl_ros/CMakeLists.txt
++++ b/stacks/dos/dos_pcl_ros/CMakeLists.txt
+@@ -50,10 +50,11 @@ rosbuild_gensrv()
+ #rosbuild_add_executable(rotational_estimation_node src/sac_model_rotational.cpp)
+ #target_link_libraries(rotational_estimation_node ${PROJECT_NAME})
+ 
+-#rosbuild_add_library (dos_pcl_ros
++rosbuild_add_library (dos_pcl_ros
+   #src/dos_pcl_ros/pipeline_switch.cpp
+-  #src/dos_pcl_ros/urdf_cloud_filter.cpp
+-  #src/dos_pcl_ros/common.cpp)
++  src/dos_pcl_ros/urdf_cloud_filter.cpp
++  #src/dos_pcl_ros/common.cpp
++)
+ 
+ #rosbuild_link_boost (dos_pcl system)
+ #target_link_libraries (dos_pcl tbb)
+diff --git a/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/impl/urdf_cloud_filter.hpp b/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/impl/urdf_cloud_filter.hpp
+index 63dfa13..6fe481a 100644
+--- a/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/impl/urdf_cloud_filter.hpp
++++ b/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/impl/urdf_cloud_filter.hpp
+@@ -1,7 +1,7 @@
+ template <typename PointT> inline void
+   dos_pcl_ros::URDFCloudFilter<PointT>::principalComponent
+-    (const Eigen3::Matrix3f &covariance_matrix, const Eigen3::Vector4f &point,
+-     Eigen3::Vector4f &principal_component)
++    (const Eigen::Matrix3f &covariance_matrix, const Eigen::Vector4f &point,
++     Eigen::Vector4f &principal_component)
+ {
+   // Avoid getting hung on Eigen's optimizers
+   for (int i = 0; i < 3; ++i)
+@@ -13,8 +13,8 @@ template <typename PointT> inline void
+         return;
+       }
+ 
+-  EIGEN_ALIGN16 Eigen3::Vector3f eigen_values;
+-  EIGEN_ALIGN16 Eigen3::Matrix3f eigen_vectors;
++  EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
++  EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
+   pcl::eigen33 (covariance_matrix, eigen_vectors, eigen_values);
+ 
+   // The normalization is not necessary, since the eigenvectors from libeigen are already normalized
+@@ -26,15 +26,15 @@ template <typename PointT> inline void
+ 
+ template <typename PointT> inline double
+   dos_pcl_ros::URDFCloudFilter<PointT>::computePrincipalComponentAngle
+-    (const PointCloud &cloud, Eigen3::Vector4f &axis)
++    (const PointCloud &cloud, Eigen::Vector4f &axis)
+ {
+   if (cloud.points.size () == 0)
+     return 0.0;
+ 
+   // Placeholder for the 3x3 covariance matrix at each surface patch
+-  EIGEN_ALIGN16 Eigen3::Matrix3f covariance_matrix;
++  EIGEN_ALIGN16 Eigen::Matrix3f covariance_matrix;
+   // 16-bytes aligned placeholder for the XYZ centroid of a surface patch
+-  Eigen3::Vector4f xyz_centroid;
++  Eigen::Vector4f xyz_centroid;
+ 
+   // Estimate the XYZ centroid
+   compute3DCentroid (cloud, xyz_centroid);
+@@ -43,7 +43,7 @@ template <typename PointT> inline double
+   computeCovarianceMatrix (cloud, xyz_centroid, covariance_matrix);
+ 
+   // Get the principal axis and compare it with the given one
+-  Eigen3::Vector4f principal_axis;
++  Eigen::Vector4f principal_axis;
+   principalComponent (covariance_matrix, xyz_centroid, principal_axis);
+ 
+   double angle = fabs (pcl::getAngle3D (principal_axis, axis));
+@@ -76,7 +76,7 @@ template <typename PointT> void
+           transformed_clouds[it->frame], remaining_indices_, indices, threshold_, indices_expand);
+     break;
+     default:
+-      ROS_WARN ("Link %s contains an unsupported collision model type.", it->link->name.c_str());
++      printf ("Link %s contains an unsupported collision model type.", it->link->name.c_str());
+     break;
+   }
+ 
+@@ -213,7 +213,7 @@ template <typename PointT> void
+ //    for (unsigned int i = 0; i < door_points.points.size(); i++)
+ //      door_points.points[i].z = 0;
+ //
+-//    Eigen3::Vector4f axis;
++//    Eigen::Vector4f axis;
+ //    axis[0] = (double) it->op.params["search_expand_axis"][0];
+ //    axis[1] = (double) it->op.params["search_expand_axis"][1];
+ //    axis[2] = (double) it->op.params["search_expand_axis"][2];
+@@ -302,7 +302,7 @@ template <typename PointT> void
+ //    // Create a shared plane model pointer directly
+ //    SampleConsensusModelPerpendicularPlanePtr model = boost::make_shared<pcl::SampleConsensusModelPerpendicularPlane<PointT> > (boost::make_shared<PointCloud> (drawer_door_points));
+ //
+-//    Eigen3::Vector3f ax;
++//    Eigen::Vector3f ax;
+ //    ax[0] = 1.0;
+ //    ax[1] = 0.0;
+ //    ax[2] = 0.0;
+@@ -320,16 +320,16 @@ template <typename PointT> void
+ //      std::vector<int> inliers;
+ //      sac.getInliers (inliers);
+ //
+-//      Eigen3::VectorXf coeff;
++//      Eigen::VectorXf coeff;
+ //      sac.getModelCoefficients (coeff);
+ //
+-//      Eigen3::VectorXf coeff_refined;
++//      Eigen::VectorXf coeff_refined;
+ //      model->optimizeModelCoefficients (inliers, coeff, coeff_refined);
+ //
+ //      PointCloud proj_points;
+ //      model->projectPoints (inliers, coeff_refined, proj_points);
+ //
+-//      Eigen3::Vector4f pt;
++//      Eigen::Vector4f pt;
+ //      pt[0] = 0;
+ //      pt[1] = 0;
+ //      pt[2] = 0;
+@@ -337,12 +337,12 @@ template <typename PointT> void
+ //
+ //      double open_state = fabs (coeff_refined.dot (pt));
+ //
+-//      Eigen3::Vector4f coeff_4;
++//      Eigen::Vector4f coeff_4;
+ //      coeff_4[0] = coeff_refined[0];
+ //      coeff_4[1] = coeff_refined[1];
+ //      coeff_4[2] = coeff_refined[2];
+ //      coeff_4[3] = coeff_refined[3];
+-//      Eigen3::Vector4f ax_4;
++//      Eigen::Vector4f ax_4;
+ //      ax_4[0] = 1.0;
+ //      ax_4[1] = 0.0;
+ //      ax_4[2] = 0.0;
+@@ -398,7 +398,7 @@ template <typename PointT> void
+      std::map <std::string, boost::shared_ptr <PointCloud> > &transformed_clouds, std::vector<int> &indices_expand)
+ {
+   // collide with the relevant regions of interest
+-  ROS_INFO ("colliding with link: %s, target_frame: %s",
++  printf ("colliding with link: %s, target_frame: %s",
+             it->link->name.c_str (), it->frame.c_str ());
+   std::vector<int> indices;
+ 
+@@ -417,7 +417,7 @@ template <typename PointT> void
+           transformed_clouds[it->frame], remaining_indices_, indices, threshold_, indices_expand);
+     break;
+     default:
+-      ROS_WARN ("Link %s contains an unsupported collision model type.", it->link->name.c_str());
++      printf ("Link %s contains an unsupported collision model type.", it->link->name.c_str());
+     break;
+   }
+ }
+@@ -430,8 +430,7 @@ template <typename PointT> void
+     PointCloud cloud_xyz;
+     pcl::fromROSMsg (*input, cloud_xyz);
+     output.header.frame_id = input->header.frame_id;
+-    
+-    ROS_INFO ("number of target frames: %i", (int)target_frames_.size());
++    printf ("number of target frames: %i", (int)target_frames_.size());
+     typename std::vector<TargetFrames>::iterator it;
+     std::map <std::string, boost::shared_ptr <PointCloud> > transformed_clouds;
+     remaining_indices_.clear ();
+@@ -441,7 +440,7 @@ template <typename PointT> void
+     {
+       if (it->op.params.count ("operation") == 0)
+       {
+-        ROS_WARN ("Filter operation for frame %s not specified", it->frame.c_str ());
++        printf ("Filter operation for frame %s not specified", it->frame.c_str ());
+         continue;
+       }
+ 
+@@ -450,29 +449,30 @@ template <typename PointT> void
+       {
+         // transform point cloud
+         PointCloud pcd;
+-	ros::Time time = cloud_xyz.header.stamp;
+-	ROS_INFO("wait_for_tf: %f", wait_for_tf_);
++	//ros::Time time = cloud_xyz.header.stamp;
++	ros::Time time = ros::Time::now();
++	printf("wait_for_tf: %f", wait_for_tf_);
+ 	bool found_transform = tf_listener_.waitForTransform(it->frame, cloud_xyz.header.frame_id, time, ros::Duration(wait_for_tf_));
+ 	if (found_transform)
+ 	  {
+ 	    if (pcl_ros::transformPointCloud (it->frame, cloud_xyz, pcd, tf_listener_))
+ 	      {
+ 		pcd.header.frame_id = it->frame;
+-		ROS_WARN ("Created new transformed point cloud in frame %s.", it->frame.c_str());
++		printf ("Created new transformed point cloud in frame %s.", it->frame.c_str());
+ 		
+ 		// cache the transformed point cloud
+ 		transformed_clouds[it->frame] = boost::make_shared <PointCloud> (pcd);
+ 		
+ 		typename std::map<std::string, boost::shared_ptr<PointCloud> >::iterator it_map;
+ 		for (it_map = transformed_clouds.begin (); it_map != transformed_clouds.end (); it_map++)
+-		  ROS_WARN ("Map contains: %s / %s (%f).", it_map->first.c_str (), it_map->second->header.frame_id.c_str(), it_map->second->points[0].x);
++		  printf ("Map contains: %s / %s (%f).", it_map->first.c_str (), it_map->second->header.frame_id.c_str(), it_map->second->points[0].x);
+ 	      }
+ 	    else
+ 	      return;
+ 	  }
+ 	else
+ 	  {
+-	    ROS_ERROR("No transform found");
++	    printf("No transform found");
+ 	    return;
+ 	  }
+       }
+@@ -491,7 +491,7 @@ template <typename PointT> void
+           // since the delete operations came first, it means we can now delete them..
+           if (indices_to_be_deleted.size () != 0) // .. if we haven't already done so
+           {
+-            ROS_INFO ("deleting points...");
++            printf ("deleting points...");
+             std::vector <bool> stay (cloud_xyz.points.size (), true);
+             remaining_indices_.clear ();
+             for (unsigned int i = 0; i < indices_to_be_deleted.size (); i++)
+@@ -507,7 +507,7 @@ template <typename PointT> void
+             pcl::toROSMsg (out, output);
+ 
+ 
+-            ROS_INFO ("%i points of %i left.", (int) remaining_indices_.size(), (int)cloud_xyz.points.size());
++            printf ("%i points of %i left.", (int) remaining_indices_.size(), (int)cloud_xyz.points.size());
+             indices_to_be_deleted.clear ();
+           }
+           last_op = "deleted";
+@@ -516,13 +516,13 @@ template <typename PointT> void
+         {
+           if (std::string(it->op.params["operation"]) == "segment_objects")
+           {
+-            ROS_INFO ("segmenting objects...");
++            printf ("segmenting objects...");
+             std::vector<int> indices_expand;
+             perform_segment_objects (it, transformed_clouds, indices_expand);
+             // publish points in expanded search region
+             if (indices_expand.size () > 0)
+             {
+-              ROS_INFO ("successfully segmented objects...");
++              printf ("successfully segmented objects...");
+               PointCloud output;
+               std::vector<int> original_indices;
+               original_indices.resize (indices_expand.size());
+@@ -533,10 +533,10 @@ template <typename PointT> void
+               copyPointCloud (cloud_xyz, original_indices, output);
+               // Publish a Boost shared ptr const data
+               publishers_[it->op.pub_topic].publish (output);
+-              ROS_INFO ("published on topic: %s", it->op.pub_topic.c_str ());
++              printf ("published on topic: %s", it->op.pub_topic.c_str ());
+             }
+             else
+-              ROS_INFO ("failed to segment any objects...");
++              printf ("failed to segment any objects...");
+           }
+           else if (std::string(it->op.params["operation"]) == "fit_drawer")
+             perform_fit_drawer (it, transformed_clouds);
+@@ -645,7 +645,7 @@ template <typename PointT> void
+         sre = (std::string)temp["regex"];
+       else
+       {
+-        ROS_WARN ("Didn't find regex param for this ROI.");
++        printf ("Didn't find regex param for this ROI.");
+         continue;
+       }
+ 
+@@ -655,7 +655,7 @@ template <typename PointT> void
+       }
+       catch (boost::regex_error& e)
+       {
+-	      ROS_ERROR ("\"%s\" is not a valid regex: %s", sre.c_str(), e.what());
++	      printf ("\"%s\" is not a valid regex: %s", sre.c_str(), e.what());
+         continue;
+       }
+ 
+@@ -673,7 +673,7 @@ template <typename PointT> void
+     }
+     catch (XmlRpc::XmlRpcException& e)  // Pokemon vs additional include file...
+     { /*nothing*/
+-      ROS_ERROR ("Cought Exception while parsing relevant_rois parameter: %s", e.getMessage ().c_str());
++      printf ("Cought Exception while parsing relevant_rois parameter: %s", e.getMessage ().c_str());
+     }
+   }
+ 
+@@ -691,7 +691,7 @@ template <typename PointT> void
+     }
+     else
+     {
+-      ROS_ERROR ("Parameter [%s] does not exist, and was not found by searchParam()",
++      printf ("Parameter [%s] does not exist, and was not found by searchParam()",
+           description_param_.c_str());
+       return;
+     }
+@@ -699,7 +699,7 @@ template <typename PointT> void
+ 
+   if (content.empty())
+   {
+-    ROS_ERROR ("URDF is empty");
++    printf ("URDF is empty");
+     return;
+   }
+ 
+@@ -740,11 +740,11 @@ template <typename PointT> void
+         {
+           std::string publish_topic = res.format (sop_it->pub_topic_re);
+           sop_it->pub_topic = publish_topic;
+-          ROS_INFO ("Regex expanded publisher topic to: %s", publish_topic.c_str());
++          printf ("Regex expanded publisher topic to: %s", publish_topic.c_str());
+           publishers_ [publish_topic] = pcl_ros::Publisher<pcl::PointXYZ>
+                                           (private_nh, publish_topic, max_queue_size_);
+         }
+-        ROS_INFO ("Match: %s (%s)", link->name.c_str(), sop_it->re.str().c_str());
++        printf ("Match: %s (%s)", link->name.c_str(), sop_it->re.str().c_str());
+         double r,p,y;
+ 
+         // handle special case of fixed links of drawers
+@@ -760,7 +760,7 @@ template <typename PointT> void
+           {
+             if (op_it->second == std::string ("fit_drawer"))
+             {
+-              ROS_ERROR ("dealing with special case: %s, %s", link->name.c_str(), link->child_joints[0]->name.c_str());
++              printf ("dealing with special case: %s, %s", link->name.c_str(), link->child_joints[0]->name.c_str());
+               sop_it->params["search_expand_distance"] = link->child_joints[0]->limits->upper
+                                                        - link->child_joints[0]->limits->lower;
+               sop_it->params["search_expand_axis"][0] = link->child_joints[0]->axis.x;
+@@ -771,7 +771,7 @@ template <typename PointT> void
+             }
+             else if (op_it->second == std::string ("fit_door"))
+             {
+-              ROS_ERROR ("dealing with special case: %s, %s", link->name.c_str(), link->child_joints[0]->name.c_str());
++              printf ("dealing with special case: %s, %s", link->name.c_str(), link->child_joints[0]->name.c_str());
+               if (sop_it->params.count ("min_drawer_inliers") == 0)
+                 sop_it->params["min_drawer_inliers"] = 50;
+             }
+@@ -805,7 +805,7 @@ template <typename PointT> void
+       }
+       else
+       {
+-        ROS_INFO ("No match: %s (%s)", link->name.c_str(), sop_it->re.str().c_str());
++        printf ("No match: %s (%s)", link->name.c_str(), sop_it->re.str().c_str());
+       }
+     }
+   }
+@@ -853,20 +853,20 @@ template <typename PointT> void
+   doc.Parse(model_description_.c_str());
+   if (!doc.RootElement())
+   {
+-    ROS_ERROR ("URDF failed XML parse");
++    printf ("URDF failed XML parse");
+     return;
+   }
+ 
+   urdf::Model descr;
+   if (!descr.initXml(doc.RootElement()))
+   {
+-    ROS_ERROR ("URDF failed Model parse");
++    printf ("URDF failed Model parse");
+     return;
+   }
+ 
+-  ROS_INFO ("URDF parsed OK");
++  printf ("URDF parsed OK");
+   loadURDFModel (doc.RootElement(), descr, private_nh);
+-  ROS_INFO ("URDF loaded OK");
++  printf ("URDF loaded OK");
+ }
+ 
+ 
+diff --git a/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/urdf_cloud_filter.h b/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/urdf_cloud_filter.h
+index b2b973b..5cd0740 100644
+--- a/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/urdf_cloud_filter.h
++++ b/stacks/dos/dos_pcl_ros/include/dos_pcl_ros/urdf_cloud_filter.h
+@@ -105,11 +105,11 @@ namespace dos_pcl_ros
+                            std::map <std::string, boost::shared_ptr <PointCloud> > &transformed_clouds,
+                            std::vector<int> &indices_expand);
+ 
+-      double computePrincipalComponentAngle (const PointCloud &cloud, Eigen3::Vector4f &axis);
++      double computePrincipalComponentAngle (const PointCloud &cloud, Eigen::Vector4f &axis);
+ 
+       void principalComponent
+-          (const Eigen3::Matrix3f &covariance_matrix, const Eigen3::Vector4f &point,
+-           Eigen3::Vector4f &principal_component);
++          (const Eigen::Matrix3f &covariance_matrix, const Eigen::Vector4f &point,
++           Eigen::Vector4f &principal_component);
+ 
+       std::vector <int> remaining_indices_;
+ 
