@@ -1,0 +1,19 @@
+<package>
+  <description brief="color_voxel_recognition_2">
+
+     color_voxel_recognition_2
+
+  </description>
+  <author>Kanezaki Asako</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/color_voxel_recognition_2</url>
+  <depend package="roscpp"/>
+  <depend package="pcl"/>
+  <depend package="c3_hlac"/>
+  <depend package="vosch"/>
+  <depend package="color_voxel_recognition"/>
+
+</package>
+
+

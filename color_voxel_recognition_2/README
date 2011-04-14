@@ -1,0 +1,11 @@
+# DEMO (trained from 63 objects)
+
+0. roscd color_feature_classification; cd demos
+   set 0.02 for voxel size (color_feature_classification/demos/voxel_size.txt)
+   "bash ../scripts/demos/train_models_all.sh"
+   "bash `rospack find color_voxel_recognition_2`/demos/SH/copy_param_and_model.sh"
+
+1. connect Kinect and "roslaunch openni_camera openni_node.launch" -- terminal 1
+2. bash `rospack find color_voxel_recognition_2`/demos/SH/detect_test_offline.sh 19 1 35 23 // multiple object detection (obj #19, #1, #35, and #23)
+
+NOTE: You may need to change parameters in color_voxel_recognition/demos/SH/copy_param_and_model.sh and color_voxel_recognition/demos/SH/detect_test_offline.sh
