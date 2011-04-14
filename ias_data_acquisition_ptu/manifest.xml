@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ias_data_acquisition_ptu</url>
   <depend package="rosbag" />
-  <depend package="dp_ptu47_pan_tilt_stage" />
   <depend package="image_transport" />
   <depend package="tf" />
   <depend package="geometry_msgs" />
