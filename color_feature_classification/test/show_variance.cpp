@@ -1,6 +1,6 @@
 #include <pcl/common/eigen.h>
 #include <iostream>
-#include "color_feature_classification/libPCA.hpp"
+#include "color_voxel_recognition/libPCA.hpp"
 
 using namespace Eigen;
 using namespace std;

@@ -2,11 +2,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include <float.h>
-#include <color_chlac/grsd_colorCHLAC_tools.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
 
-using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
@@ -64,7 +62,7 @@ readHist_saveMinMax ( int argc, char **argv, const std::string &extension, const
 int main(int argc, char** argv)
 {
   if( argc < 3 ){
-    ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output(bin_normalization/max_X).txt}\n", argv[0]);
+    std::cerr<< "Need at least two parameters! Syntax is: " << argv[0] << " {input_pointcloud_filename.pcd} {output(bin_normalization/max_X).txt}"<<std::endl;
     return(-1);
   }
 

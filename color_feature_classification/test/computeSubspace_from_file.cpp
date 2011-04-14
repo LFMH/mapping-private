@@ -7,8 +7,7 @@
 #include <pcl/io/pcd_io.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
-#include <color_chlac/grsd_colorCHLAC_tools.h>
-#include "color_feature_classification/libPCA.hpp"
+#include "color_voxel_recognition/libPCA.hpp"
 #include "FILE_MODE"
 
 using namespace pcl;
@@ -126,7 +125,7 @@ void computeSubspace( std::vector< std::vector<float> > models, const char* file
   PCA pca( false );
   const int num = (int)models.size();
   for( int i=0; i<num; i++ )
-    if( !if_zero_vec( models[ i ] ) )
+    //if( !if_zero_vec( models[ i ] ) )
       pca.addData( models[ i ] );
   pca.solve();
   pca.write( filename, ascii );

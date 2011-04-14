@@ -2,18 +2,11 @@
 
 #include <iostream>
 #include <stdio.h>
-//#include <stdlib.h>
-//#include <string>
-//#include <unistd.h>
 #include <sys/time.h>
-//#include <math.h>
-//#include <fstream>
 #include "color_voxel_recognition/libPCA.hpp"
-//#include "color_voxel_recognition/CCHLAC.hpp"
 #include "color_voxel_recognition/Search.hpp"
-#include "color_chlac/grsd_colorCHLAC_tools.h"
 
-//* 時間計測用
+// time
 double my_clock_()
 {
   struct timeval tv;
@@ -21,9 +14,9 @@ double my_clock_()
   return tv.tv_sec + (double)tv.tv_usec*1e-6;
 }
 
-//***************************//
-//* コンストラクタとデストラクタ *//
-//***************************//
+//******************************//
+//* constructor and destructor *//
+//******************************//
 
 SearchObj::SearchObj() :
   max_x(NULL),
@@ -86,20 +79,20 @@ SearchObj_multi::~SearchObj_multi(){
   if( nFeatures != NULL ) delete[] nFeatures;
 }
 
-//**************//
-//* 変数のセット *//
-//**************//
+//*****************//
+//* set variables *//
+//*****************//
 
-//***************************
-//* 検出対象物体のサイズ情報をセット
+//*************************
+// set size of sliding box
 void SearchObj::setRange( int _range1, int _range2, int _range3 ){
   range1 = _range1;
   range2 = _range2;
   range3 = _range3;
 }
 
-//************************************
-//* ランク何位までの領域を出力するか、をセット
+//***********************************************************************************
+// set number of output regions which are $rank_num most similar to the target object
 void SearchObj::setRank( int _rank_num ){
   rank_num = _rank_num;
   if( max_x != NULL ) delete[] max_x;
@@ -115,14 +108,14 @@ void SearchObj::setRank( int _rank_num ){
   for( int i=0; i<rank_num; i++ )  max_dot[ i ] = 0;
 }
 
-//***************************************************************
-//* 検出領域の中に含まれるボクセル数がいくつ未満だったら打ちきるかの閾値をセット
+//***********************************************************
+// set threshold of number of occupied voxels in a box region
 void SearchObj::setThreshold( int _exist_voxel_num_threshold ){
   exist_voxel_num_threshold = _exist_voxel_num_threshold;
 }
 
-//**********************************
-//* 検出対象物体の部分空間の基底軸の読み込み
+//*****************************************************
+// read projection axis of the target object's subspace
 void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   PCA pca_each;
   pca_each.read( filename, ascii );
@@ -131,28 +124,28 @@ void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool asc
   axis_q = tmpaxis2.transpose();
   if( multiple_similarity ){
     Eigen::VectorXf variance = pca_each.Variance();
-    for( int i=0; i<dim_model; i++ )
+    for( int i=1; i<dim_model; i++ )
       for( int j=0; j<dim; j++ )
-	axis_q( i, j ) = sqrt( variance( i ) ) * axis_q( i, j );
+	axis_q( i, j ) = axis_q( i, j ) * sqrt( variance( i ) ) / sqrt( variance( 0 ) );
   }
 }
 
-//********************************************
-//* sceneの（分割領域毎の）特徴量とボクセル数の読み込み
+//*********************************************************
+// read integral feature table (and voxel numbers) of scene
 void SearchObj::readData( const char *filenameF, const char *filenameN, int dim, bool ascii ){
   double tmpval_d;
 
   FILE *fp, *fp2;
   if( ascii ){
     fp = fopen( filenameF, "r" );
-    fscanf(fp,"%d %d %d\n",&x_num,&y_num,&z_num);
+    if( fscanf(fp,"%d %d %d\n",&x_num,&y_num,&z_num) == EOF ) std::cerr<< "fscanf err" << std::endl;
     fp2 = fopen( filenameN,"r" );
   }
   else{
     fp = fopen( filenameF, "rb" );
-    fread(&x_num,sizeof(int),1,fp);
-    fread(&y_num,sizeof(int),1,fp);
-    fread(&z_num,sizeof(int),1,fp);
+    if( fread(&x_num,sizeof(int),1,fp) < 1 ) std::cerr<< "fread err" << std::endl;
+    if( fread(&y_num,sizeof(int),1,fp) < 1 ) std::cerr<< "fread err" << std::endl;
+    if( fread(&z_num,sizeof(int),1,fp) < 1 ) std::cerr<< "fread err" << std::endl;
     fp2 = fopen( filenameN, "rb" );
   }
 
@@ -165,29 +158,29 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
     if( ascii ){
       int tmpval;
       for(int j=0;j<dim;j++){
-	fscanf(fp,"%d:%lf ",&tmpval,&tmpval_d);
+	if( fscanf(fp,"%d:%lf ",&tmpval,&tmpval_d) == EOF ) std::cerr<< "fscanf err" << std::endl;
 	nFeatures[ n ][ j ] = tmpval_d;
       }
-      fscanf(fp,"\n");
-      fscanf(fp2,"%d\n",exist_voxel_num+n);
+      if( fscanf(fp,"\n") == EOF ) std::cerr<< "fscanf err" << std::endl;
+      if( fscanf(fp2,"%d\n",exist_voxel_num+n) == EOF ) std::cerr<< "fscanf err" << std::endl;
     }
     else{
       for(int j=0;j<dim;j++){
-	fread(&tmpval_d,sizeof(tmpval_d),1,fp);
+	if( fread(&tmpval_d,sizeof(tmpval_d),1,fp) < 1 ) std::cerr<< "fread err" << std::endl;
 	nFeatures[ n ][ j ] = tmpval_d;
       }
-      fread(exist_voxel_num+n,sizeof(exist_voxel_num[n]),1,fp2);
+      if( fread(exist_voxel_num+n,sizeof(exist_voxel_num[n]),1,fp2) < 1 ) std::cerr<< "fread err" << std::endl;
     }
   }
   fclose(fp);
 }
 
-//*********************************//
-//* 検出ボックスの辺長の取得に関する関数 *//
-//*********************************//
+//************************//
+//* get sliding box size *//
+//************************//
 
 //*************************************************
-//* 引数の検出モードにおける検出ボックスのx,y,z辺の長さを取得
+// return xrange, yrange and zrange of sliding box
 inline void SearchObj::getRange( int &xrange, int &yrange, int &zrange, SearchMode mode ){
   switch( mode ){
   case S_MODE_1:
@@ -223,8 +216,8 @@ inline void SearchObj::getRange( int &xrange, int &yrange, int &zrange, SearchMo
   }
 }
 
-//*********************************************
-//* 引数の検出モードにおける検出ボックスのx辺の長さを返す
+//*****************************
+// return xrange of sliding box
 inline int SearchObj::xRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_1:
@@ -245,8 +238,8 @@ inline int SearchObj::xRange( SearchMode mode ){
   return 0;
 }
 
-//*********************************************
-//* 引数の検出モードにおける検出ボックスのy辺の長さを返す
+//*****************************
+// return yrange of sliding box
 inline int SearchObj::yRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_3:
@@ -267,8 +260,8 @@ inline int SearchObj::yRange( SearchMode mode ){
   return 0;
 }
 
-//*********************************************
-//* 引数の検出モードにおける検出ボックスのz辺の長さを返す
+//*****************************
+// return zrange of sliding box
 inline int SearchObj::zRange( SearchMode mode ){
   switch( mode ){
   case S_MODE_4:
@@ -289,13 +282,14 @@ inline int SearchObj::zRange( SearchMode mode ){
   return 0;
 }
 
-//*************************//
-//* 検出領域の保存に関する関数 *//
-//*************************//
+//*******************//
+//* storing results *//
+//*******************//
 
-//***********************************************************************
-//* 今までに発見した領域の中で、いま発見した領域とかぶる領域があれば、そのランク番号を返す
-//* かぶる領域がなければ最低ランクの番号を返す
+//****************************************************************************
+// check if the reference region is overlapped by some region already detected
+//   return the rank number of the overlapped region if there is,
+//   return the lowest rank number otherwise.
 inline int SearchObj::checkOverlap( int x, int y, int z, SearchMode mode ){
   int num;
   int xrange = 0, yrange = 0, zrange = 0;
@@ -327,9 +321,8 @@ inline int SearchObj::checkOverlap( int x, int y, int z, SearchMode mode ){
   return num;
 }
 
-//****************************
-//* 既に発見した領域のランクをずらす
-//* 例 src_num=2 dest_num=3: 3位の領域を4位に下げる
+//******************************************************************************
+// copy the info of $src_num-th detected region to $dest_num-th detected region
 inline void SearchObj::max_cpy( int src_num, int dest_num ){
   max_dot[ dest_num ] = max_dot[ src_num ];
   max_x[ dest_num ] = max_x[ src_num ];
@@ -338,8 +331,8 @@ inline void SearchObj::max_cpy( int src_num, int dest_num ){
   max_mode[ dest_num ] = max_mode[ src_num ];
 }
 
-//*************************************
-//* 今発見した領域を既に発見した領域と置き換える
+//*************************************************
+// replace the info of $dest_num-th detected region
 inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ){
   max_dot[ dest_num ] = dot;
   max_x[ dest_num ] = x;
@@ -348,14 +341,14 @@ inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z
   max_mode[ dest_num ] = mode;
 }
 
-//****************//
-//* 物体検出の関数 *//
-//****************//
+//********************//
+//* object detection *//
+//********************//
 
-//*************************
-//* 全ての検出モードでの物体検出
+//*******************************
+// object detection with rotation
 void SearchObj::search(){
-  double t1,t2;//時間計測用の変数
+  double t1,t2; // time
   t1 = my_clock_();
   if( range1 == range2 ){
     if( range2 == range3 ){ // range1 = range2 = range3
@@ -389,18 +382,18 @@ void SearchObj::search(){
   search_time = t2 - t1;
 }
 
-//******************************************
-//* 1つの検出モードでの物体検出（回転させない）
+//**********************************
+// object detection without rotation
 void SearchObj::search_withoutRotation(){
-  double t1,t2;//時間計測用の変数
+  double t1,t2; // time
   t1 = my_clock_();
   search_part( S_MODE_1 );
   t2 = my_clock_();
   search_time = t2 - t1;
 }
 
-//*************************
-//* 引数の検出モードでの物体検出
+//**************************************
+// object detection (in eash SearchMode)
 void SearchObj::search_part( SearchMode mode ){
   int xrange = 0, yrange = 0, zrange = 0;
   getRange( xrange, yrange, zrange, mode );
@@ -419,22 +412,21 @@ void SearchObj::search_part( SearchMode mode ){
       for(int y=0;y<y_end;y++){
 	for(int x=0;x<x_end;x++){
 
-	  //* 領域内にボクセルが存在するか否かをチェック
+	  //* check if there are some occupied voxels in reference region
 	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
-	  if(exist_num > exist_voxel_num_threshold){ // 領域内にボクセルが一定数以上あれば
+	  if(exist_num > exist_voxel_num_threshold){ // if there are
 
 	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
 	    
-	    //* 類似度計算
+	    //* similarity calculation
 	    sum = feature_tmp.dot( feature_tmp );
 	    tmpVector = axis_q * feature_tmp;
 	    sum = sqrt(sum);
 	    dot = tmpVector.dot( tmpVector );
 	    dot = sqrt( dot );
 	    dot /= sum ;
-	    //std::cout << x << " " << y << " " << z << " : " << dot << std::endl;
 		
-	    //* 類似度が高ければ保存
+	    //* store region info if its similarity is high
 	    for( int i=0; i<rank_num; i++ ){
 	      if(dot>max_dot[ i ]){
 		overlap_num = checkOverlap( x, y, z, mode );
@@ -453,8 +445,8 @@ void SearchObj::search_part( SearchMode mode ){
   }
 }
 
-//**********************************************
-//* 順に値が積分された配列からその位置における値を取り出す
+//***********************************************************************************
+// extract features and voxel numbers of reference region from integral feature table
 template <typename T>
 T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int xrange, const int yrange, const int zrange ) {
   T result;
@@ -508,8 +500,9 @@ T SearchObj::clipValue( T* ptr, const int x, const int y, const int z, const int
   return result;
 }
 
+//********************************************************
+// set integral feature table (and voxel numbers) of scene
 void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vector<float> > feature ){
-  //* 分割領域の個数を調べる
   x_num = subdiv_b_[0];
   y_num = subdiv_b_[1];
   z_num = subdiv_b_[2];
@@ -522,9 +515,9 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
   // exist_voxel_num = new int[ xyz_num ];
   // nFeatures = new Eigen::VectorXf [ xyz_num ];
 
-  //*********************************//
-  //* 全ての分割領域からの特徴抽出 *//
-  //*********************************//
+  //**********************//
+  //* feature extraction *//
+  //**********************//
   int idx = 0;
   const int dim_feature = feature_max.size(); // = 137
   //const int lower = 0;
@@ -532,35 +525,39 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
   for(int z=0;z<z_num;z++){
     for(int y=0;y<y_num;y++){
       for(int x=0;x<x_num;x++){
-	// histogram normalization
-	for( int t=0; t<dim_feature; t++ ){
-	  if( feature_max[ t ] == 0 ) feature[ idx ][ t ] = 0;
-	  else if( feature[ idx ][ t ] == feature_max[ t ] ) feature[ idx ][ t ] = upper;
-	  else feature[ idx ][ t ] = upper * feature[ idx ][ t ] / feature_max[ t ];
+
+	//* histogram normalization
+	if( dim_feature > 0 ){
+	  for( int t=0; t<dim_feature; t++ ){
+	    if( feature_max[ t ] == 0 ) feature[ idx ][ t ] = 0;
+	    else if( feature[ idx ][ t ] == feature_max[ t ] ) feature[ idx ][ t ] = upper;
+	    else feature[ idx ][ t ] = upper * feature[ idx ][ t ] / feature_max[ t ];
+	  }
 	}
+
 	Map<VectorXf> vec( &(feature[ idx ][0]), feature[ idx ].size() );
 	if( compress_flg )
 	  nFeatures[ idx ] = axis_p * vec;
 	else
 	  nFeatures[ idx ] = vec;
 
-	//*************************************//
-	//* 積分する（viola-jones積分画像の特徴版） *//
-	//*************************************//
+	//*******************************//
+	//* make integral feature table *//
+	//*******************************//
 	    
 	if(z==0){
 	  if(y==0){
-	    if(x!=0){ // (1,0,0)
+	    if(x!=0){ // (*,0,0)
 	      exist_voxel_num[ idx ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
 	      nFeatures[ idx ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
 	    }
 	  }
 	  else{
-	    if(x==0){ // (0,1,0)
+	    if(x==0){ // (0,*,0)
 	      exist_voxel_num[ idx ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
 	      nFeatures[ idx ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
 	    }
-	    else{ // (1,1,0)
+	    else{ // (*,*,0)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
@@ -574,11 +571,11 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 	}
 	else{
 	  if(y==0){
-	    if(x==0){ // (0,0,1)	
+	    if(x==0){ // (0,0,*)	
 	      exist_voxel_num[ idx ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
 	      nFeatures[ idx ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
 	    }
-	    else {// (1,0,1)
+	    else {// (*,0,*)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
@@ -590,7 +587,7 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 	    }
 	  }
 	  else{
-	    if(x==0){ // (0,1,1)
+	    if(x==0){ // (0,*,*)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ x + ( y - 1 )*x_num + z *xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
@@ -600,7 +597,7 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  nFeatures[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
 	    }
-	    else{ // (1,1,1)
+	    else{ // (*,*,*)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
@@ -626,9 +623,8 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
   }
 }
 
-
-//*******************
-//* 結果をファイルに出力
+//*****************************
+// output the results in a file
 void SearchObj::writeResult( const char *filename, int box_size ){
   FILE *fp = fopen(filename,"w");
   int xrange = 0, yrange = 0, zrange = 0;
@@ -644,10 +640,12 @@ void SearchObj::writeResult( const char *filename, int box_size ){
     //printf("max: %4d~%4d %4d~%4d %4d~%4d | max_dot: %f\n",x_tmp_min,x_tmp_max,y_tmp_min,y_tmp_max,z_tmp_min,z_tmp_max,max_dot[ r ]);
     fprintf(fp,"%d %d %d %d %d %d %f\n",x_tmp_min,x_tmp_max-x_tmp_min,y_tmp_min,y_tmp_max-y_tmp_min,z_tmp_min,z_tmp_max-z_tmp_min,max_dot[ r ]);
   }    
-  fprintf(fp,"time: %f\n",search_time);//経過時間
+  fprintf(fp,"time: %f\n",search_time);
   fclose(fp);
 }
 
+//*******************
+// delete the results
 void SearchObj::cleanMax(){
   for( int i=0; i<rank_num; i++ ){
     max_x[ i ] = 0;
@@ -657,15 +655,15 @@ void SearchObj::cleanMax(){
   }
 }
 
-////////////////////////////
-///    オンライン処理向け    ///
-////////////////////////////
-
+//****************************************************************
+// set projection axis for feature compression (without whitening)
 void SearchObj::setSceneAxis( Eigen::MatrixXf _axis ){
   axis_p = _axis;
   compress_flg = true;
 }
 
+//**************************************************************
+// set projection axis for feature compression (with whitening)
 void SearchObj::setSceneAxis( Eigen::MatrixXf _axis, Eigen::VectorXf var, int dim ){
   const int rows = _axis.rows();
   const int cols = _axis.cols();
@@ -679,6 +677,8 @@ void SearchObj::setSceneAxis( Eigen::MatrixXf _axis, Eigen::VectorXf var, int di
   compress_flg = true;
 }
 
+//***********************************************
+// delete the results and integral feature table
 void SearchObj::cleanData(){
   x_num = 0;
   y_num = 0;
@@ -697,84 +697,14 @@ void SearchObj::cleanData(){
   nFeatures = NULL;
 }
 
-void SearchObj::setDataVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  std::cout<< "hogehoge 1" << std::endl;
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature117( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
-  std::cout<< "hogehoge 2" << std::endl;
+//*******************************************************
+// return x, y and z length of ($num-th) detected region
+int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
+int SearchObj::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
+int SearchObj::maxZrange( int num ){ return zRange( max_mode[ num ] ); }
 
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
-  exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen::VectorXf [ h_num ];
-  std::cout<< "hogehoge 3" << std::endl;
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( conc_vector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  std::cout<< "hogehoge" << std::endl;
-
-  setData( subdiv_b_, feature );
-}
-
-void SearchObj::setDataGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-
-  std::vector< std::vector<float> > feature;
-  const int h_num = grsd.size();
-  exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen::VectorXf [ h_num ];
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( grsd[ h ] );
-    exist_voxel_num[ h ] = 0;
-    for( int i=0; i<20; i++ )
-      exist_voxel_num[ h ] += grsd[ h ][ i ];
-    exist_voxel_num[ h ] /= 26; // ボクセルの数 before adding up
-  }
-  setData( subdiv_b_, feature );
-}
-
-void SearchObj::setDataConVOSCH( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
-
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
-  exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen::VectorXf [ h_num ];
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( conc_vector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  setData( subdiv_b_, feature );
-}
-
-void SearchObj::setDataColorCHLAC( int dim, int thR, int thG, int thB, pcl::VoxelGrid<pcl::PointXYZRGB> grid, pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  std::vector< std::vector<float> > c3hlac;
-  Eigen::Vector3i subdiv_b_ = extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, thR, thG, thB, voxel_size, subdivision_size );
-
-  const int h_num = c3hlac.size();
-  exist_voxel_num = new int[ h_num ];
-  nFeatures = new Eigen::VectorXf [ h_num ];
-  for( int h=0; h<h_num; h++ )
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  setData( subdiv_b_, c3hlac );
-}
-
-const int SearchObj::maxXrange( int num ){ return xRange( max_mode[ num ] ); }
-const int SearchObj::maxYrange( int num ){ return yRange( max_mode[ num ] ); }
-const int SearchObj::maxZrange( int num ){ return zRange( max_mode[ num ] ); }
-
+//*************************************
+// set values for feature normalization
 void SearchObj::setNormalizeVal( const char* filename ){ 
   FILE *fp = fopen( filename, "r" );
   float val;
@@ -783,10 +713,12 @@ void SearchObj::setNormalizeVal( const char* filename ){
   fclose( fp );    
 }
 
-//*******************************//
-//*     SearchObj_multi    *//
-//*******************************//
+//----------------------------//
+// multiple objects detection //
+//----------------------------//
 
+//**********************************************
+// delete the results and integral feature table
 void SearchObj_multi::cleanData(){
   x_num = 0;
   y_num = 0;
@@ -807,6 +739,8 @@ void SearchObj_multi::cleanData(){
   nFeatures = NULL;
 }
 
+//***********************************************************************************
+// set number of output regions which are $rank_num most similar to the target object
 void SearchObj_multi::setRank( int _rank_num ){
   rank_num = _rank_num;
 
@@ -846,6 +780,8 @@ void SearchObj_multi::setRank( int _rank_num ){
   }
 }
 
+//*****************************************************
+// read projection axis of the target object's subspace
 void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   if( axis_q_multi != NULL ) delete[] axis_q_multi;
   axis_q_multi = new Eigen::MatrixXf [ model_num ];
@@ -859,13 +795,15 @@ void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool as
     axis_q_multi[ m ] = tmpaxis2.transpose();
     if( multiple_similarity ){
       Eigen::VectorXf variance = pca_each.Variance();
-      for( int i=0; i<dim_model; i++ )
+      for( int i=1; i<dim_model; i++ )
 	for( int j=0; j<dim; j++ )
-	  axis_q_multi[ m ]( i, j ) = sqrt( variance( i ) ) * axis_q_multi[ m ]( i, j );
+	  axis_q_multi[ m ]( i, j ) = axis_q_multi[ m ]( i, j ) * sqrt( variance( i ) ) / sqrt( variance( 0 ) );
     }
   }
 }
 
+//*******************
+// delete the results
 void SearchObj_multi::cleanMax(){
   for( int m=0; m<model_num; m++ ){
     for( int i=0; i<rank_num; i++ ){
@@ -877,10 +815,16 @@ void SearchObj_multi::cleanMax(){
   }
 }
 
-const int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode_multi[ m_num ][ num ] ); }
-const int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode_multi[ m_num ][ num ] ); }
-const int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode_multi[ m_num ][ num ] ); }
+//*******************************************************
+// return x, y and z length of ($num-th) detected region
+int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode_multi[ m_num ][ num ] ); }
+int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode_multi[ m_num ][ num ] ); }
+int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode_multi[ m_num ][ num ] ); }
 
+//****************************************************************************
+// check if the reference region is overlapped by some region already detected
+//   return the rank number of the overlapped region if there is,
+//   return the lowest rank number otherwise.
 inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
   int num;
   int xrange = 0, yrange = 0, zrange = 0;
@@ -912,6 +856,8 @@ inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, Search
   return num;
 }
 
+//******************************************************************************
+// copy the info of $src_num-th detected region to $dest_num-th detected region
 inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
   max_dot_multi[ m_num ][ dest_num ] = max_dot_multi[ m_num ][ src_num ];
   max_x_multi[ m_num ][ dest_num ] = max_x_multi[ m_num ][ src_num ];
@@ -920,6 +866,8 @@ inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
   max_mode_multi[ m_num ][ dest_num ] = max_mode_multi[ m_num ][ src_num ];
 }
 
+//*************************************************
+// replace the info of $dest_num-th detected region
 inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
   max_dot_multi[ m_num ][ dest_num ] = dot;
   max_x_multi[ m_num ][ dest_num ] = x;
@@ -928,6 +876,8 @@ inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, in
   max_mode_multi[ m_num ][ dest_num ] = mode;
 }
 
+//**************************************
+// object detection (in eash SearchMode)
 void SearchObj_multi::search_part( SearchMode mode ){
   int xrange = 0, yrange = 0, zrange = 0;
   getRange( xrange, yrange, zrange, mode );
@@ -946,13 +896,13 @@ void SearchObj_multi::search_part( SearchMode mode ){
       for(int y=0;y<y_end;y++){
 	for(int x=0;x<x_end;x++){
 
-	  //* 領域内にボクセルが存在するか否かをチェック
+	  //* check if there are some occupied voxels in reference region
 	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
-	  if(exist_num > exist_voxel_num_threshold){ // 領域内にボクセルが一定数以上あれば
+	  if(exist_num > exist_voxel_num_threshold){  // if there are
 
 	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
 	    
-	    //* 類似度計算
+	    //* similarity calculation
 	    sum = feature_tmp.dot( feature_tmp );
 	    sum = sqrt(sum);
 
@@ -961,7 +911,8 @@ void SearchObj_multi::search_part( SearchMode mode ){
 	      dot = tmpVector.dot( tmpVector );
 	      dot = sqrt( dot );
 	      dot /= sum ;
-	      //* 類似度が高ければ保存
+	      
+	      //* store region info if its similarity is high
 	      for( int i=0; i<rank_num; i++ ){
 		if(dot>max_dot_multi[ m ][ i ]){
 		  overlap_num = checkOverlap( m, x, y, z, mode );
@@ -982,6 +933,8 @@ void SearchObj_multi::search_part( SearchMode mode ){
   }
 }
 
+//****************************************************************************
+// solve and remove overlap between detected regions for object1, object2, ...
 void SearchObj_multi::removeOverlap(){
   for( int m=0; m<model_num; m++ ){
     //for( int i=0; i<rank_num; i++ ){

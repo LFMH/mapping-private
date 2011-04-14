@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <float.h>
-#include <color_chlac/grsd_colorCHLAC_tools.h>
+#include <c3_hlac/c3_hlac_tools.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
 
@@ -31,7 +31,10 @@ readVoxelFromPoints ( int argc, char **argv, const std::string &extension )
     if (fname.compare (fname.size () - extension.size (), extension.size (), extension) == 0){
 
       pcl::PointCloud<PointXYZRGB> input_cloud;
-      readPoints( argv[i], input_cloud );
+      if (pcl::io::loadPCDFile (argv[i], input_cloud) == -1){
+	ROS_ERROR ("Couldn't read file %s",argv[i]);
+	return ;
+      }
       pcl::VoxelGrid<PointXYZRGB> grid;
       pcl::PointCloud<PointXYZRGB> cloud_downsampled;
       getVoxelGrid( grid, input_cloud, cloud_downsampled, voxel_size );

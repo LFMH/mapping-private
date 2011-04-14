@@ -18,25 +18,25 @@ public:
   
   ~PCA(){}
   
-  //* add feature vectors to the correlation matrix one by one
-  void addData( std::vector<float> &feature );
+  // add feature vectors to the correlation matrix one by one
+  void addData( const std::vector<float> feature );
 
-  //* solve PCA
+  // solve PCA
   void solve( bool regularization_flg = false, float regularization_nolm = 0.0001 );
     
-  //* get eigen vectors
+  // get eigen vectors
   const MatrixXf &Axis() const { return axis; }
 
-  //* get eigen values
+  // get eigen values
   const VectorXf &Variance() const { return variance; }
 
-  //* get the mean vector of feature vectors
+  // get the mean vector of feature vectors
   const VectorXf &Mean() const;
     
-  //* read PCA file
+  // read PCA file
   void read( const char *filename, bool ascii = false );
 
-  //* write PCA file
+  // write PCA file
   void write( const char *filename, bool ascii = false );
     
 private:

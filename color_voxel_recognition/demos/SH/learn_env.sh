@@ -3,26 +3,28 @@
 # USAGE
 # ./SH/learn_env.sh
 
-# すでに環境データがある場合は消去
-if [ $(ls -d scene_for_PCA | wc -l) = 1 ]
+demos_path=`rospack find color_voxel_recognition`/demos
+dir_name=$demos_path/scene_`date '+%Y%m%d%H%M%S'`
+display_config_file=$demos_path/display_config
+
+# save point clouds of scene (= environment)
+roslaunch color_voxel_recognition saveData_and_view.launch /dir_name:=$dir_name /input:=/camera/rgb/points /display_config:=$display_config_file
+
+if [ $(ls $dir_name/Points | wc -l) -eq 0 ]
 then
-    rm -i -r scene_for_PCA
+    rm -rf $dir_name
+else
+# prepare directory
+    rm -f $demos_path/scene 2>/dev/null
+    ln -s $dir_name $demos_path/scene
+    mkdir -p $demos_path/scene/Features
+    
+# calculate threshold for RGB binarize
+    rosrun color_voxel_recognition calc_scene_autoThreshold $demos_path $(ls $demos_path/scene/Points | wc -l)
+    
+# extract C3_HLAC features
+    rosrun color_voxel_recognition extractC3HLAC_scene $demos_path $(ls $demos_path/scene/Points | wc -l)
+    
+# get projection axis for feature compression
+    rosrun color_voxel_recognition pca_scene $demos_path $(ls $demos_path/scene/Features | wc -l)
 fi
-
-# 環境データを取得
-rosrun color_voxel_recognition saveData scene_for_PCA /input:=/camera/depth/points2_throttle
-
-# フォルダを準備
-rm scene
-ln -s scene_for_PCA scene
-mkdir scene/Voxel
-
-# 環境のボクセルデータを作る
-rosrun color_voxel_recognition getVoxel_scene_each $(ls scene/Points | wc -l)
-
-# RGB値の閾値を計算する
-rosrun color_voxel_recognition calc_scene_autoThreshold $(ls scene/Points | wc -l)
-
-# Color-CHLAC特徴圧縮用のPCAを計算する
-rosrun color_voxel_recognition pca_scene_from_each_file $(ls scene/Points | wc -l)
-

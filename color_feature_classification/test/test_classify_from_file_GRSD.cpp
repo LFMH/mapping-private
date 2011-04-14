@@ -13,8 +13,7 @@
 #include <pcl/io/pcd_io.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
-#include <color_chlac/grsd_colorCHLAC_tools.h>
-#include "color_feature_classification/libPCA.hpp"
+#include "color_voxel_recognition/libPCA.hpp"
 #include <sys/stat.h>
 #include <dirent.h>
 #include "FILE_MODE"
@@ -27,6 +26,15 @@ int file_num[ 9 ];
 
 //const float lower = 0;//-1;
 const float upper = 1;
+
+//-----------
+//* time
+double my_clock()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec + (double)tv.tv_usec*1e-6;
+}
 
 int MyCmp(const void* a, const void* b){
   if(*(float *)a < *(float *)b) return 1;

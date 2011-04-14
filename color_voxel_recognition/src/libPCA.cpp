@@ -6,14 +6,14 @@
 using namespace std;
 
 PCA::PCA( bool _mean_flg ) :
-  dim(-1),
   mean_flg(_mean_flg),
+  dim(-1),
   nsample(0) {
 }
 
-//***********************************************************
-//* add feature vectors to the correlation matrix one by one
-void PCA::addData( std::vector<float> &feature ){
+//**********************************************************
+// add feature vectors to the correlation matrix one by one
+void PCA::addData( const std::vector<float> feature ){
   if( dim == -1 ){ // initial value
     dim = feature.size();
     correlation = MatrixXf::Zero( dim, dim );
@@ -36,8 +36,8 @@ void PCA::addData( std::vector<float> &feature ){
   nsample++;
 }
 
-//************
-//* solve PCA
+//***********
+// solve PCA
 void PCA::solve( bool regularization_flg, float regularization_nolm ){
   if( dim==-1 ){
     cerr << "ERR (in PCA::solve): there is no data" << endl;
@@ -72,8 +72,8 @@ void PCA::solve( bool regularization_flg, float regularization_nolm ){
   sortVecAndVal( tmp_axis, tmp_variance );  
 }
 
-//*****************************************
-//* get the mean vector of feature vectors
+//****************************************
+// get the mean vector of feature vectors
 const VectorXf& PCA::Mean() const {
   if( !mean_flg ){
     cerr << "ERR (in PCA::Mean): There is no mean vector (mean_flg=false)." << endl;
@@ -82,8 +82,8 @@ const VectorXf& PCA::Mean() const {
   return mean;
 }
 
-//****************
-//* read PCA file
+//***************
+// read PCA file
 void PCA::read( const char *filename, bool ascii )
 {
   FILE *fp;
@@ -153,8 +153,8 @@ void PCA::read( const char *filename, bool ascii )
 }
 
 
-//*****************
-//* write PCA file
+//****************
+// write PCA file
 void PCA::write( const char *filename, bool ascii )
 { 
   const int dim = variance.size();
@@ -207,7 +207,8 @@ void PCA::write( const char *filename, bool ascii )
   fclose( fp );
 }
 
-//* private function
+//*******
+//* sort
 void PCA::sortVecAndVal( MatrixXf &vecs, VectorXf &vals ){
   int *index = new int[ dim ];
   for( int i = 0; i < dim; i++ )

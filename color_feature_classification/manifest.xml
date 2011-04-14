@@ -13,6 +13,9 @@
   <depend package="roscpp"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
-  <depend package="color_chlac"/>
+  <!-- depend package="color_chlac"/-->
+  <depend package="c3_hlac"/>
+  <depend package="vosch"/>
+  <depend package="color_voxel_recognition"/>
   <depend package="terminal_tools"/>
 </package>

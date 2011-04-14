@@ -1,11 +1,12 @@
-#include <color_chlac/grsd_colorCHLAC_tools.h>
 #include <iostream>
+#include <vector>
+#include <stdio.h>
 
 using namespace std;
 
 int main( int argc, char** argv ){
   if( argc != 3 ){
-    ROS_ERROR ("Need two parameters! Syntax is: %s [input_histogram.pcd] [options] [output_histogram.pcd]\n", argv[0]);
+    std::cerr<< "Need two parameters! Syntax is: " << argv[0] << " [input_histogram.pcd] [options] [output_histogram.pcd]" << std::endl;
     return(-1);
   }
   int dim, sample_num;

@@ -1,38 +1,36 @@
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
-#include <color_voxel_recognition/glView.hpp>
-#include <color_voxel_recognition/Voxel.hpp>
-#include <color_voxel_recognition/Param.hpp>
+#include <visualization_msgs/Marker.h>
 #include <float.h>
-#include "./FILE_MODE"
-//#include "../param/CAM_SIZE"
+#include "color_voxel_recognition/FILE_MODE"
 #include <ros/ros.h>
+#include <pcl/point_types.h>
 #include "pcl/io/pcd_io.h"
-//#include "pcl_ros/subscriber.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 
-/**************************************************************************/
-/* Enterキーか's'を入力することで、カメラ画像とSRデータを保存する                    */
-/* 同じフォルダに、プレビューに用いたメッシュ化のパラメータファイルparam.txtを保存する   */
-/* 注） RELATIVE MODE: 末尾のコマンドライン引数でDISTANCE_TH(m)を指定すると、      */
-/*       最も近い点からDISTANCE_TH(m)の奥行きまでのみをメッシュ化する              */
-/*     （対象物体を見せて学習させる際の自動セグメンテーション方法として使用する）        */
-/**************************************************************************/
+//**************************************************************************************************//
+//* save point clouds                                                                              *//
+//*   press any key to save, "Ctrl+C" to quit.                                                     *//
+//*   if you give "distance_th" as command-line arg,                                               *//
+//*    the point cloud will be limited by "distance_th" depth from the closest point to viewpoint. *//
+//*   (this limitation is used for segmenting the target object in training process)               *//
+//**************************************************************************************************//
 
 using namespace std;
 
 float DISTANCE_TH = 5.0;
-
-//************************
-//* グローバル変数など
-enum V_STATE { DISP, CREATE } v_state;
-static int GLUTwindow = 0;
-Voxel voxel;
 bool save_flg = false;
 
-//* Note that x and y values are inverted.
+int kbhit(){
+  struct timeval tv = { 0L, 0L };
+  fd_set fds;
+  FD_ZERO(&fds);
+  FD_SET(0, &fds);
+  return select(1, &fds, NULL, NULL, &tv);
+}
+
+//******************************************
+//* limit points by certain depth threshold
 template <typename T>
 void limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &output_cloud, const float dis_th ){
   output_cloud.width = input_cloud.width;
@@ -44,8 +42,6 @@ void limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &outpu
   for( int i=0; i<v_num; i++ ){
     if( input_cloud.points[ i ].z < dis_th ){
       output_cloud.points[ idx ] = input_cloud.points[ i ];
-      output_cloud.points[ idx ].x = - input_cloud.points[ i ].x; // inverted.
-      output_cloud.points[ idx ].y = - input_cloud.points[ i ].y; // inverted.
       idx++;
     }
   }
@@ -54,110 +50,77 @@ void limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &outpu
   output_cloud.points.resize( idx );
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//* プレビューのためのクラス
-class TestView : public GlView {
-public:
-  TestView(){ me = this; }
-  ~TestView(){ if( me!=NULL ) delete[] me; }
-  void initView( Voxel &voxel );
-
-private:
-  void display( void );
-  void keyboard (unsigned char key, int x, int y);
-};
-
-//* ボクセルを表示する場合
-void TestView::initView( Voxel &voxel ){
-  int x_min,x_max,y_min,y_max,z_min,z_max;
-  voxel.getMinMax( x_min, x_max, y_min, y_max, z_min, z_max );
-  viewpoint_init( x_min, x_max, y_min, y_max, z_min, z_max );
-  cout << "x_min: "<< x_min << "  x_max: " << x_max << endl;
-  cout << "y_min: "<< y_min << "  y_max: " << y_max << endl;
-  cout << "z_min: "<< z_min << "  z_max: " << z_max << endl;
+//**************
+//* set marker
+visualization_msgs::Marker setMarker( const int id_, const float pos_x, const float pos_y, const float pos_z, const float scale_x, const float scale_y, const float scale_z, const float ca, const float cr, const float cg, const float cb ){
+  visualization_msgs::Marker marker_;
+  marker_.header.frame_id = "/openni_rgb_optical_frame";
+  //std::cout << frame_id << std::endl;
+  marker_.header.stamp = ros::Time::now();
+  marker_.ns = "BoxEstimation";
+  marker_.id = id_;
+  marker_.type = visualization_msgs::Marker::CUBE;
+  marker_.action = visualization_msgs::Marker::ADD;
+  marker_.pose.position.x = pos_x;
+  marker_.pose.position.y = pos_y;
+  marker_.pose.position.z = pos_z;
+  marker_.pose.orientation.x = 0;
+  marker_.pose.orientation.y = 0;
+  marker_.pose.orientation.z = 0;
+  marker_.pose.orientation.w = 1;
+  marker_.scale.x = scale_x;
+  marker_.scale.y = scale_y;
+  marker_.scale.z = scale_z;
+  marker_.color.a = ca;
+  marker_.color.r = cr;
+  marker_.color.g = cg;
+  marker_.color.b = cb;
+  marker_.lifetime = ros::Duration();
+  return marker_;
 }
 
-void TestView::display(void)
-{
-  if( v_state == DISP ){
-    cout << "DISP" << endl;
-    display_init( (float)2.0, true );
-    initView( voxel );
-    dispVoxel( voxel );
-    cout << voxel.Xsize() << " " << voxel.Ysize() << " " << endl;
-    glutSwapBuffers();
-    v_state = CREATE;
-  }
-}    
-
-void TestView::keyboard(unsigned char key, int x, int y)
-{
-  switch (key) {
-  case 's':
-  case 0x0D : // Enter
-    save_flg = true;
-    break;
-
-  case 'Q':
-  case 'q':
-  case 27: // ESCAPE
-    glutDestroyWindow(GLUTwindow);
-    exit(0);
-    break;
-
-  case 'p':
-    capture("gomi/tmp.png");
-    break;
-  }
-}
-
-/////////////////////////////////////////////
-//* ボクセル化、データの保存のためのクラス
-class ViewAndSave {
+//*******************
+//* save point cloud
+class SaveData {
 protected:
   ros::NodeHandle nh_;
+  sensor_msgs::PointCloud2 cloud_msg;
 private:
-  bool relative_mode; // RELATIVE MODEにするか否か
-  int captureNum; // セーブしたファイル数
+  bool relative_mode; // flag for RELATIVE MODE (depth limitation)
+  int captureNum;     // number of saved files
   char filename[ 2048 ];
   const char *save_base_dir;
 public:
   void activateRelativeMode(){ relative_mode = true; }
   string cloud_topic_;
-  //pcl_ros::Subscriber<sensor_msgs::PointCloud2> sub_;
   ros::Subscriber sub_;
+  ros::Publisher pub_;
+  ros::Publisher marker_pub_;
 
-  //***************
-  //* コンストラクタ
-  ViewAndSave( const char* _save_base_dir ) :
+  SaveData( const char* _save_base_dir ) :
     relative_mode(false),
     captureNum(0),
     save_base_dir(_save_base_dir) {
     make_directories();
   }
 
-  //**********************
-  //* セーブするフォルダの生成  
+  //*******************
+  //* make directories
   void make_directories() {
     mkdir(save_base_dir, 0777);
     sprintf(filename,"%s/Points", save_base_dir );
     mkdir(filename, 0777);
   }
 
-  //*******************************
-  //* ボクセル化、データの保存
-  void vas_cb(const sensor_msgs::PointCloud2ConstPtr& cloud) {
-    if( v_state == DISP ) usleep( 1000 );
-    else{
-      cout << "CREATE" << endl;
+  //*******************
+  //* save point cloud
+  void save_cb(const sensor_msgs::PointCloud2ConstPtr& cloud) {
       if ((cloud->width * cloud->height) == 0)
         return;
-      ROS_INFO ("Received %d data points in frame %s with the following fields: %s", (int)cloud->width * cloud->height, cloud->header.frame_id.c_str (), pcl::getFieldsList (*cloud).c_str ());
       pcl::PointCloud<pcl::PointXYZRGB> cloud_xyzrgb_, cloud_xyzrgb;
       pcl::fromROSMsg (*cloud, cloud_xyzrgb_);
 
-      //* limit distance
-      //* Note that x and y values are inverted.
+      //* limit depth
       if( relative_mode ){
       	float dis_min = FLT_MAX;
       	for (int i=0; i<(int)cloud_xyzrgb_.points.size(); i++)
@@ -166,39 +129,58 @@ public:
       }
       else
 	limitPoint( cloud_xyzrgb_, cloud_xyzrgb, DISTANCE_TH );
+
+      const int pnum = cloud_xyzrgb.points.size();
+      float x_min = 10000000, y_min = 10000000, z_min = 10000000;
+      float x_max = -10000000, y_max = -10000000, z_max = -10000000;
+      for( int p=0; p<pnum; p++ ){
+	if( cloud_xyzrgb.points[ p ].x < x_min ) x_min = cloud_xyzrgb.points[ p ].x;
+	if( cloud_xyzrgb.points[ p ].y < y_min ) y_min = cloud_xyzrgb.points[ p ].y;
+	if( cloud_xyzrgb.points[ p ].z < z_min ) z_min = cloud_xyzrgb.points[ p ].z;
+	if( cloud_xyzrgb.points[ p ].x > x_max ) x_max = cloud_xyzrgb.points[ p ].x;
+	if( cloud_xyzrgb.points[ p ].y > y_max ) y_max = cloud_xyzrgb.points[ p ].y;
+	if( cloud_xyzrgb.points[ p ].z > z_max ) z_max = cloud_xyzrgb.points[ p ].z;
+      }
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker_range", 1); 
+
+      //* show the limited space
+      if( relative_mode )
+	marker_pub_.publish( setMarker( -1, (x_max+x_min)/2, (y_max+y_min)/2, (z_max+z_min)/2, x_max-x_min, y_max-y_min, z_max-z_min, 0.5, 0.0, 1.0, 0.0 ) );
+      else
+	marker_pub_.publish( setMarker( -1, (x_max+x_min)/2, (y_max+y_min)/2, (z_max+z_min)/2, x_max-x_min, y_max-y_min, z_max-z_min, 0.1, 1.0, 0.0, 0.0 ) );
       
-      //* ボクセル化
-      voxel.points2voxel( cloud_xyzrgb, SIMPLE_REVERSE ); // REVERSEMODEは関係ないので何でも良い
+      //* publish
+      pcl::toROSMsg (cloud_xyzrgb, cloud_msg);
+      pub_ = nh_.advertise<sensor_msgs::PointCloud2>("save_points", 1);
+      pub_.publish( cloud_msg );
 
-      //* データの保存
+      //* save data
       if( save_flg ){
-	save_flg = false;
-	if( ( voxel.Xsize() != 0 ) && ( voxel.Ysize() != 0 ) && ( voxel.Zsize() != 0 ) ){
-
-	  sprintf(filename,"%s/Points/%03d.pcd", save_base_dir, captureNum );
-	  //pcl::io::savePCDFile (filename, *cloud, Eigen::Vector4f::Zero (), Eigen::Quaternionf::Identity (), true);
+	if( cloud_xyzrgb.points.size() != 0 ){
+	  sprintf(filename,"%s/Points/%05d.pcd", save_base_dir, captureNum );
 	  pcl::io::savePCDFile (filename, cloud_xyzrgb, true);
-	  cout << "captured. " << captureNum << endl;
+	  cout << "    captured. " << filename << endl;
+	  cout << "Press any key to save." << endl;
 	  captureNum++;
 	}
+	save_flg = false;
       }
 
-      v_state = DISP;
-    }
   }
 
   void loop(){
       cloud_topic_ = "input";
-
-      //sub_.subscribe (nh_, "input", 1,  boost::bind (&ViewAndSave::vas_cb, this, _1));
-      sub_ = nh_.subscribe ("input", 1,  &ViewAndSave::vas_cb, this);
+      sub_ = nh_.subscribe ("input", 1,  &SaveData::save_cb, this);
       ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());
   }
 };
 
-///////////////////////////////////////////////////////////////////////////////
+//********************************
+//* main
 int main(int argc, char* argv[]) {
-  if((argc!=3)&&(argc!=4)){
+    cerr << argc << endl;
+    cerr << argv[0] << " " << argv[1]  << " " << argv[2]  << " " << argv[3]  << " " << argv[4] << endl;
+  if((argc!=3)&&(argc!=4)&&(argc!=5)&&(argc!=6)){
     cerr << "usage: " << argv[0] << " [save_dir_name] /input:=/camera/depth/points2" << endl;
     cerr << " or" << endl;
     cerr << "usage: " << argv[0] << " [save_dir_name] <distance_th(m)> /input:=/camera/depth/points2" << endl;
@@ -207,28 +189,25 @@ int main(int argc, char* argv[]) {
   }
   ros::init (argc, argv, "saveData", ros::init_options::AnonymousName);
 
-  voxel.setVoxelSize( Param::readVoxelSize() );
-  v_state = CREATE;
-
-  // ボクセル（かメッシュ）のプレビューとデータ取得の準備
-  ViewAndSave vas( argv[1] );
-  if( argc==3 ){ // 注！！ ros::init の後なのでコマンドライン引数の数が１こ少なくなってる
-    vas.activateRelativeMode();
+  SaveData saveData( argv[1] );
+  if( (argc==3) || (argc==5) ){ // note that argc=(argc-1) after ros::init
+    saveData.activateRelativeMode();
     DISTANCE_TH = atof( argv[2] );
   }
-  //cout << argc << " " << DISTANCE_TH <<  endl;
 
-  // OpenGLによる描画
-  glutInit(&argc, argv);
-  TestView testView;
-  GLUTwindow = testView.createWindow( 640, 480, 400, 100, argv[0] );
-
-  // ループのスタート
-  //boost::thread thread_create( boost::bind(&testView_start, testView) );
-  vas.loop();
+  saveData.loop();
   ros::AsyncSpinner spinner(2); // Use 2 threads
   spinner.start();
-  testView.start();
+  char c;
+  cout << "Press any key to save." << endl;
 
+  while(ros::ok()){
+    if( kbhit() ){
+      c = getchar();    
+      //if( c=='q' || c=='Q' ) break;
+      save_flg = true;
+    }
+    else usleep(100000);
+  }
   return 0;
 }

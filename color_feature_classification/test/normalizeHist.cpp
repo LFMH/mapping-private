@@ -1,7 +1,7 @@
 #define QUIET
 
 #include <color_feature_classification/points_tools.hpp>
-#include "color_chlac/grsd_colorCHLAC_tools.h"
+#include "c3_hlac/c3_hlac_tools.h"
 #include <iostream>
 #include "FILE_MODE"
 

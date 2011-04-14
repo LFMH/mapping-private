@@ -1,19 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
-#include <math.h>
+#include <c3_hlac/c3_hlac_tools.h>
 #include <color_voxel_recognition/Param.hpp>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/voxel_grid.h>
 
 /*************************************************************************************************/
-/* voxelize point clouds of the target object                                                    */
-/*   Note that voxelization is also done for synthetically rotated point clouds                  */
+/* extract C^3-HLAC features from all the subdivisions of the target object                      */
+/*   Note that features are also extracted from synthetically rotated point clouds               */
 /*   bounding box size is written into color_voxel_recognition/demos/models/$model_name/size.txt */
 /*************************************************************************************************/
 
 using namespace std;
+using namespace pcl;
 
 //*****************************
 //* determine bounding box size
@@ -106,12 +105,13 @@ bool rotatePoints( const T& input_cloud, T& output_cloud, const double roll, con
 
 //********************************
 //* main
-int main(int argc, char **argv)
+int main( int argc, char* argv[])
 {
   if( argc != 4 ){
-    cerr << "usage: " << argv[0] << " [path] [model_name] <registration_num>" << endl;
+    cerr << "usage: " << argv[0] << " [path] [label] <registration_num>" << endl;
     exit( EXIT_FAILURE );
   }
+  const int file_num = atoi( argv[3] );
   char tmpname[ 1000 ];
 
   //* length of bounding box sides (initialize)
@@ -125,18 +125,32 @@ int main(int argc, char **argv)
   const int rotate_num = Param::readRotateNum( tmpname );
 
   //* read the number of voxels in each subdivision's side of a target object
+  const int subdivision_size = Param::readBoxSize_model( tmpname );
+
+  //* read the length of voxel side
   const float voxel_size = Param::readVoxelSize( tmpname );
+
+  //* read the threshold for RGB binalize
+  int color_threshold_r, color_threshold_g, color_threshold_b;
+  sprintf( tmpname, "%s/param/color_threshold.txt", argv[1] );
+  Param::readColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b, tmpname );
 
   //* Voxel Grid
   pcl::VoxelGrid<pcl::PointXYZRGB> grid;
   grid.setLeafSize (voxel_size, voxel_size, voxel_size);
   grid.setSaveLeafLayout(true);
 
-  const int obj_num = atoi(argv[3]);
-  int write_count = 0; // number for output file names
-  for( int i=0; i<obj_num; i++ ){
+  //*******************************//
+  //* C^3-HLAC feature extraction *//
+  //*******************************//
+
+  int write_count = 0;
+  std::vector< std::vector<float> > c3_hlac;
+  for( int n = 0; n < file_num; n++ ){
+    printf("%d in %d...\n",n,file_num);
+
     pcl::PointCloud<pcl::PointXYZRGB> ref_cloud;
-    sprintf( tmpname, "%s/models/%s/Points/%05d.pcd", argv[1], argv[2], i );
+    sprintf( tmpname, "%s/models/%s/Points/%05d.pcd", argv[1], argv[2], n );
     pcl::io::loadPCDFile (tmpname, ref_cloud);
 
     //* rotate point clouds synthetically to T postures
@@ -150,15 +164,18 @@ int main(int argc, char **argv)
 
 	  //* voxelize
 	  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
-	  pcl::PointCloud<pcl::PointXYZRGB> output_cloud;
+	  pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled;
 	  rotatePoints( ref_cloud, input_cloud, roll, pan, roll2 ); // rotation
 	  grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
-	  grid.filter (output_cloud);
-	  sprintf( tmpname, "%s/models/%s/Voxel/%05d.dat", argv[1], argv[2], write_count++ );
-	  pcl::io::savePCDFile (tmpname, output_cloud, true);
+	  grid.filter (cloud_downsampled);
+
+	  //* extract features
+	  extract_C3_HLAC_Signature981( grid, cloud_downsampled, c3_hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
+	  sprintf( tmpname, "%s/models/%s/Features/%05d.pcd", argv[1], argv[2], write_count++ );
+	  writeFeature( tmpname, c3_hlac );
 
 	  //* determine bounding box size
-	  getMinMax_points( output_cloud, vals[0], vals[1], vals[2] );
+	  getMinMax_points( cloud_downsampled, vals[0], vals[1], vals[2] );
 	  float tmp_size1 = 0;
 	  float tmp_size2 = 0;
 	  float tmp_size3 = 0;
@@ -175,10 +192,10 @@ int main(int argc, char **argv)
   }
 
   //* output bounding box size
-  sprintf( tmpname, "%s/models/%s/size.txt", argv[1], argv[2] );
+  sprintf( tmpname, "%s/models/%s/size.txt",argv[1], argv[2] );
   FILE *fp = fopen( tmpname, "w" );
   fprintf( fp, "%f %f %f\n", size1, size2, size3 );
   fclose( fp );
 
-  return(0);
+  return 0;
 }

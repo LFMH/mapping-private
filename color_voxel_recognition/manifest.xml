@@ -10,17 +10,11 @@
   <url>http://ros.org/wiki/color_voxel_recognition</url>
   <depend package="roscpp"/>
   <depend package="pcl"/>
-  <depend package="pcl_ros"/>
-  <depend package="opencv2"/>
-  <depend package="color_chlac"/>
+  <depend package="c3_hlac"/>
   <depend package="visualization_msgs"/>
-  <!-- <cpp lflags="-lglut"/> -->
   <export>
     <cpp cflags="-I${prefix}/include/" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcolor_voxel_recognition"/>
   </export>
-  
-  <rosdep name="freeglut3-dev"/>
-  <!-- <rosdep name="octave"/> -->
 </package>
 
 

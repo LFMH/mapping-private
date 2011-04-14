@@ -2,38 +2,37 @@
 #include <stdlib.h>
 #include <iostream>
 #include <float.h>
-#include "./FILE_MODE"
+#include <color_voxel_recognition/Param.hpp>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/voxel_grid.h>
 
-/******************************************************************************/
-/* ボクセルデータを読み込み、                                                      */
-/* RGBそれぞれについて大津の閾値決定法で閾値を決め                                     */
-/* param/color_threshold.txt に結果を出力                                       */
-/* （環境からの特徴抽出を頻繁に行う場合は省略可能。最初に求めた値を再利用してよい）           */
-/* （あるいは、単純に256の半分の 127 127 127 でもよい）                              */
-/*  注）コマンドライン引数にファイル数を指定すると、Voxel/フォルダ以下のファイル群が対象となる */
-/******************************************************************************/
+//**************************************************************************************************************************//
+//* read point clouds, voxelize, and determine threshold for RGB binarlization                                             *//
+//* output the result in color_voxel_recognition/demos/param/color_threshold.txt                                           *//
+//*   Note that this process is necessary only once when the system sees the environment for the first time                *//
+//*   Or, you can skip this process and set the values manually in color_voxel_recognition/demos/param/color_threshold.txt *//
+//**************************************************************************************************************************//
 
 using namespace std;
 
 int main(int argc, char** argv)
 {
-  if( ( argc != 1 )&&( argc != 2 ) ){
-    cerr << "usage: " << argv[0] << endl;
-    cerr << " or" << endl;
-    cerr << "usage: " << argv[0] << " <registration_num>" << endl;
+  if( argc != 3 ){
+    cerr << "usage: " << argv[0] << " [path] <registration_num>" << endl;
     exit( EXIT_FAILURE );
   }
-  int file_num = 1;
-  if( argc==2 ) file_num = atoi( argv[1] );
+  char tmpname[ 1000 ];
+  const int file_num = atoi( argv[2] );
 
-  int totalNum = 0;                    // ボクセルの個数
-  int *threshold   = new int[ 3 ];     // RGB値の2値化の閾値
-  double *totalAve = new double[ 3 ];  // RGB値の全体の平均値
-  double **eachAve = new double*[ 3 ]; // RGB値の0からj番めの値までの平均値
-  int **eachNum    = new int*[ 3 ];    // RGB値の0からj番めの値までのボクセル個数
-  int **h          = new int*[ 3 ];    // RGB値のヒストグラム
+  int totalNum = 0;                    // the number of occupied voxels
+  int *threshold   = new int[ 3 ];     // threshold for RGB binarize (= results)
+  double *totalAve = new double[ 3 ];  // total average of RGB values
+  double **eachAve = new double*[ 3 ]; // each average of RGB values from 0 to j
+  int **eachNum    = new int*[ 3 ];    // the number of occupied voxles with RGB values from 0 to j
+  int **h          = new int*[ 3 ];    // histograms of RGB
 
-  //* 初期化
+  //* initialize
   for( int i = 0; i < 3; i++ ){
     threshold[ i ]    = 0;
     totalAve[ i ]     = 0;
@@ -44,60 +43,40 @@ int main(int argc, char** argv)
       h[ i ][ j ]       = 0;
   }
 
-  //* 読み込み、ヒストグラムの作成
-  FILE *fp;
-  char tmpname[ 100 ];
-  if( ASCII_MODE_V ){
-    for( int i=0; i<file_num; i++ ){
-      if( argc==1 ) // コマンドライン引数がなければ単一のファイルから
-	fp = fopen( "scene/voxel_scene.dat","r" );
-      else{         // コマンドライン引数があれば複数のファイルから
-	sprintf( tmpname, "scene/Voxel/%03d.dat", i );
-	fp = fopen( tmpname,"r" );
-      }
-      int tmp;
-      fscanf(fp,"%d %d %d\n",&tmp,&tmp,&tmp);
-      int x,y,z,r,g,b;
-      while( fscanf(fp,"%d %d %d %d %d %d",&x,&y,&z,&r,&g,&b)!=EOF ){
+  //* read the length of voxel side
+  sprintf( tmpname, "%s/param/parameters.txt", argv[1] );
+  const float voxel_size = Param::readVoxelSize( tmpname );
+
+  //* Voxel Grid
+  pcl::VoxelGrid<pcl::PointXYZRGB> grid;
+  grid.setLeafSize (voxel_size, voxel_size, voxel_size);
+
+  //* read points, voxelize, and make histograms of RGB
+  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
+  pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled;
+  for( int i=0; i<file_num; i++ ){
+    sprintf( tmpname, "%s/scene/Points/%05d.pcd", argv[1], i );
+    pcl::io::loadPCDFile (tmpname, input_cloud);
+    grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+    grid.filter (cloud_downsampled);
+
+    const int p_num = cloud_downsampled.points.size();
+    for( int i = 0; i<p_num; i++ ){
+      if( isfinite(cloud_downsampled.points[i].x) && isfinite(cloud_downsampled.points[i].y) && isfinite(cloud_downsampled.points[i].z) ){
+	const int color = *reinterpret_cast<const int*>(&(cloud_downsampled.points[i].rgb));
+	const int r = (0xff0000 & color) >> 16;
+	const int g = (0x00ff00 & color) >> 8;
+	const int b =  0x0000ff & color;
+	
 	totalNum++;
 	h[ 0 ][ r ] ++;
 	h[ 1 ][ g ] ++;
 	h[ 2 ][ b ] ++;
       }
-      fclose( fp );
     }
   }
-  else{
-    for( int i=0; i<file_num; i++ ){
-      if( argc==1 ) // コマンドライン引数がなければ単一のファイルから
-	fp = fopen( "scene/voxel_scene.dat","rb" );
-      else{         // コマンドライン引数があれば複数のファイルから
-	sprintf( tmpname, "scene/Voxel/%03d.dat", i );
-	fp = fopen( tmpname,"rb" );
-      }
-      int tmp;
-      fread(&tmp,sizeof(int),1,fp);
-      fread(&tmp,sizeof(int),1,fp);
-      fread(&tmp,sizeof(int),1,fp);
-      fscanf(fp,"%d %d %d\n",&tmp,&tmp,&tmp);
-      int x,y,z;
-      unsigned char r,g,b;
-      while( fread(&x,sizeof(int),1,fp) > 0 ){
-	fread(&y,sizeof(int),1,fp);
-	fread(&z,sizeof(int),1,fp);
-	fread(&r,sizeof(unsigned char),1,fp);
-	fread(&g,sizeof(unsigned char),1,fp);
-	fread(&b,sizeof(unsigned char),1,fp);
-	totalNum++;    
-	h[ 0 ][ r ] ++;
-	h[ 1 ][ g ] ++;
-	h[ 2 ][ b ] ++;
-      }
-      fclose( fp );
-    }
-  }
-
-  //* 全体の平均の計算
+    
+  //* total average of RGB values
   const double scale = 1 / (double)totalNum;
   for( int i = 0; i < 3; i++ ){
     for( int j = 0; j < 256; j++ )
@@ -105,7 +84,7 @@ int main(int argc, char** argv)
     totalAve[ i ] *= scale;
   }
 
-  //* 0からj番めの値までの値までの平均の計算
+  //* each average of RGB values from 0 to j
   for( int i = 0; i < 3; i++ ){
     eachAve[ i ][ 0 ] = 0;
     eachNum[ i ][ 0 ] = h[ i ][ 0 ];
@@ -120,8 +99,8 @@ int main(int argc, char** argv)
     }
   }
 
-  //* 閾値の決定
-  //* クラス間分散が最大になるときを探す
+  //* determine threshold of RGB
+  //*   by looking for the case when between-class variance becomes the largest
   for( int i = 0; i < 3; i++ ){
     double max_var = 0;
     for( int j = 1; j < 256; j++ ){
@@ -140,8 +119,9 @@ int main(int argc, char** argv)
   printf("totalAverage: %f %f %f\n",  totalAve[0], totalAve[1], totalAve[2]);
   printf("threshold: %d %d %d\n",threshold[0],threshold[1],threshold[2]);
 
-  //* 結果をファイルに出力
-  fp = fopen( "param/color_threshold.txt","w" );
+  //* output results into file
+  sprintf( tmpname, "%s/param/color_threshold.txt", argv[1] );
+  FILE *fp = fopen( tmpname,"w" );
   fprintf(fp,"%d %d %d\n",threshold[0],threshold[1],threshold[2]);
   fclose(fp);
 

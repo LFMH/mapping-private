@@ -1,34 +1,18 @@
-# Library for detecting objects by ColorCHLAC and subspace method.
-# works with Kinect
+# Library for sliding object detection by C^3-HLAC and subspace method.
+#   works with Kinect and ni package
+#   please rosmake openni_camera and openni_pcl
 
-#########
-# DEMO 1
-1. connect Kinect and "roslaunch openni_camera openni_kinect.launch" -- terminal 1
-2. "rosrun topic_tools throttle messages /camera/depth/points2 5" -- terminal 2
-3. roscd color_voxel_recognition; cd demos -- terminal 3
+1. connect Kinect and "roslaunch openni_camera openni_node.launch" -- terminal 1
+2. in another terminal,
 
-     3.1 learn the environment  (necessary for only once)
-         "./SH/learn_env.sh"
-         Enter for saving data, and "q" for quit
+     2.1 learn the environment  (necessary for only once)
+         "bash `rospack find color_voxel_recognition`/demos/SH/learn_env.sh"
+         - Enter for saving data, and "Ctrl+C" ONLY ONCE for quit
 
-     3.2 learn objects (once for each object)
-         "./SH/learn_obj.sh <object_name>"
-         Enter for saving data, and "q" for quit
+     2.2 learn objects (once for each object)
+         "bash `rospack find color_voxel_recognition`/demos/SH/learn_obj.sh <object_name>"
+         - Put the target object closest from Kinect and confirm the green box contains only the object.
+         - Enter for saving data, and "Ctrl+C" ONLY ONCE for quit
 
-     3.3 detect one object
-         "./SH/detect_test.sh <object_name> <similarity_threshold>"
-
-
-##################################
-# DEMO 2 (trained from 63 objects)
-0. roscd color_feature_classification; cd demos
-   set 0.02 for voxel size (color_feature_classification/demos/voxel_size.txt)
-   "bash ../scripts/demos/train_models_all.sh"
-   "bash `rospack find color_voxel_recognition`/demos/SH/copy_param_and_model.sh"
-
-1. connect Kinect and "roslaunch openni_camera openni_kinect.launch" -- terminal 1
-2. "rosrun topic_tools throttle messages /camera/depth/points2 5" -- terminal 2
-3. roscd color_voxel_recognition; cd demos -- terminal 3
-   bash SH/detect_test_offline.sh 19 0 // 19 for milch, 0 for debug
-
-NOTE: You may need to change parameters in color_voxel_recognition/demos/SH/copy_param_and_model.sh and color_voxel_recognition/demos/SH/detect_test_offline.sh
+     2.3 detect one object
+         "bash `rospack find color_voxel_recognition`/demos/SH/detect_test.sh <object_name> <similarity_threshold> <bounding box size>"
