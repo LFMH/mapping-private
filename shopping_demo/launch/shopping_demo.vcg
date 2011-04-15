@@ -171,6 +171,12 @@ Robot\:\ Robot\ Model\ Link\ island_block_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ island_block_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ oven_block_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ oven_block_linkShow\ Trail=0
+Robot\:\ Robot\ Model\ Link\ rack_bottom_linkShow\ Axes=0
+Robot\:\ Robot\ Model\ Link\ rack_bottom_linkShow\ Trail=0
+Robot\:\ Robot\ Model\ Link\ rack_middle_linkShow\ Axes=0
+Robot\:\ Robot\ Model\ Link\ rack_middle_linkShow\ Trail=0
+Robot\:\ Robot\ Model\ Link\ rack_top_linkShow\ Axes=0
+Robot\:\ Robot\ Model\ Link\ rack_top_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ shelf_bottom_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ shelf_bottom_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ shelf_center_linkShow\ Axes=0
@@ -183,12 +189,6 @@ Robot\:\ Robot\ Model\ Link\ shopping_block_side_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ shopping_block_side_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ shopping_block_skirt_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ shopping_block_skirt_linkShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_bottom_linkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_bottom_linkShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_middle_linkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_middle_linkShow\ Trail=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_top_linkShow\ Axes=0
-Robot\:\ Robot\ Model\ Link\ shopping_shelf_top_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ sink_block_linkShow\ Axes=0
 Robot\:\ Robot\ Model\ Link\ sink_block_linkShow\ Trail=0
 Robot\:\ Robot\ Model\ Link\ sink_linkShow\ Axes=0
@@ -211,7 +211,7 @@ Tool\ 2D\ Nav\ GoalTopic=goal
 Tool\ 2D\ Pose\ EstimateTopic=initialpose
 Camera\ Type=rviz::OrbitViewController
 Camera\ Config=0.942456 0.972946 12.7225 0.273589 1.66017 2.65653
-Property\ Grid\ State=selection=Axes.Enabled;expanded=.Global Options,Robot Model.Enabled,Point Cloud2.Enabled;scrollpos=0,0;splitterpos=240,496;ispageselected=1
+Property\ Grid\ State=selection=;expanded=.Global Options,Axes.Enabled.Axes.StatusTopStatus,Point Cloud2.Enabled;scrollpos=0,0;splitterpos=243,456;ispageselected=1
 [Display0]
 Name=Axes
 Package=rviz
