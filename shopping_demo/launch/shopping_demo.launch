@@ -1,5 +1,12 @@
 <launch>
 
+  <!-- When not running on the robot -->
+  <!-- Use simulation time -->
+
+  <rosparam>
+    use_sim_time: true
+  </rosparam>
+
   <!-- URDF Model of Environment -->
 
   <group ns="ias_kitchen">
@@ -45,11 +52,11 @@
            operation: "delete"}
 
         # Segment objects on the COUNTERS #
-#        - {regex: "counter_top_(.*)_link",
-#           operation: "segment_objects",
-#           publish: "objects_on_$1_counter",
-#           search_expand_axis: [0.0, 0.0, 1.0],
-#           search_expand_distance: 1.0}
+        - {regex: "counter_top_(.*)_link",
+           operation: "segment_objects",
+           publish: "objects_on_$1_counter",
+           search_expand_axis: [0.0, 0.0, 1.0],
+           search_expand_distance: 1.0}
 
         # Segment objects on the SHELVES #
 #        - {regex: "shelf_(.*)_link",
@@ -70,12 +77,9 @@
     </rosparam>
   </node>
 
-  <!-- Play .BAG File -->
+  <!-- When not running on the robot -->
+  <!-- Specify an input .bag file -->
 
-  <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag island.bag) -r $(optenv rate 5) --pause"/>
-
-  <!-- Visualize in RVIZ -->
-
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find shopping_demo)/launch/shopping_demo.vcg"/>
+  <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag island.bag) --clock --pause -r $(optenv rate 2.5)"/>
 
 </launch>

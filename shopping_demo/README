@@ -25,8 +25,13 @@ HOW TO RUN AND WHAT TO DO
 ================================================================= 
 
 ============ The URDF kitchen model ============
-// Do not forget to set the path of the input .bag file //
+// When not running on the robot //
+// Do not forget to set the path of the input .bag file in the .launch file //
+
 roslaunch shopping_demo shopping_demo.launch
+rosrun rviz rviz -d launch/shopping_demo.vcg 
+
+// And do not forget to press <SAPCE> for playing the .bag file //
 ================================================
 
 ============ Open/Close Drawers ============
