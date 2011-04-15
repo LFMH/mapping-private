@@ -65,6 +65,9 @@ rosrun autonomous_mapping segment_difference /cloud_pcd:=/points2_out
 ========================= TODO ==============================
 
 * get rid of everything which is makeShared() related
+
+* change everything from `PointCloud<Type>` to `PointCloud<Type>::Ptr` or `PointCloud<Type>::ConstPtr`
+
 * separate normal segmentation and segmentation by color and fixture
     * segmentation_of_pointclouds.cpp
     * segmentation_by_color_and_fixtures_of_pointclouds.cpp
