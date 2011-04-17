@@ -1,9 +1,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <float.h>
-#include <color_voxel_recognition/libPCA.hpp>
-#include <color_voxel_recognition/Param.hpp>
-#include <color_voxel_recognition_2/Search_new.hpp>
+#include <color_voxel_recognition/pca.h>
+#include <color_voxel_recognition/param.h>
+#include <color_voxel_recognition_2/search_new.h>
 #include "c3_hlac/c3_hlac_tools.h"
 #include "color_voxel_recognition/FILE_MODE"
 #include <ros/ros.h>
@@ -30,7 +30,7 @@ int model_num;
 
 //************************
 //* その他のグローバル変数など
-Search_VOSCH_multi search_obj;
+SearchVOSCHMulti search_obj;
 int color_threshold_r, color_threshold_g, color_threshold_b;
 int dim;
 int box_size;
@@ -152,7 +152,11 @@ public:
 #endif
 	t1_2 = my_clock();
 	if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
-	  search_obj.search_withoutRotation();
+#ifdef CCHLAC_TEST
+	  search_obj.search();
+#else
+	  search_obj.searchWithoutRotation();
+#endif
 	search_obj.removeOverlap();
 	
 	//* 物体検出 ここまで
@@ -300,7 +304,7 @@ int main(int argc, char* argv[]) {
 
   //****************************************
   //* 物体検出のための準備
-  box_size = Param::readBoxSize_scene( tmpname );  //* 分割領域の大きさの読み込み
+  box_size = Param::readBoxSizeScene( tmpname );  //* 分割領域の大きさの読み込み
 
   //* 次元数など
   dim = Param::readDim( tmpname );  //* 圧縮した特徴ベクトルの次元数の読み込み
@@ -360,10 +364,10 @@ int main(int argc, char* argv[]) {
   PCA pca;
   sprintf( tmpname, "%s/models/compress_axis", argv[1] );
   pca.read( tmpname, ASCII_MODE_P );
-  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf tmpaxis = pca.getAxis();
   Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
   Eigen::MatrixXf axis_t = axis.transpose();
-  Eigen::VectorXf variance = pca.Variance();
+  Eigen::VectorXf variance = pca.getVariance();
   if( WHITENING )
     search_obj.setSceneAxis( axis_t, variance, dim );  //* whitening
   else

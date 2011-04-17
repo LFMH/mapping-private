@@ -1,9 +1,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <float.h>
-#include <color_voxel_recognition/libPCA.hpp>
-#include <color_voxel_recognition/Param.hpp>
-#include <color_voxel_recognition_2/Search_new.hpp>
+#include <color_voxel_recognition/pca.h>
+#include <color_voxel_recognition/param.h>
+#include <color_voxel_recognition_2/search_new.h>
 #include "c3_hlac/c3_hlac_tools.h"
 #include "color_voxel_recognition/FILE_MODE"
 #include <ros/ros.h>
@@ -20,6 +20,7 @@
 /*  注） プレビューはMESH_VIEWがtrueならメッシュ、falseならボクセルで表示。                                                           */
 /****************************************************************************************************************************/
 
+typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 using namespace std;
 using namespace Eigen;
 
@@ -27,9 +28,8 @@ float distance_th;
 
 //************************
 //* その他のグローバル変数など
-Search_VOSCH search_obj;
-int color_threshold_r, color_threshold_g, color_threshold_b;
-int dim;
+SearchGRSD search_obj;
+const int dim = 20; // for GRSD
 int box_size;
 float voxel_size;
 float region_size;
@@ -38,6 +38,7 @@ bool exit_flg = false;
 bool start_flg = true;
 float detect_th = 0;
 int rank_num;
+//const double normals_radius_search = 0.02;
 
 template <typename T>
 int limitPoint( const pcl::PointCloud<T> input_cloud, pcl::PointCloud<T> &output_cloud, const float dis_th ){
@@ -66,9 +67,12 @@ class ViewAndDetect {
 protected:
   ros::NodeHandle nh_;
 private:
-  pcl::PointCloud<pcl::PointXYZRGB> cloud_xyzrgb_, cloud_xyzrgb;
-  pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_normal, cloud_downsampled;
-  pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid;
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n3d; 
+  KdTreePtr normals_tree;
+  pcl::PointCloud<pcl::PointXYZ> cloud_xyz_, cloud_xyz;
+  pcl::PointCloud<pcl::Normal> cloud_normal;
+  pcl::PointCloud<pcl::PointNormal> cloud_xyz_normal, cloud_downsampled;
+  pcl::VoxelGrid<pcl::PointNormal> grid;
   bool relative_mode; // RELATIVE MODEにするか否か
   double t1, t1_2, t2, t0, t0_2, tAll;
   int process_count;
@@ -92,22 +96,28 @@ public:
         return;
       //ROS_INFO ("Received %d data points in frame %s with the following fields: %s", (int)cloud->width * cloud->height, cloud->header.frame_id.c_str (), pcl::getFieldsList (*cloud).c_str ());
       //cout << "fromROSMsg?" << endl;
-      pcl::fromROSMsg (*cloud, cloud_xyzrgb_);
+      pcl::fromROSMsg (*cloud, cloud_xyz_);
       //cout << "  fromROSMsg done." << endl;
       cout << "CREATE" << endl;
       t0 = my_clock();
 
-      if( limitPoint( cloud_xyzrgb_, cloud_xyzrgb, distance_th ) > 10 ){
+      if( limitPoint( cloud_xyz_, cloud_xyz, distance_th ) > 10 ){
 	//cout << "  limit done." << endl;
 	cout << "compute normals and voxelize...." << endl;
 
 	//****************************************
 	//* compute normals
-	computeNormal( cloud_xyzrgb, cloud_normal );
+	n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud_xyz));
+	n3d.setRadiusSearch (normals_radius_search);
+	normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
+	n3d.setSearchMethod (normals_tree);
+	n3d.compute (cloud_normal);
+	pcl::concatenateFields (cloud_xyz, cloud_normal, cloud_xyz_normal);
+
 	t0_2 = my_clock();
 	
 	//* voxelize
-	getVoxelGrid( grid, cloud_normal, cloud_downsampled, voxel_size );
+	getVoxelGrid( grid, cloud_xyz_normal, cloud_downsampled, voxel_size );
 	cout << "     ...done.." << endl;
 	
 	const int pnum = cloud_downsampled.points.size();
@@ -130,10 +140,10 @@ public:
 	//****************************************
 	//* 物体検出
 	search_obj.cleanData();
-	search_obj.setVOSCH( dim, color_threshold_r, color_threshold_g, color_threshold_b, grid, cloud_normal, cloud_downsampled, voxel_size, box_size );
+	search_obj.setGRSD( dim, grid, cloud_xyz_normal, cloud_downsampled, voxel_size, box_size );
 	t1_2 = my_clock();
 	if( ( search_obj.XYnum() != 0 ) && ( search_obj.Znum() != 0 ) )
-	  search_obj.search_withoutRotation();
+	  search_obj.searchWithoutRotation();
 	
 	//* 物体検出 ここまで
 	//****************************************
@@ -233,7 +243,7 @@ int main(int argc, char* argv[]) {
     exit( EXIT_FAILURE );
   }
   char tmpname[ 1000 ];
-  ros::init (argc, argv, "detectObj_VOSCH", ros::init_options::AnonymousName);
+  ros::init (argc, argv, "detectObj_GRSD", ros::init_options::AnonymousName);
 
   sprintf( tmpname, "%s/param/parameters.txt", argv[1] );
   voxel_size = Param::readVoxelSize( tmpname );  //* ボクセルの一辺の長さ（mm）の読み込み
@@ -244,13 +254,11 @@ int main(int argc, char* argv[]) {
 
   //****************************************
   //* 物体検出のための準備
-  box_size = Param::readBoxSize_scene( tmpname );  //* 分割領域の大きさの読み込み
+  box_size = Param::readBoxSizeScene( tmpname );  //* 分割領域の大きさの読み込み
 
-  //* 次元数など
-  dim = Param::readDim( tmpname );  //* 圧縮した特徴ベクトルの次元数の読み込み
   const int dim_model = atoi(argv[5]);  //* 検出対象物体の部分空間の基底の次元数
   if( dim <= dim_model ){
-    cerr << "ERR: dim_model should be less than dim(in dim.txt)" << endl; // 注 特徴量の次元数よりも多くなくてはいけません
+    cerr << "ERR: dim_model should be less than 20" << endl; // 注 特徴量の次元数よりも多くなくてはいけません
     exit( EXIT_FAILURE );
   }
   //* 検出ボックスの大きさを決定する
@@ -276,33 +284,11 @@ int main(int argc, char* argv[]) {
   search_obj.setThreshold( atoi(argv[3]) );
   search_obj.readAxis( argv[4], dim, dim_model, ASCII_MODE_P, MULTIPLE_SIMILARITY );  //* 検出対象物体の部分空間の基底軸の読み込み
 
-  //* RGB二値化の閾値の読み込み
-  sprintf( tmpname, "%s/param/color_threshold.txt", argv[1] );
-  Param::readColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b, tmpname );
-
-  //* 特徴を圧縮する際に使用する主成分軸の読み込み
-  PCA pca;
-  sprintf( tmpname, "%s/models/compress_axis", argv[1] );
-  pca.read( tmpname, ASCII_MODE_P );
-  Eigen::MatrixXf tmpaxis = pca.Axis();
-  Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
-  Eigen::MatrixXf axis_t = axis.transpose();
-  Eigen::VectorXf variance = pca.Variance();
-  if( WHITENING )
-    search_obj.setSceneAxis( axis_t, variance, dim );  //* whitening
-  else
-    search_obj.setSceneAxis( axis_t );  //* 圧縮部分空間の基底軸のセット
-
   // 物体検出のための準備 ここまで
   //****************************************
 
-  //*****************************************//
-  //* 以下は、saveData.cppのmain関数と同じ *//
-  //*****************************************//
-  // ボクセル（かメッシュ）のプレビューとデータ取得の準備
-  ViewAndDetect vad;
-
   // ループのスタート
+  ViewAndDetect vad;
   vad.loop();
   ros::spin();
 

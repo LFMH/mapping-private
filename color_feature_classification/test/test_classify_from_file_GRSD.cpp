@@ -13,7 +13,7 @@
 #include <pcl/io/pcd_io.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
-#include "color_voxel_recognition/libPCA.hpp"
+#include "color_voxel_recognition/pca.h"
 #include <sys/stat.h>
 #include <dirent.h>
 #include "FILE_MODE"
@@ -62,7 +62,7 @@ int classify_by_kNN( std::vector<float> feature, const char feature_type, int ar
 int classify_by_subspace( std::vector<float> feature, const char feature_type, const int dim_subspace ){
   char dirname[ 20 ];
   char filename[ 300 ];
-  Map<VectorXf> vec( &(feature[0]), feature.size() );
+  Eigen::Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
 
   sprintf( dirname, "pca_result_" );
   dirname[ 11 ] = feature_type;
@@ -95,21 +95,21 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
     for( int j=0; j<file_num[ i ];j++ ){
       sprintf( filename, "%s/%03d_%03d", dirname, i, current_num++);
       pca.read( filename, false );
-      //     cout << pca.Axis() << endl;
+      //     cout << pca.getAxis() << endl;
       //     continue;
       //     for( int t=0; t<981;t++ )
       //       printf("%f ",vec[t]);
-      // VectorXf var = pca.Variance();
+      // Eigen::VectorXf var = pca.getVariance();
       // cout << var << endl;
       // exit(1);
-      MatrixXf tmpMat = pca.Axis();
-      VectorXf variance = pca.Variance();
-      MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
-      VectorXf tmpVec;
+      Eigen::MatrixXf tmpMat = pca.getAxis();
+      Eigen::VectorXf variance = pca.getVariance();
+      Eigen::MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim_subspace);
+      Eigen::VectorXf tmpVec;
       t1 = my_clock();
       if( pca.mean_flg ){
-	//cout << pca.Mean() << endl;
-	VectorXf tmpVec2 = vec-pca.Mean();
+	//cout << pca.getMean() << endl;
+	Eigen::VectorXf tmpVec2 = vec-pca.getMean();
 	tmpVec = tmpMat2.transpose() * tmpVec2;
 	sum = tmpVec2.dot( tmpVec2 );
       }
@@ -144,12 +144,12 @@ int classify_by_subspace( std::vector<float> feature, const char feature_type, c
 void compressFeature( string filename, std::vector<float> &feature, const int dim, bool ascii ){
   PCA pca;
   pca.read( filename.c_str(), ascii );
-  VectorXf variance = pca.Variance();
-  MatrixXf tmpMat = pca.Axis();
-  MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
-  Map<VectorXf> vec( &(feature[0]), feature.size() );
+  Eigen::VectorXf variance = pca.getVariance();
+  Eigen::MatrixXf tmpMat = pca.getAxis();
+  Eigen::MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
+  Eigen::Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
   //vec = tmpMat2.transpose() * vec;
-  VectorXf tmpvec = tmpMat2.transpose() * vec;
+  Eigen::VectorXf tmpvec = tmpMat2.transpose() * vec;
   feature.resize( dim );
   if( WHITENING ){
     for( int t=0; t<dim; t++ )

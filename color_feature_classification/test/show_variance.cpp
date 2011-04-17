@@ -1,6 +1,6 @@
 #include <pcl/common/eigen.h>
 #include <iostream>
-#include "color_voxel_recognition/libPCA.hpp"
+#include "color_voxel_recognition/pca.h"
 
 using namespace Eigen;
 using namespace std;
@@ -13,7 +13,7 @@ int main( int argc, char** argv ){
   }
   PCA pca;
   pca.read( argv[1], false );
-  VectorXf var = pca.Variance();
+  VectorXf var = pca.getVariance();
   cout << var << endl;
 
   if( argc > 2 ){

@@ -7,7 +7,7 @@
 #include <pcl/io/pcd_io.h>
 #include <terminal_tools/parse.h>
 #include <terminal_tools/print.h>
-#include "color_voxel_recognition/libPCA.hpp"
+#include "color_voxel_recognition/pca.h"
 #include "FILE_MODE"
 
 using namespace pcl;
@@ -93,14 +93,14 @@ readFeatureModels ( int argc, char **argv, const std::string &extension,
 void compressFeature( string filename, std::vector< std::vector<float> > &models, const int dim, bool ascii ){
   PCA pca;
   pca.read( filename.c_str(), ascii );
-  VectorXf variance = pca.Variance();
-  MatrixXf tmpMat = pca.Axis();
-  MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
+  Eigen::VectorXf variance = pca.getVariance();
+  Eigen::MatrixXf tmpMat = pca.getAxis();
+  Eigen::MatrixXf tmpMat2 = tmpMat.block(0,0,tmpMat.rows(),dim);
   const int num = (int)models.size();
   for( int i=0; i<num; i++ ){
-    Map<VectorXf> vec( &(models[i][0]), models[i].size() );
+    Eigen::Map<Eigen::VectorXf> vec( &(models[i][0]), models[i].size() );
     //vec = tmpMat2.transpose() * vec;
-    VectorXf tmpvec = tmpMat2.transpose() * vec;
+    Eigen::VectorXf tmpvec = tmpMat2.transpose() * vec;
     models[i].resize( dim );
     if( WHITENING ){
       for( int t=0; t<dim; t++ )

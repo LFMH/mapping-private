@@ -4,7 +4,7 @@
 //  Rotation is possible also when feature_type is 'g' or 'r'.
 //  (It's different from computeSubspace.cpp and computeSubspace_with_rotation.cpp)
 
-#include <color_feature_classification/points_tools.hpp>
+#include <color_feature_classification/points_tools.h>
 #include "c3_hlac/c3_hlac_tools.h"
 #include "vosch/vosch_tools.h"
 #include <terminal_tools/parse.h>
@@ -36,8 +36,8 @@ void computeFeature( const PointCloud<PointNormal> input_cloud, std::vector< std
       for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	//* extract - GRSD -
 	std::vector< std::vector<float> > grsd;
-	//extract_GRSD_Signature21( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-	extract_PlusGRSD_Signature110( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	//extractGRSDSignature21( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	extractPlusGRSDSignature110( grid, input_cloud, cloud_downsampled, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	const int hist_num = grsd.size(); // number of subdivisions
 	
 	for( int h=0; h<hist_num; h++ )
@@ -75,8 +75,8 @@ void computeFeature_with_rotate( const PointCloud<PointNormal> input_cloud, std:
 	  for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	    for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	      //* extract - GRSD -
-	      //extract_GRSD_Signature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
-	      extract_PlusGRSD_Signature110( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	      //extractGRSDSignature21( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
+	      extractPlusGRSDSignature110( grid_normal, cloud_normal_r, cloud_downsampled_normal, grsd, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step, THEORY_NORMALIZE );
 	      const int hist_num = grsd.size();
 	      
 	      for( int h=0; h<hist_num; h++ )

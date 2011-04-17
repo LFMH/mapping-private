@@ -13,5 +13,5 @@
   <arg name="/model_num" />
   <arg name="/input" default="/camera/rgb/points" />
   <node pkg="rviz" type="rviz" name="rviz1" args="-d $(arg /display_config)" />
-  <node pkg="color_voxel_recognition_2" type="detectObj_multi" name="detectObj_multi1" output="screen" args="$(arg /demos_path) $(arg /rank_num) $(arg /exist_voxel_num_threshold) $(arg /pca) $(arg /r_dim) $(arg /size1) $(arg /size2) $(arg /size3) $(arg /similarity_th) $(arg /distance_th) $(arg /model_num) /input:=$(arg /input)" />
+  <node pkg="color_voxel_recognition_2" type="detect_object_multi" name="detect_object_multi1" output="screen" args="$(arg /demos_path) $(arg /rank_num) $(arg /exist_voxel_num_threshold) $(arg /pca) $(arg /r_dim) $(arg /size1) $(arg /size2) $(arg /size3) $(arg /similarity_th) $(arg /distance_th) $(arg /model_num) /input:=$(arg /input)" />
 </launch>
