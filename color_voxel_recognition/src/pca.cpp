@@ -1,9 +1,41 @@
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <cstdio>
 #include <iostream>
 #include <fstream>
-#include "color_voxel_recognition/libPCA.hpp"
-
-using namespace std;
+#include "color_voxel_recognition/pca.h"
 
 PCA::PCA( bool _mean_flg ) :
   mean_flg(_mean_flg),
@@ -16,11 +48,11 @@ PCA::PCA( bool _mean_flg ) :
 void PCA::addData( const std::vector<float> feature ){
   if( dim == -1 ){ // initial value
     dim = feature.size();
-    correlation = MatrixXf::Zero( dim, dim );
-    mean = VectorXf::Zero( dim );
+    correlation = Eigen::MatrixXf::Zero( dim, dim );
+    mean = Eigen::VectorXf::Zero( dim );
   }
   else if( feature.size() != (std::vector<float>::size_type)dim ){
-    cerr << "ERR (in PCA::addData): vector size differs" << endl;
+    std::cerr << "ERR (in PCA::addData): vector size differs" << std::endl;
     exit( EXIT_FAILURE );
   }
 
@@ -40,7 +72,7 @@ void PCA::addData( const std::vector<float> feature ){
 // solve PCA
 void PCA::solve( bool regularization_flg, float regularization_nolm ){
   if( dim==-1 ){
-    cerr << "ERR (in PCA::solve): there is no data" << endl;
+    std::cerr << "ERR (in PCA::solve): there is no data" << std::endl;
     exit( EXIT_FAILURE );
   }
   printf("sample: %lld\n",nsample);
@@ -66,17 +98,17 @@ void PCA::solve( bool regularization_flg, float regularization_nolm ){
       correlation( i, i ) += regularization_nolm;
 
   //* solve eigen problem
-  SelfAdjointEigenSolver< MatrixXf > pca ( correlation );
-  MatrixXf tmp_axis = pca.eigenvectors();
-  VectorXf tmp_variance = pca.eigenvalues();
+  Eigen::SelfAdjointEigenSolver< Eigen::MatrixXf > pca ( correlation );
+  Eigen::MatrixXf tmp_axis = pca.eigenvectors();
+  Eigen::VectorXf tmp_variance = pca.eigenvalues();
   sortVecAndVal( tmp_axis, tmp_variance );  
 }
 
 //****************************************
 // get the mean vector of feature vectors
-const VectorXf& PCA::Mean() const {
+const Eigen::VectorXf& PCA::getMean() const {
   if( !mean_flg ){
-    cerr << "ERR (in PCA::Mean): There is no mean vector (mean_flg=false)." << endl;
+    std::cerr << "ERR (in PCA::getMean): There is no mean vector (mean_flg=false)." << std::endl;
     exit( EXIT_FAILURE );
   }
   return mean;
@@ -95,18 +127,18 @@ void PCA::read( const char *filename, bool ascii )
 
   if( ascii ){
     //* dimension of feature vectors
-    if( fscanf( fp, "%d\n", &dim ) != 1 ) cerr << "fscanf err." << endl;
+    if( fscanf( fp, "%d\n", &dim ) != 1 ) std::cerr << "fscanf err." << std::endl;
 
     //* eigen vectors
     axis.resize( dim, dim );
     for( int i=0; i<dim; i++ )
       for( int j=0; j<dim; j++ )
-	if( fscanf( fp, "%f ", &( axis( j, i ) ) ) != 1 ) cerr << "fscanf err." << endl;
+	if( fscanf( fp, "%f ", &( axis( j, i ) ) ) != 1 ) std::cerr << "fscanf err." << std::endl;
     
     //* eigen values
     variance.resize( dim );
     for( int i=0; i<dim; i++ )
-      if( fscanf( fp, "%f\n", &( variance( i ) ) ) != 1 ) cerr << "fscanf err." << endl;
+      if( fscanf( fp, "%f\n", &( variance( i ) ) ) != 1 ) std::cerr << "fscanf err." << std::endl;
 
     //* mean vector of feature vectors
     float tmpVal;
@@ -118,22 +150,22 @@ void PCA::read( const char *filename, bool ascii )
       mean.resize( dim );
       mean( 0 ) = tmpVal;
       for( int i=1; i<dim; i++ )
-	if( fscanf( fp, "%f\n", &( mean( i ) ) ) != 1 ) cerr << "fscanf err." << endl;
+	if( fscanf( fp, "%f\n", &( mean( i ) ) ) != 1 ) std::cerr << "fscanf err." << std::endl;
     }
   }else{
     //* dimension of feature vectors
-    if( fread( &dim, sizeof(int), 1, fp ) != 1 ) cerr << "fread err." << endl;
+    if( fread( &dim, sizeof(int), 1, fp ) != 1 ) std::cerr << "fread err." << std::endl;
 
     //* eigen vectors
     axis.resize( dim, dim );
     for( int i=0; i<dim; i++ )
       for( int j=0; j<dim; j++ )
-	if( fread( &( axis( j, i ) ), sizeof(float), 1, fp ) != 1 ) cerr << "fread err." << endl;
+	if( fread( &( axis( j, i ) ), sizeof(float), 1, fp ) != 1 ) std::cerr << "fread err." << std::endl;
 
     //* eigen values
     variance.resize( dim );
     for( int i=0; i<dim; i++ )
-      if( fread( &( variance( i ) ), sizeof(float), 1, fp ) != 1 ) cerr << "fread err." << endl;
+      if( fread( &( variance( i ) ), sizeof(float), 1, fp ) != 1 ) std::cerr << "fread err." << std::endl;
 
     //* mean vector of feature vectors
     float tmpVal;
@@ -145,7 +177,7 @@ void PCA::read( const char *filename, bool ascii )
       mean.resize( dim );
       mean( 0 ) = tmpVal;
       for( int i=1; i<dim; i++ )
-	if( fread( &( mean( i ) ), sizeof(float), 1, fp ) != 1 ) cerr << "fread err." << endl;
+	if( fread( &( mean( i ) ), sizeof(float), 1, fp ) != 1 ) std::cerr << "fread err." << std::endl;
     }
   }
   
@@ -209,7 +241,7 @@ void PCA::write( const char *filename, bool ascii )
 
 //*******
 //* sort
-void PCA::sortVecAndVal( MatrixXf &vecs, VectorXf &vals ){
+void PCA::sortVecAndVal( Eigen::MatrixXf &vecs, Eigen::VectorXf &vals ){
   int *index = new int[ dim ];
   for( int i = 0; i < dim; i++ )
     index[ i ] = i;

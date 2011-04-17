@@ -1,22 +1,53 @@
-#include <iostream>
-#include <c3_hlac/c3_hlac.h>
-#include <c3_hlac/c3_hlac_tools.h>
-#include <color_voxel_recognition/libPCA.hpp>
-#include <color_voxel_recognition/Param.hpp>
-#include "color_voxel_recognition/FILE_MODE"
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /**************************************************************************************************/
 /* calculate projection axis of the target object's subspace                                      */
 /*   Note that features are also extracted from synthetically rotated point clouds (each 90 deg.) */
 /**************************************************************************************************/
 
-using namespace std;
-using namespace pcl;
+#include <iostream>
+#include <c3_hlac/c3_hlac.h>
+#include <c3_hlac/c3_hlac_tools.h>
+#include <color_voxel_recognition/pca.h>
+#include <color_voxel_recognition/param.h>
+#include <color_voxel_recognition/FILE_MODE>
 
 //**************************
 //* compress feature vectors
 const std::vector< float > compressFeature( std::vector< float > &feature, Eigen::MatrixXf &axis_t, Eigen::VectorXf &variance, const int dim ){
-  Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
+  Eigen::Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
   std::vector< float > feature_compressed;
   feature_compressed.resize( dim );
   Eigen::VectorXf vec2 = axis_t*vec;
@@ -36,7 +67,7 @@ const std::vector< float > compressFeature( std::vector< float > &feature, Eigen
 int main( int argc, char* argv[])
 {
   if( argc != 4 ){
-    cerr << "usage: " << argv[0] << " [path] [label] <registration_num>" << endl;
+    std::cerr << "usage: " << argv[0] << " [path] [label] <registration_num>" << std::endl;
     exit( EXIT_FAILURE );
   }
   const int file_num = atoi( argv[3] );
@@ -47,16 +78,16 @@ int main( int argc, char* argv[])
   const int dim = Param::readDim( tmpname );
 
   //* read flag for c3_hlac extraction
-  const int c3_hlac_flg = Param::readC3HLAC_flag( tmpname );
+  const int c3_hlac_flg = Param::readC3HLACFlag( tmpname );
 
   //* read the projection matrix for feature compression
   PCA pca;
   sprintf( tmpname, "%s/models/compress_axis", argv[1] );
   pca.read( tmpname, ASCII_MODE_P );
-  Eigen::MatrixXf tmpaxis = pca.Axis();
+  Eigen::MatrixXf tmpaxis = pca.getAxis();
   Eigen::MatrixXf axis = tmpaxis.block( 0,0,tmpaxis.rows(),dim );
   Eigen::MatrixXf axis_t = axis.transpose();
-  Eigen::VectorXf variance = pca.Variance();
+  Eigen::VectorXf variance = pca.getVariance();
 
   //*****************//
   //* read features *//
@@ -81,59 +112,59 @@ int main( int argc, char* argv[])
 	std::vector<float> feature_rotate_pre2;
 	
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}
       
-	rotateFeature90( feature_rotate,feature[ h ],R_MODE_3);
+	pcl::rotateFeature90( feature_rotate,feature[ h ],pcl::R_MODE_3);
 	pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	feature_rotate_pre  = feature_rotate;
 	feature_rotate_pre2 = feature_rotate;
       
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}
       
-	rotateFeature90( feature_rotate,feature_rotate_pre2,R_MODE_3);
+	pcl::rotateFeature90( feature_rotate,feature_rotate_pre2,pcl::R_MODE_3);
 	pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	feature_rotate_pre = feature_rotate;
 	feature_rotate_pre2 = feature_rotate;
       
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}
       
-	rotateFeature90( feature_rotate,feature_rotate_pre2,R_MODE_3);
+	pcl::rotateFeature90( feature_rotate,feature_rotate_pre2,pcl::R_MODE_3);
 	pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	feature_rotate_pre = feature_rotate;
       
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}
       
-	rotateFeature90( feature_rotate,feature[ h ],R_MODE_1);
+	pcl::rotateFeature90( feature_rotate,feature[ h ],pcl::R_MODE_1);
 	pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	feature_rotate_pre = feature_rotate;
       
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}
       
-	rotateFeature90( feature_rotate,feature[ h ],R_MODE_4);
+	pcl::rotateFeature90( feature_rotate,feature[ h ],pcl::R_MODE_4);
 	pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	feature_rotate_pre = feature_rotate;
       
 	for(int t=0;t<3;t++){
-	  rotateFeature90( feature_rotate,feature_rotate_pre,R_MODE_2);
+	  pcl::rotateFeature90( feature_rotate,feature_rotate_pre,pcl::R_MODE_2);
 	  pca_each.addData( compressFeature( feature_rotate, axis_t, variance, dim ) );
 	  feature_rotate_pre = feature_rotate;
 	}

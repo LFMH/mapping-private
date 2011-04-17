@@ -1,8 +1,42 @@
-#ifndef MY_SEARCH_HPP
-#define MY_SEARCH_HPP
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef COLOR_VOXEL_RECOGNITION_SEARCH_H_
+#define COLOR_VOXEL_RECOGNITION_SEARCH_H_
 
 #include <pcl/point_types.h>
-#include "pcl/filters/voxel_grid.h"
+#include <pcl/filters/voxel_grid.h>
 
 /*****************************************************************/
 /* Class for Sliding-Box Object Detection                        */
@@ -44,7 +78,7 @@ public:
   void search();
 
   // object detection without rotation
-  void search_withoutRotation();
+  void searchWithoutRotation();
 
   // output the results in a file
   void writeResult( const char *filename, int box_size );
@@ -111,7 +145,7 @@ protected:
   double *max_dot;        // similarity of ($rank_num best) detected region
   Eigen::MatrixXf axis_q; // projection axis of the target object's subspace
   int *exist_voxel_num;   // number of occupied voxels in a box region of scene
-  Eigen::VectorXf *nFeatures; // integral feature table of scene
+  Eigen::VectorXf *integral_features; // integral feature table of scene
   Eigen::MatrixXf axis_p;     // projection axis for feature compression
   std::vector<float> feature_max; // values for histogram normalization
   bool compress_flg; // flag to compress features or not
@@ -129,13 +163,13 @@ protected:
   virtual int checkOverlap( int x, int y, int z, SearchMode mode );
 
   // copy the info of $src_num-th detected region to $dest_num-th detected region
-  virtual void max_cpy( int src_num, int dest_num );
+  virtual void maxCpy( int src_num, int dest_num );
 
   // replace the info of $dest_num-th detected region
-  virtual void max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode );
+  virtual void maxAssign( int dest_num, double dot, int x, int y, int z, SearchMode mode );
 
   // object detection
-  virtual void search_part( SearchMode mode );
+  virtual void searchPart( SearchMode mode );
 
   // set integral feature table (and voxel numbers) of scene
   void setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vector<float> > feature );
@@ -148,11 +182,11 @@ protected:
 //----------------------------//
 // multiple objects detection //
 //----------------------------//
-class SearchObj_multi : public SearchObj {
+class SearchObjMulti : public SearchObj {
 public:
   using SearchObj::search_time; // time for search
-  SearchObj_multi();
-  ~SearchObj_multi();
+  SearchObjMulti();
+  ~SearchObjMulti();
 
   // set number of detection-target objects
   void setModelNum( int model_num_ ){ model_num = model_num_; }
@@ -216,8 +250,8 @@ protected:
   SearchMode **max_mode_multi;   // SearchMode of ($rank_num best) detected region
   double **max_dot_multi;        // similarity of ($rank_num best) detected region
   Eigen::MatrixXf *axis_q_multi; // projection axis of the target object's subspace
-  using SearchObj::exist_voxel_num; // number of occupied voxels in a box region of scene
-  using SearchObj::nFeatures; // integral feature table of scene
+  using SearchObj::exist_voxel_num;  // number of occupied voxels in a box region of scene
+  using SearchObj::integral_features; // integral feature table of scene
   using SearchObj::axis_p;    // projection axis for feature compression
   using SearchObj::feature_max; // values for histogram normalization
   using SearchObj::compress_flg; // flag to compress features or not
@@ -226,13 +260,13 @@ protected:
   int checkOverlap( int m_num, int x, int y, int z, SearchMode mode );
 
   // copy the info of $src_num-th detected region to $dest_num-th detected region
-  void max_cpy( int m_num, int src_num, int dest_num );
+  void maxCpy( int m_num, int src_num, int dest_num );
 
   // replace the info of $dest_num-th detected region
-  void max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode );
+  void maxAssign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode );
 
   // object detection
-  void search_part( SearchMode mode );
+  void searchPart( SearchMode mode );
 };
 
 #endif

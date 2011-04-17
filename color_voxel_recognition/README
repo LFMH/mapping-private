@@ -1,4 +1,4 @@
-# Library for sliding object detection by C^3-HLAC and subspace method.
+# Library for sliding object detection by C3-HLAC and subspace method.
 #   works with Kinect and ni package
 #   please rosmake openni_camera and openni_pcl
 

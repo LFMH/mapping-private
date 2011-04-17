@@ -19,7 +19,7 @@ then
 fi
 
 # save point clouds of the target object
-roslaunch color_voxel_recognition saveData_and_view.launch /dir_name:=$demos_path/models/$1 /limit_depth:=$limit_depth /input:=/camera/rgb/points /display_config:=$display_config_file
+roslaunch color_voxel_recognition save_data_and_view.launch /dir_name:=$demos_path/models/$1 /limit_depth:=$limit_depth /input:=/camera/rgb/points /display_config:=$display_config_file
 
 if [ $(ls $demos_path/models/$1/Points | wc -l) -eq 0 ]
 then
@@ -29,7 +29,7 @@ else
     mkdir -p $demos_path/models/$1/Features
     
 # extract C3_HLAC features
-    rosrun color_voxel_recognition extractC3HLAC_models $demos_path $1 $(ls $demos_path/models/$1/Points | wc -l)
+    rosrun color_voxel_recognition extract_c3_hlac_models $demos_path $1 $(ls $demos_path/models/$1/Points | wc -l)
     
 # get projection axis of the target object's subspace
     rosrun color_voxel_recognition pca_models $demos_path $1 $(ls $demos_path/models/$1/Features | wc -l)

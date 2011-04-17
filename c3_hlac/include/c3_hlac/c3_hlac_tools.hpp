@@ -1,3 +1,37 @@
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
 //-----------
 //* time
 double my_clock()
@@ -46,7 +80,7 @@ void readFeature(const char *name, std::vector<float> &feature ){
 
 //-----------
 //* write
-bool if_zero_vec( const std::vector<float> vec ){
+bool ifZeroVec( const std::vector<float> vec ){
   const int vec_size = vec.size();
   for( int i=0; i<vec_size; i++ )
     if( vec[ i ] != 0 ) return false;
@@ -58,7 +92,7 @@ void writeFeature(const char *name, const std::vector< std::vector<float> > feat
   int hist_num = hist_num_init;
   if( remove_0_flg )
     for( int h=0; h<hist_num_init; h++ )
-      if( if_zero_vec( feature[ h ] ) )
+      if( ifZeroVec( feature[ h ] ) )
 	hist_num --;
   
   FILE *fp = fopen( name, "w" );
@@ -72,7 +106,7 @@ void writeFeature(const char *name, const std::vector< std::vector<float> > feat
   fprintf(fp,"POINTS %d\n", hist_num);
   fprintf(fp,"DATA ascii\n");
   for( int h=0; h<hist_num_init; h++ ){
-    if( remove_0_flg && if_zero_vec( feature[ h ] ) ) continue;
+    if( remove_0_flg && ifZeroVec( feature[ h ] ) ) continue;
     for(int t=0;t<feature_size;t++)
       fprintf(fp,"%f ",feature[ h ][ t ]);
     fprintf(fp,"\n");
@@ -98,14 +132,14 @@ void getVoxelGrid( pcl::VoxelGrid<T> &grid, pcl::PointCloud<T> input_cloud, pcl:
 //------------------------
 //* extract - C3HLAC -
 template <typename PointT>
-Eigen::Vector3i extract_C3_HLAC_Signature981(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, const float voxel_size, const int subdivision_size, const int offset_x, const int offset_y, const int offset_z ){
+Eigen::Vector3i extractC3HLACSignature981(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int color_threshold_r, int color_threshold_g, int color_threshold_b, const float voxel_size, const int subdivision_size, const int offset_x, const int offset_y, const int offset_z ){
   feature.resize( 0 );
-  pcl::PointCloud<pcl::C3_HLAC_Signature981> c3_hlac_signature;
-  pcl::C3_HLAC_Estimation<PointT, pcl::C3_HLAC_Signature981> c3_hlac_;
+  pcl::PointCloud<pcl::C3HLACSignature981> c3_hlac_signature;
+  pcl::C3HLAC981Estimation<PointT, pcl::C3HLACSignature981> c3_hlac_;
 
-  c3_hlac_.setRadiusSearch (1.8);
-  c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
-  c3_hlac_.setColorThreshold( thR, thG, thB );
+  c3_hlac_.setRadiusSearch (0.000000001); // not used actually.
+  c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () ); // not used actually.
+  c3_hlac_.setColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
   if( c3_hlac_.setVoxelFilter (grid, subdivision_size, offset_x, offset_y, offset_z, voxel_size) ){
     c3_hlac_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
     t1 = my_clock();
@@ -117,8 +151,8 @@ Eigen::Vector3i extract_C3_HLAC_Signature981(pcl::VoxelGrid<PointT> grid, pcl::P
     const int hist_num = c3_hlac_signature.points.size();
     feature.resize( hist_num );
     for( int h=0; h<hist_num; h++ ){
-      feature[ h ].resize( DIM_C3HLAC_1_3_ALL );
-      for( int i=0; i<DIM_C3HLAC_1_3_ALL; i++)
+      feature[ h ].resize( DIM_C3HLAC_981_1_3_ALL );
+      for( int i=0; i<DIM_C3HLAC_981_1_3_ALL; i++)
 	feature[ h ][ i ] = c3_hlac_signature.points[ h ].histogram[ i ];
     }
   }
@@ -126,21 +160,21 @@ Eigen::Vector3i extract_C3_HLAC_Signature981(pcl::VoxelGrid<PointT> grid, pcl::P
 }
 
 template <typename PointT>
-void extract_C3_HLAC_Signature981(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB, const float voxel_size ){
+void extractC3HLACSignature981(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int color_threshold_r, int color_threshold_g, int color_threshold_b, const float voxel_size ){
   std::vector< std::vector<float> > tmp( 1 );
-  extract_C3_HLAC_Signature981( grid, cloud, tmp, thR, thG, thB, voxel_size ); // for one signature
+  extractC3HLACSignature981( grid, cloud, tmp, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size ); // for one signature
   feature = tmp[ 0 ];
 }
 
 template <typename PointT>
-Eigen::Vector3i extract_C3_HLAC_Signature117(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int thR, int thG, int thB, const float voxel_size, const int subdivision_size, const int offset_x , const int offset_y, const int offset_z ){
+Eigen::Vector3i extractC3HLACSignature117(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector< std::vector<float> > &feature, int color_threshold_r, int color_threshold_g, int color_threshold_b, const float voxel_size, const int subdivision_size, const int offset_x , const int offset_y, const int offset_z ){
   feature.resize( 0 );
-  pcl::PointCloud<pcl::C3_HLAC_Signature117> c3_hlac_signature;
-  pcl::C3_HLAC_RI_Estimation<PointT, pcl::C3_HLAC_Signature117> c3_hlac_;
+  pcl::PointCloud<pcl::C3HLACSignature117> c3_hlac_signature;
+  pcl::C3HLAC117Estimation<PointT, pcl::C3HLACSignature117> c3_hlac_;
 
-  c3_hlac_.setRadiusSearch (1.8);
-  c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () );
-  c3_hlac_.setColorThreshold( thR, thG, thB );
+  c3_hlac_.setRadiusSearch (0.000000001); // not used actually.
+  c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () ); // not used actually.
+  c3_hlac_.setColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
   if( c3_hlac_.setVoxelFilter (grid, subdivision_size, offset_x, offset_y, offset_z, voxel_size) ){
     c3_hlac_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
     t1 = my_clock();
@@ -152,8 +186,8 @@ Eigen::Vector3i extract_C3_HLAC_Signature117(pcl::VoxelGrid<PointT> grid, pcl::P
     const int hist_num = c3_hlac_signature.points.size();
     feature.resize( hist_num );
     for( int h=0; h<hist_num; h++ ){
-      feature[ h ].resize( DIM_C3HLAC_RI_1_3_ALL );
-      for( int i=0; i<DIM_C3HLAC_RI_1_3_ALL; i++)
+      feature[ h ].resize( DIM_C3HLAC_117_1_3_ALL );
+      for( int i=0; i<DIM_C3HLAC_117_1_3_ALL; i++)
 	feature[ h ][ i ] = c3_hlac_signature.points[ h ].histogram[ i ];
     }
   }
@@ -161,8 +195,8 @@ Eigen::Vector3i extract_C3_HLAC_Signature117(pcl::VoxelGrid<PointT> grid, pcl::P
 }
 
 template <typename PointT>
-void extract_C3_HLAC_Signature117(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int thR, int thG, int thB, const float voxel_size ){
+void extractC3HLACSignature117(pcl::VoxelGrid<PointT> grid, pcl::PointCloud<PointT> cloud, std::vector<float> &feature, int color_threshold_r, int color_threshold_g, int color_threshold_b, const float voxel_size ){
   std::vector< std::vector<float> > tmp( 1 );
-  extract_C3_HLAC_Signature117( grid, cloud, tmp, thR, thG, thB, voxel_size ); // for one signature
+  extractC3HLACSignature117( grid, cloud, tmp, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size ); // for one signature
   feature = tmp[ 0 ];
 }

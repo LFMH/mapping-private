@@ -15,5 +15,5 @@ size1=$3
 distance_th=3
 display_config_file=$demos_path/display_config
 
-#rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $size1 $size1 $size1 $similarity_th $distance_th /input:=/camera/rgb/points
+#rosrun color_voxel_recognition detect_object $rank_num $exist_voxel_num_threshold $pca $r_dim $size1 $size1 $size1 $similarity_th $distance_th /input:=/camera/rgb/points
 roslaunch color_voxel_recognition detect.launch /demos_path:=$demos_path /rank_num:=$rank_num /exist_voxel_num_threshold:=$exist_voxel_num_threshold /pca:=$pca /r_dim:=$r_dim /size1:=$size1 /size2:=$size1 /size3:=$size1 /similarity_th:=$similarity_th /distance_th:=$distance_th /input:=/camera/rgb/points /display_config:=$display_config_file

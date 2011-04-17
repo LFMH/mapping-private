@@ -32,48 +32,54 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "c3_hlac/c3_hlac_tools.h"
+#ifndef COLOR_VOXEL_RECOGNITION_PCA_H_
+#define COLOR_VOXEL_RECOGNITION_PCA_H_
 
-//#define DIVID_TEST
+#include <vector>
+#include <Eigen/Eigenvalues>
 
-int main( int argc, char** argv ){
-  if( argc != 2 ){
-    ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
-    return(-1);
-  }
+/*****************/
+/* class for PCA */
+/*****************/
 
-  //* voxel_size : the length of voxel side (unit: meter)
-  const double voxel_size = 0.01;
+class PCA{
+public:
+  bool mean_flg;        // "true" when you substract the mean vector from the correlation matrix
 
-  //* read
-  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
-  if (pcl::io::loadPCDFile (argv[1], input_cloud) == -1){
-    ROS_ERROR ("Couldn't read file %s",argv[1]);
-    return (-1);
-  }
-  ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int)(input_cloud.width * input_cloud.height), argv[1], pcl::getFieldsList (input_cloud).c_str ());
+  PCA( bool _mean_flg = true ); // _mean_flg should be "true" when you substract the mean vector from the correlation matrix
+  
+  ~PCA(){}
+  
+  // add feature vectors to the correlation matrix one by one
+  void addData( const std::vector<float> feature );
 
-  //* voxelize
-  pcl::VoxelGrid<pcl::PointXYZRGB> grid;
-  pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled;
-  getVoxelGrid( grid, input_cloud, cloud_downsampled, voxel_size );
+  // solve PCA
+  void solve( bool regularization_flg = false, float regularization_nolm = 0.0001 );
+    
+  // get eigen vectors
+  const Eigen::MatrixXf &getAxis() const { return axis; }
 
-#ifdef DIVID_TEST
-  //* extract - C3_HLAC -
-  std::vector< std::vector<float> > c3_hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3_hlac, 127, 127, 127, voxel_size, 10 );
+  // get eigen values
+  const Eigen::VectorXf &getVariance() const { return variance; }
 
-  //* write
-  writeFeature( "c3hlac.pcd", c3_hlac );
+  // get the mean vector of feature vectors
+  const Eigen::VectorXf &getMean() const;
+    
+  // read PCA file
+  void read( const char *filename, bool ascii = false );
 
-#else
-  //* extract - C3_HLAC -
-  std::vector<float> c3_hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3_hlac, 127, 127, 127, voxel_size );
+  // write PCA file
+  void write( const char *filename, bool ascii = false );
+    
+private:
+  int dim;              // dimension of feature vectors
+  long long nsample;    // number of feature vectors
+  Eigen::VectorXf mean;        // mean vector of feature vectors
+  Eigen::MatrixXf correlation; // self correlation matrix
+  Eigen::MatrixXf axis;        // eigen vectors
+  Eigen::VectorXf variance;    // eigen values
 
-  //* write
-  writeFeature( "c3hlac.pcd", c3_hlac );
+  void sortVecAndVal( Eigen::MatrixXf &vecs, Eigen::VectorXf &vals );
+};
+
 #endif
-
-  return(0);
-}

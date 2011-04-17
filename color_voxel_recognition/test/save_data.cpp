@@ -1,12 +1,36 @@
-#include <visualization_msgs/Marker.h>
-#include <float.h>
-#include "color_voxel_recognition/FILE_MODE"
-#include <ros/ros.h>
-#include <pcl/point_types.h>
-#include "pcl/io/pcd_io.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/select.h>
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
 
 //**************************************************************************************************//
 //* save point clouds                                                                              *//
@@ -16,7 +40,15 @@
 //*   (this limitation is used for segmenting the target object in training process)               *//
 //**************************************************************************************************//
 
-using namespace std;
+#include <visualization_msgs/Marker.h>
+#include <float.h>
+#include <color_voxel_recognition/FILE_MODE>
+#include <ros/ros.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/select.h>
 
 float DISTANCE_TH = 5.0;
 bool save_flg = false;
@@ -92,7 +124,7 @@ private:
   const char *save_base_dir;
 public:
   void activateRelativeMode(){ relative_mode = true; }
-  string cloud_topic_;
+  std::string cloud_topic_;
   ros::Subscriber sub_;
   ros::Publisher pub_;
   ros::Publisher marker_pub_;
@@ -159,8 +191,8 @@ public:
 	if( cloud_xyzrgb.points.size() != 0 ){
 	  sprintf(filename,"%s/Points/%05d.pcd", save_base_dir, captureNum );
 	  pcl::io::savePCDFile (filename, cloud_xyzrgb, true);
-	  cout << "    captured. " << filename << endl;
-	  cout << "Press any key to save." << endl;
+	  std::cout << "    captured. " << filename << std::endl;
+	  std::cout << "Press any key to save." << std::endl;
 	  captureNum++;
 	}
 	save_flg = false;
@@ -178,13 +210,13 @@ public:
 //********************************
 //* main
 int main(int argc, char* argv[]) {
-    cerr << argc << endl;
-    cerr << argv[0] << " " << argv[1]  << " " << argv[2]  << " " << argv[3]  << " " << argv[4] << endl;
+    std::cerr << argc << std::endl;
+    std::cerr << argv[0] << " " << argv[1]  << " " << argv[2]  << " " << argv[3]  << " " << argv[4] << std::endl;
   if((argc!=3)&&(argc!=4)&&(argc!=5)&&(argc!=6)){
-    cerr << "usage: " << argv[0] << " [save_dir_name] /input:=/camera/depth/points2" << endl;
-    cerr << " or" << endl;
-    cerr << "usage: " << argv[0] << " [save_dir_name] <distance_th(m)> /input:=/camera/depth/points2" << endl;
-    cerr << "       (for relative-mode)" << endl;
+    std::cerr << "usage: " << argv[0] << " [save_dir_name] /input:=/camera/depth/points2" << std::endl;
+    std::cerr << " or" << std::endl;
+    std::cerr << "usage: " << argv[0] << " [save_dir_name] <distance_th(m)> /input:=/camera/depth/points2" << std::endl;
+    std::cerr << "       (for relative-mode)" << std::endl;
     exit( EXIT_FAILURE );
   }
   ros::init (argc, argv, "saveData", ros::init_options::AnonymousName);
@@ -199,7 +231,7 @@ int main(int argc, char* argv[]) {
   ros::AsyncSpinner spinner(2); // Use 2 threads
   spinner.start();
   char c;
-  cout << "Press any key to save." << endl;
+  std::cout << "Press any key to save." << std::endl;
 
   while(ros::ok()){
     if( kbhit() ){

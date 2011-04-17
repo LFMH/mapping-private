@@ -1,10 +1,44 @@
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #define QUIET
 
 #include <iostream>
 #include <stdio.h>
 #include <sys/time.h>
-#include "color_voxel_recognition/libPCA.hpp"
-#include "color_voxel_recognition/Search.hpp"
+#include "color_voxel_recognition/pca.h"
+#include "color_voxel_recognition/search.h"
 
 // time
 double my_clock_()
@@ -25,7 +59,7 @@ SearchObj::SearchObj() :
   max_mode(NULL),
   max_dot (NULL),
   exist_voxel_num(NULL),
-  nFeatures(NULL),
+  integral_features(NULL),
   compress_flg(false) {
 }
 
@@ -36,10 +70,10 @@ SearchObj::~SearchObj(){
   if( max_mode != NULL ) delete[] max_mode;
   if( max_dot  != NULL ) delete[] max_dot;
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete[] nFeatures;
+  if( integral_features != NULL ) delete[] integral_features;
 }
 
-SearchObj_multi::SearchObj_multi() :
+SearchObjMulti::SearchObjMulti() :
   model_num(0),
   max_x_multi(NULL),
   max_y_multi(NULL),
@@ -49,7 +83,7 @@ SearchObj_multi::SearchObj_multi() :
   axis_q_multi (NULL) {
 }
 
-SearchObj_multi::~SearchObj_multi(){
+SearchObjMulti::~SearchObjMulti(){
   if( max_x_multi != NULL ){
     for( int i=0; i<model_num; i++ ) delete[] max_x_multi[i];
     delete max_x_multi;
@@ -76,7 +110,7 @@ SearchObj_multi::~SearchObj_multi(){
     max_dot_multi = NULL;
   }
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete[] nFeatures;
+  if( integral_features != NULL ) delete[] integral_features;
 }
 
 //*****************//
@@ -119,11 +153,11 @@ void SearchObj::setThreshold( int _exist_voxel_num_threshold ){
 void SearchObj::readAxis( const char *filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   PCA pca_each;
   pca_each.read( filename, ascii );
-  Eigen::MatrixXf tmpaxis = pca_each.Axis();
+  Eigen::MatrixXf tmpaxis = pca_each.getAxis();
   Eigen::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
   axis_q = tmpaxis2.transpose();
   if( multiple_similarity ){
-    Eigen::VectorXf variance = pca_each.Variance();
+    Eigen::VectorXf variance = pca_each.getVariance();
     for( int i=1; i<dim_model; i++ )
       for( int j=0; j<dim; j++ )
 	axis_q( i, j ) = axis_q( i, j ) * sqrt( variance( i ) ) / sqrt( variance( 0 ) );
@@ -152,14 +186,14 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
   xy_num = x_num*y_num;
   const int xyz_num = xy_num * z_num;
   exist_voxel_num = new int[ xyz_num ];
-  nFeatures = new Eigen::VectorXf [ xyz_num ];
+  integral_features = new Eigen::VectorXf [ xyz_num ];
   for(int n=0;n<xyz_num;n++){
-    nFeatures[ n ].resize(dim);
+    integral_features[ n ].resize(dim);
     if( ascii ){
       int tmpval;
       for(int j=0;j<dim;j++){
 	if( fscanf(fp,"%d:%lf ",&tmpval,&tmpval_d) == EOF ) std::cerr<< "fscanf err" << std::endl;
-	nFeatures[ n ][ j ] = tmpval_d;
+	integral_features[ n ][ j ] = tmpval_d;
       }
       if( fscanf(fp,"\n") == EOF ) std::cerr<< "fscanf err" << std::endl;
       if( fscanf(fp2,"%d\n",exist_voxel_num+n) == EOF ) std::cerr<< "fscanf err" << std::endl;
@@ -167,7 +201,7 @@ void SearchObj::readData( const char *filenameF, const char *filenameN, int dim,
     else{
       for(int j=0;j<dim;j++){
 	if( fread(&tmpval_d,sizeof(tmpval_d),1,fp) < 1 ) std::cerr<< "fread err" << std::endl;
-	nFeatures[ n ][ j ] = tmpval_d;
+	integral_features[ n ][ j ] = tmpval_d;
       }
       if( fread(exist_voxel_num+n,sizeof(exist_voxel_num[n]),1,fp2) < 1 ) std::cerr<< "fread err" << std::endl;
     }
@@ -323,7 +357,7 @@ inline int SearchObj::checkOverlap( int x, int y, int z, SearchMode mode ){
 
 //******************************************************************************
 // copy the info of $src_num-th detected region to $dest_num-th detected region
-inline void SearchObj::max_cpy( int src_num, int dest_num ){
+inline void SearchObj::maxCpy( int src_num, int dest_num ){
   max_dot[ dest_num ] = max_dot[ src_num ];
   max_x[ dest_num ] = max_x[ src_num ];
   max_y[ dest_num ] = max_y[ src_num ];
@@ -333,7 +367,7 @@ inline void SearchObj::max_cpy( int src_num, int dest_num ){
 
 //*************************************************
 // replace the info of $dest_num-th detected region
-inline void SearchObj::max_assign( int dest_num, double dot, int x, int y, int z, SearchMode mode ){
+inline void SearchObj::maxAssign( int dest_num, double dot, int x, int y, int z, SearchMode mode ){
   max_dot[ dest_num ] = dot;
   max_x[ dest_num ] = x;
   max_y[ dest_num ] = y;
@@ -352,31 +386,31 @@ void SearchObj::search(){
   t1 = my_clock_();
   if( range1 == range2 ){
     if( range2 == range3 ){ // range1 = range2 = range3
-      search_part( S_MODE_1 );
+      searchPart( S_MODE_1 );
     }
     else{ // range1 = range2
-      search_part( S_MODE_1 );
-      search_part( S_MODE_2 );
-      search_part( S_MODE_5 );
+      searchPart( S_MODE_1 );
+      searchPart( S_MODE_2 );
+      searchPart( S_MODE_5 );
     }
   }
   else if( range2 == range3 ){ // range2 = range3
-    search_part( S_MODE_1 );
-    search_part( S_MODE_5 );
-    search_part( S_MODE_6 );
+    searchPart( S_MODE_1 );
+    searchPart( S_MODE_5 );
+    searchPart( S_MODE_6 );
   }
   else if( range1==range3 ){ // range1 = range3
-    search_part( S_MODE_1 );
-    search_part( S_MODE_5 );
-    search_part( S_MODE_3 );
+    searchPart( S_MODE_1 );
+    searchPart( S_MODE_5 );
+    searchPart( S_MODE_3 );
   }
   else{ // range1 != range2 != range3
-    search_part( S_MODE_1 );
-    search_part( S_MODE_2 );
-    search_part( S_MODE_3 );
-    search_part( S_MODE_4 );
-    search_part( S_MODE_5 );
-    search_part( S_MODE_6 );
+    searchPart( S_MODE_1 );
+    searchPart( S_MODE_2 );
+    searchPart( S_MODE_3 );
+    searchPart( S_MODE_4 );
+    searchPart( S_MODE_5 );
+    searchPart( S_MODE_6 );
   }
   t2 = my_clock_();
   search_time = t2 - t1;
@@ -384,17 +418,17 @@ void SearchObj::search(){
 
 //**********************************
 // object detection without rotation
-void SearchObj::search_withoutRotation(){
+void SearchObj::searchWithoutRotation(){
   double t1,t2; // time
   t1 = my_clock_();
-  search_part( S_MODE_1 );
+  searchPart( S_MODE_1 );
   t2 = my_clock_();
   search_time = t2 - t1;
 }
 
 //**************************************
 // object detection (in eash SearchMode)
-void SearchObj::search_part( SearchMode mode ){
+void SearchObj::searchPart( SearchMode mode ){
   int xrange = 0, yrange = 0, zrange = 0;
   getRange( xrange, yrange, zrange, mode );
 
@@ -416,7 +450,7 @@ void SearchObj::search_part( SearchMode mode ){
 	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
 	  if(exist_num > exist_voxel_num_threshold){ // if there are
 
-	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
+	    feature_tmp = clipValue( integral_features, x, y, z, xrange, yrange, zrange );
 	    
 	    //* similarity calculation
 	    sum = feature_tmp.dot( feature_tmp );
@@ -431,10 +465,10 @@ void SearchObj::search_part( SearchMode mode ){
 	      if(dot>max_dot[ i ]){
 		overlap_num = checkOverlap( x, y, z, mode );
 		for( int j=0; j<overlap_num-i; j++ )
-		  max_cpy( overlap_num-1-j, overlap_num-j );		  
+		  maxCpy( overlap_num-1-j, overlap_num-j );		  
 
 		if( i<=overlap_num )
-		  max_assign( i, dot, x, y, z, mode );
+		  maxAssign( i, dot, x, y, z, mode );
 		break;
 	      }
 	    }
@@ -513,7 +547,7 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
     return;
 
   // exist_voxel_num = new int[ xyz_num ];
-  // nFeatures = new Eigen::VectorXf [ xyz_num ];
+  // integral_features = new Eigen::VectorXf [ xyz_num ];
 
   //**********************//
   //* feature extraction *//
@@ -535,11 +569,11 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 	  }
 	}
 
-	Map<VectorXf> vec( &(feature[ idx ][0]), feature[ idx ].size() );
+	Eigen::Map<Eigen::VectorXf> vec( &(feature[ idx ][0]), feature[ idx ].size() );
 	if( compress_flg )
-	  nFeatures[ idx ] = axis_p * vec;
+	  integral_features[ idx ] = axis_p * vec;
 	else
-	  nFeatures[ idx ] = vec;
+	  integral_features[ idx ] = vec;
 
 	//*******************************//
 	//* make integral feature table *//
@@ -549,23 +583,23 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 	  if(y==0){
 	    if(x!=0){ // (*,0,0)
 	      exist_voxel_num[ idx ] += exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ];
-	      nFeatures[ idx ] += nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ];
+	      integral_features[ idx ] += integral_features[ ( x - 1 ) + y*x_num + z*xy_num ];
 	    }
 	  }
 	  else{
 	    if(x==0){ // (0,*,0)
 	      exist_voxel_num[ idx ] += exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ];	    
-	      nFeatures[ idx ] += nFeatures[ x + ( y - 1 )*x_num + z*xy_num ];	    
+	      integral_features[ idx ] += integral_features[ x + ( y - 1 )*x_num + z*xy_num ];	    
 	    }
 	    else{ // (*,*,0)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + ( y - 1 )*x_num + z*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
-	      nFeatures[ idx ]
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
-		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
+	      integral_features[ idx ]
+		+= integral_features[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  integral_features[ x + ( y - 1 )*x_num + z*xy_num ]
+		-  integral_features[ ( x - 1 ) + ( y - 1 )*x_num + z*xy_num ];
 	    }
 	  }
 	}
@@ -573,17 +607,17 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 	  if(y==0){
 	    if(x==0){ // (0,0,*)	
 	      exist_voxel_num[ idx ] += exist_voxel_num[ x + y*x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ idx ] += nFeatures[ x + y*x_num + ( z - 1 )*xy_num ];
+	      integral_features[ idx ] += integral_features[ x + y*x_num + ( z - 1 )*xy_num ];
 	    }
 	    else {// (*,0,*)
 	      exist_voxel_num[ idx ] 
 		+= exist_voxel_num[ ( x - 1 ) + y*x_num + z*xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ idx ]
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
+	      integral_features[ idx ]
+		+= integral_features[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  integral_features[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  integral_features[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ];
 	    }
 	  }
 	  else{
@@ -592,10 +626,10 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 		+= exist_voxel_num[ x + ( y - 1 )*x_num + z *xy_num ]
 		+  exist_voxel_num[ x + y *x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ idx ]
-		+= nFeatures[ x + ( y - 1 )*x_num + z *xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	      integral_features[ idx ]
+		+= integral_features[ x + ( y - 1 )*x_num + z *xy_num ]
+		+  integral_features[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  integral_features[ x + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
 	    }
 	    else{ // (*,*,*)
 	      exist_voxel_num[ idx ] 
@@ -606,14 +640,14 @@ void SearchObj::setData( const Eigen::Vector3i subdiv_b_, std::vector< std::vect
 		-  exist_voxel_num[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
 		-  exist_voxel_num[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
 		+  exist_voxel_num[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
-	      nFeatures[ idx ] 
-		+= nFeatures[ ( x - 1 ) + y*x_num + z*xy_num ]
-		+  nFeatures[ x + ( y - 1 )*x_num + z*xy_num ]
-		+  nFeatures[ x + y *x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
-		-  nFeatures[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
-		-  nFeatures[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
-		+  nFeatures[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
+	      integral_features[ idx ] 
+		+= integral_features[ ( x - 1 ) + y*x_num + z*xy_num ]
+		+  integral_features[ x + ( y - 1 )*x_num + z*xy_num ]
+		+  integral_features[ x + y *x_num + ( z - 1 )*xy_num ]
+		-  integral_features[ ( x - 1 ) + ( y - 1 )*x_num + z *xy_num ]
+		-  integral_features[ x + ( y - 1 )*x_num + ( z - 1 )*xy_num ]
+		-  integral_features[ ( x - 1 ) + y *x_num + ( z - 1 )*xy_num ]
+		+  integral_features[ ( x - 1 ) + ( y - 1 ) *x_num + ( z - 1 )*xy_num ];
 	    }
 	  }
 	}
@@ -692,9 +726,9 @@ void SearchObj::cleanData(){
     max_dot[ i ] = 0;
   }
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete[] nFeatures;
+  if( integral_features != NULL ) delete[] integral_features;
   exist_voxel_num = NULL;
-  nFeatures = NULL;
+  integral_features = NULL;
 }
 
 //*******************************************************
@@ -719,7 +753,7 @@ void SearchObj::setNormalizeVal( const char* filename ){
 
 //**********************************************
 // delete the results and integral feature table
-void SearchObj_multi::cleanData(){
+void SearchObjMulti::cleanData(){
   x_num = 0;
   y_num = 0;
   z_num = 0;
@@ -734,14 +768,14 @@ void SearchObj_multi::cleanData(){
     }
   }
   if( exist_voxel_num != NULL ) delete[] exist_voxel_num;
-  if( nFeatures != NULL ) delete[] nFeatures;
+  if( integral_features != NULL ) delete[] integral_features;
   exist_voxel_num = NULL;
-  nFeatures = NULL;
+  integral_features = NULL;
 }
 
 //***********************************************************************************
 // set number of output regions which are $rank_num most similar to the target object
-void SearchObj_multi::setRank( int _rank_num ){
+void SearchObjMulti::setRank( int _rank_num ){
   rank_num = _rank_num;
 
   if( max_x_multi != NULL ){
@@ -782,7 +816,7 @@ void SearchObj_multi::setRank( int _rank_num ){
 
 //*****************************************************
 // read projection axis of the target object's subspace
-void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
+void SearchObjMulti::readAxis( char **filename, int dim, int dim_model, bool ascii, bool multiple_similarity ){
   if( axis_q_multi != NULL ) delete[] axis_q_multi;
   axis_q_multi = new Eigen::MatrixXf [ model_num ];
 
@@ -790,11 +824,11 @@ void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool as
     PCA pca_each;
     pca_each.read( filename[ m ], ascii );
     std::cout << filename[ m ] << std::endl;
-    Eigen::MatrixXf tmpaxis = pca_each.Axis();
+    Eigen::MatrixXf tmpaxis = pca_each.getAxis();
     Eigen::MatrixXf tmpaxis2 = tmpaxis.block(0,0,tmpaxis.rows(),dim_model);
     axis_q_multi[ m ] = tmpaxis2.transpose();
     if( multiple_similarity ){
-      Eigen::VectorXf variance = pca_each.Variance();
+      Eigen::VectorXf variance = pca_each.getVariance();
       for( int i=1; i<dim_model; i++ )
 	for( int j=0; j<dim; j++ )
 	  axis_q_multi[ m ]( i, j ) = axis_q_multi[ m ]( i, j ) * sqrt( variance( i ) ) / sqrt( variance( 0 ) );
@@ -804,7 +838,7 @@ void SearchObj_multi::readAxis( char **filename, int dim, int dim_model, bool as
 
 //*******************
 // delete the results
-void SearchObj_multi::cleanMax(){
+void SearchObjMulti::cleanMax(){
   for( int m=0; m<model_num; m++ ){
     for( int i=0; i<rank_num; i++ ){
       max_x_multi[ m ][ i ] = 0;
@@ -817,15 +851,15 @@ void SearchObj_multi::cleanMax(){
 
 //*******************************************************
 // return x, y and z length of ($num-th) detected region
-int SearchObj_multi::maxXrange( int m_num, int num ){ return xRange( max_mode_multi[ m_num ][ num ] ); }
-int SearchObj_multi::maxYrange( int m_num, int num ){ return yRange( max_mode_multi[ m_num ][ num ] ); }
-int SearchObj_multi::maxZrange( int m_num, int num ){ return zRange( max_mode_multi[ m_num ][ num ] ); }
+int SearchObjMulti::maxXrange( int m_num, int num ){ return xRange( max_mode_multi[ m_num ][ num ] ); }
+int SearchObjMulti::maxYrange( int m_num, int num ){ return yRange( max_mode_multi[ m_num ][ num ] ); }
+int SearchObjMulti::maxZrange( int m_num, int num ){ return zRange( max_mode_multi[ m_num ][ num ] ); }
 
 //****************************************************************************
 // check if the reference region is overlapped by some region already detected
 //   return the rank number of the overlapped region if there is,
 //   return the lowest rank number otherwise.
-inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
+inline int SearchObjMulti::checkOverlap( int m_num, int x, int y, int z, SearchMode mode ){
   int num;
   int xrange = 0, yrange = 0, zrange = 0;
   int val1, val2, val3;
@@ -858,7 +892,7 @@ inline int SearchObj_multi::checkOverlap( int m_num, int x, int y, int z, Search
 
 //******************************************************************************
 // copy the info of $src_num-th detected region to $dest_num-th detected region
-inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
+inline void SearchObjMulti::maxCpy( int m_num, int src_num, int dest_num ){
   max_dot_multi[ m_num ][ dest_num ] = max_dot_multi[ m_num ][ src_num ];
   max_x_multi[ m_num ][ dest_num ] = max_x_multi[ m_num ][ src_num ];
   max_y_multi[ m_num ][ dest_num ] = max_y_multi[ m_num ][ src_num ];
@@ -868,7 +902,7 @@ inline void SearchObj_multi::max_cpy( int m_num, int src_num, int dest_num ){
 
 //*************************************************
 // replace the info of $dest_num-th detected region
-inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
+inline void SearchObjMulti::maxAssign( int m_num, int dest_num, double dot, int x, int y, int z, SearchMode mode ){
   max_dot_multi[ m_num ][ dest_num ] = dot;
   max_x_multi[ m_num ][ dest_num ] = x;
   max_y_multi[ m_num ][ dest_num ] = y;
@@ -878,7 +912,7 @@ inline void SearchObj_multi::max_assign( int m_num, int dest_num, double dot, in
 
 //**************************************
 // object detection (in eash SearchMode)
-void SearchObj_multi::search_part( SearchMode mode ){
+void SearchObjMulti::searchPart( SearchMode mode ){
   int xrange = 0, yrange = 0, zrange = 0;
   getRange( xrange, yrange, zrange, mode );
 
@@ -900,7 +934,7 @@ void SearchObj_multi::search_part( SearchMode mode ){
 	  exist_num = clipValue( exist_voxel_num, x, y, z, xrange, yrange, zrange );
 	  if(exist_num > exist_voxel_num_threshold){  // if there are
 
-	    feature_tmp = clipValue( nFeatures, x, y, z, xrange, yrange, zrange );
+	    feature_tmp = clipValue( integral_features, x, y, z, xrange, yrange, zrange );
 	    
 	    //* similarity calculation
 	    sum = feature_tmp.dot( feature_tmp );
@@ -917,10 +951,10 @@ void SearchObj_multi::search_part( SearchMode mode ){
 		if(dot>max_dot_multi[ m ][ i ]){
 		  overlap_num = checkOverlap( m, x, y, z, mode );
 		  for( int j=0; j<overlap_num-i; j++ )
-		    max_cpy( m, overlap_num-1-j, overlap_num-j );		  
+		    maxCpy( m, overlap_num-1-j, overlap_num-j );		  
 		  
 		  if( i<=overlap_num )
-		    max_assign( m, i, dot, x, y, z, mode );
+		    maxAssign( m, i, dot, x, y, z, mode );
 		  break;
 		}
 	      }
@@ -935,7 +969,7 @@ void SearchObj_multi::search_part( SearchMode mode ){
 
 //****************************************************************************
 // solve and remove overlap between detected regions for object1, object2, ...
-void SearchObj_multi::removeOverlap(){
+void SearchObjMulti::removeOverlap(){
   for( int m=0; m<model_num; m++ ){
     //for( int i=0; i<rank_num; i++ ){
     for( int i=0; i<1; i++ ){
@@ -945,11 +979,11 @@ void SearchObj_multi::removeOverlap(){
 	  int overlap_num = checkOverlap( m2, maxX( m, i ), maxY( m, i ), maxZ( m, i ), maxMode( m, i ) );
 	  if( maxDot( m, i ) > maxDot( m2, overlap_num ) )
 	    for( int j=overlap_num; j<rank_num-1; j++ )
-	      max_cpy( m2, j+1, j );
+	      maxCpy( m2, j+1, j );
 	    //max_dot_multi[ m2 ][ overlap_num ] = 0;
 	  else
 	    for( int j=i; j<rank_num-1; j++ )
-	      max_cpy( m, j+1, j );
+	      maxCpy( m, j+1, j );
 	    //max_dot_multi[ m ][ i ] = 0;
 	}
       }

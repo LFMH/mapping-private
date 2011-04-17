@@ -1,18 +1,49 @@
-#include <iostream>
-#include <c3_hlac/c3_hlac_tools.h>
-#include <color_voxel_recognition/Param.hpp>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/filters/voxel_grid.h>
+/*
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2011, Asako Kanezaki <kanezaki@isi.imi.i.u-tokyo.ac.jp>
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage, Inc. nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /*************************************************************************************************/
-/* extract C^3-HLAC features from all the subdivisions of the target object                      */
+/* extract C3-HLAC features from all the subdivisions of the target object                       */
 /*   Note that features are also extracted from synthetically rotated point clouds               */
 /*   bounding box size is written into color_voxel_recognition/demos/models/$model_name/size.txt */
 /*************************************************************************************************/
 
-using namespace std;
-using namespace pcl;
+#include <iostream>
+#include <c3_hlac/c3_hlac_tools.h>
+#include <color_voxel_recognition/param.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/voxel_grid.h>
 
 //*****************************
 //* determine bounding box size
@@ -108,7 +139,7 @@ bool rotatePoints( const T& input_cloud, T& output_cloud, const double roll, con
 int main( int argc, char* argv[])
 {
   if( argc != 4 ){
-    cerr << "usage: " << argv[0] << " [path] [label] <registration_num>" << endl;
+    std::cerr << "usage: " << argv[0] << " [path] [label] <registration_num>" << std::endl;
     exit( EXIT_FAILURE );
   }
   const int file_num = atoi( argv[3] );
@@ -125,7 +156,7 @@ int main( int argc, char* argv[])
   const int rotate_num = Param::readRotateNum( tmpname );
 
   //* read the number of voxels in each subdivision's side of a target object
-  const int subdivision_size = Param::readBoxSize_model( tmpname );
+  const int subdivision_size = Param::readBoxSizeModel( tmpname );
 
   //* read the length of voxel side
   const float voxel_size = Param::readVoxelSize( tmpname );
@@ -140,9 +171,9 @@ int main( int argc, char* argv[])
   grid.setLeafSize (voxel_size, voxel_size, voxel_size);
   grid.setSaveLeafLayout(true);
 
-  //*******************************//
-  //* C^3-HLAC feature extraction *//
-  //*******************************//
+  //******************************//
+  //* C3-HLAC feature extraction *//
+  //******************************//
 
   int write_count = 0;
   std::vector< std::vector<float> > c3_hlac;
@@ -170,7 +201,7 @@ int main( int argc, char* argv[])
 	  grid.filter (cloud_downsampled);
 
 	  //* extract features
-	  extract_C3_HLAC_Signature981( grid, cloud_downsampled, c3_hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
+	  extractC3HLACSignature981( grid, cloud_downsampled, c3_hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
 	  sprintf( tmpname, "%s/models/%s/Features/%05d.pcd", argv[1], argv[2], write_count++ );
 	  writeFeature( tmpname, c3_hlac );
 

@@ -1,35 +1,46 @@
 #include "c3_hlac/c3_hlac.h"
 
+const float angle_norm = M_PI / 510;
+
+const float NORMALIZE_0 = 1/255.0;    // value for normalizing 0th-order C3_HLAC (without RGB binalize)
+const float NORMALIZE_1 = 1/65025.0;  // value for normalizing 1st-order C3_HLAC (without RGB binalize)
+const float NORMALIZE_0_BIN = 1;    // value for normalizing 0th-order C3_HLAC (with RGB binalize)
+const float NORMALIZE_1_BIN = 1;    // value for normalizing 1st-order C3_HLAC (with RGB binalize)
+const float NORMALIZE_117_0 = 1/255.0;    // value for normalizing 0th-order C3_HLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_117_1 = 1/845325.0; // value for normalizing 1st-order C3_HLAC (without RGB binalize) - rotation-invariant -
+const float NORMALIZE_117_0_BIN = 1;    // value for normalizing 0th-order C3_HLAC (with RGB binalize) - rotation-invariant -
+const float NORMALIZE_117_1_BIN = 1/13.0; // value for normalizing 1st-order C3_HLAC (with RGB binalize) - rotation-invariant -
+
 //*********************************************************************************
 //* calculate a feature vector when the target voxel data is rotated by 90 degrees.
 void pcl::rotateFeature90( std::vector<float> &output, const std::vector<float> &input, RotateMode mode ){
   int dim = input.size();
 
   switch( dim ){
-  case DIM_C3HLAC_BIN_1_3+DIM_C3HLAC_1_3:
+  case DIM_C3HLAC_981_BIN_1_3+DIM_C3HLAC_981_1_3:
     {
       if( output.size() != (std::vector<float>::size_type)dim )
 	output.resize( dim );
       
-      std::vector<float> tmp_input(DIM_C3HLAC_1_3);
+      std::vector<float> tmp_input(DIM_C3HLAC_981_1_3);
       std::vector<float> tmp_output;
-      for(int i=0;i<DIM_C3HLAC_1_3;i++)
+      for(int i=0;i<DIM_C3HLAC_981_1_3;i++)
 	tmp_input[i] = input[i];
       rotateFeature90( tmp_output, tmp_input, mode );
-      for(int i=0;i<DIM_C3HLAC_1_3;i++)
+      for(int i=0;i<DIM_C3HLAC_981_1_3;i++)
 	output[i] = tmp_output[i];
       
-      tmp_input.resize( DIM_C3HLAC_BIN_1_3 );
-      for(int i=0;i<DIM_C3HLAC_BIN_1_3;i++)
-	tmp_input[i] = input[i+DIM_C3HLAC_1_3];
+      tmp_input.resize( DIM_C3HLAC_981_BIN_1_3 );
+      for(int i=0;i<DIM_C3HLAC_981_BIN_1_3;i++)
+	tmp_input[i] = input[i+DIM_C3HLAC_981_1_3];
       rotateFeature90( tmp_output, tmp_input, mode );
-      for(int i=0;i<DIM_C3HLAC_BIN_1_3;i++)
-	output[i+DIM_C3HLAC_1_3] = tmp_output[i];    
+      for(int i=0;i<DIM_C3HLAC_981_BIN_1_3;i++)
+	output[i+DIM_C3HLAC_981_1_3] = tmp_output[i];    
       break;
     }
     
-  case DIM_C3HLAC_BIN_1_3:
-  case DIM_C3HLAC_1_3:
+  case DIM_C3HLAC_981_BIN_1_3:
+  case DIM_C3HLAC_981_1_3:
     if( output.size() != (std::vector<float>::size_type)dim )
       output.resize( dim );
     for(int i=0;i<6;i++)
@@ -127,8 +138,39 @@ void pcl::rotateFeature90( std::vector<float> &output, const std::vector<float> 
   }
 }
 
+//*********************************************************//
+//* functions for C3HLACSignature117 (rotation-invariant) *//
+//*********************************************************//
+/** \brief Empty constructor. */
+template <typename PointT, typename PointOutT>
+pcl::C3HLAC117Estimation<PointT, PointOutT>::C3HLAC117Estimation () : voxel_size(0), hist_num (1), color_threshold_r (-1), color_threshold_g (-1), color_threshold_b (-1){
+  feature_name_ = "C3HLAC117Estimation";
+  relative_coordinates.resize(3, 13);
+  int idx = 0;
+  // 0 - 8
+  for( int i=-1; i<2; i++ ){
+    for( int j=-1; j<2; j++ ){
+      relative_coordinates( 0, idx ) = i;
+      relative_coordinates( 1, idx ) = j;
+      relative_coordinates( 2, idx ) = -1;
+      idx++;
+    }
+  }
+  // 9 - 11
+  for( int i=-1; i<2; i++ ){
+    relative_coordinates( 0, idx ) = i;
+    relative_coordinates( 1, idx ) = -1;
+    relative_coordinates( 2, idx ) = 0;
+    idx++;
+  }
+  // 12
+  relative_coordinates( 0, idx ) = -1;
+  relative_coordinates( 1, idx ) = 0;
+  relative_coordinates( 2, idx ) = 0;
+};
+
 template <typename PointT, typename PointOutT> bool
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_ = 0, const int offset_x_ = 0, const int offset_y_ = 0, const int offset_z_ = 0, const float voxel_size_ = 0.01 )
+pcl::C3HLAC117Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<PointT> grid_, const int subdivision_size_, const int offset_x_, const int offset_y_, const int offset_z_, const float voxel_size_ )
 { 
   grid = grid_;
   voxel_size = voxel_size_;
@@ -156,11 +198,305 @@ pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::setVoxelFilter ( pcl::VoxelGrid<P
   return true;
 }
 
-//***********************************************************//
-//* functions for C3_HLAC_Signature981 (rotation-variant) *//
-//***********************************************************//
 template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_0 ( const int idx, PointCloudOut &output )
+pcl::C3HLAC117Estimation<PointT, PointOutT>::setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ ){
+  const int val1 = r;
+  const int val2 = g;
+  const int val3 = b;
+  r  = 255 * sin( val1 * angle_norm );
+  g  = 255 * sin( val2 * angle_norm );
+  b  = 255 * sin( val3 * angle_norm );
+  r_ = 255 * cos( val1 * angle_norm );
+  g_ = 255 * cos( val2 * angle_norm );
+  b_ = 255 * cos( val3 * angle_norm );
+}
+
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC117Estimation<PointT, PointOutT>::addC3HLACcol0 ( const int idx, PointCloudOut &output )
+{
+  output.points[idx].histogram[   0 ] += center_r;
+  output.points[idx].histogram[   1 ] += center_r_;
+  output.points[idx].histogram[   2 ] += center_g;
+  output.points[idx].histogram[   3 ] += center_g_;
+  output.points[idx].histogram[   4 ] += center_b;
+  output.points[idx].histogram[   5 ] += center_b_;
+  output.points[idx].histogram[  42 ] += center_r * center_r;
+  output.points[idx].histogram[  43 ] += center_r * center_r_;
+  output.points[idx].histogram[  44 ] += center_r * center_g;
+  output.points[idx].histogram[  45 ] += center_r * center_g_;
+  output.points[idx].histogram[  46 ] += center_r * center_b;
+  output.points[idx].histogram[  47 ] += center_r * center_b_;
+  output.points[idx].histogram[  48 ] += center_r_* center_r_;
+  output.points[idx].histogram[  49 ] += center_r_* center_g;
+  output.points[idx].histogram[  50 ] += center_r_* center_g_;
+  output.points[idx].histogram[  51 ] += center_r_* center_b;
+  output.points[idx].histogram[  52 ] += center_r_* center_b_;
+  output.points[idx].histogram[  53 ] += center_g * center_g;
+  output.points[idx].histogram[  54 ] += center_g * center_g_;
+  output.points[idx].histogram[  55 ] += center_g * center_b;
+  output.points[idx].histogram[  56 ] += center_g * center_b_;
+  output.points[idx].histogram[  57 ] += center_g_* center_g_;
+  output.points[idx].histogram[  58 ] += center_g_* center_b;
+  output.points[idx].histogram[  59 ] += center_g_* center_b_;
+  output.points[idx].histogram[  60 ] += center_b * center_b;
+  output.points[idx].histogram[  61 ] += center_b * center_b_;
+  output.points[idx].histogram[  62 ] += center_b_* center_b_;
+}
+
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC117Estimation<PointT, PointOutT>::addC3HLACcol0Bin ( const int idx, PointCloudOut &output )
+{
+  if( center_bin_r )
+    output.points[idx].histogram[  63 ] ++;
+  else
+    output.points[idx].histogram[  64 ] ++;
+  if( center_bin_g )
+    output.points[idx].histogram[  65 ] ++;
+  else
+    output.points[idx].histogram[  66 ] ++;
+  if( center_bin_b )
+    output.points[idx].histogram[  67 ] ++;
+  else
+    output.points[idx].histogram[  68 ] ++;
+
+  if( center_bin_r ){
+    if( center_bin_g )
+      output.points[idx].histogram[ 105 ] ++;
+    else
+      output.points[idx].histogram[ 106 ] ++;
+    if( center_bin_b )
+      output.points[idx].histogram[ 107 ] ++;
+    else
+      output.points[idx].histogram[ 108 ] ++;
+  }
+  else{
+    if( center_bin_g )
+      output.points[idx].histogram[ 109 ] ++;
+    else
+      output.points[idx].histogram[ 110 ] ++;
+    if( center_bin_b )
+      output.points[idx].histogram[ 111 ] ++;
+    else
+      output.points[idx].histogram[ 112 ] ++;
+  }
+  if( center_bin_g ){
+    if( center_bin_b )
+      output.points[idx].histogram[ 113 ] ++;
+    else
+      output.points[idx].histogram[ 114 ] ++;
+  }
+  else{
+    if( center_bin_b )
+      output.points[idx].histogram[ 115 ] ++;
+    else
+      output.points[idx].histogram[ 116 ] ++;
+  }
+}
+
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC117Estimation<PointT, PointOutT>::addC3HLACcol1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
+{
+  output.points[idx].histogram[   6 ] += center_r * r;
+  output.points[idx].histogram[   7 ] += center_r * r_;
+  output.points[idx].histogram[   8 ] += center_r * g;
+  output.points[idx].histogram[   9 ] += center_r * g_;
+  output.points[idx].histogram[  10 ] += center_r * b;
+  output.points[idx].histogram[  11 ] += center_r * b_;
+  output.points[idx].histogram[  12 ] += center_r_* r;
+  output.points[idx].histogram[  13 ] += center_r_* r_;
+  output.points[idx].histogram[  14 ] += center_r_* g;
+  output.points[idx].histogram[  15 ] += center_r_* g_;
+  output.points[idx].histogram[  16 ] += center_r_* b;
+  output.points[idx].histogram[  17 ] += center_r_* b_;
+  output.points[idx].histogram[  18 ] += center_g * r;
+  output.points[idx].histogram[  19 ] += center_g * r_;
+  output.points[idx].histogram[  20 ] += center_g * g;
+  output.points[idx].histogram[  21 ] += center_g * g_;
+  output.points[idx].histogram[  22 ] += center_g * b;
+  output.points[idx].histogram[  23 ] += center_g * b_;
+  output.points[idx].histogram[  24 ] += center_g_* r;
+  output.points[idx].histogram[  25 ] += center_g_* r_;
+  output.points[idx].histogram[  26 ] += center_g_* g;
+  output.points[idx].histogram[  27 ] += center_g_* g_;
+  output.points[idx].histogram[  28 ] += center_g_* b;
+  output.points[idx].histogram[  29 ] += center_g_* b_;
+  output.points[idx].histogram[  30 ] += center_b * r;
+  output.points[idx].histogram[  31 ] += center_b * r_;
+  output.points[idx].histogram[  32 ] += center_b * g;
+  output.points[idx].histogram[  33 ] += center_b * g_;
+  output.points[idx].histogram[  34 ] += center_b * b;
+  output.points[idx].histogram[  35 ] += center_b * b_;
+  output.points[idx].histogram[  36 ] += center_b_* r;
+  output.points[idx].histogram[  37 ] += center_b_* r_;
+  output.points[idx].histogram[  38 ] += center_b_* g;
+  output.points[idx].histogram[  39 ] += center_b_* g_;
+  output.points[idx].histogram[  40 ] += center_b_* b;
+  output.points[idx].histogram[  41 ] += center_b_* b_;
+}
+
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC117Estimation<PointT, PointOutT>::addC3HLACcol1Bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
+{
+  const int r_ = 1 - r;
+  const int g_ = 1 - g;
+  const int b_ = 1 - b;
+
+  if( center_bin_r ){
+    output.points[idx].histogram[  69 ] += r;
+    output.points[idx].histogram[  70 ] += r_;
+    output.points[idx].histogram[  71 ] += g;
+    output.points[idx].histogram[  72 ] += g_;
+    output.points[idx].histogram[  73 ] += b;
+    output.points[idx].histogram[  74 ] += b_;
+  }
+  else{
+    output.points[idx].histogram[  75 ] += r;
+    output.points[idx].histogram[  76 ] += r_;
+    output.points[idx].histogram[  77 ] += g;
+    output.points[idx].histogram[  78 ] += g_;
+    output.points[idx].histogram[  79 ] += b;
+    output.points[idx].histogram[  80 ] += b_;
+  }
+  if( center_bin_g ){
+    output.points[idx].histogram[  81 ] += r;
+    output.points[idx].histogram[  82 ] += r_;
+    output.points[idx].histogram[  83 ] += g;
+    output.points[idx].histogram[  84 ] += g_;
+    output.points[idx].histogram[  85 ] += b;
+    output.points[idx].histogram[  86 ] += b_;
+  }
+  else{
+    output.points[idx].histogram[  87 ] += r;
+    output.points[idx].histogram[  88 ] += r_;
+    output.points[idx].histogram[  89 ] += g;
+    output.points[idx].histogram[  90 ] += g_;
+    output.points[idx].histogram[  91 ] += b;
+    output.points[idx].histogram[  92 ] += b_;
+  }
+  if( center_bin_b ){
+    output.points[idx].histogram[  93 ] += r;
+    output.points[idx].histogram[  94 ] += r_;
+    output.points[idx].histogram[  95 ] += g;
+    output.points[idx].histogram[  96 ] += g_;
+    output.points[idx].histogram[  97 ] += b;
+    output.points[idx].histogram[  98 ] += b_;
+  }
+  else{
+    output.points[idx].histogram[  99 ] += r;
+    output.points[idx].histogram[ 100 ] += r_;
+    output.points[idx].histogram[ 101 ] += g;
+    output.points[idx].histogram[ 102 ] += g_;
+    output.points[idx].histogram[ 103 ] += b;
+    output.points[idx].histogram[ 104 ] += b_;
+  }
+}
+
+template <typename PointT, typename PointOutT> void
+pcl::C3HLAC117Estimation<PointT, PointOutT>::normalizeC3HLAC ( PointCloudOut &output )
+{
+  for( int h=0; h<hist_num; h++ ){
+    for(int i=0; i<6; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_117_0;
+    for(int i=6; i<42; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_117_1;
+    for(int i=42; i<DIM_C3HLAC_117_1_3; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_1; // not divided by 13.
+    for(int i=DIM_C3HLAC_117_1_3; i<69; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_117_0_BIN;
+    for(int i=69; i<105; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_117_1_BIN;
+    for(int i=105; i<DIM_C3HLAC_117_1_3_ALL; ++i)
+      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN; // not divided by 13.
+  }
+}
+
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC117Estimation<PointT, PointOutT>::computeC3HLAC ( const pcl::PointCloud<PointT> &cloud,
+					       PointCloudOut &output, const int center_idx )
+{
+  // calc hist_idx
+  int hist_idx;
+  if( hist_num == 1 ) hist_idx = 0;
+  else{
+    const int tmp_x = floor( (*surface_).points[ center_idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
+    const int tmp_y = floor( (*surface_).points[ center_idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
+    const int tmp_z = floor( (*surface_).points[ center_idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;
+
+    // const int x_mul_y = div_b_[0] * div_b_[1];
+    // const int tmp_z = center_idx / x_mul_y - offset_z;
+    // const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0] - offset_y;
+    // const int tmp_x = center_idx % div_b_[0] - offset_x;
+    if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ){
+      return; // ignore idx smaller than offset.
+    }
+    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << std::endl;
+    // const int debug_val = tmp_x+tmp_y*div_b_[0]+tmp_z*div_b_[0]*div_b_[1];
+    // if( debug_val != center_idx )
+    //   std::cout << debug_val << " " << center_idx << std::endl;
+
+    Eigen::Vector3i ijk = Eigen::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
+    hist_idx = ijk.dot (subdivb_mul_);
+    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << " ||| " << ijk[ 0 ] << " " << ijk[ 1 ] << " " << ijk[ 2 ] << " : " << hist_idx << std::endl;
+  }
+
+  color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
+  center_r  = (0xff0000 & color) >> 16;
+  center_g  = (0x00ff00 & color) >> 8;
+  center_b  =  0x0000ff & color;
+  center_bin_r = binarizeR( center_r );
+  center_bin_g = binarizeG( center_g );
+  center_bin_b = binarizeB( center_b );
+  addC3HLACcol0Bin( hist_idx, output );
+
+  setColor( center_r, center_g, center_b, center_r_, center_g_, center_b_ );
+  addC3HLACcol0( hist_idx, output );
+
+  const std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
+
+  int r, g, b, r_, g_, b_;
+  for (int i = 0; i < 13; ++i){
+    // Check if the point is invalid
+    if ( neighbors[i]!=-1 ){
+      color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
+      r  = (0xff0000 & color) >> 16;
+      g  = (0x00ff00 & color) >> 8;
+      b  =  0x0000ff & color;
+      addC3HLACcol1Bin ( hist_idx, output, i, binarizeR(r), binarizeG(g), binarizeB(b) );
+
+      setColor( r, g, b, r_, g_, b_ );
+      addC3HLACcol1 ( hist_idx, output, i, r, g, b, r_, g_, b_ );
+    }
+  }
+}
+
+template <typename PointT, typename PointOutT> void
+pcl::C3HLAC117Estimation<PointT, PointOutT>::computeFeature (PointCloudOut &output)
+{
+  if( (color_threshold_r<0)||(color_threshold_g<0)||(color_threshold_b<0) ){
+    std::cerr << "Invalid color_threshold: " << color_threshold_r << " " << color_threshold_g << " " << color_threshold_b << std::endl;
+    return;
+  }
+
+  output.points.resize (hist_num);
+  output.width = hist_num;
+  output.height = 1;
+
+  // initialize histogram
+  for( int h=0; h<hist_num; h++ )
+    for( int t=0; t<DIM_C3HLAC_117_1_3_ALL; t++ )
+      output.points[h].histogram[t] = 0;
+  
+  // Iterating over the entire index vector
+  for (size_t idx = 0; idx < indices_->size (); ++idx)
+    computeC3HLAC (*surface_, output, (*indices_)[idx] );
+  normalizeC3HLAC( output );
+}
+
+//*******************************************************//
+//* functions for C3HLACSignature981 (rotation-variant) *//
+//*******************************************************//
+template <typename PointT, typename PointOutT> void 
+pcl::C3HLAC981Estimation<PointT, PointOutT>::addC3HLACcol0 ( const int idx, PointCloudOut &output )
 {
   output.points[idx].histogram[   0 ] += center_r;
   output.points[idx].histogram[   1 ] += center_r_;
@@ -192,7 +528,7 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_0 ( const int idx, PointC
 }
 
 template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_0_bin ( const int idx, PointCloudOut &output )
+pcl::C3HLAC981Estimation<PointT, PointOutT>::addC3HLACcol0Bin ( const int idx, PointCloudOut &output )
 {
   if( center_bin_r )
     output.points[idx].histogram[ 495 ] ++;
@@ -242,7 +578,7 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_0_bin ( const int idx, Po
 }
 
 template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
+pcl::C3HLAC981Estimation<PointT, PointOutT>::addC3HLACcol1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
 {
   switch( neighbor_idx ){
   case 0:
@@ -750,7 +1086,7 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_1 ( const int idx, PointC
 
 //memo! template <typename t> func(boost::enable_if<boost::??is_same_type<t, ...981>>);
 template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
+pcl::C3HLAC981Estimation<PointT, PointOutT>::addC3HLACcol1Bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
 {
   const int r_ = 1 - r;
   const int g_ = 1 - g;
@@ -759,653 +1095,653 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_1_bin ( const int idx, Po
   switch( neighbor_idx ){
   case 0:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +   6 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  15 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  24 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  33 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  42 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  51 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +   6 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  15 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  24 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  33 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  42 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  51 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  84 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  93 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 102 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 111 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 120 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 129 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  84 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  93 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 102 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 111 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 120 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 129 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 162 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 171 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 180 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 189 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 198 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 207 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 162 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 171 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 180 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 189 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 198 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 207 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 240 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 249 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 258 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 267 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 276 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 285 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 240 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 249 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 258 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 267 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 276 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 285 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 318 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 327 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 336 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 345 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 354 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 363 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 318 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 327 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 336 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 345 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 354 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 363 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 396 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 405 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 414 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 423 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 432 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 441 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 396 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 405 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 414 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 423 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 432 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 441 ] += b_;
     }
     break;
   case 1:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +   7 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  16 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  25 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  34 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  43 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  52 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +   7 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  16 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  25 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  34 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  43 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  52 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  85 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  94 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 103 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 112 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 121 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 130 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  85 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  94 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 103 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 112 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 121 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 130 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 163 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 172 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 181 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 190 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 199 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 208 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 163 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 172 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 181 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 190 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 199 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 208 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 241 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 250 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 259 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 268 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 277 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 286 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 241 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 250 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 259 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 268 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 277 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 286 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 319 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 328 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 337 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 346 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 355 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 364 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 319 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 328 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 337 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 346 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 355 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 364 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 397 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 406 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 415 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 424 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 433 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 442 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 397 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 406 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 415 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 424 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 433 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 442 ] += b_;
     }
     break;
   case 2:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +   8 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  17 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  26 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  35 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  44 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  53 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +   8 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  17 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  26 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  35 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  44 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  53 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  86 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  95 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 104 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 113 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 122 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 131 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  86 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  95 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 104 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 113 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 122 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 131 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 164 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 173 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 182 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 191 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 200 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 209 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 164 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 173 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 182 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 191 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 200 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 209 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 242 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 251 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 260 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 269 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 278 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 287 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 242 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 251 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 260 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 269 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 278 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 287 ] += b_;
     }
     if( center_bin_b){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 320 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 329 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 338 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 347 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 356 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 365 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 320 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 329 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 338 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 347 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 356 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 365 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 398 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 407 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 416 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 425 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 434 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 443 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 398 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 407 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 416 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 425 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 434 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 443 ] += b_;
     }
 
     break;
   case 3:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +   9 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  18 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  27 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  36 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  45 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  54 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +   9 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  18 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  27 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  36 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  45 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  54 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  87 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  96 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 105 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 114 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 123 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 132 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  87 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  96 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 105 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 114 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 123 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 132 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 165 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 174 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 183 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 192 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 201 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 210 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 165 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 174 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 183 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 192 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 201 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 210 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 243 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 252 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 261 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 270 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 279 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 288 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 243 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 252 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 261 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 270 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 279 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 288 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 321 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 330 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 339 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 348 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 357 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 366 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 321 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 330 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 339 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 348 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 357 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 366 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 399 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 408 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 417 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 426 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 435 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 444 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 399 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 408 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 417 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 426 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 435 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 444 ] += b_;
     }
     break;
   case 4:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  10 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  19 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  28 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  37 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  46 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  55 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  10 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  19 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  28 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  37 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  46 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  55 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  88 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  97 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 106 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 115 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 124 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 133 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  88 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  97 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 106 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 115 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 124 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 133 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 166 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 175 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 184 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 193 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 202 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 211 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 166 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 175 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 184 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 193 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 202 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 211 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 244 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 253 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 262 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 271 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 280 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 289 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 244 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 253 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 262 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 271 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 280 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 289 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 322 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 331 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 340 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 349 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 358 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 367 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 322 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 331 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 340 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 349 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 358 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 367 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 400 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 409 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 418 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 427 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 436 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 445 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 400 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 409 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 418 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 427 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 436 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 445 ] += b_;
     }
     break;
   case 5:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  11 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  20 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  29 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  38 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  47 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  56 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  11 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  20 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  29 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  38 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  47 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  56 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  89 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  98 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 107 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 116 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 125 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 134 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  89 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  98 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 107 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 116 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 125 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 134 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 167 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 176 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 185 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 194 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 203 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 212 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 167 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 176 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 185 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 194 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 203 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 212 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 245 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 254 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 263 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 272 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 281 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 290 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 245 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 254 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 263 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 272 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 281 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 290 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 323 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 332 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 341 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 350 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 359 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 368 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 323 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 332 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 341 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 350 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 359 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 368 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 401 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 410 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 419 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 428 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 437 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 446 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 401 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 410 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 419 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 428 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 437 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 446 ] += b_;
     }
     break;
   case 6:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  12 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  21 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  30 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  39 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  48 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  57 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  12 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  21 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  30 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  39 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  48 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  57 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  90 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  99 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 108 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 117 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 126 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 135 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  90 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  99 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 108 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 117 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 126 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 135 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 168 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 177 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 186 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 195 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 204 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 213 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 168 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 177 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 186 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 195 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 204 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 213 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 246 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 255 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 264 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 273 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 282 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 291 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 246 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 255 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 264 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 273 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 282 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 291 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 324 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 333 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 342 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 351 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 360 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 369 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 324 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 333 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 342 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 351 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 360 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 369 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 402 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 411 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 420 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 429 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 438 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 447 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 402 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 411 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 420 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 429 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 438 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 447 ] += b_;
     }
     break;
   case 7:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  13 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  22 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  31 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  40 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  49 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  58 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  13 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  22 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  31 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  40 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  49 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  58 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  91 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 100 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 109 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 118 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 127 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 136 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  91 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 100 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 109 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 118 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 127 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 136 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 169 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 178 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 187 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 196 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 205 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 214 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 169 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 178 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 187 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 196 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 205 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 214 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 247 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 256 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 265 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 274 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 283 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 292 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 247 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 256 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 265 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 274 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 283 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 292 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 325 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 334 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 343 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 352 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 361 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 370 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 325 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 334 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 343 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 352 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 361 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 370 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 403 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 412 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 421 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 430 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 439 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 448 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 403 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 412 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 421 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 430 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 439 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 448 ] += b_;
     }
     break;
   case 8:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  14 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  23 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  32 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  41 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  50 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  59 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  14 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  23 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  32 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  41 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  50 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  59 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  92 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 101 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 110 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 119 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 128 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 137 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  92 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 101 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 110 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 119 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 128 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 137 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 170 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 179 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 188 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 197 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 206 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 215 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 170 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 179 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 188 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 197 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 206 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 215 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 248 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 257 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 266 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 275 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 284 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 293 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 248 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 257 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 266 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 275 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 284 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 293 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 326 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 335 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 344 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 353 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 362 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 371 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 326 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 335 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 344 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 353 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 362 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 371 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 404 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 413 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 422 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 431 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 440 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 449 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 404 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 413 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 422 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 431 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 440 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 449 ] += b_;
     }
     break;
   case 9:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  60 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  64 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  68 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  72 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  76 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  80 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  60 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  64 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  68 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  72 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  76 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  80 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 138 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 142 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 146 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 150 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 154 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 158 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 138 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 142 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 146 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 150 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 154 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 158 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 216 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 220 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 224 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 228 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 232 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 236 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 216 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 220 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 224 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 228 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 232 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 236 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 294 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 298 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 302 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 306 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 310 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 314 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 294 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 298 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 302 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 306 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 310 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 314 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 372 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 376 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 380 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 384 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 388 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 392 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 372 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 376 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 380 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 384 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 388 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 392 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 450 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 454 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 458 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 462 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 466 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 470 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 450 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 454 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 458 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 462 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 466 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 470 ] += b_;
     }
     break;
   case 10:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  61 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  65 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  69 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  73 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  77 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  81 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  61 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  65 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  69 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  73 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  77 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  81 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 139 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 143 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 147 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 151 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 155 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 159 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 139 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 143 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 147 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 151 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 155 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 159 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 217 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 221 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 225 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 229 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 233 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 237 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 217 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 221 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 225 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 229 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 233 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 237 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 295 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 299 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 303 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 307 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 311 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 315 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 295 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 299 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 303 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 307 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 311 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 315 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 373 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 377 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 381 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 385 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 389 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 393 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 373 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 377 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 381 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 385 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 389 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 393 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 451 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 455 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 459 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 463 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 467 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 471 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 451 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 455 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 459 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 463 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 467 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 471 ] += b_;
     }
     break;
   case 11:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  62 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  66 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  70 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  74 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  78 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  82 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  62 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  66 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  70 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  74 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  78 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  82 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 140 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 144 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 148 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 152 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 156 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 160 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 140 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 144 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 148 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 152 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 156 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 160 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 218 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 222 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 226 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 230 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 234 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 238 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 218 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 222 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 226 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 230 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 234 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 238 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 296 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 300 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 304 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 308 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 312 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 316 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 296 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 300 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 304 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 308 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 312 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 316 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 374 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 378 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 382 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 386 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 390 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 394 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 374 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 378 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 382 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 386 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 390 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 394 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 452 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 456 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 460 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 464 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 468 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 472 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 452 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 456 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 460 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 464 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 468 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 472 ] += b_;
     }
     break;
   case 12:
     if( center_bin_r ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  63 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  67 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  71 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  75 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  79 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 +  83 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  63 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  67 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  71 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  75 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  79 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 +  83 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 141 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 145 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 149 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 153 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 157 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 161 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 141 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 145 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 149 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 153 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 157 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 161 ] += b_;
     }
     if( center_bin_g ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 219 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 223 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 227 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 231 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 235 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 239 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 219 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 223 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 227 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 231 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 235 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 239 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 297 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 301 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 305 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 309 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 313 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 317 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 297 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 301 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 305 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 309 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 313 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 317 ] += b_;
     }
     if( center_bin_b ){
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 375 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 379 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 383 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 387 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 391 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 395 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 375 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 379 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 383 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 387 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 391 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 395 ] += b_;
     }
     else{
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 453 ] += r;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 457 ] += r_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 461 ] += g;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 465 ] += g_;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 469 ] += b;
-      output.points[idx].histogram[ DIM_C3HLAC_1_3 + 473 ] += b_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 453 ] += r;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 457 ] += r_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 461 ] += g;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 465 ] += g_;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 469 ] += b;
+      output.points[idx].histogram[ DIM_C3HLAC_981_1_3 + 473 ] += b_;
     }
     break;
     //   case 13: // itself
@@ -1418,291 +1754,26 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::addC3_HLAC_1_bin ( const int idx, Po
 
 }
 
-template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::computeC3_HLAC ( const pcl::PointCloud<PointT> &cloud,
-					       PointCloudOut &output, const int center_idx )
-{
-  // calc hist_idx
-  int hist_idx;
-  if( hist_num == 1 ) hist_idx = 0;
-  else{
-    const int tmp_x = floor( (*surface_).points[ center_idx ].x/voxel_size ) - min_b_[ 0 ] - offset_x;
-    const int tmp_y = floor( (*surface_).points[ center_idx ].y/voxel_size ) - min_b_[ 1 ] - offset_y;
-    const int tmp_z = floor( (*surface_).points[ center_idx ].z/voxel_size ) - min_b_[ 2 ] - offset_z;
-
-    // const int x_mul_y = div_b_[0] * div_b_[1];
-    // const int tmp_z = center_idx / x_mul_y - offset_z;
-    // const int tmp_y = ( center_idx % x_mul_y ) / div_b_[0] - offset_y;
-    // const int tmp_x = center_idx % div_b_[0] - offset_x;
-    if( ( tmp_x < 0 ) || ( tmp_y < 0 ) || ( tmp_z < 0 ) ){
-      return; // ignore idx smaller than offset.
-    }
-    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << std::endl;
-    // const int debug_val = tmp_x+tmp_y*div_b_[0]+tmp_z*div_b_[0]*div_b_[1];
-    // if( debug_val != center_idx )
-    //   std::cout << debug_val << " " << center_idx << std::endl;
-
-    Eigen::Vector3i ijk = Eigen::Vector3i ( floor ( tmp_x * inverse_subdivision_size), floor ( tmp_y * inverse_subdivision_size), floor ( tmp_z * inverse_subdivision_size) );
-    hist_idx = ijk.dot (subdivb_mul_);
-    //std::cout << tmp_x << " " << tmp_y << " " << tmp_z << " ||| " << ijk[ 0 ] << " " << ijk[ 1 ] << " " << ijk[ 2 ] << " : " << hist_idx << std::endl;
-  }
-
-  color = *reinterpret_cast<const int*>(&(cloud.points[center_idx].rgb));
-  center_r  = (0xff0000 & color) >> 16;
-  center_g  = (0x00ff00 & color) >> 8;
-  center_b  =  0x0000ff & color;
-  center_bin_r = binarize_r( center_r );
-  center_bin_g = binarize_g( center_g );
-  center_bin_b = binarize_b( center_b );
-  addC3_HLAC_0_bin( hist_idx, output );
-
-  setColor( center_r, center_g, center_b, center_r_, center_g_, center_b_ );
-  addC3_HLAC_0( hist_idx, output );
-
-  const std::vector<int> neighbors = grid.getNeighborCentroidIndices (cloud.points[center_idx], relative_coordinates);
-
-  int r, g, b, r_, g_, b_;
-  for (int i = 0; i < 13; ++i){
-    // Check if the point is invalid
-    if ( neighbors[i]!=-1 ){
-      color = *reinterpret_cast<const int*>(&(cloud.points[neighbors[i]].rgb));
-      r  = (0xff0000 & color) >> 16;
-      g  = (0x00ff00 & color) >> 8;
-      b  =  0x0000ff & color;
-      addC3_HLAC_1_bin ( hist_idx, output, i, binarize_r(r), binarize_g(g), binarize_b(b) );
-
-      setColor( r, g, b, r_, g_, b_ );
-      addC3_HLAC_1 ( hist_idx, output, i, r, g, b, r_, g_, b_ );
-    }
-  }
-}
-
 template <typename PointT, typename PointOutT> void
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::normalizeC3_HLAC ( PointCloudOut &output )
+pcl::C3HLAC981Estimation<PointT, PointOutT>::normalizeC3HLAC ( PointCloudOut &output )
 {
   for( int h=0; h<hist_num; h++ ){
     for(int i=0; i<6; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_0;
-    for(int i=6; i<DIM_C3HLAC_1_3; ++i)
+    for(int i=6; i<DIM_C3HLAC_981_1_3; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_1;
-    for(int i=DIM_C3HLAC_1_3; i<501; ++i)
+    for(int i=DIM_C3HLAC_981_1_3; i<501; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_0_BIN;
-    for(int i=501; i<DIM_C3HLAC_1_3_ALL; ++i)
+    for(int i=501; i<DIM_C3HLAC_981_1_3_ALL; ++i)
       output.points[h].histogram[ i ] *= NORMALIZE_1_BIN;
   }
 }
 
-//*************************************************************//
-//* functions for C3_HLAC_Signature117 (rotation-invariant) *//
-//*************************************************************//
-
-template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::addC3_HLAC_0 ( const int idx, PointCloudOut &output )
-{
-  output.points[idx].histogram[   0 ] += center_r;
-  output.points[idx].histogram[   1 ] += center_r_;
-  output.points[idx].histogram[   2 ] += center_g;
-  output.points[idx].histogram[   3 ] += center_g_;
-  output.points[idx].histogram[   4 ] += center_b;
-  output.points[idx].histogram[   5 ] += center_b_;
-  output.points[idx].histogram[  42 ] += center_r * center_r;
-  output.points[idx].histogram[  43 ] += center_r * center_r_;
-  output.points[idx].histogram[  44 ] += center_r * center_g;
-  output.points[idx].histogram[  45 ] += center_r * center_g_;
-  output.points[idx].histogram[  46 ] += center_r * center_b;
-  output.points[idx].histogram[  47 ] += center_r * center_b_;
-  output.points[idx].histogram[  48 ] += center_r_* center_r_;
-  output.points[idx].histogram[  49 ] += center_r_* center_g;
-  output.points[idx].histogram[  50 ] += center_r_* center_g_;
-  output.points[idx].histogram[  51 ] += center_r_* center_b;
-  output.points[idx].histogram[  52 ] += center_r_* center_b_;
-  output.points[idx].histogram[  53 ] += center_g * center_g;
-  output.points[idx].histogram[  54 ] += center_g * center_g_;
-  output.points[idx].histogram[  55 ] += center_g * center_b;
-  output.points[idx].histogram[  56 ] += center_g * center_b_;
-  output.points[idx].histogram[  57 ] += center_g_* center_g_;
-  output.points[idx].histogram[  58 ] += center_g_* center_b;
-  output.points[idx].histogram[  59 ] += center_g_* center_b_;
-  output.points[idx].histogram[  60 ] += center_b * center_b;
-  output.points[idx].histogram[  61 ] += center_b * center_b_;
-  output.points[idx].histogram[  62 ] += center_b_* center_b_;
-}
-
-template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::addC3_HLAC_0_bin ( const int idx, PointCloudOut &output )
-{
-  if( center_bin_r )
-    output.points[idx].histogram[  63 ] ++;
-  else
-    output.points[idx].histogram[  64 ] ++;
-  if( center_bin_g )
-    output.points[idx].histogram[  65 ] ++;
-  else
-    output.points[idx].histogram[  66 ] ++;
-  if( center_bin_b )
-    output.points[idx].histogram[  67 ] ++;
-  else
-    output.points[idx].histogram[  68 ] ++;
-
-  if( center_bin_r ){
-    if( center_bin_g )
-      output.points[idx].histogram[ 105 ] ++;
-    else
-      output.points[idx].histogram[ 106 ] ++;
-    if( center_bin_b )
-      output.points[idx].histogram[ 107 ] ++;
-    else
-      output.points[idx].histogram[ 108 ] ++;
-  }
-  else{
-    if( center_bin_g )
-      output.points[idx].histogram[ 109 ] ++;
-    else
-      output.points[idx].histogram[ 110 ] ++;
-    if( center_bin_b )
-      output.points[idx].histogram[ 111 ] ++;
-    else
-      output.points[idx].histogram[ 112 ] ++;
-  }
-  if( center_bin_g ){
-    if( center_bin_b )
-      output.points[idx].histogram[ 113 ] ++;
-    else
-      output.points[idx].histogram[ 114 ] ++;
-  }
-  else{
-    if( center_bin_b )
-      output.points[idx].histogram[ 115 ] ++;
-    else
-      output.points[idx].histogram[ 116 ] ++;
-  }
-}
-
-template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::addC3_HLAC_1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ )
-{
-  output.points[idx].histogram[   6 ] += center_r * r;
-  output.points[idx].histogram[   7 ] += center_r * r_;
-  output.points[idx].histogram[   8 ] += center_r * g;
-  output.points[idx].histogram[   9 ] += center_r * g_;
-  output.points[idx].histogram[  10 ] += center_r * b;
-  output.points[idx].histogram[  11 ] += center_r * b_;
-  output.points[idx].histogram[  12 ] += center_r_* r;
-  output.points[idx].histogram[  13 ] += center_r_* r_;
-  output.points[idx].histogram[  14 ] += center_r_* g;
-  output.points[idx].histogram[  15 ] += center_r_* g_;
-  output.points[idx].histogram[  16 ] += center_r_* b;
-  output.points[idx].histogram[  17 ] += center_r_* b_;
-  output.points[idx].histogram[  18 ] += center_g * r;
-  output.points[idx].histogram[  19 ] += center_g * r_;
-  output.points[idx].histogram[  20 ] += center_g * g;
-  output.points[idx].histogram[  21 ] += center_g * g_;
-  output.points[idx].histogram[  22 ] += center_g * b;
-  output.points[idx].histogram[  23 ] += center_g * b_;
-  output.points[idx].histogram[  24 ] += center_g_* r;
-  output.points[idx].histogram[  25 ] += center_g_* r_;
-  output.points[idx].histogram[  26 ] += center_g_* g;
-  output.points[idx].histogram[  27 ] += center_g_* g_;
-  output.points[idx].histogram[  28 ] += center_g_* b;
-  output.points[idx].histogram[  29 ] += center_g_* b_;
-  output.points[idx].histogram[  30 ] += center_b * r;
-  output.points[idx].histogram[  31 ] += center_b * r_;
-  output.points[idx].histogram[  32 ] += center_b * g;
-  output.points[idx].histogram[  33 ] += center_b * g_;
-  output.points[idx].histogram[  34 ] += center_b * b;
-  output.points[idx].histogram[  35 ] += center_b * b_;
-  output.points[idx].histogram[  36 ] += center_b_* r;
-  output.points[idx].histogram[  37 ] += center_b_* r_;
-  output.points[idx].histogram[  38 ] += center_b_* g;
-  output.points[idx].histogram[  39 ] += center_b_* g_;
-  output.points[idx].histogram[  40 ] += center_b_* b;
-  output.points[idx].histogram[  41 ] += center_b_* b_;
-}
-
-template <typename PointT, typename PointOutT> void 
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::addC3_HLAC_1_bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b )
-{
-  const int r_ = 1 - r;
-  const int g_ = 1 - g;
-  const int b_ = 1 - b;
-
-  if( center_bin_r ){
-    output.points[idx].histogram[  69 ] += r;
-    output.points[idx].histogram[  70 ] += r_;
-    output.points[idx].histogram[  71 ] += g;
-    output.points[idx].histogram[  72 ] += g_;
-    output.points[idx].histogram[  73 ] += b;
-    output.points[idx].histogram[  74 ] += b_;
-  }
-  else{
-    output.points[idx].histogram[  75 ] += r;
-    output.points[idx].histogram[  76 ] += r_;
-    output.points[idx].histogram[  77 ] += g;
-    output.points[idx].histogram[  78 ] += g_;
-    output.points[idx].histogram[  79 ] += b;
-    output.points[idx].histogram[  80 ] += b_;
-  }
-  if( center_bin_g ){
-    output.points[idx].histogram[  81 ] += r;
-    output.points[idx].histogram[  82 ] += r_;
-    output.points[idx].histogram[  83 ] += g;
-    output.points[idx].histogram[  84 ] += g_;
-    output.points[idx].histogram[  85 ] += b;
-    output.points[idx].histogram[  86 ] += b_;
-  }
-  else{
-    output.points[idx].histogram[  87 ] += r;
-    output.points[idx].histogram[  88 ] += r_;
-    output.points[idx].histogram[  89 ] += g;
-    output.points[idx].histogram[  90 ] += g_;
-    output.points[idx].histogram[  91 ] += b;
-    output.points[idx].histogram[  92 ] += b_;
-  }
-  if( center_bin_b ){
-    output.points[idx].histogram[  93 ] += r;
-    output.points[idx].histogram[  94 ] += r_;
-    output.points[idx].histogram[  95 ] += g;
-    output.points[idx].histogram[  96 ] += g_;
-    output.points[idx].histogram[  97 ] += b;
-    output.points[idx].histogram[  98 ] += b_;
-  }
-  else{
-    output.points[idx].histogram[  99 ] += r;
-    output.points[idx].histogram[ 100 ] += r_;
-    output.points[idx].histogram[ 101 ] += g;
-    output.points[idx].histogram[ 102 ] += g_;
-    output.points[idx].histogram[ 103 ] += b;
-    output.points[idx].histogram[ 104 ] += b_;
-  }
-}
-
 template <typename PointT, typename PointOutT> void
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::normalizeC3_HLAC ( PointCloudOut &output )
+pcl::C3HLAC981Estimation<PointT, PointOutT>::computeFeature (PointCloudOut &output)
 {
-  for( int h=0; h<hist_num; h++ ){
-    for(int i=0; i<6; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_0;
-    for(int i=6; i<42; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_1;
-    for(int i=42; i<DIM_C3HLAC_RI_1_3; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1; // not divided by 13.
-    for(int i=DIM_C3HLAC_RI_1_3; i<69; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_0_BIN;
-    for(int i=69; i<105; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_RI_1_BIN;
-    for(int i=105; i<DIM_C3HLAC_RI_1_3_ALL; ++i)
-      output.points[h].histogram[ i ] *= NORMALIZE_1_BIN; // not divided by 13.
-  }
-}
-
-//***********************//
-//* compute() function  *//
-//***********************//
-template <typename PointT, typename PointOutT> void
-pcl::C3_HLAC_Estimation<PointT, PointOutT>::computeFeature (PointCloudOut &output)
-{
-  if( (color_thR<0)||(color_thG<0)||(color_thB<0) ){
-    std::cerr << "Invalid color_threshold: " << color_thR << " " << color_thG << " " << color_thB << std::endl;
+  if( (color_threshold_r<0)||(color_threshold_g<0)||(color_threshold_b<0) ){
+    std::cerr << "Invalid color_threshold: " << color_threshold_r << " " << color_threshold_g << " " << color_threshold_b << std::endl;
     return;
   }
 
@@ -1712,44 +1783,21 @@ pcl::C3_HLAC_Estimation<PointT, PointOutT>::computeFeature (PointCloudOut &outpu
 
   // initialize histogram
   for( int h=0; h<hist_num; h++ )
-    for( int t=0; t<DIM_C3HLAC_1_3_ALL; t++ )
+    for( int t=0; t<DIM_C3HLAC_981_1_3_ALL; t++ )
       output.points[h].histogram[t] = 0;
   
   // Iterating over the entire index vector
   for (size_t idx = 0; idx < indices_->size (); ++idx)
-    computeC3_HLAC (*surface_, output, (*indices_)[idx] );
-  normalizeC3_HLAC( output );
+    computeC3HLAC (*surface_, output, (*indices_)[idx] );
+  normalizeC3HLAC( output );
 }
 
-template <typename PointT, typename PointOutT> void
-pcl::C3_HLAC_RI_Estimation<PointT, PointOutT>::computeFeature (PointCloudOut &output)
-{
-  if( (color_thR<0)||(color_thG<0)||(color_thB<0) ){
-    std::cerr << "Invalid color_threshold: " << color_thR << " " << color_thG << " " << color_thB << std::endl;
-    return;
-  }
+template class pcl::C3HLAC117Estimation<pcl::PointXYZRGB, pcl::C3HLACSignature117>;
+template class pcl::C3HLAC117Estimation<pcl::PointXYZRGB, pcl::C3HLACSignature981>;
+template class pcl::C3HLAC981Estimation<pcl::PointXYZRGB, pcl::C3HLACSignature117>;
+template class pcl::C3HLAC981Estimation<pcl::PointXYZRGB, pcl::C3HLACSignature981>;
 
-  output.points.resize (hist_num);
-  output.width = hist_num;
-  output.height = 1;
-
-  // initialize histogram
-  for( int h=0; h<hist_num; h++ )
-    for( int t=0; t<DIM_C3HLAC_RI_1_3_ALL; t++ )
-      output.points[h].histogram[t] = 0;
-  
-  // Iterating over the entire index vector
-  for (size_t idx = 0; idx < indices_->size (); ++idx)
-    computeC3_HLAC (*surface_, output, (*indices_)[idx] );
-  normalizeC3_HLAC( output );
-}
-
-template class pcl::C3_HLAC_RI_Estimation<pcl::PointXYZRGB, pcl::C3_HLAC_Signature117>;
-template class pcl::C3_HLAC_RI_Estimation<pcl::PointXYZRGB, pcl::C3_HLAC_Signature981>;
-template class pcl::C3_HLAC_Estimation<pcl::PointXYZRGB, pcl::C3_HLAC_Signature117>;
-template class pcl::C3_HLAC_Estimation<pcl::PointXYZRGB, pcl::C3_HLAC_Signature981>;
-
-template class pcl::C3_HLAC_RI_Estimation<pcl::PointXYZRGBNormal, pcl::C3_HLAC_Signature117>;
-template class pcl::C3_HLAC_RI_Estimation<pcl::PointXYZRGBNormal, pcl::C3_HLAC_Signature981>;
-template class pcl::C3_HLAC_Estimation<pcl::PointXYZRGBNormal, pcl::C3_HLAC_Signature117>;
-template class pcl::C3_HLAC_Estimation<pcl::PointXYZRGBNormal, pcl::C3_HLAC_Signature981>;
+template class pcl::C3HLAC117Estimation<pcl::PointXYZRGBNormal, pcl::C3HLACSignature117>;
+template class pcl::C3HLAC117Estimation<pcl::PointXYZRGBNormal, pcl::C3HLACSignature981>;
+template class pcl::C3HLAC981Estimation<pcl::PointXYZRGBNormal, pcl::C3HLACSignature117>;
+template class pcl::C3HLAC981Estimation<pcl::PointXYZRGBNormal, pcl::C3HLACSignature981>;

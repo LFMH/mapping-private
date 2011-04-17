@@ -32,48 +32,51 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "c3_hlac/c3_hlac_tools.h"
+/***********************************************************************************************************/
+/* voxelize point clouds of scene                                                                          */
+/*   Note that this process is necessary only once when the system sees the environment for the first time */
+/***********************************************************************************************************/
 
-//#define DIVID_TEST
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <float.h>
+#include <color_voxel_recognition/param.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/voxel_grid.h>
 
-int main( int argc, char** argv ){
-  if( argc != 2 ){
-    ROS_ERROR ("Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n", argv[0]);
-    return(-1);
+int main(int argc, char **argv)
+{
+  if( argc != 3 ){
+    std::cerr << "usage: " << argv[0] << " [path] <registration_num>" << std::endl;
+    exit( EXIT_FAILURE );
   }
+  char tmpname[ 1000 ];
 
-  //* voxel_size : the length of voxel side (unit: meter)
-  const double voxel_size = 0.01;
+  //* read the length of voxel side
+  sprintf( tmpname, "%s/param/parameters.txt", argv[1] );
+  const float voxel_size = Param::readVoxelSize( tmpname );
 
-  //* read
-  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
-  if (pcl::io::loadPCDFile (argv[1], input_cloud) == -1){
-    ROS_ERROR ("Couldn't read file %s",argv[1]);
-    return (-1);
-  }
-  ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int)(input_cloud.width * input_cloud.height), argv[1], pcl::getFieldsList (input_cloud).c_str ());
-
-  //* voxelize
+  //* Voxel Grid
   pcl::VoxelGrid<pcl::PointXYZRGB> grid;
-  pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled;
-  getVoxelGrid( grid, input_cloud, cloud_downsampled, voxel_size );
+  grid.setLeafSize (voxel_size, voxel_size, voxel_size);
+  grid.setSaveLeafLayout(true);
 
-#ifdef DIVID_TEST
-  //* extract - C3_HLAC -
-  std::vector< std::vector<float> > c3_hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3_hlac, 127, 127, 127, voxel_size, 10 );
+  const int obj_num = atoi(argv[2]);
+  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
+  pcl::PointCloud<pcl::PointXYZRGB> output_cloud;
+  for(int i=0;i<obj_num;i++){
+    sprintf( tmpname, "%s/scene/Points/%05d.pcd", argv[1], i );
+    pcl::io::loadPCDFile (tmpname, input_cloud);
 
-  //* write
-  writeFeature( "c3hlac.pcd", c3_hlac );
+    //* voxelize
+    grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+    grid.filter (output_cloud);
 
-#else
-  //* extract - C3_HLAC -
-  std::vector<float> c3_hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3_hlac, 127, 127, 127, voxel_size );
+    sprintf( tmpname, "%s/scene/Voxel/%05d.dat", argv[1], i ); 
+    pcl::io::savePCDFile (tmpname, output_cloud, true);
+  }
 
-  //* write
-  writeFeature( "c3hlac.pcd", c3_hlac );
-#endif
-
-  return(0);
+  return(0);    
 }
