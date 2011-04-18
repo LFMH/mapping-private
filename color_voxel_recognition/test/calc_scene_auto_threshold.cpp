@@ -89,7 +89,7 @@ int main(int argc, char** argv)
   for( int i=0; i<file_num; i++ ){
     sprintf( tmpname, "%s/scene/Points/%05d.pcd", argv[1], i );
     pcl::io::loadPCDFile (tmpname, input_cloud);
-    grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+    grid.setInputCloud ( input_cloud.makeShared() );
     grid.filter (cloud_downsampled);
 
     const int p_num = cloud_downsampled.points.size();

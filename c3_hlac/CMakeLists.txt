@@ -25,6 +25,6 @@ link_directories(${LIBRARY_OUTPUT_PATH})
 #common commands for building c++ executables and libraries
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
-rosbuild_add_library(c3_hlac src/c3_hlac.cpp)
+#rosbuild_add_library(c3_hlac src/c3_hlac.cpp)
 rosbuild_add_executable(example_c3_hlac test/example_c3_hlac.cpp)
 target_link_libraries(example_c3_hlac c3_hlac)

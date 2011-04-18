@@ -77,7 +77,7 @@ int main(int argc, char** argv){
     pcl::io::loadPCDFile (tmpname, input_cloud);
 
     //* voxelize
-    grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+    grid.setInputCloud ( input_cloud.makeShared() );
     grid.filter (cloud_downsampled);
 
     //* extract features

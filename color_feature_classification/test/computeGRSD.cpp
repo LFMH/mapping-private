@@ -103,7 +103,7 @@ bool readPoints_oldPCD( const char *name, pcl::PointCloud<PointNormal>& cloud ){
   //n3d_.setKSearch (k_);
   n3d_.setRadiusSearch (0.02);
   n3d_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointXYZ> > () );
-  n3d_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointXYZ> > (input_cloud) );
+  n3d_.setInputCloud ( input_cloud.makeShared() );
   n3d_.compute (cloud);
 
   for ( int i=0; i< (int)input_cloud.points.size (); i++ ){

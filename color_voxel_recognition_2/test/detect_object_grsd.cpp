@@ -107,7 +107,7 @@ public:
 
 	//****************************************
 	//* compute normals
-	n3d.setInputCloud (boost::make_shared<pcl::PointCloud<pcl::PointXYZ> > (cloud_xyz));
+	n3d.setInputCloud (cloud_xyz.makeShared());
 	n3d.setRadiusSearch (normals_radius_search);
 	normals_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
 	n3d.setSearchMethod (normals_tree);

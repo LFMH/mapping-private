@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 	  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
 	  pcl::PointCloud<pcl::PointXYZRGB> output_cloud;
 	  rotatePoints( ref_cloud, input_cloud, roll, pan, roll2 ); // rotation
-	  grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+	  grid.setInputCloud ( input_cloud.makeShared() );
 	  grid.filter (output_cloud);
 	  sprintf( tmpname, "%s/models/%s/Voxel/%05d.dat", argv[1], argv[2], write_count++ );
 	  pcl::io::savePCDFile (tmpname, output_cloud, true);

@@ -197,7 +197,7 @@ int main( int argc, char* argv[])
 	  pcl::PointCloud<pcl::PointXYZRGB> input_cloud;
 	  pcl::PointCloud<pcl::PointXYZRGB> cloud_downsampled;
 	  rotatePoints( ref_cloud, input_cloud, roll, pan, roll2 ); // rotation
-	  grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<pcl::PointXYZRGB> > (input_cloud) );
+	  grid.setInputCloud ( input_cloud.makeShared() );
 	  grid.filter (cloud_downsampled);
 
 	  //* extract features

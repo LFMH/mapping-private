@@ -124,7 +124,7 @@ void writeFeature(const char *name, const std::vector<float> feature, bool remov
 template <typename T>
 void getVoxelGrid( pcl::VoxelGrid<T> &grid, pcl::PointCloud<T> input_cloud, pcl::PointCloud<T>& output_cloud, const float voxel_size ){
   grid.setLeafSize (voxel_size, voxel_size, voxel_size);
-  grid.setInputCloud ( boost::make_shared<const pcl::PointCloud<T> > (input_cloud) );
+  grid.setInputCloud ( input_cloud.makeShared() );
   grid.setSaveLeafLayout(true);
   grid.filter (output_cloud);
 }
@@ -141,7 +141,7 @@ Eigen::Vector3i extractC3HLACSignature981(pcl::VoxelGrid<PointT> grid, pcl::Poin
   c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () ); // not used actually.
   c3_hlac_.setColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
   if( c3_hlac_.setVoxelFilter (grid, subdivision_size, offset_x, offset_y, offset_z, voxel_size) ){
-    c3_hlac_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
+    c3_hlac_.setInputCloud ( cloud.makeShared() );
     t1 = my_clock();
     c3_hlac_.compute( c3_hlac_signature );
     t2 = my_clock();
@@ -176,7 +176,7 @@ Eigen::Vector3i extractC3HLACSignature117(pcl::VoxelGrid<PointT> grid, pcl::Poin
   c3_hlac_.setSearchMethod ( boost::make_shared<pcl::KdTreeFLANN<PointT> > () ); // not used actually.
   c3_hlac_.setColorThreshold( color_threshold_r, color_threshold_g, color_threshold_b );
   if( c3_hlac_.setVoxelFilter (grid, subdivision_size, offset_x, offset_y, offset_z, voxel_size) ){
-    c3_hlac_.setInputCloud ( boost::make_shared<const pcl::PointCloud<PointT> > (cloud) );
+    c3_hlac_.setInputCloud ( cloud.makeShared() );
     t1 = my_clock();
     c3_hlac_.compute( c3_hlac_signature );
     t2 = my_clock();
