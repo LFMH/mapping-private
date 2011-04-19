@@ -121,14 +121,8 @@ namespace pcl{
 	return 0;
       }
 
-      virtual void setColor( int &r, int &g, int &b, int &r_, int &g_, int &b_ );
-      virtual void addC3HLACcol0 ( const int idx, PointCloudOut &output );
-      virtual void addC3HLACcol0Bin ( const int idx, PointCloudOut &output );
-      virtual void addC3HLACcol1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
-      virtual void addC3HLACcol1Bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
       virtual void computeC3HLAC ( const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
       virtual void normalizeC3HLAC ( PointCloudOut &output );
-
       virtual void computeFeature (PointCloudOut &output);
 
     protected:
@@ -180,12 +174,21 @@ namespace pcl{
       };
 
     protected:
-      virtual void addC3HLACcol0 ( const int idx, PointCloudOut &output );
-      virtual void addC3HLACcol0Bin ( const int idx, PointCloudOut &output );
-      virtual void addC3HLACcol1 ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b, const int r_, const int g_, const int b_ );
-      virtual void addC3HLACcol1Bin ( const int idx, PointCloudOut &output, const int neighbor_idx, const int r, const int g, const int b );
-      virtual void normalizeC3HLAC ( PointCloudOut &output );
+      inline int binarizeR ( int val ){
+	if( val > color_threshold_r ) return 1;
+	return 0;
+      }
+      inline int binarizeG ( int val ){
+	if( val > color_threshold_g ) return 1;
+	return 0;
+      }
+      inline int binarizeB ( int val ){
+	if( val > color_threshold_b ) return 1;
+	return 0;
+      }
 
+      virtual void computeC3HLAC ( const pcl::PointCloud<PointT> &cloud, PointCloudOut &output, const int center_idx );
+      virtual void normalizeC3HLAC ( PointCloudOut &output );
       virtual void computeFeature (PointCloudOut &output);
 
     protected:
