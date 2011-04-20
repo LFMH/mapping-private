@@ -48,3 +48,10 @@ rostopic pub /ias_kitchen/joint_states sensor_msgs/JointState '{name : [fridge_b
 * add counter/shelves inside cabinets/cupboards to URDF kitchen model
 ==============================
 
+
+============ How to run extraction of clusters from the storage rack ============
+* install mapping and mapping-private repositories (see http://code.cs.tum.edu)
+* compile pcl_cloud_tools package
+* roslaunch shopping_demo extract_clusters.launch
+  ** clusters will then be available through /extract_clusters/get_clusters action s 
+==============================
