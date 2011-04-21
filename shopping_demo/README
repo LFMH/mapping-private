@@ -11,6 +11,12 @@ HOW TO RUN AND WHAT TO DO
 - run roscore
     - $ roscore
 
+- break germandeli.owl file (speeds up startingx):
+  change the following line 
+  "<owl:imports rdf:resource="&local_path;germandeli.owl"/>"
+  to be 
+  "<owl:imports rdf:resource="&local_path;bla.owl"/>"
+
 - launch knowrob with the comp_orgprinciples module
     - $ roslaunch comp_orgprinciples comp_orgprinciples.launch
 
