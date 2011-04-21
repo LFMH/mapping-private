@@ -24,15 +24,30 @@ HOW TO RUN AND WHAT TO DO
     - use "cont-InGeneric" object properties to place objects at location instances from the ccrl2_semantic_map 
 ================================================================= 
 
-============ The URDF kitchen model ============
+============ The URDF Model + Object Segmentation ============
 // When not running on the robot //
-// Do not forget to set the path of the input .bag file in the .launch file //
 
+// Do not forget to set the path of the input .bag file in the .launch file //
+// And do not forget to press <SAPCE> for playing the .bag file //
 roslaunch shopping_demo shopping_demo.launch
 rosrun rviz rviz -d launch/shopping_demo.vcg 
 
+OR
+
+// Do not forget to set the path of the input .bag file in the .launch file //
 // And do not forget to press <SAPCE> for playing the .bag file //
+roscore
+rosparam set use_sim_time true
+roslaunch ias_kitchen_defs ias_kitchen_model.launch
+roslaunch dos_pcl_ros urdf_cloud_filter_ijrr.launch
+rosbag play --clock --pause data/racks1.bag
+rostopic list
 ================================================
+
+============ .bag Data Files ============
+http://ias.cs.tum.edu/~goron/data/shopping-demo-bags.tar.gz
+http://ias.cs.tum.edu/~goron/data/old-shopping-demo-bags.tar.gz
+=========================================
 
 ============ Open/Close Drawers ============
 Open/Close Drawer

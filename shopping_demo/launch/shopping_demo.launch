@@ -80,6 +80,6 @@
   <!-- When not running on the robot -->
   <!-- Specify an input .bag file -->
 
-  <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag rack1.bag) --clock --pause -r $(optenv rate 2.5)"/>
+  <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag racks1.bag) --clock --pause -r $(optenv rate 1)"/>
 
 </launch>
