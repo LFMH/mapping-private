@@ -3,7 +3,7 @@ HOW TO RUN AND WHAT TO DO
 
 ============ How to run the best location inference: ============ 
 - checkout and make packages:
-    -  checkout knowrob/comp_orgprinciples
+    -  checkout http://code.in.tum.de/svn/knowrob/trunk
     - $ rosmake comp_orgprinciples
     - $ rosmake json_prolog
     - $ rosmake shopping demo
@@ -12,8 +12,7 @@ HOW TO RUN AND WHAT TO DO
     - $ roscore
 
 - launch knowrob with the comp_orgprinciples module
-    - $ cd comp_orgprinciples/launch/
-    - $ roslaunch comp_orgprinciples.launch
+    - $ roslaunch comp_orgprinciples comp_orgprinciples.launch
 
 - start test client: query_comp_orgprinciples
     - $ cd shopping_demo/bin
