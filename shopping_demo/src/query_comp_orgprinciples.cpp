@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
   //query: get location as string
   {
-    string object = "knowrob:'Spoon'";
+    string object = "germandeli:'Teekanne_Rotbusch_Tee_20_Bags'";
     string classifier = "best_location_maxMaxWup"; //best_location_dtree
 
     string query = classifier + "(" + object + ", L)";
@@ -46,19 +46,42 @@ int main(int argc, char *argv[])
     //wait until it is initialized
     sleep(5);
     
-    string object = "knowrob:'Spoon'";
+    string object = "germandeli:'Teekanne_Rotbusch_Tee_20_Bags'";
     string classifier = "best_location_maxMaxWup"; //best_location_dtree
 
     string query = "highlight_" + classifier + "(" + object + ", _)";
+    string query2 = classifier + "(" + object + ", L)";
     cout << query << endl;
+
+    PrologQueryProxy bdgs =     pl.query(query2);
     pl.query(query);
-    
+
+    for(PrologQueryProxy::iterator it=bdgs.begin();
+	it != bdgs.end(); it++)
+      {
+	PrologBindings bdg = *it;
+	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
+	cout << "Location = "<< bdg["L"] << endl;
+      }
+
     sleep(10);
     
-    object = "knowrob:'Milk'";
+    object = "orgprinciples_demo:'AlpenMilch_Fettarme_Milch'";
     query = "highlight_" + classifier + "(" + object + ", _)";
+    query2 = classifier + "(" + object + ", L)";
     cout << query << endl;
+
+    bdgs =     pl.query(query2);
     pl.query(query);
+	
+    for(PrologQueryProxy::iterator it=bdgs.begin();
+	it != bdgs.end(); it++)
+      {
+	PrologBindings bdg = *it;
+	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
+	cout << "Location = "<< bdg["L"] << endl;
+      }
+    
   }
   
   return 0;
