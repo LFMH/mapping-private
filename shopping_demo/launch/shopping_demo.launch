@@ -65,6 +65,10 @@
            search_expand_axis: [0.0, 0.0, 1.0],
            search_expand_distance: 0.200}
 
+        # We specify first what points we want to delete #
+        - {regex: "rack_(.*)_link",
+           operation: "delete"}
+
         # Segment objects on the RACKS #
         - {regex: "rack_(.*)_link",
            operation: "segment_objects",
