@@ -30,6 +30,7 @@ HOW TO RUN AND WHAT TO DO
 
 // Do not forget to set the path of the input .bag file in the .launch file //
 // And do not forget to press <SAPCE> for playing the .bag file //
+
 roslaunch shopping_demo shopping_demo.launch
 rosrun rviz rviz -d launch/shopping_demo.vcg 
 
@@ -37,13 +38,15 @@ OR
 
 // Do not forget to set the path of the input .bag file in the .launch file //
 // And do not forget to press <SAPCE> for playing the .bag file //
+
 roscore
 rosparam set use_sim_time true
 roslaunch ias_kitchen_defs ias_kitchen_model.launch
 roslaunch dos_pcl_ros urdf_cloud_filter_ijrr.launch
 rosbag play --clock --pause data/racks1.bag
 rostopic list
-================================================
+rosrun rviz rviz -d launch/shopping_demo.vcg
+==============================================================
 
 ============ .bag Data Files ============
 http://ias.cs.tum.edu/~goron/data/shopping-demo-bags.tar.gz
