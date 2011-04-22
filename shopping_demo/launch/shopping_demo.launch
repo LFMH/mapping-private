@@ -74,7 +74,7 @@
            operation: "segment_objects",
            publish: "objects_on_$1_rack",
            search_expand_axis: [0.0, 0.0, 1.0],
-           search_expand_distance: 0.400}
+           search_expand_distance: 0.300}
 
         - {regex: "(wall|counter_side).*",
            operation: "delete"}
