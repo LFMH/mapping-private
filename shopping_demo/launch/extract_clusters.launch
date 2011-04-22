@@ -15,6 +15,6 @@
     <param name="point_cloud_topic" value="/narrow_stereo_textured/points2"/>
     <param name="publish_token" value="false"/>	
     <!-- <param name="padding" value="0.1"/>		 -->
-    <param name="z_max_limit" value="1.1"/>
+    <param name="z_max_limit" value="1.2"/>
  </node>
 </launch>
