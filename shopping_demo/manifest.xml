@@ -8,7 +8,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/shopping_demo</url>
-    <depend package="json_prolog" />
+
+  <depend package="json_prolog" />
+  <depend package="pcl" />
+  <depend package="pcl_ros" />
+
 </package>
-
-
