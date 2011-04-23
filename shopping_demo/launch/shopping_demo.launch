@@ -74,7 +74,7 @@
            operation: "segment_objects",
            publish: "objects_on_$1_rack",
            search_expand_axis: [0.0, 0.0, 1.0],
-           search_expand_distance: 0.300}
+           search_expand_distance: 0.400}
 
         - {regex: "(wall|counter_side).*",
            operation: "delete"}
@@ -85,5 +85,12 @@
   <!-- Specify an input .bag file -->
 
   <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag racks1.bag) --clock --pause -r $(optenv rate 1)"/>
+
+  <!-- Clustering of Objects on Racks -->
+
+  <node pkg="shopping_demo" type="cluster_objects_on_racks" name="cluster_objects_on_racks" output="screen">
+    <remap from="/cluster_objects_on_racks/input" to="/urdf_cloud_filter/objects_on_middle_rack" />
+    <remap from="/cluster_objects_on_racks/output" to="/cluster_objects_on_racks/clusters" />
+  </node>
 
 </launch>
