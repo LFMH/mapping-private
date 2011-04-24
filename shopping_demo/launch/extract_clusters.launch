@@ -1,5 +1,6 @@
 <launch>
-  <node pkg="pcl_cloud_tools" type="extract_clusters_on_table" name="extract_clusters" output="screen" respawn="true" args="free_view">
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />	
+  <node pkg="pcl_cloud_tools" type="extract_clusters_on_table" name="extract_clusters" output="screen" respawn="true" args="free_view" machine="c2">
     <!-- Parameters --> 
     <param name="cluster_min_height" value="0.02"/>
     <param name="cluster_max_height" value="0.3"/>	
