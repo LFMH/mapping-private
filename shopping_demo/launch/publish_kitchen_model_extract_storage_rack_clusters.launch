@@ -3,9 +3,9 @@
   <!-- When not running on the robot -->
   <!-- Use simulation time -->
 
-  <rosparam>
-    use_sim_time: true
-  </rosparam>
+  <!-- <rosparam> -->
+  <!--   use_sim_time: true -->
+  <!-- </rosparam> -->
 
   <!-- URDF Model of Environment -->
 
