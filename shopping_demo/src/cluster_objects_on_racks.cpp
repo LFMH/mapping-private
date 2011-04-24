@@ -223,57 +223,57 @@ class ClusterObjectsOnRacks
 
 
 
-      // Point cloud of normals
-      pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
-      // Build kd-tree structure for normals
-      pcl::KdTreeFLANN<PointT>::Ptr tree (new pcl::KdTreeFLANN<PointT> ());
+      // // Point cloud of normals
+      // pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
+      // // Build kd-tree structure for normals
+      // pcl::KdTreeFLANN<PointT>::Ptr tree (new pcl::KdTreeFLANN<PointT> ());
 
-      // Create object for normal estimation
-      pcl::NormalEstimation<PointT, pcl::Normal> ne;
-      // Provide pointer to the search method
-      ne.setSearchMethod (tree);
-      // Set for which point cloud to compute the normals
-      ne.setInputCloud (cloud);
-      // Set number of k nearest neighbors to use
-      ne.setKSearch (50);
-      // Estimate the normals
-      ne.compute (*normals);
+      // // Create object for normal estimation
+      // pcl::NormalEstimation<PointT, pcl::Normal> ne;
+      // // Provide pointer to the search method
+      // ne.setSearchMethod (tree);
+      // // Set for which point cloud to compute the normals
+      // ne.setInputCloud (cloud);
+      // // Set number of k nearest neighbors to use
+      // ne.setKSearch (50);
+      // // Estimate the normals
+      // ne.compute (*normals);
 
-      ROS_INFO ("[ClusterObjectsOnRacks:] Working cloud has %d points", (int) cloud->points.size());
-      ROS_INFO ("[ClusterObjectsOnRacks:] With %d normals of course", (int) normals->points.size());
+      // ROS_INFO ("[ClusterObjectsOnRacks:] Working cloud has %d points", (int) cloud->points.size());
+      // ROS_INFO ("[ClusterObjectsOnRacks:] With %d normals of course", (int) normals->points.size());
 
 
-      // Create the segmentation object
-      pcl::SACSegmentationFromNormals<PointT, pcl::Normal> sfn;
+      // // Create the segmentation object
+      // pcl::SACSegmentationFromNormals<PointT, pcl::Normal> sfn;
 
-      // Declare the variable which are needed
-      Eigen::Vector3f axis = Eigen::Vector3f (1.0, 0.0, 0.0); 
-      pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices ());
-      pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients ());
+      // // Declare the variable which are needed
+      // Eigen::Vector3f axis = Eigen::Vector3f (1.0, 0.0, 0.0); 
+      // pcl::PointIndices::Ptr plane_inliers (new pcl::PointIndices ());
+      // pcl::ModelCoefficients::Ptr plane_coefficients (new pcl::ModelCoefficients ());
 
-      // Segmentation's Parameters
-      double epsilon_angle = 0.25; /// [radians]
-      double plane_threshold = 0.050; /// [meters]
-      int minimum_plane_inliers = 10000; /// [points]
-      int maximum_plane_iterations = 1000; /// [iterations]
-      double normal_distance_weight = 0.05; /// [percentage] 
+      // // Segmentation's Parameters
+      // double epsilon_angle = 0.25; /// [radians]
+      // double plane_threshold = 0.050; /// [meters]
+      // int minimum_plane_inliers = 10000; /// [points]
+      // int maximum_plane_iterations = 1000; /// [iterations]
+      // double normal_distance_weight = 0.05; /// [percentage] 
 
-      // Set all the parameters for segmenting planes
-      sfn.setMethodType (pcl::SAC_RANSAC);
-      sfn.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-      sfn.setModelType (pcl::SACMODEL_PLANE);
+      // // Set all the parameters for segmenting planes
+      // sfn.setMethodType (pcl::SAC_RANSAC);
+      // sfn.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+      // sfn.setModelType (pcl::SACMODEL_PLANE);
 
-      sfn.setAxis (axis);
-      sfn.setInputCloud (cloud);
-      sfn.setInputNormals (normals);
-      sfn.setEpsAngle (epsilon_angle);
-      sfn.setOptimizeCoefficients (true);
-      sfn.setDistanceThreshold (plane_threshold);
-      sfn.setMaxIterations (maximum_plane_iterations);
-      sfn.setNormalDistanceWeight (normal_distance_weight);
+      // sfn.setAxis (axis);
+      // sfn.setInputCloud (cloud);
+      // sfn.setInputNormals (normals);
+      // sfn.setEpsAngle (epsilon_angle);
+      // sfn.setOptimizeCoefficients (true);
+      // sfn.setDistanceThreshold (plane_threshold);
+      // sfn.setMaxIterations (maximum_plane_iterations);
+      // sfn.setNormalDistanceWeight (normal_distance_weight);
 
-      // Obtain the plane inliers and coefficients
-      sfn.segment (*plane_inliers, *plane_coefficients);
+      // // Obtain the plane inliers and coefficients
+      // sfn.segment (*plane_inliers, *plane_coefficients);
 
 
 
@@ -319,34 +319,34 @@ class ClusterObjectsOnRacks
       */
 
 
-      if ( minimum_plane_inliers < (int) plane_inliers->indices.size () )
-      {
+      // if ( minimum_plane_inliers < (int) plane_inliers->indices.size () )
+      // {
 
-        ROS_INFO ("[ClusterObjectsOnRacks:] Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", (int) plane_inliers->indices.size (), 
-            plane_coefficients->values [0], plane_coefficients->values [1], plane_coefficients->values [2], plane_coefficients->values [3], maximum_plane_iterations);
+      //   ROS_INFO ("[ClusterObjectsOnRacks:] Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", (int) plane_inliers->indices.size (), 
+      //       plane_coefficients->values [0], plane_coefficients->values [1], plane_coefficients->values [2], plane_coefficients->values [3], maximum_plane_iterations);
 
-        // Point cloud of plane inliers
-        pcl::PointCloud<PointT>::Ptr plane_inliers_cloud (new pcl::PointCloud<PointT> ());
+      //   // Point cloud of plane inliers
+      //   pcl::PointCloud<PointT>::Ptr plane_inliers_cloud (new pcl::PointCloud<PointT> ());
 
-        // Extract the circular inliers from the input cloud
-        pcl::ExtractIndices<PointT> extraction_of_plane_inliers;
-        // Set point cloud from where to extract
-        extraction_of_plane_inliers.setInputCloud (cloud);
-        // Set which indices to extract
-        extraction_of_plane_inliers.setIndices (plane_inliers);
-        // Return the points which represent the inliers
-        extraction_of_plane_inliers.setNegative (false);
-        // Call the extraction function
-        extraction_of_plane_inliers.filter (*plane_inliers_cloud);
-        // Return the remaining points of inliers
-        extraction_of_plane_inliers.setNegative (true);
-        // Call the extraction function
-        extraction_of_plane_inliers.filter (*cloud);
+      //   // Extract the circular inliers from the input cloud
+      //   pcl::ExtractIndices<PointT> extraction_of_plane_inliers;
+      //   // Set point cloud from where to extract
+      //   extraction_of_plane_inliers.setInputCloud (cloud);
+      //   // Set which indices to extract
+      //   extraction_of_plane_inliers.setIndices (plane_inliers);
+      //   // Return the points which represent the inliers
+      //   extraction_of_plane_inliers.setNegative (false);
+      //   // Call the extraction function
+      //   extraction_of_plane_inliers.filter (*plane_inliers_cloud);
+      //   // Return the remaining points of inliers
+      //   extraction_of_plane_inliers.setNegative (true);
+      //   // Call the extraction function
+      //   extraction_of_plane_inliers.filter (*cloud);
 
-        ROS_INFO ("[ClusterObjectsOnRacks:] Remaning working cloud has %d points", (int) cloud->points.size());
-        ROS_INFO ("[ClusterObjectsOnRacks:] And the cloud with the plane's inliers has %d points", (int) plane_inliers_cloud->points.size());
+      //   ROS_INFO ("[ClusterObjectsOnRacks:] Remaning working cloud has %d points", (int) cloud->points.size());
+      //   ROS_INFO ("[ClusterObjectsOnRacks:] And the cloud with the plane's inliers has %d points", (int) plane_inliers_cloud->points.size());
 
-      }
+      // }
 
 
 
