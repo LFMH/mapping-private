@@ -5,7 +5,7 @@ Fixed\ Frame=/map
 Target\ Frame=<Fixed Frame>
 Camera.Alpha=0.5
 Camera.Enabled=0
-Camera.Image\ Topic=/narrow_stereo/left/image_rect
+Camera.Image\ Topic=/narrow_stereo/left/image_rect_throttle
 Camera.Transport\ Hint=raw
 Laser\ Scan.Alpha=1
 Laser\ Scan.Billboard\ Size=0.02
@@ -454,8 +454,8 @@ TF.Update\ Interval=0
 Tool\ 2D\ Nav\ GoalTopic=move_base_simple/goal
 Tool\ 2D\ Pose\ EstimateTopic=/initialpose
 Camera\ Type=rviz::OrbitViewController
-Camera\ Config=1.051 5.56479 7.60585 -1.40069 0.881337 5.22209
-Property\ Grid\ State=selection=Point Cloud.Enabled;expanded=.Global Options,Point Cloud2.Enabled,Point Cloud2.Enabled.Point Cloud2.StatusTopStatus,Markers2.Enabled,Markers2.Enabled.Markers2.StatusTopStatus,Markers2.Enabled.Markers2.Namespaces,Point Cloud22.Enabled,Point Cloud22.Enabled.Point Cloud22.StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Map.Enabled,Laser Scan.Enabled,Point Cloud24.Enabled,Robot Model2.Enabled,Point Cloud.Enabled;scrollpos=0,66;splitterpos=152,304;ispageselected=1
+Camera\ Config=0.751 5.5348 12.2869 -1.40069 0.881337 5.22209
+Property\ Grid\ State=selection=Camera.Enabled;expanded=.Global Options,Point Cloud2.Enabled,Point Cloud2.Enabled.Point Cloud2.StatusTopStatus,Markers2.Enabled,Markers2.Enabled.Markers2.StatusTopStatus,Markers2.Enabled.Markers2.Namespaces,Point Cloud22.Enabled,Point Cloud22.Enabled.Point Cloud22.StatusTopStatus,TF.Enabled.TF.StatusTopStatus,TF.Enabled.TF.Tree,Map.Enabled,Laser Scan.Enabled,Point Cloud24.Enabled,Camera.Enabled,Robot Model2.Enabled,Point Cloud.Enabled;scrollpos=0,9;splitterpos=152,304;ispageselected=1
 [Display0]
 Name=Origin Axes
 Package=rviz
