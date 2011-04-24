@@ -1,0 +1,84 @@
+<launch>
+
+  <!-- When not running on the robot -->
+  <!-- Use simulation time -->
+
+  <rosparam>
+    use_sim_time: true
+  </rosparam>
+
+  <!-- URDF Model of Environment -->
+
+  <group ns="ias_kitchen">
+    <param name="kitchen_description" command="$(find xacro)/xacro.py '$(find ias_kitchen_defs)/kitchen/ias_kitchen.urdf.xml'"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="kitchen_link_broadcaster" args="1.4 2.8 0 3.21 0 0 /map /ias_kitchen/kitchen_link 100"/>
+
+    <node pkg="robot_state_chain_publisher" type="state_chain_publisher" name="kitchen_state_publisher" output="screen">
+      <param name="publish_frequency" value="2"/>
+      <param name="tf_prefix" value="ias_kitchen"/>
+      <remap from="robot_description" to="kitchen_description" />
+    </node>
+  </group>
+
+  <!-- Convert PointCloud to PointCloud2 -->
+
+  <node pkg="point_cloud_converter" type="point_cloud_converter" name="convert_cloud" output="screen">
+    <remap from="/points_in" to="/shoulder_cloud" />
+    <remap from="/points2_out" to="/cloud_pcd" />
+    <remap from="/points2_in" to="/urdf_cloud_filter/output" />
+    <remap from="/points_out" to="/urdf_cloud_filter_dummy" />
+  </node>
+
+  <!-- PCL Manager -->
+
+  <node pkg="nodelet" type="nodelet" name="dos_pcl_manager" args="manager" output="screen" />
+
+  <!-- URDF Cloud Filter -->
+
+  <node pkg="nodelet" type="nodelet" name="urdf_cloud_filter" args="standalone dos_pcl_ros/URDFCloudFilter" output="screen">
+    <remap from="~input" to="/cloud_pcd" />
+    <rosparam>
+
+      model_description: /ias_kitchen/kitchen_description
+      tf_prefix: /ias_kitchen
+      stop_link: kitchen_link
+      approximate_sync: true
+      wait_for_tf: 1.0
+      relevant_rois:
+
+        # First, specify what points should be deleted #
+
+        - {regex: "side_rack_link",
+           operation: "delete",
+           threshold: 0.050}
+
+        - {regex: "rack_(.*)_link",
+           operation: "delete",
+           threshold: 0.025}
+
+        # Then, segment the objects on the racks #
+
+        - {regex: "rack_(.*)_link",
+           operation: "segment_objects",
+           publish: "objects_on_$1_rack",
+           search_expand_axis: [0.0, 0.0, 1.0],
+           search_expand_distance: 0.400,
+           threshold: 0.0}
+
+    </rosparam>
+  </node>
+
+  <!-- When not running on the robot -->
+  <!-- Specify an input .bag file -->
+
+  <node pkg="rosbag" type="rosbag" name="rosbag" output="screen" respawn="false" args="play $(find shopping_demo)/data/$(optenv bag racks1.bag) --clock --pause -r $(optenv rate 1)"/>
+
+  <!-- Clustering of Objects on Racks -->
+
+  <node pkg="shopping_demo" type="cluster_objects_on_racks" name="cluster_objects_on_racks" output="screen">
+    <remap from="/cluster_objects_on_racks/input" to="/urdf_cloud_filter/objects_on_middle_rack" />
+    <remap from="/cluster_objects_on_racks/output" to="/cluster_objects_on_racks/clusters" />
+  </node>
+
+</launch>
