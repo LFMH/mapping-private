@@ -1,44 +1,37 @@
 #include <string>
 #include <iostream>
 
-#include <unistd.h> //for sleep()
+#include <unistd.h>
 
 #include <ros/ros.h>
 #include <json_prolog/prolog.h>
+#include <shopping_demo/QueryBestObjLocation.h>
 
 using namespace std;
 using namespace json_prolog;
 
-int main(int argc, char *argv[])
+class QueryOrgPrinciples
 {
-  ros::init(argc, argv, "best_object_location");
+protected:
+  ros::NodeHandle nh_;
+  ros::ServiceServer service_;
 
-  Prolog pl;
-
-  //classifiers: best_location_maxMaxWup and best_location_dtree
-  //best_location_maxMaxWup may return multiple solutions (if they
-  //have equal similarities)
-
-  //query: get location as string
+public:      
+  QueryOrgPrinciples(ros::NodeHandle &nh) : nh_ (nh)
   {
-    string object = "germandeli:'Teekanne_Rotbusch_Tee_20_Bags'";
-    string classifier = "best_location_maxMaxWup"; //best_location_dtree
-
-    string query = classifier + "(" + object + ", L)";
-    PrologQueryProxy bdgs = pl.query(query);
-    
-    for(PrologQueryProxy::iterator it=bdgs.begin();
-	it != bdgs.end(); it++)
-      {
-	PrologBindings bdg = *it;
-	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
-	cout << "Location = "<< bdg["L"] << endl;
-      }
+    service_ = nh_.advertiseService("query", &QueryOrgPrinciples::queryCB, this);
+    ROS_INFO ("[QueryOrgPrinciples] Advertising service on: %s", service_.getService ().c_str ());
   }
-    
-    
-  //query and highlight in knowrob visualization
+
+  
+  bool queryCB (shopping_demo::QueryBestObjLocation::Request  &req,
+		shopping_demo::QueryBestObjLocation::Response &res)
   {
+    //classifiers: best_location_maxMaxWup and best_location_dtree
+    //best_location_maxMaxWup may return multiple solutions (if they
+    //have equal similarities)
+
+    Prolog pl;
     //initialize visualization:
     pl.query("register_ros_package(mod_vis)");
     pl.query("use_module(library('mod_vis'))");
@@ -46,43 +39,36 @@ int main(int argc, char *argv[])
     //wait until it is initialized
     sleep(5);
     
-    string object = "germandeli:'Teekanne_Rotbusch_Tee_20_Bags'";
+    string object = req.name_space+":'"+req.object_type+"'";
     string classifier = "best_location_maxMaxWup"; //best_location_dtree
 
     string query = "highlight_" + classifier + "(" + object + ", _)";
     string query2 = classifier + "(" + object + ", L)";
-    cout << query << endl;
+    ROS_INFO("Query highlight: %s", query.c_str());
+    ROS_INFO("Query: %s", query2.c_str());
 
+    pl.query(query);
     PrologQueryProxy bdgs =     pl.query(query2);
-    pl.query(query);
 
     for(PrologQueryProxy::iterator it=bdgs.begin();
-	it != bdgs.end(); it++)
+  	it != bdgs.end(); it++)
       {
-	PrologBindings bdg = *it;
-	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
-	cout << "Location = "<< bdg["L"] << endl;
+  	PrologBindings bdg = *it;
+  	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
+	res.location.push_back(bdg["L"]);
+  	ROS_INFO_STREAM("Location = "<< bdg["L"]);
       }
-
-    sleep(10);
-    
-    object = "orgprinciples_demo:'AlpenMilch_Fettarme_Milch'";
-    query = "highlight_" + classifier + "(" + object + ", _)";
-    query2 = classifier + "(" + object + ", L)";
-    cout << query << endl;
-
-    bdgs =     pl.query(query2);
-    pl.query(query);
-	
-    for(PrologQueryProxy::iterator it=bdgs.begin();
-	it != bdgs.end(); it++)
-      {
-	PrologBindings bdg = *it;
-	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
-	cout << "Location = "<< bdg["L"] << endl;
-      }
-    
+    //    sleep(10);    
+    return true;
   }
-  
+};
+
+
+int main(int argc, char *argv[])
+{
+  ros::init(argc, argv, "best_object_location");
+  ros::NodeHandle n("~");
+  QueryOrgPrinciples qop(n);
+  ros::spin ();  
   return 0;
 }
