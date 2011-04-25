@@ -12,6 +12,7 @@
   <depend package="json_prolog" />
   <depend package="pcl" />
   <depend package="pcl_ros" />
+  <depend package="visualization_msgs" />
   <depend package="ias_drawer_executive" />
   <depend package="pcl_cloud_tools" />
 

@@ -81,4 +81,9 @@
     <remap from="/cluster_objects_on_racks/output" to="/cluster_objects_on_racks/clusters" />
   </node>
 
+  <!-- Mesh of Shopping Basket -->
+
+  <node pkg="shopping_demo" type="shopping_basket" name="shopping_basket" output="screen">
+  </node>
+
 </launch>
