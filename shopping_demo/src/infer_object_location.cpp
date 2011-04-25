@@ -247,8 +247,10 @@ int main (int argc, char **argv)
     OperateHandleController::plateAttackPose();
     //get the robot to the pose in map
     RobotDriver::getInstance()->moveBaseP(robot_pose[0], robot_pose[1], robot_pose[2], robot_pose[3]);
+    ROS_INFO("[segment_objects_interactive: ] Robot at the table.");
 
     Gripper::getInstance(side)->open();
+    ROS_INFO("[segment_objects_interactive: ] Gripper opened.");
 
     //point the head to the table
     pointHead(pointing_frame, to_frame, x, y, z, duration, velocity);
