@@ -1,0 +1,21 @@
+<launch>
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />	
+  <include file="$(find shopping_demo)/launch/extract_clusters.launch" />	
+
+  <node pkg="topic_tools" type="throttle" name="narrow_stereo_throttle" output="screen" respawn="true"
+        args="messages /narrow_stereo/left/image_rect 1" machine="c2"/>
+
+  <node pkg="shopping_demo" type="query_comp_orgprinciples" name="best_object_location" output="screen" respawn="true" machine="c2"/>
+
+  <group ns="ias_kitchen">
+    <param name="kitchen_description" command="$(find xacro)/xacro.py '$(find ias_kitchen_defs)/kitchen/ias_kitchen.urdf.xml'"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="kitchen_link_broadcaster" args="1.4 2.8 0 3.21 0 0 /map /ias_kitchen/kitchen_link 100" machine="c2"/>
+    
+    <node pkg="robot_state_chain_publisher" type="state_chain_publisher" name="kitchen_state_publisher" output="screen" machine="c2">
+      <param name="publish_frequency" value="2"/>
+      <param name="tf_prefix" value="ias_kitchen"/>
+      <remap from="robot_description" to="kitchen_description" />
+    </node>
+  </group>
+</launch>

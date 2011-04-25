@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />	
+  <include file="$(find shopping_demo)/launch/extract_clusters.launch" />	
+  <include file="$(find shopping_demo)/launch/point_cloud_assembler_with_filter.launch" />
+  <include file="$(find shopping_demo)/launch/objects_from_urdf.launch" />
+  
+</launch>
