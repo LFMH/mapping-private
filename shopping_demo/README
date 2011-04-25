@@ -102,6 +102,10 @@ rostopic list
 rosrun rviz rviz -d launch/shopping_demo.vcg
 ==============================================================
 
+============ .dae Collada File ============
+http://sketchup.google.com/3dwarehouse/details?mid=a0e69e333f8aceaa24ad83a2d67317f&prevstart=36
+===========================================
+
 ============ .bag Data Files ============
 http://ias.cs.tum.edu/~goron/data/shopping-demo-bags.tar.gz
 http://ias.cs.tum.edu/~goron/data/old-shopping-demo-bags.tar.gz
