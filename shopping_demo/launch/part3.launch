@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find pr2_machine)/$(env ROBOT).machine" />	
+  <include file="$(find ias_drawer_executive)/launch/wopcl.launch" />
+</launch>

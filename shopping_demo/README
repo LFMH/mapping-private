@@ -1,5 +1,19 @@
+Instructions on how to setup and run the shopping demo for CoTesys 2011 Spring Demo
+============ How to run the shopping groceries  (Part 1 of the demo): ============ 
+On the robot:
+- checkout and make 
+    - git clone indefero@code.in.tum.de:mapping-private.git
+    - git clone indefero@code.in.tum.de:mapping.git
+    - git clone  gitosis@git9.in.tum.de:tumros-internal
+    - rosmake perception_for_manipulation
+    - rosmake shopping_demo
 
-HOW TO RUN AND WHAT TO DO
+- run the auxiliary programs:
+  - roslaunch shopping_demo part1.launch
+
+- run the main program
+  - rosrun perception_for_manipuation shopping_demo 0
+=================================================================
 
 ============ How to run the best location inference (Part 2 of the demo): ============ 
 On the robot: 
@@ -26,14 +40,44 @@ On the thehypnotoad:
   export ROS_MASTER_URI=http://pr2a:11311
 
 - launch knowrob with the comp_orgprinciples module
-    - $ roslaunch comp_orgprinciples comp_orgprinciples.launch
+    - roslaunch comp_orgprinciples comp_orgprinciples.launch
 
 On the robot:
-roscd shopping_demo; ./bin/infer_object_location orgprinciples_demo EinHerzFuerErzeuger_Fettarme_HMilch
+- run the auxiliary programs:
+  - roslaunch shopping_demo part2.launch
+
+- run the main program
+  - rosrun shopping_demo infer_object_location orgprinciples_demo EinHerzFuerErzeuger_Fettarme_HMilch
+================================================================= 
+
+============ How to run the putting the object in the fridge  (Part 3 of the demo): ============ 
+On the robot:
+- checkout and make 
+    - git clone indefero@code.in.tum.de:mapping-private.git
+    - git clone indefero@code.in.tum.de:mapping.git
+    - git clone  gitosis@git9.in.tum.de:tumros-internal
+    - rosmake ias_drawer_executive
+    - rosmake shopping_demo
+
+- run the auxiliary programs:
+  - roslaunch shopping_demo part3.launch
+
+- run the main program
+  - rosrun shopping_demo put_object_in_container
 ================================================================= 
 
 
 
+
+
+
+
+
+
+
+================================================================= 
+========================OLD, OLD================================= 
+================================================================= 
 
 ============ The URDF Model + Object Segmentation ============
 // When not running on the robot //
