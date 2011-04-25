@@ -5,9 +5,9 @@
   <group ns="ias_kitchen">
     <param name="kitchen_description" command="$(find xacro)/xacro.py '$(find ias_kitchen_defs)/kitchen/ias_kitchen.urdf.xml'"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="kitchen_link_broadcaster" args="1.4 2.8 0 3.21 0 0 /map /ias_kitchen/kitchen_link 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="kitchen_link_broadcaster" args="1.4 2.8 0 3.21 0 0 /map /ias_kitchen/kitchen_link 100" machine="c2"/>
 
-    <node pkg="robot_state_chain_publisher" type="state_chain_publisher" name="kitchen_state_publisher" output="screen">
+    <node pkg="robot_state_chain_publisher" type="state_chain_publisher" name="kitchen_state_publisher" output="screen" machine="c2">
       <param name="publish_frequency" value="2"/>
       <param name="tf_prefix" value="ias_kitchen"/>
       <remap from="robot_description" to="kitchen_description" />
@@ -16,7 +16,7 @@
 
   <!-- Convert PointCloud to PointCloud2 -->
 
-  <node pkg="point_cloud_converter" type="point_cloud_converter" name="convert_cloud" output="screen">
+  <node pkg="point_cloud_converter" type="point_cloud_converter" name="convert_cloud" output="screen" machine="c2">
     <remap from="/points_in" to="/shoulder_cloud" />
     <remap from="/points2_out" to="/cloud_pcd" />
     <remap from="/points2_in" to="/urdf_cloud_filter/output" />
@@ -25,11 +25,11 @@
 
   <!-- PCL Manager -->
 
-  <node pkg="nodelet" type="nodelet" name="dos_pcl_manager" args="manager" output="screen" />
+  <node pkg="nodelet" type="nodelet" name="dos_pcl_manager" args="manager" output="screen" machine="c2"/>
 
   <!-- URDF Cloud Filter -->
 
-  <node pkg="nodelet" type="nodelet" name="urdf_cloud_filter" args="standalone dos_pcl_ros/URDFCloudFilter" output="screen">
+  <node pkg="nodelet" type="nodelet" name="urdf_cloud_filter" args="standalone dos_pcl_ros/URDFCloudFilter" output="screen" machine="c2">
     <remap from="~input" to="/cloud_pcd" />
     <rosparam>
 
@@ -64,7 +64,7 @@
 
   <!-- Clustering of Objects on Racks -->
 
-  <node pkg="shopping_demo" type="cluster_objects_on_racks" name="cluster_objects_on_racks" output="screen">
+  <node pkg="shopping_demo" type="cluster_objects_on_racks" name="cluster_objects_on_racks" output="screen" machine="c2">
     <remap from="/cluster_objects_on_racks/input" to="/urdf_cloud_filter/objects_on_middle_rack" />
     <remap from="/cluster_objects_on_racks/output" to="/cluster_objects_on_racks/clusters" />
   </node>
