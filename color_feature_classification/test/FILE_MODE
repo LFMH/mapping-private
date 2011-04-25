@@ -2,4 +2,4 @@
 #define MULTIPLE_SIMILARITY false //true
 #define TRAIN_90_ROTATION false//true
 #define THEORY_NORMALIZE false//true
-// 注 THEORY_NORMALIZEをONにするならcolor_chlacのdefineもかえなければ
+// TODO: some modification is required in vosch pkg to activate THEORY_NORMALIZE

@@ -14,6 +14,7 @@ do
     echo $i
     num=$(printf "%03d" $n)
     rosrun color_feature_classification computeSubspace_from_file $i -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num
+    #rosrun color_feature_classification computeSubspace_from_file $i $norm_flag_c $DATA/pca_result_c/$num
     n=`expr $n + 1`
 done
 #
@@ -23,6 +24,7 @@ do
     echo $i
     num=$(printf "%03d" $n)
     rosrun color_feature_classification computeSubspace_from_file $i -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num
+    #rosrun color_feature_classification computeSubspace_from_file $i $norm_flag_d $DATA/pca_result_d/$num
     n=`expr $n + 1`
 done
 #
@@ -41,6 +43,7 @@ do
     echo $i
     num=$(printf "%03d" $n)
     rosrun color_feature_classification computeSubspace_from_file $i -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA/pca_result_r/$num
+    #rosrun color_feature_classification computeSubspace_from_file $i $norm_flag_r $DATA/pca_result_r/$num
     n=`expr $n + 1`
 done
 

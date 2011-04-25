@@ -1,7 +1,7 @@
 #!/bin/bash
 # Example directory containing .pcd files
-DATA=`rospack find color_feature_classification`/demos/data
+DATA=`rospack find color_feature_classification`/demos
 
 # compute a subspace
-files=`find $DATA/* -type f -iname "*.pcd" | sort -d`
-rosrun color_feature_classification calc_autoThreshold $files color_threshold.txt
+files=`find $DATA/data/* -type f -iname "*.pcd" | sort -d`
+rosrun color_feature_classification calc_autoThreshold $files $DATA/color_threshold.txt

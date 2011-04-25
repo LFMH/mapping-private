@@ -59,12 +59,12 @@ int classify_by_kNN( std::vector<float> feature, const char feature_type, int ar
   return 1;
 }
 
-int classify_by_subspace( std::vector<float> feature, const char feature_type, const int dim_subspace ){
+int classify_by_subspace( std::vector<float> feature, const char feature_type, const int dim_subspace, const char* config_txt_path ){
   char dirname[ 20 ];
   char filename[ 300 ];
   Eigen::Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
 
-  sprintf( dirname, "pca_result_" );
+  sprintf( dirname, "%s/pca_result_", config_txt_path );
   dirname[ 11 ] = feature_type;
   dirname[ 12 ] = '\0';
 
@@ -164,8 +164,8 @@ void compressFeature( string filename, std::vector<float> &feature, const int di
 //--------------------------------------------------------------------------------------------
 int main( int argc, char** argv ){
   //ros::init( argc, argv, "test" );
-  if( argc < 4 ){
-    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options]\n", argv[0]);
+  if( argc < 5 ){
+    ROS_ERROR ("Need three parameters! Syntax is: %s {input_pointcloud_filename.pcd} {feature_initial(g, c, d, or r)} {classifier_initial(k or s)} [options] {config_txt_path}\n", argv[0]);
     ROS_INFO ("    where [options] are:  -dim D = dimension of compressed feature vectors\n");
     ROS_INFO ("    where [options] are:  -sub R = dimension of subspace\n");
     ROS_INFO ("                          -comp filename = name of compress_axis file\n");
@@ -188,18 +188,11 @@ int main( int argc, char** argv ){
   file_num[ 7 ] = 2;
   file_num[ 8 ] = 1;
 
-  // color threshold
-  int thR, thG, thB;
-  FILE *fp;
-  if( feature_type != 'g' ){
-    fp = fopen( "color_threshold.txt", "r" );
-    fscanf( fp, "%d %d %d\n", &thR, &thG, &thB );
-    fclose(fp);
-  }
-
   // voxel size
   float voxel_size;
-  fp = fopen( "voxel_size.txt", "r" );
+  char voxel_size_file[1024];
+  sprintf(voxel_size_file, "%s/voxel_size.txt", argv[argc-1]);
+  FILE *fp = fopen( voxel_size_file, "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
@@ -281,7 +274,7 @@ int main( int argc, char** argv ){
   }
   else if( classifier_type == 's' ){
     //* classifier - SubspaceMethod -
-    classify_by_subspace( feature, feature_type, dim_subspace );
+    classify_by_subspace( feature, feature_type, dim_subspace, argv[ argc - 1 ] );
   }
   else{
     ROS_ERROR ("Unknown classifier type.\n");
@@ -290,81 +283,3 @@ int main( int argc, char** argv ){
 
   return(0);
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//* This is old version (not used now.)
-//* To activate this function, this package needs the dependency of "vfh_cluster_classifier"
-//*   and also some proper changes.
-
-// int classify_by_kNN( vfh_model feature, const char feature_type, int argc, char** argv, int k = 8, int metric = 7, double thresh = DBL_MAX ){
-//   string kdtree_idx_file_name, training_data_h5_file_name, training_data_list_file_name;
-
-//   if( feature_type == 'v' ){
-//     kdtree_idx_file_name = "kdtree_vfh.idx";
-//     training_data_h5_file_name = "training_data_vfh.h5";
-//     training_data_list_file_name = "training_data_vfh.list";
-//   }
-//   else if( feature_type == 'c' ){
-//     kdtree_idx_file_name = "kdtree_colorCHLAC.idx";
-//     training_data_h5_file_name = "training_data_colorCHLAC.h5";
-//     training_data_list_file_name = "training_data_colorCHLAC.list";
-//   }
-//   else{
-//     ROS_ERROR ("Unknown feature type.\n");
-//     return(-1);
-//   }
-
-//   vector<vfh_model> models;
-//   flann::Matrix<int> k_indices;
-//   flann::Matrix<float> k_distances;
-//   flann::Matrix<float> data;
-
-//   // Check if the data has already been saved to disk
-//   if (!boost::filesystem::exists (training_data_h5_file_name) || !boost::filesystem::exists (training_data_list_file_name))
-//   {
-//     print_error ("Could not find training data models files %s and %s!\n", training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
-//     return (-1);
-//   }
-//   else
-//   {
-//     loadFileList (models, training_data_list_file_name);
-//     flann::load_from_file (data, training_data_h5_file_name, "training_data");
-//     print_highlight ("Training data found. Loaded %d VFH models from %s/%s.\n", (int)data.rows, training_data_h5_file_name.c_str (), training_data_list_file_name.c_str ());
-//   }
-
-//   // Check if the tree index has already been saved to disk
-//   if (!boost::filesystem::exists (kdtree_idx_file_name))
-//   {
-//     print_error ("Could not find kd-tree index in file %s!", kdtree_idx_file_name.c_str ());
-//     return (-1);
-//   }
-//   else
-//   {
-//     flann::Index<flann::ChiSquareDistance<float> > index (data, flann::SavedIndexParams (kdtree_idx_file_name));
-//     index.buildIndex ();
-//     nearestKSearch (index, feature, k, k_indices, k_distances);
-//   }
-
-//   // Output the results on screen
-//   print_highlight ("The closest %d neighbors for %s are:\n", k, feature.first.c_str() );
-//   for (int i = 0; i < k; ++i)
-//     print_info ("    %d - %s (%d) with a distance of: %f\n", i, models.at (k_indices[0][i]).first.c_str (), k_indices[0][i], k_distances[0][i]);
-  
-//   // // Visualize the results
-//   // if( feature_type == 'c' ){
-//   //   for( int m = 0; m < (int)models.size(); m++ ){
-//   //     int len = models[ m ].first.length();
-//   //     models[ m ].first[ len - 14 ] = 'v';
-//   //     models[ m ].first[ len - 13 ] = 'f';
-//   //     models[ m ].first[ len - 12 ] = 'h';
-//   //     models[ m ].first[ len - 11 ] = '.';
-//   //     models[ m ].first[ len - 10 ] = 'p';
-//   //     models[ m ].first[ len - 9 ] = 'c';
-//   //     models[ m ].first[ len - 8 ] = 'd';
-//   //     models[ m ].first[ len - 7 ] = '\0';
-//   //   }
-//   // }
-//   // visualizeNearestModels( argc, argv, k, thresh, models, k_indices, k_distances );
-
-//   return(1);
-// }

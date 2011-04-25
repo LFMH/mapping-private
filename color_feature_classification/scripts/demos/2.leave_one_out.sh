@@ -35,9 +35,9 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	cp -f $DATA/pca_result_c/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c 
-	mv -f hogehoge $DATA/pca_result_c/$num
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 50 -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c 
+	mv -f hogehoge $DATA/pca_result_c/$num $DATA
     done
 done
 #
@@ -69,8 +69,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	cp -f $DATA/pca_result_d/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA/pca_result_d/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} d s -sub 50 -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA
 	mv -f hogehoge $DATA/pca_result_d/$num
     done
 done
@@ -79,7 +79,8 @@ echo "----------------------------------------------------------"
 echo "GRSD (20)"
 echo "----------------------------------------------------------"
 dirNum=`ls $DATA/test_features_g/* -d | wc -l`
-for((i=0;i<$dirNum;i++))
+#for((i=0;i<$dirNum;i++))
+for((i=60;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
     dir_name=$(printf "obj%03d" $i)
@@ -104,7 +105,7 @@ do
 	done
 	cp -f $DATA/pca_result_g/$num hogehoge
 	rosrun color_feature_classification computeSubspace_from_file $train_models $norm_flag_g $DATA/pca_result_g/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} g s -sub 15 $norm_flag_g
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} g s -sub 10 $norm_flag_g $DATA
 	mv -f hogehoge $DATA/pca_result_g/$num
     done
 done
@@ -137,8 +138,8 @@ do
 	    train_models="$train_models ${files1[$k]}"
 	done
 	cp -f $DATA/pca_result_r/$num hogehoge
-	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA/pca_result_r/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
+	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA/pca_result_r/$num 1>/dev/null
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} r s -sub 50 -dim 100 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA
 	mv -f hogehoge $DATA/pca_result_r/$num
     done
 done

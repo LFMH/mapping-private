@@ -31,4 +31,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_executable(detect_object_vosch test/detect_object_vosch.cpp)
 rosbuild_add_executable(detect_object_grsd test/detect_object_grsd.cpp)
-rosbuild_add_executable(detect_object_multi test/detect_object_multi.cpp)
+rosbuild_add_executable(detect_object_vosch_multi test/detect_object_vosch_multi.cpp)

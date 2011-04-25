@@ -59,19 +59,18 @@ int main(int argc, char** argv)
     ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output(color_threshold).txt}\n", argv[0]);
     return(-1);
   }
+  int *threshold   = new int[ 3 ];     // threshold for RGB binarize (= results)
+  double *totalAve = new double[ 3 ];  // total average of RGB values
+  double **eachAve = new double*[ 3 ]; // each average of RGB values from 0 to j
+  int **eachNum    = new int*[ 3 ];    // the number of occupied voxles with RGB values from 0 to j
+  h = new int*[ 3 ];                   // histograms of RGB
 
-  int *threshold   = new int[ 3 ];     // RGB値の2値化の閾値
-  double *totalAve = new double[ 3 ];  // RGB値の全体の平均値
-  double **eachAve = new double*[ 3 ]; // RGB値の0からj番めの値までの平均値
-  int **eachNum    = new int*[ 3 ];    // RGB値の0からj番めの値までのボクセル個数
-  h = new int*[ 3 ];
-
-  //* voxel size (downsample_leaf)
+  //* read the length of voxel side
   FILE *fp = fopen( "voxel_size.txt", "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 
-  //* 初期化
+  //* initialize
   for( int i = 0; i < 3; i++ ){
     threshold[ i ]    = 0;
     totalAve[ i ]     = 0;
@@ -82,12 +81,12 @@ int main(int argc, char** argv)
       h[ i ][ j ]       = 0;
   }
 
-  //* 読み込み、ヒストグラムの作成
+  //* read points, voxelize, and make histograms of RGB
   std::string extension (".pcd");
   transform (extension.begin (), extension.end (), extension.begin (), (int(*)(int))tolower);
   readVoxelFromPoints( argc, argv, extension );
 
-  //* 全体の平均の計算
+  //* total average of RGB values
   const double scale = 1 / (double)totalNum;
   for( int i = 0; i < 3; i++ ){
     for( int j = 0; j < 256; j++ )
@@ -95,7 +94,7 @@ int main(int argc, char** argv)
     totalAve[ i ] *= scale;
   }
 
-  //* 0からj番めの値までの値までの平均の計算
+  //* each average of RGB values from 0 to j
   for( int i = 0; i < 3; i++ ){
     eachAve[ i ][ 0 ] = 0;
     eachNum[ i ][ 0 ] = h[ i ][ 0 ];
@@ -110,8 +109,8 @@ int main(int argc, char** argv)
     }
   }
 
-  //* 閾値の決定
-  //* クラス間分散が最大になるときを探す
+  //* determine threshold of RGB
+  //*   by looking for the case when between-class variance becomes the largest
   for( int i = 0; i < 3; i++ ){
     double max_var = 0;
     for( int j = 1; j < 256; j++ ){
@@ -130,7 +129,7 @@ int main(int argc, char** argv)
   printf("totalAverage: %f %f %f\n",  totalAve[0], totalAve[1], totalAve[2]);
   printf("threshold: %d %d %d\n",threshold[0],threshold[1],threshold[2]);
 
-  //* 結果をファイルに出力
+  //* output results into file
   fp = fopen( argv[ argc-1 ],"w" );
   fprintf(fp,"%d %d %d\n",threshold[0],threshold[1],threshold[2]);
   fclose(fp);

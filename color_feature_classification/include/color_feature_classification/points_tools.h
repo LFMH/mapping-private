@@ -1,3 +1,6 @@
+#ifndef COLOR_FEATURE_CLASSIFICATION_POINTS_TOOLS_H_
+#define COLOR_FEATURE_CLASSIFICATION_POINTS_TOOLS_H_
+
 #include <pcl/pcl_base.h>
 #include <pcl/point_types.h>
 
@@ -123,3 +126,4 @@ bool rotatePoints( const pcl::PointCloud<pcl::PointNormal> &input_cloud, pcl::Po
   return(1);
 }
 
+#endif

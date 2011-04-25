@@ -17,7 +17,8 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
+    rosrun color_feature_classification test_classify_from_file $i c s -sub 15 -dim 50 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA
+    #rosrun color_feature_classification test_classify_from_file $i c s -sub 15 $norm_flag_c $DATA
     n=`expr $n + 1`
 done
 #
@@ -30,7 +31,8 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
+    rosrun color_feature_classification test_classify_from_file $i d s -sub 15 -dim 50 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA
+    #rosrun color_feature_classification test_classify_from_file $i d s -sub 15 $norm_flag_d $DATA
     n=`expr $n + 1`
 done
 #
@@ -43,7 +45,7 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i g s -sub 15 $norm_flag_g
+    rosrun color_feature_classification test_classify_from_file $i g s -sub 15 $norm_flag_g $DATA
     n=`expr $n + 1`
 done
 #
@@ -56,7 +58,8 @@ do
     #echo $i
     #echo "----------------"
     echo $n
-    rosrun color_feature_classification test_classify_from_file $i r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
+    rosrun color_feature_classification test_classify_from_file $i r s -sub 15 -dim 50 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA
+    #rosrun color_feature_classification test_classify_from_file $i r s -sub 15 $norm_flag_r $DATA
     n=`expr $n + 1`
 done
 

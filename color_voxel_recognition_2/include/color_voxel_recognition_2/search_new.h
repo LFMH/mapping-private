@@ -32,46 +32,31 @@ public:
 //////////
 
 void SearchVOSCH::setVOSCH( int dim, int color_threshold_r, int color_threshold_g, int color_threshold_b, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  std::cout<< "hogehoge 1" << std::endl;
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature117( grid, cloud_downsampled, c3hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
-  std::cout<< "hogehoge 2" << std::endl;
+  //* extract - VOSCH -
+  std::vector< std::vector<float> > vosch;
+  Eigen::Vector3i subdiv_b_ = extractVOSCH( grid, cloud, cloud_downsampled, vosch, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
+  const int h_num = vosch.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
-  std::cout<< "hogehoge 3" << std::endl;
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( concVector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  std::cout<< "hogehoge" << std::endl;
+  for( int h=0; h<h_num; h++ )
+    exist_voxel_num[ h ] = ( vosch[h][20] + vosch[h][21] ) * 2 + 0.001; // the number of occupied voxels before adding up
 
-  setData( subdiv_b_, feature );
+  setData( subdiv_b_, vosch );
 }
 
 void SearchConVOSCH::setConVOSCH( int dim, int color_threshold_r, int color_threshold_g, int color_threshold_b, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
+  //* extract - ConVOSCH -
+  std::vector< std::vector<float> > convosch;
+  Eigen::Vector3i subdiv_b_ = extractConVOSCH( grid, cloud, cloud_downsampled, convosch, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
+  const int h_num = convosch.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( concVector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  setData( subdiv_b_, feature );
+  for( int h=0; h<h_num; h++ )
+    exist_voxel_num[ h ] = ( convosch[h][20] + convosch[h][21] ) * 2 + 0.001; // the number of occupied voxels before adding up
+
+  setData( subdiv_b_, convosch );
 }
 
 void SearchGRSD::setGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
@@ -79,18 +64,16 @@ void SearchGRSD::setGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::P
   std::vector< std::vector<float> > grsd;
   Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
   const int h_num = grsd.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
-    feature.push_back( grsd[ h ] );
     exist_voxel_num[ h ] = 0;
     for( int i=0; i<20; i++ )
       exist_voxel_num[ h ] += grsd[ h ][ i ];
-    exist_voxel_num[ h ] /= 26; // ボクセルの数 before adding up
+    exist_voxel_num[ h ] /= 26;  // the number of occupied voxels before adding up
   }
-  setData( subdiv_b_, feature );
+  setData( subdiv_b_, grsd );
 }
 
 ///////////
@@ -121,46 +104,31 @@ public:
 //////////
 
 void SearchVOSCHMulti::setVOSCH( int dim, int color_threshold_r, int color_threshold_g, int color_threshold_b, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  std::cout<< "hogehoge 1" << std::endl;
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature117( grid, cloud_downsampled, c3hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
-  std::cout<< "hogehoge 2" << std::endl;
+  //* extract - VOSCH -
+  std::vector< std::vector<float> > vosch;
+  Eigen::Vector3i subdiv_b_ = extractVOSCH( grid, cloud, cloud_downsampled, vosch, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
+  const int h_num = vosch.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
-  std::cout<< "hogehoge 3" << std::endl;
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( concVector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  std::cout<< "hogehoge" << std::endl;
+  for( int h=0; h<h_num; h++ )
+    exist_voxel_num[ h ] = ( vosch[h][20] + vosch[h][21] ) * 2 + 0.001; // the number of occupied voxels before adding up
 
-  setData( subdiv_b_, feature );
+  setData( subdiv_b_, vosch );
 }
 
 void SearchConVOSCHMulti::setConVOSCH( int dim, int color_threshold_r, int color_threshold_g, int color_threshold_b, pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud, pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
-  //* extract - GRSD -
-  std::vector< std::vector<float> > grsd;
-  Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
-  //* extract - C3HLAC -
-  std::vector< std::vector<float> > c3hlac;
-  extractC3HLACSignature981( grid, cloud_downsampled, c3hlac, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
+  //* extract - ConVOSCH -
+  std::vector< std::vector<float> > convosch;
+  Eigen::Vector3i subdiv_b_ = extractConVOSCH( grid, cloud, cloud_downsampled, convosch, color_threshold_r, color_threshold_g, color_threshold_b, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
-  const int h_num = c3hlac.size();
+  const int h_num = convosch.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
-  for( int h=0; h<h_num; h++ ){
-    feature.push_back( concVector( grsd[ h ], c3hlac[ h ] ) );
-    exist_voxel_num[ h ] = ( c3hlac[h][0] + c3hlac[h][1] ) * 2 + 0.001; // ボクセルの数 before adding up
-  }
-  setData( subdiv_b_, feature );
+  for( int h=0; h<h_num; h++ )
+    exist_voxel_num[ h ] = ( convosch[h][20] + convosch[h][21] ) * 2 + 0.001; // the number of occupied voxels before adding up
+
+  setData( subdiv_b_, convosch );
 }
 
 void SearchGRSDMulti::setGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, pcl::PointCloud<pcl::PointNormal> cloud, pcl::PointCloud<pcl::PointNormal> cloud_downsampled, const double voxel_size, const int subdivision_size ){
@@ -168,18 +136,16 @@ void SearchGRSDMulti::setGRSD( int dim, pcl::VoxelGrid<pcl::PointNormal> grid, p
   std::vector< std::vector<float> > grsd;
   Eigen::Vector3i subdiv_b_ = extractGRSDSignature21( grid, cloud, cloud_downsampled, grsd, voxel_size, subdivision_size );
 
-  std::vector< std::vector<float> > feature;
   const int h_num = grsd.size();
   exist_voxel_num = new int[ h_num ];
   integral_features = new Eigen::VectorXf [ h_num ];
   for( int h=0; h<h_num; h++ ){
-    feature.push_back( grsd[ h ] );
     exist_voxel_num[ h ] = 0;
     for( int i=0; i<20; i++ )
       exist_voxel_num[ h ] += grsd[ h ][ i ];
-    exist_voxel_num[ h ] /= 26; // ボクセルの数 before adding up
+    exist_voxel_num[ h ] /= 26;  // the number of occupied voxels before adding up
   }
-  setData( subdiv_b_, feature );
+  setData( subdiv_b_, grsd );
 }
 
 #endif

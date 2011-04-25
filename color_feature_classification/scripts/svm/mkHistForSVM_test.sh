@@ -20,7 +20,7 @@ do
 	    for color in black blue green orange purple red yellow
 	    do
 		cp $1/noisy${nlevel}${x}_${shape}_${color}.pcd $DATA/data/noisy_${shape}_${color}.pcd
-		rosrun color_chlac convertOld2NewPCD $DATA/data/noisy_${shape}_${color}.pcd $DATA/data/noisy_${shape}_${color}.pcd
+		rosrun color_feature_classification convertOld2NewPCD $DATA/data/noisy_${shape}_${color}.pcd $DATA/data/noisy_${shape}_${color}.pcd
 	    done
 	done
 	

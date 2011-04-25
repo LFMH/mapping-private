@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# USAGE: bash scripts/detect_test.sh <target obj number> <similarity threshold>
-#   e.g. bash scripts/detect_test.sh 19 0.3
+# USAGE: bash scripts/detect_test.sh <numbers of the target objects>
+#   e.g. bash scripts/detect_test.sh 19 1 35 23
 
 ##################################
 # parameters
@@ -34,7 +34,7 @@ display_config_file=`rospack find color_voxel_recognition`/demos/display_config
 
 ##################################
 
-rm models
+rm $demos_path/models
 ln -s $demos_path/models_offline_r $demos_path/models
 pca=$demos_path/models/$(printf "%03d" $1)/pca_result
 
@@ -47,7 +47,7 @@ do
     echo $demos_path/models/$(printf "%03d" $1)/pca_result >>$demos_path/pca_file_names.txt
 done
 
-#rosrun color_voxel_recognition_2 detectObj_multi `rospack find color_voxel_recognition_2`/demos $rank_num $exist_voxel_num_threshold $demos_path/pca_file_names.txt $r_dim $detection_box_size1 $detection_box_size2 $detection_box_size3 0 $distance_th $model_num /input:=/camera/rgb/points
+#rosrun color_voxel_recognition_2 detect_vosch_multi `rospack find color_voxel_recognition_2`/demos $rank_num $exist_voxel_num_threshold $demos_path/pca_file_names.txt $r_dim $detection_box_size1 $detection_box_size2 $detection_box_size3 0 $distance_th $model_num /input:=/camera/rgb/points
 roslaunch color_voxel_recognition_2 detect_multi.launch /demos_path:=$demos_path /rank_num:=$rank_num /exist_voxel_num_threshold:=$exist_voxel_num_threshold /pca:=$demos_path/pca_file_names.txt /r_dim:=$r_dim /size1:=$detection_box_size1 /size2:=$detection_box_size2 /size3:=$detection_box_size3 /similarity_th:=$similarity_th /distance_th:=$distance_th /model_num:=$model_num /input:=/camera/rgb/points /display_config:=$display_config_file
 
 #rosrun color_voxel_recognition detectObj $rank_num $exist_voxel_num_threshold $pca $r_dim $detection_box_size1 $detection_box_size2 $detection_box_size3 $2 $distance_th /input:=/camera/depth/points2_throttle

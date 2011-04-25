@@ -2,7 +2,6 @@
 
 //* NOTICE
 //  Rotation is possible also when feature_type is 'g' or 'r'.
-//  (It's different from computeSubspace.cpp and computeSubspace_with_rotation.cpp)
 
 #include <color_feature_classification/points_tools.h>
 #include "c3_hlac/c3_hlac_tools.h"

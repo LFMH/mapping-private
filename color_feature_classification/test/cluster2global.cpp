@@ -2,16 +2,14 @@
 #include <vector>
 #include <stdio.h>
 
-using namespace std;
-
 int main( int argc, char** argv ){
   if( argc != 3 ){
-    std::cerr<< "Need two parameters! Syntax is: " << argv[0] << " [input_histogram.pcd] [options] [output_histogram.pcd]" << std::endl;
+    std::cerr<< "Need two parameters! Syntax is: " << argv[0] << " [input_histogram.pcd] [output_histogram.pcd]" << std::endl;
     return(-1);
   }
   int dim, sample_num;
   char line[ 100 ];
-  string tmpname;
+  std::string tmpname;
   std::vector<float> feature;
   float val;
 
@@ -19,7 +17,7 @@ int main( int argc, char** argv ){
   FILE *fpW = fopen( argv[2], "w" );
   while( 1 ){
     fgets(line,sizeof(line),fpR);
-    tmpname = string (line);
+    tmpname = std::string (line);
     if( tmpname.compare (0, 5, "COUNT") == 0 )
       sscanf( line, "COUNT %d", &dim );
     else if( tmpname.compare (0, 5, "WIDTH") == 0 ){

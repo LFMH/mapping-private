@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# USAGE
+#  bash 2.test_classify.sh > result.txt
+#  bash calcRate.sh result.txt
+
 flag=-1
 count=0
 results=""

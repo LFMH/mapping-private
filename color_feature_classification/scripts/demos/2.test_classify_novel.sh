@@ -19,22 +19,27 @@ do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+    if [ $sub -lt 981 ]
     then
-    	for j in `find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
-    	do
-    	    rosrun color_feature_classification test_classify_from_file $j c s -sub $sub -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c
-    	done
+	if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+	then
+    	    for j in `find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
+    	    do
+    		rosrun color_feature_classification test_classify_from_file $j c s -sub $sub -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA
+    		#rosrun color_feature_classification test_classify_from_file $j c s -sub $sub $norm_flag_c $DATA
+    	    done
+	else
+    	    for((j=0;j<$1;j++))
+    	    do
+    		echo "-1 0"
+    	    done
+	fi
     else
-    	for((j=0;j<$1;j++))
-    	do
+	for((j=0;j<$1;j++))
+	do
     	    echo "-1 0"
-    	done
+	done
     fi
-    # for((j=0;j<$1;j++))
-    # do
-    # 	echo "-1 0"
-    # done
 done
 #
 echo "----------------------------------------------------------"
@@ -46,22 +51,27 @@ do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+    if [ $sub -lt 1001 ]
     then
-    	for j in `find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
-    	do
-    	    rosrun color_feature_classification test_classify_from_file $j d s -sub $sub -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d
-    	done
+	if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+	then
+    	    for j in `find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
+    	    do
+    		rosrun color_feature_classification test_classify_from_file $j d s -sub $sub -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA
+    		#rosrun color_feature_classification test_classify_from_file $j d s -sub $sub $norm_flag_d $DATA
+    	    done
+	else
+    	    for((j=0;j<$1;j++))
+    	    do
+    		echo "-1 0"
+    	    done
+	fi
     else
-    	for((j=0;j<$1;j++))
-    	do
+	for((j=0;j<$1;j++))
+	do
     	    echo "-1 0"
-    	done
+	done
     fi
-    # for((j=0;j<$1;j++))
-    # do
-    # 	echo "-1 0"
-    # done
 done
 #
 echo "----------------------------------------------------------"
@@ -79,8 +89,8 @@ do
 	then
     	    for j in `find $DATA/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     	    do
-    		rosrun color_feature_classification test_classify_from_file $j g s -sub $sub $norm_flag_g
-    	    #rosrun color_feature_classification test_classify_from_file $j g s -sub $sub -dim 100 -comp $DATA/pca_result_g/compress_axis $norm_flag_g
+    		#rosrun color_feature_classification test_classify_from_file $j g s -sub $sub -dim 150 -comp $DATA/pca_result_g/compress_axis $norm_flag_g $DATA
+    		rosrun color_feature_classification test_classify_from_file $j g s -sub $sub $norm_flag_g $DATA
     	    done
 	else
     	    for((j=0;j<$1;j++))
@@ -89,10 +99,10 @@ do
     	    done
 	fi
     else
-	for((j=0;j<$1;j++))
-	do
+    	for((j=0;j<$1;j++))
+    	do
     	    echo "-1 0"
-	done
+    	done
     fi
 done
 #
@@ -105,38 +115,25 @@ do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+    if [ $sub -lt 137 ]
     then
-    	for j in `find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
-    	do
-    	    rosrun color_feature_classification test_classify_from_file $j r s -sub $sub -dim 100 -comp $DATA/pca_result_r/compress_axis $norm_flag_r
-    	done
+    	if [ `ls $DATA/test_features_c/$dir_name/ | wc -l` != 0 ]
+    	then
+    	    for j in `find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
+    	    do
+    		rosrun color_feature_classification test_classify_from_file $j r s -sub $sub -dim 100 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA
+    	    #rosrun color_feature_classification test_classify_from_file $j r s -sub $sub $norm_flag_r $DATA
+    	    done
+    	else
+    	    for((j=0;j<$1;j++))
+    	    do
+    		echo "-1 0"
+    	    done
+    	fi
     else
-    	for((j=0;j<$1;j++))
-    	do
+	for((j=0;j<$1;j++))
+	do
     	    echo "-1 0"
-    	done
+	done
     fi
-    # for((j=0;j<$1;j++))
-    # do
-    # 	echo "-1 0"
-    # done
 done
-
-
-# dirNum=`ls data/* -d | wc -l`
-# for((i=0;i<$dirNum;i++))
-# do
-#     dir_name=$(printf "obj%03d" $i)
-#     echo $DATA/$dir_name
-#     echo "---------------------------------------------------------"
-#     for j in `find $DATA/$dir_name -type f \( -iname "*.pcd" ! -iname "*vfh*" ! -iname "*colorCHLAC*" \)`
-#     do
-# 	#rosrun color_feature_classification test_classify $j c s -sub 100 -dim 800 -comp pca_result_c/compress_axis
-# 	#rosrun color_feature_classification test_classify $j d s -sub 100 -dim 800 -comp pca_result_d/compress_axis
-# 	#rosrun color_feature_classification test_classify $j d s -sub 30 -dim 100 -comp pca_result_d/compress_axis
-# 	#rosrun color_feature_classification test_classify $j g s -sub 10 
-# 	#rosrun color_feature_classification test_classify $j r s -sub 80
-# 	rosrun color_feature_classification test_classify $j r s -sub 40 -dim 100 -comp pca_result_r/compress_axis
-#     done
-# done
