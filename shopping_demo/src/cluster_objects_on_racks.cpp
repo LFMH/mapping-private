@@ -75,7 +75,7 @@
 
 
 
-using namespace std;
+//using namespace std;
 
 
 
@@ -146,7 +146,7 @@ class ClusterObjectsOnRacks
 
   public:
     int queue_size_;
-    string output_cloud_topic_, input_cloud_topic_, to_frame_;
+    std::string output_cloud_topic_, input_cloud_topic_, to_frame_;
 
     ros::Subscriber sub_1_;
     ros::Subscriber sub_2_;
