@@ -335,7 +335,7 @@ int main (int argc, char **argv)
     shopping_demo::QueryBestObjLocation srv;
     
     srv.request.name_space = argc == 3 ? argv[1] : "orgprinciples_demo";
-    srv.request.object_type = argc == 3 ? argv[2] : "AlpenMilch_Fettarme_Milch";
+    srv.request.object_type = argc == 3 ? argv[2] : "EinHerzFuerErzeuger_Fettarme_HMilch";
     if (client.call(srv))
       {
       for (uint i = 0; i < srv.response.location.size(); i++)
@@ -350,10 +350,13 @@ int main (int argc, char **argv)
 
 
     //move the object back to the table
-    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
-    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
-    Gripper::getInstance(side)->open();
-    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
-    OperateHandleController::plateAttackPose();
+    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
+    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
+    // Gripper::getInstance(side)->open();
+    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
+    // OperateHandleController::plateAttackPose();
+     
+     //go to hands parked pose
+     OperateHandleController::plateTuckPose();
     return 0;
 }
