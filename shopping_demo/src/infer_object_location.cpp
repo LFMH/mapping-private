@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Thomas Ruehr <ruehr@cs.tum.edu>
+ * Copyright (c) 2010, Dejan Pangercic <pangercic@cs.tum.edu>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -229,8 +229,9 @@ int main (int argc, char **argv)
     ros::Publisher vis_pub = nh.advertise<visualization_msgs::Marker>( "/segment_objects_interactive/vis_marker", 1, true);
     std::string to_frame, pointing_frame;
     double x, y, z, duration, velocity;
-    double robot_pose [4] = {-3.15, -1.1, -0.707, 0.707};
-
+    double robot_pose [4] = {-3.25, -1.1, -0.707, 0.707};
+    //0 - right, 1 - left
+    int side = 1;
     nh.param("to_frame", to_frame, std::string("base_link"));
     nh.param("pointing_frame", pointing_frame, std::string("narrow_stereo_optical_frame"));
     nh.param("x", x, 0.5);
@@ -247,7 +248,7 @@ int main (int argc, char **argv)
     //get the robot to the pose in map
     RobotDriver::getInstance()->moveBaseP(robot_pose[0], robot_pose[1], robot_pose[2], robot_pose[3]);
 
-    Gripper::getInstance(0)->open();
+    Gripper::getInstance(side)->open();
 
     //point the head to the table
     pointHead(pointing_frame, to_frame, x, y, z, duration, velocity);
@@ -307,14 +308,14 @@ int main (int argc, char **argv)
     ROS_INFO("Closing to %f", fabs(point_max.point.y - point_min.point.y));
     //grasp the object and calculate 
     double obj_z_grasp_correction = 0.2 * fabs(point_max.point.z - point_min.point.z);
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
 
     //close compliant
-    closeGripperComp("r", 0.05);
+    closeGripperComp("l", 0.05);
     //moving the object in front of the camera
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x, center.point.y, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(0.537, -0.008, 0.873, 0.301, 0.244, 0.618, 0.684, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(0.534, 0.058, 0.874, -0.271, 0.268, -0.639, 0.668, "base_link");
 
 
     //call recognition
@@ -349,10 +350,10 @@ int main (int argc, char **argv)
 
 
     //move the object back to the table
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
-    Gripper::getInstance(0)->open();
-    RobotArm::getInstance(0)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
+    Gripper::getInstance(side)->open();
+    RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
     OperateHandleController::plateAttackPose();
     return 0;
 }
