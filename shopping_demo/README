@@ -1,34 +1,39 @@
 
 HOW TO RUN AND WHAT TO DO
 
-============ How to run the best location inference: ============ 
+============ How to run the best location inference (Part 2 of the demo): ============ 
+On the robot: 
+- checkout and make 
+    - git clone indefero@code.in.tum.de:mapping-private.git
+    - git clone indefero@code.in.tum.de:mapping.git
+    - rosmake shopping_demo
+    - roslaunch shopping_demo part2.launch
+
+On the thehypnotoad:
 - checkout and make packages:
     -  checkout http://code.in.tum.de/svn/knowrob/trunk
     - $ rosmake comp_orgprinciples
     - $ rosmake json_prolog
     - $ rosmake shopping demo
 
-- run roscore
-    - $ roscore
-
-- break germandeli.owl file (speeds up startingx):
+- break germandeli.owl file (speeds up starting):
   change the following line 
   "<owl:imports rdf:resource="&local_path;germandeli.owl"/>"
   to be 
   "<owl:imports rdf:resource="&local_path;bla.owl"/>"
 
+- export ROS_MASTER_URI:
+  export ROS_MASTER_URI=http://pr2a:11311
+
 - launch knowrob with the comp_orgprinciples module
     - $ roslaunch comp_orgprinciples comp_orgprinciples.launch
 
-- start test client: query_comp_orgprinciples
-    - $ cd shopping_demo/bin
-    - $ ./query_comp_orgprinciples
-
-
-- for the demo: add new product classes and instances to ontology:
-    - use e.g. Protege to edit comp_orgprinciples/owl/orgprinciples_demo.owl
-    - use "cont-InGeneric" object properties to place objects at location instances from the ccrl2_semantic_map 
+On the robot:
+roscd shopping_demo; ./bin/infer_object_location orgprinciples_demo AlpenMilch_Fettarme_Milch
 ================================================================= 
+
+
+
 
 ============ The URDF Model + Object Segmentation ============
 // When not running on the robot //
