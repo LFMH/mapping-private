@@ -74,10 +74,6 @@
 
 
 
-// TODO : DO NOT FORGET AOUBT THE PointRGB THING //
-typedef pcl::PointXYZ PointT;
-
-
 
 using namespace std;
 
@@ -206,7 +202,7 @@ class ClusterObjectsOnRacks
 //    typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
 
 
-//pcl::PointCloud<PointT>::Ptr
+//pcl::PointCloud<pcl::PointXYZ>::Ptr
 
     ////////////////////////////////////////////////////////////////////////////////
     void Clustering (const sensor_msgs::PointCloud2::ConstPtr &input)
@@ -214,7 +210,7 @@ class ClusterObjectsOnRacks
 
       // Declare the working cloud
       //pcl::PointCloud<pcl::PointXYZ> cloud;
-      pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
       // Convert from sensor_msgs::PointCloud2 to pcl::PointCloud<T>
       pcl::fromROSMsg (*input, *cloud);
@@ -226,10 +222,10 @@ class ClusterObjectsOnRacks
       // // Point cloud of normals
       // pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
       // // Build kd-tree structure for normals
-      // pcl::KdTreeFLANN<PointT>::Ptr tree (new pcl::KdTreeFLANN<PointT> ());
+      // pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
 
       // // Create object for normal estimation
-      // pcl::NormalEstimation<PointT, pcl::Normal> ne;
+      // pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
       // // Provide pointer to the search method
       // ne.setSearchMethod (tree);
       // // Set for which point cloud to compute the normals
@@ -244,7 +240,7 @@ class ClusterObjectsOnRacks
 
 
       // // Create the segmentation object
-      // pcl::SACSegmentationFromNormals<PointT, pcl::Normal> sfn;
+      // pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> sfn;
 
       // // Declare the variable which are needed
       // Eigen::Vector3f axis = Eigen::Vector3f (1.0, 0.0, 0.0); 
@@ -282,8 +278,8 @@ class ClusterObjectsOnRacks
       /*
 
       // Create the segmentation object
-      //pcl::SACSegmentationFromNormals<PointT, pcl::Normal> sfn;
-      pcl::SACSegmentation<PointT> sfn;
+      //pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> sfn;
+      pcl::SACSegmentation<pcl::PointXYZ> sfn;
 
       // Declare the variable which are needed
       //Eigen::Vector3f axis = Eigen::Vector3f (1.0, 0.0, 0.0); 
@@ -326,10 +322,10 @@ class ClusterObjectsOnRacks
       //       plane_coefficients->values [0], plane_coefficients->values [1], plane_coefficients->values [2], plane_coefficients->values [3], maximum_plane_iterations);
 
       //   // Point cloud of plane inliers
-      //   pcl::PointCloud<PointT>::Ptr plane_inliers_cloud (new pcl::PointCloud<PointT> ());
+      //   pcl::PointCloud<pcl::PointXYZ>::Ptr plane_inliers_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
       //   // Extract the circular inliers from the input cloud
-      //   pcl::ExtractIndices<PointT> extraction_of_plane_inliers;
+      //   pcl::ExtractIndices<pcl::PointXYZ> extraction_of_plane_inliers;
       //   // Set point cloud from where to extract
       //   extraction_of_plane_inliers.setInputCloud (cloud);
       //   // Set which indices to extract
@@ -361,10 +357,10 @@ class ClusterObjectsOnRacks
       // Vector of clusters from inliers
       std::vector<pcl::PointIndices> plane_clusters;
       // Build kd-tree structure for clusters
-      pcl::KdTreeFLANN<PointT>::Ptr plane_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+      pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr plane_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
 
       // Instantiate cluster extraction object
-      pcl::EuclideanClusterExtraction<PointT> clustering_of_plane_inliers;
+      pcl::EuclideanClusterExtraction<pcl::PointXYZ> clustering_of_plane_inliers;
       // Set as input the cloud of circle inliers
       clustering_of_plane_inliers.setInputCloud (cloud);
       // Radius of the connnectivity threshold
@@ -388,16 +384,16 @@ class ClusterObjectsOnRacks
 
 
       // Point clouds which represent the clusters of the plane inliers
-      std::vector<pcl::PointCloud<PointT>::ConstPtr> plane_clusters_clouds;
+      std::vector<pcl::PointCloud<pcl::PointXYZ>::ConstPtr> plane_clusters_clouds;
 
       for (int c = 0; c < (int) plane_clusters.size(); c++)
       {
         // Local variables
         pcl::PointIndices::Ptr pointer_of_plane_cluster (new pcl::PointIndices (plane_clusters.at(c)));
-        pcl::PointCloud<PointT>::Ptr cluster (new pcl::PointCloud<PointT>);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cluster (new pcl::PointCloud<pcl::PointXYZ>);
 
         // Extract the circular inliers from the input cloud
-        pcl::ExtractIndices<PointT> extraction_of_plane_clusters;
+        pcl::ExtractIndices<pcl::PointXYZ> extraction_of_plane_clusters;
         // Set point cloud from where to extract
         
         extraction_of_plane_clusters.setInputCloud (cloud);
@@ -465,7 +461,7 @@ class ClusterObjectsOnRacks
 
         //pub_.publish (cluster_msg);
 
-        //pcl::PointCloud<PointT>::Ptr _output_cloud_ (new pcl::PointCloud<PointT> ());
+        //pcl::PointCloud<pcl::PointXYZ>::Ptr _output_cloud_ (new pcl::PointCloud<pcl::PointXYZ> ());
         //pcl::fromROSMsg (output_cloud_, *_output_cloud_);
         //pcl::toROSMsg (output_cloud_, *_output_cloud_);
 
