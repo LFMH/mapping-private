@@ -61,6 +61,9 @@
 //for best object location
 #include <shopping_demo/QueryBestObjLocation.h>
 
+//for putting the object in the fridge
+#include <ias_drawer_executive/DemoScripts.h>
+
 void copAnswerCB(std::string *object_type, const vision_msgs::cop_answer::ConstPtr& msg)
 {
   // vision_msgs::cop_answer msg;
@@ -250,116 +253,6 @@ int main (int argc, char **argv)
     RobotDriver::getInstance()->moveBaseP(robot_pose1[0], robot_pose1[1], robot_pose1[2], robot_pose1[3]);
     RobotDriver::getInstance()->moveBaseP(robot_pose2[0], robot_pose2[1], robot_pose2[2], robot_pose2[3]);
     RobotDriver::getInstance()->moveBaseP(robot_pose3[0], robot_pose3[1], robot_pose3[2], robot_pose3[3]);
-
-    // Gripper::getInstance(side)->open();
-
-    // //point the head to the table
-    // pointHead(pointing_frame, to_frame, x, y, z, duration, velocity);
-    // ROS_INFO("[segment_objects_interactive: ] Head pointed to the table.");
-
-    // //turn on projected stereo
-    // int sysret = system("rosrun dynamic_reconfigure dynparam set  /camera_synchronizer_node '{projector_mode: 3, narrow_stereo_trig_mode: 3}'");
-    // ROS_INFO("[segment_objects_interactive: ] %i rosrun dynamic_reconfigure dynparam set  /camera_synchronizer_node '{projector_mode: 3, narrow_stereo_trig_mode: 3}'", sysret);
-
-    // //get the cluster on the table
-    // boost::shared_ptr<const pcl_cloud_tools::GetClustersResult> result = getClusters(0);
-
-    // sysret=system("rosrun dynamic_reconfigure dynparam set  /camera_synchronizer_node projector_mode 1");
-    // ROS_INFO("[segment_objects_interactive: ] %i rosrun dynamic_reconfigure dynparam set  /camera_synchronizer_node '{projector_mode: 1}'", sysret);
-
-    // if (result->clusters.size () == 0)
-    //   {
-    // 	ROS_ERROR("No clusters found, returning");
-    // 	return -1;
-    //   }
-	
-    // geometry_msgs::PointStamped stamped_in, center, point_min, point_max;
-    // for (size_t j=0; j < result->clusters.size(); ++j)
-    //   {
-    // 	ROS_INFO("cluster center %f, %f, %f", result->clusters[j].center.x, result->clusters[j].center.y, result->clusters[j].center.z);
-    // 	ros::Time time = ros::Time::now();
-    // 	bool found_transform = tf_listener_.waitForTransform("base_link", result->clusters[j].header.frame_id, time, ros::Duration(0.1));
-    // 	if (!found_transform)
-    // 	  {
-    // 	    ROS_WARN("No transform found" );
-    // 	    continue;
-    // 	  }
-    // 	stamped_in.header = result->clusters[j].header;
-    // 	stamped_in.point.x = result->clusters[j].center.x;
-    // 	stamped_in.point.y = result->clusters[j].center.y;
-    // 	stamped_in.point.z = result->clusters[j].center.z;
-    // 	tf_listener_.transformPoint("base_link", stamped_in, center);
-    // 	double color [3] = {1.0, 0.0, 0.0};
-    // 	computeMarkerAndPublish (vis_pub, center, 0, color);
-    // 	ROS_INFO("Cluster center in base_link %f, %f, %f", center.point.x, center.point.y, center.point.z);
-
-    // 	stamped_in.point.x = result->clusters[j].min_bound.x;
-    // 	stamped_in.point.y = result->clusters[j].min_bound.y;
-    // 	stamped_in.point.z = result->clusters[j].min_bound.z;
-    // 	tf_listener_.transformPoint("base_link", stamped_in, point_min);
-    // 	color = {0.0, 1.0, 0.0};
-    // 	computeMarkerAndPublish (vis_pub, point_min, 1, color);
-
-    // 	stamped_in.point.x = result->clusters[j].max_bound.x;
-    // 	stamped_in.point.y = result->clusters[j].max_bound.y;
-    // 	stamped_in.point.z = result->clusters[j].max_bound.z;
-    // 	tf_listener_.transformPoint("base_link", stamped_in, point_max);
-    // 	color = {0.0, 0.0, 1.0};
-    // 	computeMarkerAndPublish (vis_pub, point_max, 2, color);
-    //   }
-
-    // ROS_INFO("Closing to %f", fabs(point_max.point.y - point_min.point.y));
-    // //grasp the object and calculate 
-    // double obj_z_grasp_correction = 0.2 * fabs(point_max.point.z - point_min.point.z);
-    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
-    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
-
-    // //close compliant
-    // closeGripperComp("l", 0.05);
-    // //moving the object in front of the camera
-    // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
-    // RobotArm::getInstance(side)->universal_move_toolframe_ik(0.534, 0.058, 0.874, -0.271, 0.268, -0.639, 0.668, "base_link");
-
-
-    // //call recognition
-    // //TODO
-    // // ros::Rate rate(1);
-    // // std::string obj = "";
-    // // while (obj == "")
-    // // {
-    // //   rate.sleep();
-    // //   ros::spinOnce();
-    // //   obj = getObjectType(nh);
-    // // }
-    // // ROS_INFO("Object type: %s", obj.c_str());
-    
-    // //call best_object_location
-    // ros::ServiceClient client = nh.serviceClient<shopping_demo::QueryBestObjLocation>("/best_object_location/query");
-    // shopping_demo::QueryBestObjLocation srv;
-    
-    // srv.request.name_space = argc == 3 ? argv[1] : "orgprinciples_demo";
-    // srv.request.object_type = argc == 3 ? argv[2] : "AlpenMilch_Fettarme_Milch";
-    // if (client.call(srv))
-    //   {
-    //   for (uint i = 0; i < srv.response.location.size(); i++)
-    // 	{
-    // 	ROS_INFO("[segment_objects_interactive: ] /best_object_location/query: service reponse %s", srv.response.location[i].c_str ());
-    // 	}
-    //   }
-    // else
-    //   ROS_ERROR("Failed to call [segment_objects_interactive: ] /best_object_location/query: sevice!");
-
-    //  sleep(5.0);
-
-
-    // //move the object back to the table
-    // // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction+0.2, 0.0, 0.0, 0.0, 1.0, "base_link");
-    // // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x, center.point.y-0.01, center.point.z-obj_z_grasp_correction, 0.0, 0.0, 0.0, 1.0, "base_link");
-    // // Gripper::getInstance(side)->open();
-    // // RobotArm::getInstance(side)->universal_move_toolframe_ik(center.point.x-0.1, center.point.y-0.01, center.point.z, 0.0, 0.0, 0.0, 1.0, "base_link");
-    // // OperateHandleController::plateAttackPose();
-     
-    //  //go to hands parked pose
-    //  OperateHandleController::plateTuckPose();
-    return 0;
+    moveTorso(0.3, 1.0, "up");
+    DemoScripts::putObjectIntoFridge();
 }
