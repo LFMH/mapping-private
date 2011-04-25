@@ -12,5 +12,6 @@
   <depend package="json_prolog" />
   <depend package="pcl" />
   <depend package="pcl_ros" />
+  <depend package="ias_drawer_executive" />
 
 </package>
