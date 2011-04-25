@@ -29,7 +29,7 @@ On the thehypnotoad:
     - $ roslaunch comp_orgprinciples comp_orgprinciples.launch
 
 On the robot:
-roscd shopping_demo; ./bin/infer_object_location orgprinciples_demo AlpenMilch_Fettarme_Milch
+roscd shopping_demo; ./bin/infer_object_location orgprinciples_demo EinHerzFuerErzeuger_Fettarme_HMilch
 ================================================================= 
 
 
