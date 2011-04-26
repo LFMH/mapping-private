@@ -53,7 +53,7 @@
 #include <vision_msgs/cop_answer.h>
 
 //for copAnswerCB
-#include <boost/bind.hpp> 
+#include <boost/bind.hpp>
 
 //for moving the Torso
 #include <pr2_controllers_msgs/SingleJointPositionAction.h>
@@ -83,7 +83,7 @@ void copAnswerCB(std::string *object_type, const vision_msgs::cop_answer::ConstP
 std::string getObjectType(ros::NodeHandle &nh)
 {
   std::string object_type;
-  ros::Subscriber sub_cop = nh.subscribe<vision_msgs::cop_answer>("/odu_finder/TemplateName", 10, boost::bind(&copAnswerCB, &object_type, _1)); 
+  ros::Subscriber sub_cop = nh.subscribe<vision_msgs::cop_answer>("/odu_finder/TemplateName", 10, boost::bind(&copAnswerCB, &object_type, _1));
   return object_type;
 }
 
@@ -122,7 +122,7 @@ void computeMarkerAndPublish (ros::Publisher &vis_pub, geometry_msgs::PointStamp
 void moveTorso(double position, double velocity, std::string direction)
 {
   actionlib::SimpleActionClient<pr2_controllers_msgs::SingleJointPositionAction> tc ("torso_controller/position_joint_action", true);
-  
+
   //wait for the action server to come up
   while(!tc.waitForServer(ros::Duration(5.0)))
     {
@@ -132,11 +132,11 @@ void moveTorso(double position, double velocity, std::string direction)
   goal.position = position;  //all the way up is 0.3
   goal.min_duration = ros::Duration(2.0);
   goal.max_velocity = velocity;
-  
+
   ROS_INFO("Sending '%s' goal", direction.c_str());
   tc.sendGoal(goal);
   tc.waitForResult();
-  
+
   if(tc.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
       ROS_INFO("Torso moved %s.", direction.c_str());
@@ -151,13 +151,13 @@ void moveTorso(double position, double velocity, std::string direction)
 void pointHead(std::string pointing_frame, std::string frame_id, double x, double y, double z, double duration, double velocity)
   {
     typedef actionlib::SimpleActionClient<pr2_controllers_msgs::PointHeadAction> PointHeadClient;
-    
+
     PointHeadClient point_head_client ("/head_traj_controller/point_head_action", true);
     while(!point_head_client.waitForServer())
       {
 	ROS_INFO("Waiting for the point_head_action server to come up");
       }
-    
+
     //the goal message we will be sending
     pr2_controllers_msgs::PointHeadGoal goal;
 
@@ -167,7 +167,7 @@ void pointHead(std::string pointing_frame, std::string frame_id, double x, doubl
     point.point.x = x; point.point.y = y; point.point.z = z;
     goal.target = point;
 
-    //we are pointing the wide_stereo camera frame 
+    //we are pointing the wide_stereo camera frame
     //(pointing_axis defaults to X-axis)
     goal.pointing_frame = pointing_frame;
 
@@ -212,7 +212,7 @@ boost::shared_ptr<const pcl_cloud_tools::GetClustersResult> getClusters(int ec_g
     {
       ROS_INFO("Waiting for /extract_clusters/get_clusters server to come up");
     }
-  
+
   pcl_cloud_tools::GetClustersGoal goal;
   goal.ec_goal = ec_goal;
   // Fill in goal here
@@ -224,6 +224,13 @@ boost::shared_ptr<const pcl_cloud_tools::GetClustersResult> getClusters(int ec_g
   return result;
 }
 
+void threadTorso(double position, double velocity, std::string direction, double sleepTime)
+{
+    sleep(sleepTime);
+    moveTorso(position,velocity,direction);
+    std::cerr<<"moveTorso thread finished"<<std::endl;
+}
+
 
 int main (int argc, char **argv)
 {
@@ -232,9 +239,10 @@ int main (int argc, char **argv)
     ros::Publisher vis_pub = nh.advertise<visualization_msgs::Marker>( "/segment_objects_interactive/vis_marker", 1, true);
     std::string to_frame, pointing_frame;
     double x, y, z, duration, velocity;
-    double robot_pose1 [4] = {-3.094, 0.155, 0.009, 1.000};
-    double robot_pose2 [4] = {-1.947, 0.216, 0.000, 1.000};
-    double robot_pose3 [4] = {-0.491, 0.152, -0.260, 0.966};
+    double robot_pose1 [4] = {-3.094, 0.155,  0.000, 1.000};
+    double robot_pose2 [4] = {-1.947, 0.216,  0.000, 1.000};
+    double robot_pose3 [4] = {-0.500, 0.100,  0.000, 1.000};
+    double robot_pose4 [4] = { 0.000,-0.500,  0.000, 1.000};
     //0 - right, 1 - left
     int side = 1;
     nh.param("to_frame", to_frame, std::string("base_link"));
@@ -246,13 +254,16 @@ int main (int argc, char **argv)
     nh.param("velocity", velocity, 0.3);
 
     tf::TransformListener tf_listener_;
-    
+
     //raise up the Torso
-    moveTorso(0.01, 1.0, "down");
+    //moveTorso(0.01, 1.0, "down");
+    boost::thread threadT1(threadTorso, 0.15, 1.0, "down",0);
     //get the robot to the pose in map
     RobotDriver::getInstance()->moveBaseP(robot_pose1[0], robot_pose1[1], robot_pose1[2], robot_pose1[3]);
     RobotDriver::getInstance()->moveBaseP(robot_pose2[0], robot_pose2[1], robot_pose2[2], robot_pose2[3]);
     RobotDriver::getInstance()->moveBaseP(robot_pose3[0], robot_pose3[1], robot_pose3[2], robot_pose3[3]);
-    moveTorso(0.3, 1.0, "up");
-    DemoScripts::putObjectIntoFridge();
+    boost::thread threadT2(threadTorso, 0.30, 1.0,   "up",0);
+    RobotDriver::getInstance()->moveBaseP(robot_pose4[0], robot_pose4[1], robot_pose4[2], robot_pose4[3]);
+    //moveTorso(0.3, 1.0, "up");
+    //DemoScripts::putObjectIntoFridge();
 }
