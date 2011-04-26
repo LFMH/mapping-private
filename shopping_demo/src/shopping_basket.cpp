@@ -79,7 +79,7 @@ int main (int argc, char** argv)
 
   visualization_msgs::Marker mesh;
 
-  mesh.header.frame_id = "/map";
+  mesh.header.frame_id = "shopping_basket_link";
   mesh.header.stamp = ros::Time::now();
   mesh.ns = "";
   mesh.id = 0;
@@ -90,25 +90,25 @@ int main (int argc, char** argv)
   //mesh.mesh_resource = "file:///home/goron/ros/tum-stacks/mapping-private/shopping_demo/meshes/basket/models/skpfile.dae";
   //mesh.mesh_resource = "package://shopping_demo/meshes/basket/models/skpfile.dae";
   //mesh.mesh_resource = "package://shopping_demo/meshes/basket/models/easter.skp";
-  //mesh.mesh_resource = "package://shopping_demo/meshes/pancake.dae";
+  //mesh.mesh_resource = "package://ias_pancakes/Media/models/pancake.dae";
   //mesh.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
-  mesh.mesh_resource = "package://shopping_demo/meshes/basket/models/skpfile.dae";
+  mesh.mesh_resource = "package://shopping_demo/meshes/models/basket_handle_center.stl";
   
-  mesh.mesh_use_embedded_materials = true;
+  //  mesh.mesh_use_embedded_materials = true;
 
-  mesh.pose.position.x = 3.0;
-  mesh.pose.position.y = 3.0;
-  mesh.pose.position.z = 3.0;
+  mesh.pose.position.x = 0.0;
+  mesh.pose.position.y = 0.0;
+  mesh.pose.position.z = 0.0;
   mesh.pose.orientation.x = 0.0;
   mesh.pose.orientation.y = 0.0;
   mesh.pose.orientation.z = 0.0;
   mesh.pose.orientation.w = 1.0;
-  mesh.scale.x = 100.0;
-  mesh.scale.y = 100.0;
-  mesh.scale.z = 100.0;
+  mesh.scale.x = 0.05;
+  mesh.scale.y = 0.05;
+  mesh.scale.z = 0.05;
   mesh.color.a = 1.0;
-  mesh.color.r = 0.0;
-  mesh.color.g = 1.0;
+  mesh.color.r = 1.0;
+  mesh.color.g = 0.0;
   mesh.color.b = 0.0;
   mesh.lifetime = ros::Duration();
 
