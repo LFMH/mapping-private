@@ -4,4 +4,4 @@ DATA=`rospack find color_feature_classification`/demos_artificial
 
 # compute a subspace
 files=`find $DATA/data -type f -iname "obj_*.pcd" | sort -d`
-rosrun color_feature_classification calc_autoThreshold $files $DATA/color_threshold.txt
+rosrun color_feature_classification calc_autoThreshold $files $DATA $DATA/color_threshold.txt

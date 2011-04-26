@@ -8,6 +8,11 @@ norm_flag_d="-norm $DATA/bin_normalization/max_d.txt"
 norm_flag_g="-norm $DATA/bin_normalization/max_g.txt"
 norm_flag_r="-norm $DATA/bin_normalization/max_r.txt"
 
+mkdir -p $DATA/pca_result_c
+mkdir -p $DATA/pca_result_d
+mkdir -p $DATA/pca_result_g
+mkdir -p $DATA/pca_result_r
+
 # compute a subspace
 files=`find $DATA/features_c/* -type f -iname "*.pcd" | sort -d`
 rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_c $DATA/pca_result_c/compress_axis

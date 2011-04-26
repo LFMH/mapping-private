@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # USAGE
-#  bash 2.test_classify.sh > result.txt
+#  bash 2.test_classify.sh [dim_of_subspace] > result.txt
 #  bash calcRate.sh result.txt 24
 
 flag=-1

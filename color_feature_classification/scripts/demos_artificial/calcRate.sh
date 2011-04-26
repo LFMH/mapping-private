@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # USAGE
-#  bash 2.test_classify.sh > result.txt
+#  bash 2.test_classify.sh [hist_data_path] > result.txt
 #  bash calcRate.sh result.txt
 
 flag=-1

@@ -3,6 +3,11 @@
 DATA=`rospack find color_feature_classification`/demos_artificial
 n=0
 
+mkdir -p $DATA/features_c
+mkdir -p $DATA/features_d
+mkdir -p $DATA/features_g
+mkdir -p $DATA/features_r
+
 for i in `find $DATA/data -type f \( -iname "obj_*.pcd" ! -iname "*GRSD_CCHLAC.pcd" ! -iname "*colorCHLAC.pcd" \) | sort -d`
 do
     echo "Processing $i"

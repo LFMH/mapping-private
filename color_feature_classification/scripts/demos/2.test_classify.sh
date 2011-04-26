@@ -13,13 +13,13 @@ norm_flag_r="-norm $DATA/bin_normalization/max_r.txt"
 echo "----------------------------------------------------------"
 echo "colorCHLAC - rotation variant - (981)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_c/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_c/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    for j in `find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
+    for j in `find $DATA/test_data/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`
     do
 	#echo "-1 0"
 	rosrun color_feature_classification test_classify_from_file $j c s -sub $sub -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA
@@ -29,13 +29,13 @@ done
 echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation variant - (1001)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_d/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_d/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    for j in `find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
+    for j in `find $DATA/test_data/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`
     do
 	#echo "-1 0"
 	rosrun color_feature_classification test_classify_from_file $j d s -sub $sub -dim 100 -comp $DATA/pca_result_d/compress_axis $norm_flag_d $DATA
@@ -45,13 +45,13 @@ done
 echo "----------------------------------------------------------"
 echo "GRSD (20)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_g/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_g/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    for j in `find $DATA/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`
+    for j in `find $DATA/test_data/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`
     do
 	if [ $sub -lt 20 ]
 	then
@@ -66,13 +66,13 @@ done
 echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation invariant - (137)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_r/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_r/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     dir_name=$(printf "obj%03d" $i)
     echo $dir_name
     echo "---------------------------------------------------------"
-    for j in `find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
+    for j in `find $DATA/test_data/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`
     do
 	#echo "-1 0"
 	rosrun color_feature_classification test_classify_from_file $j r s -sub $sub -dim 100 -comp $DATA/pca_result_r/compress_axis $norm_flag_r $DATA

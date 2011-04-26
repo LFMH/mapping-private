@@ -35,40 +35,27 @@ DATA=`rospack find color_feature_classification`/demos
 #     rm pca_result_g
 #     rm pca_result_r
 
-rm test_features_c
-rm test_features_d
-rm test_features_g
-rm test_features_r
-
 ######################
 ###### test novel objects 
 for dim in 70 #50 5 10 15 20 30 40 60 70 80 90 #200 300 400 500 600 700 800 900
 do
     #touch results_icra2011setup_noNormalize_clafic_dim$dim.txt
-    touch $1
+    touch $2
     
-    for dir_name in `ls ../novel_view`
+    for dir_name in `ls $1`
     do
-	echo "#####" >>$1
-	echo $dir_name >>$1
-	echo "#####" >>$1
+	echo "#####" >>$2
+	echo $dir_name >>$2
+	echo "#####" >>$2
 
     # get $num
-	num1=`ls ../novel_view/$dir_name/obj* -d | wc -l`
-	num2=`ls ../novel_view/$dir_name/obj*/*.pcd | wc -l`
+	num1=`ls $1/$dir_name/obj* -d | wc -l`
+	num2=`ls $1/$dir_name/obj*/*.pcd | wc -l`
 	num=`expr $num2 / $num1`
 	echo $num
 	
-	for x in c d g r
-	do
-	    ln -s ../novel_view/$dir_name/test_features_$x .
-	done
-	#bash ../scripts/demos/2.test_classify_novel.sh $num $dim >hogehoge
-	bash ../scripts/demos/2.test_classify_novel.sh $num $dim >>$1
-	for x in c d g r
-	do
-	    rm test_features_$x
-	done
+	#bash $DATA/../scripts/demos/2.test_classify_novel.sh $num $dim $1/$dir_name >hogehoge
+	bash $DATA/../scripts/demos/2.test_classify_novel.sh $num $dim $1/$dir_name >>$2
 	# echo "#####" >>results_icra2011setup_noNormalize_clafic_dim$dim.txt
 	# echo $dir_name >>results_icra2011setup_noNormalize_clafic_dim$dim.txt
 	# echo "#####" >>results_icra2011setup_noNormalize_clafic_dim$dim.txt

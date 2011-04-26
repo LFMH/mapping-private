@@ -55,8 +55,8 @@ readVoxelFromPoints ( int argc, char **argv, const std::string &extension )
 
 int main(int argc, char** argv)
 {
-  if( argc < 3 ){
-    ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {output(color_threshold).txt}\n", argv[0]);
+  if( argc < 4 ){
+    ROS_ERROR ("Need at least two parameters! Syntax is: %s {input_pointcloud_filename.pcd} {config_txt_path} {output(color_threshold).txt}\n", argv[0]);
     return(-1);
   }
   int *threshold   = new int[ 3 ];     // threshold for RGB binarize (= results)
@@ -66,7 +66,9 @@ int main(int argc, char** argv)
   h = new int*[ 3 ];                   // histograms of RGB
 
   //* read the length of voxel side
-  FILE *fp = fopen( "voxel_size.txt", "r" );
+  char voxel_size_file[1024];
+  sprintf(voxel_size_file, "%s/voxel_size.txt", argv[argc-2]);
+  FILE *fp = fopen( voxel_size_file, "r" );
   fscanf( fp, "%f\n", &voxel_size );
   fclose(fp);
 

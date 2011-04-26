@@ -18,10 +18,10 @@ do
     rm -f time_for_srand.txt
     date +%s >time_for_srand.txt
     
-    mkdir $DATA/test_features_c/
-    mkdir $DATA/test_features_d/
-    mkdir $DATA/test_features_g/
-    mkdir $DATA/test_features_r/
+    mkdir -p $DATA/test_features_c/
+    mkdir -p $DATA/test_features_d/
+    mkdir -p $DATA/test_features_g/
+    mkdir -p $DATA/test_features_r/
     
     rosrun color_feature_classification computeFeature $i c -test $rotate $DATA $DATA/test_features_c/$num.pcd
     rosrun color_feature_classification computeFeature $i d -test $rotate $DATA $DATA/test_features_d/$num.pcd

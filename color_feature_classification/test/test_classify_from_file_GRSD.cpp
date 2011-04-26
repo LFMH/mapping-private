@@ -60,18 +60,21 @@ int classify_by_kNN( std::vector<float> feature, const char feature_type, int ar
 }
 
 int classify_by_subspace( std::vector<float> feature, const char feature_type, const int dim_subspace, const char* config_txt_path ){
-  char dirname[ 20 ];
-  char filename[ 300 ];
+  char dirname[ 1000 ];
+  char data_dirname[ 1000 ];
+  char filename[ 1000 ];
   Eigen::Map<Eigen::VectorXf> vec( &(feature[0]), feature.size() );
 
   sprintf( dirname, "%s/pca_result_", config_txt_path );
-  dirname[ 11 ] = feature_type;
-  dirname[ 12 ] = '\0';
+  const int len = strlen(dirname);
+  dirname[ len ] = feature_type;
+  dirname[ len+1 ] = '\0';
 
   // count obj class num
   int obj_class_num = 0;
   struct dirent *entry;
-  DIR *dp = opendir( "data" );
+  sprintf( data_dirname, "%s/data", config_txt_path );
+  DIR *dp = opendir( data_dirname );
   while( ( entry = readdir( dp ) ) != NULL ){
     string tmpname = string (entry->d_name);
     if( tmpname.compare (0, 3, "obj") == 0 )  obj_class_num ++;

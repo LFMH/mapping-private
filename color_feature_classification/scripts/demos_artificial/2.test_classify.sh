@@ -12,7 +12,7 @@ echo "----------------------------------------------------------"
 echo "colorCHLAC - rotateion variant - (981)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_c/ -type f -iname "*.pcd" | sort -d`
+for i in `find $1/test_features_c/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
@@ -26,7 +26,7 @@ echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation variant - (1001)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_d/ -type f -iname "*.pcd" | sort -d`
+for i in `find $1/test_features_d/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
@@ -40,7 +40,7 @@ echo "----------------------------------------------------------"
 echo "GRSD (20)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_g/ -type f -iname "*.pcd" | sort -d`
+for i in `find $1/test_features_g/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"
@@ -53,7 +53,7 @@ echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation invariant - (137)"
 echo "----------------------------------------------------------"
 n=0
-for i in `find $DATA/test_features_r/ -type f -iname "*.pcd" | sort -d`
+for i in `find $1/test_features_r/ -type f -iname "*.pcd" | sort -d`
 do
     #echo $i
     #echo "----------------"

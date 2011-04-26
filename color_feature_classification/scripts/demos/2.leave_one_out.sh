@@ -10,7 +10,7 @@ norm_flag_r="-norm $DATA/bin_normalization/max_r.txt"
 echo "----------------------------------------------------------"
 echo "colorCHLAC - rotation variant - (981)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_c/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_c/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
@@ -19,7 +19,7 @@ do
     echo "---------------------------------------------------------"
 
     files1=(`find $DATA/features_c/$dir_name -type f -iname "*.pcd" | sort -d`)
-    files2=(`find $DATA/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`)
+    files2=(`find $DATA/test_data/test_features_c/$dir_name -type f -iname "*.pcd" | sort -d`)
     fileNum=`echo ${#files1[@]}`
 
     for((j=0; j<$fileNum; j++))
@@ -36,15 +36,15 @@ do
 	done
 	cp -f $DATA/pca_result_c/$num hogehoge
 	rosrun color_feature_classification computeSubspace_from_file $train_models -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA/pca_result_c/$num 1>/dev/null
-	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 50 -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c 
-	mv -f hogehoge $DATA/pca_result_c/$num $DATA
+	rosrun color_feature_classification test_classify_from_file ${files2[$j]} c s -sub 50 -dim 100 -comp $DATA/pca_result_c/compress_axis $norm_flag_c $DATA
+	mv -f hogehoge $DATA/pca_result_c/$num
     done
 done
 #
 echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation variant - (1001)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_d/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_d/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
@@ -53,7 +53,7 @@ do
     echo "---------------------------------------------------------"
 
     files1=(`find $DATA/features_d/$dir_name -type f -iname "*.pcd" | sort -d`)
-    files2=(`find $DATA/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`)
+    files2=(`find $DATA/test_data/test_features_d/$dir_name -type f -iname "*.pcd" | sort -d`)
     fileNum=`echo ${#files1[@]}`
 
     for((j=0; j<$fileNum; j++))
@@ -78,7 +78,7 @@ done
 echo "----------------------------------------------------------"
 echo "GRSD (20)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_g/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_g/* -d | wc -l`
 #for((i=0;i<$dirNum;i++))
 for((i=60;i<$dirNum;i++))
 do
@@ -88,7 +88,7 @@ do
     echo "---------------------------------------------------------"
 
     files1=(`find $DATA/features_g/$dir_name -type f -iname "*.pcd" | sort -d`)
-    files2=(`find $DATA/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`)
+    files2=(`find $DATA/test_data/test_features_g/$dir_name -type f -iname "*.pcd" | sort -d`)
     fileNum=`echo ${#files1[@]}`
 
     for((j=0; j<$fileNum; j++))
@@ -113,7 +113,7 @@ done
 echo "----------------------------------------------------------"
 echo "GRSD-colorCHLAC - rotation invariant - (137)"
 echo "----------------------------------------------------------"
-dirNum=`ls $DATA/test_features_r/* -d | wc -l`
+dirNum=`ls $DATA/test_data/test_features_r/* -d | wc -l`
 for((i=0;i<$dirNum;i++))
 do
     num=$(printf "%03d" $i)
@@ -122,7 +122,7 @@ do
     echo "---------------------------------------------------------"
 
     files1=(`find $DATA/features_r/$dir_name -type f -iname "*.pcd" | sort -d`)
-    files2=(`find $DATA/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`)
+    files2=(`find $DATA/test_data/test_features_r/$dir_name -type f -iname "*.pcd" | sort -d`)
     fileNum=`echo ${#files1[@]}`
 
     for((j=0; j<$fileNum; j++))

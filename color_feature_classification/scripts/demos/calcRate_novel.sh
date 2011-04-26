@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # USAGE
-#  bash test_all.sh result.txt
+#  bash test_all.sh [novel_view_dir] result.txt
 #  bash calcRate_novel.sh result.txt
 
 text=(`cat $1`)
