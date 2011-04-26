@@ -235,7 +235,7 @@ int main (int argc, char **argv)
     nh.param("to_frame", to_frame, std::string("base_link"));
     nh.param("pointing_frame", pointing_frame, std::string("narrow_stereo_optical_frame"));
     nh.param("x", x, 0.5);
-    nh.param("y", y, 0.0);
+    nh.param("y", y, 0.2);
     nh.param("z", z, 0.7);
     nh.param("duration", duration, 0.1);
     nh.param("velocity", velocity, 0.3);
