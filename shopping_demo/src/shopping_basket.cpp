@@ -55,6 +55,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+//Needs: static transform publisher:
+// rosrun tf static_transform_publisher 0 0 0 0 0 1.57 /r_gripper_tool_frame /shopping_basket_link 100
 int main (int argc, char** argv)
 {
 
@@ -81,6 +83,7 @@ int main (int argc, char** argv)
 
   mesh.header.frame_id = "shopping_basket_link";
   mesh.header.stamp = ros::Time::now();
+  //mesh.header.stamp = ros::Time(0);
   mesh.ns = "";
   mesh.id = 0;
 
@@ -103,9 +106,9 @@ int main (int argc, char** argv)
   mesh.pose.orientation.y = 0.0;
   mesh.pose.orientation.z = 0.0;
   mesh.pose.orientation.w = 1.0;
-  mesh.scale.x = 0.05;
-  mesh.scale.y = 0.05;
-  mesh.scale.z = 0.05;
+  mesh.scale.x = 0.015;
+  mesh.scale.y = 0.015;
+  mesh.scale.z = 0.015;
   mesh.color.a = 1.0;
   mesh.color.r = 1.0;
   mesh.color.g = 0.0;
@@ -114,13 +117,13 @@ int main (int argc, char** argv)
 
   pub = nh.advertise<visualization_msgs::Marker>( "basket", 1, true);
 
+  ros::Rate rate(5);
   while (ros::ok())
   {
     ros::spinOnce();
-    sleep (1);
-
+    rate.sleep();
+    mesh.header.stamp = ros::Time::now();
     pub.publish( mesh );
-
   } 
 
   //ros::spin ();
