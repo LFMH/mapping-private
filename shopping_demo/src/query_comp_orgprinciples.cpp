@@ -7,6 +7,9 @@
 #include <json_prolog/prolog.h>
 #include <shopping_demo/QueryBestObjLocation.h>
 
+#include "rospack/rospack.h"
+
+
 using namespace std;
 using namespace json_prolog;
 
@@ -49,7 +52,7 @@ public:
 
     pl.query(query);
     PrologQueryProxy bdgs =     pl.query(query2);
-
+    string objectLocation = "";
     for(PrologQueryProxy::iterator it=bdgs.begin();
   	it != bdgs.end(); it++)
       {
@@ -57,8 +60,28 @@ public:
   	//cout << "Found solution: " << (bool)(it == bdgs.end()) << endl;
 	res.location.push_back(bdg["L"]);
   	ROS_INFO_STREAM("Location = "<< bdg["L"]);
+	objectLocation = bdg["L"].toString();
       }
     //    sleep(10);    
+
+
+// Logger
+	rospack::ROSPack rp;
+	char *p[] = {"rospack", "find", "shopping_demo"};
+	rp.run(3, p);
+ //ROS_INFO("ERROOORR %s",p.c_str());
+
+  //rp.run(p);
+	char folderName[300];
+	strcpy(folderName, rp.getOutput().c_str());
+	folderName[strlen(folderName)-1] = 0;
+
+	ROS_INFO_STREAM("Foldername" << folderName);
+	//display object images:
+    string queryDisplayImages = "display_object_images_at_location('" + objectLocation + "','" + folderName +"')";
+       //cout << queryDisplayImages << endl;
+    pl.query(queryDisplayImages);
+
     return true;
   }
 };
