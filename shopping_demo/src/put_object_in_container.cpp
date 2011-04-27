@@ -265,5 +265,6 @@ int main (int argc, char **argv)
     boost::thread threadT2(threadTorso, 0.30, 1.0,   "up",0);
     RobotDriver::getInstance()->moveBaseP(robot_pose4[0], robot_pose4[1], robot_pose4[2], robot_pose4[3]);
     //moveTorso(0.3, 1.0, "up");
-    //DemoScripts::putObjectIntoFridge();
+
+    DemoScripts::putObjectIntoFridge();
 }

@@ -12,7 +12,7 @@ On the robot:
   - roslaunch shopping_demo part1.launch
 
 - run the main program
-  - rosrun perception_for_manipuation shopping_demo 0
+  - rosrun perception_for_manipulation shopping_demo 0
 =================================================================
 
 ============ How to run the best location inference (Part 2 of the demo): ============ 
