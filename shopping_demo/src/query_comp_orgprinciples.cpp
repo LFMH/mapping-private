@@ -19,14 +19,14 @@ protected:
   ros::NodeHandle nh_;
   ros::ServiceServer service_;
 
-public:      
+public:
   QueryOrgPrinciples(ros::NodeHandle &nh) : nh_ (nh)
   {
     service_ = nh_.advertiseService("query", &QueryOrgPrinciples::queryCB, this);
     ROS_INFO ("[QueryOrgPrinciples] Advertising service on: %s", service_.getService ().c_str ());
   }
 
-  
+
   bool queryCB (shopping_demo::QueryBestObjLocation::Request  &req,
 		shopping_demo::QueryBestObjLocation::Response &res)
   {
@@ -41,7 +41,7 @@ public:
     pl.query("mod_vis:visualisation_canvas(C)");
     //wait until it is initialized
     sleep(5);
-    
+
     string object = req.name_space+":'"+req.object_type+"'";
     string classifier = "best_location_maxMaxWup"; //best_location_dtree
 
@@ -62,7 +62,7 @@ public:
   	ROS_INFO_STREAM("Location = "<< bdg["L"]);
 	objectLocation = bdg["L"].toString();
       }
-    //    sleep(10);    
+    //    sleep(10);
 
 
 // Logger
@@ -73,11 +73,13 @@ public:
 
   //rp.run(p);
 	char folderName[300];
-	strcpy(folderName, rp.getOutput().c_str());
-	folderName[strlen(folderName)-1] = 0;
+	///strcpy(folderName, rp.getOutput().c_str());
+	///folderName[strlen(folderName)-1] = 0;
 
-	ROS_INFO_STREAM("Foldername" << folderName);
+	///ROS_INFO_STREAM("Foldername" << folderName);
 	//display object images:
+	//TODO: very ugly replace
+	strcpy(folderName,"/home/moesenle/work/ros/sandbox/mapping-private/shopping_demo");
     string queryDisplayImages = "display_object_images_at_location('" + objectLocation + "','" + folderName +"')";
        //cout << queryDisplayImages << endl;
     pl.query(queryDisplayImages);
@@ -92,6 +94,6 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "best_object_location");
   ros::NodeHandle n("~");
   QueryOrgPrinciples qop(n);
-  ros::spin ();  
+  ros::spin ();
   return 0;
 }
