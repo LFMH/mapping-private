@@ -35,6 +35,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # TODO: Put data of table scenes with the segmetned objects
 
 # ------[ Segment
+rosbuild_add_executable (hough_segmentation src/segmentation_by_voting.cpp)
 rosbuild_add_executable (hough_segmentation_node src/cloud_segmentation_by_voting.cpp)
 target_link_libraries (hough_segmentation_node pcl_io)
 
