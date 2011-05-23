@@ -404,8 +404,6 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
                               pcl_visualization::PCLVisualizer &viewer)
 {
 
-// bool wtf = true;
-
   // Count number of fitted planes 
   int plane_fit = 0;
 
@@ -611,26 +609,11 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
         // Save planar surface
         planar_surfaces.push_back (cluster);
 
-
-
-
-//        pcl::PointCloud<PointT>::Ptr furniture (new pcl::PointCloud<PointT> ());
-
-//        if ( surface == 0 )
-//          *furniture = *planar_surfaces.at (surface);
-//        else
-
-//          if ( wtf ) 
-//            *furniture = *cluster;
-
-
-
+        // Save coefficients of plane's planar surface
+        planar_surfaces_coefficients.push_back (plane_coefficients);
 
         // Save indices of planar surfaces
         planar_surfaces_indices.push_back (pointer_of_plane_cluster);
-
-        // Save coefficients of plane's planar surface
-        planar_surfaces_coefficients.push_back (plane_coefficients);
 
         if ( verbose )
         {
@@ -731,20 +714,20 @@ int main (int argc, char** argv)
     ROS_INFO ("    -height_of_ceiling X                     = Height of ceiling layer of point cloud data.");
     ROS_INFO ("    -height_of_walls X                       = Minimum height of walls in the point cloud data.");
     ROS_INFO (" ");
-    ROS_INFO ("    -epsilon_angle X                         = ");
-    ROS_INFO ("    -plane_threshold X                       = ");
-    ROS_INFO ("    -minimum_plane_inliers X                 = ");
-    ROS_INFO ("    -maximum_plane_iterations X              = ");
+    ROS_INFO ("    -epsilon_angle X                         = The maximum allowed difference between the plane normal and the given axis.");
+    ROS_INFO ("    -plane_threshold X                       = Distance to the fitted plane model.");
+    ROS_INFO ("    -minimum_plane_inliers X                 = Minimum number of inliers of the fitted plane in order to be accepted.");
+    ROS_INFO ("    -maximum_plane_iterations X              = Maximum number of interations for fitting the plane model.");
     ROS_INFO (" ");
-    ROS_INFO ("    -minimum_size_of_plane_cluster           = ");
-    ROS_INFO ("    -plane_inliers_clustering_tolarence      = ");
-    ROS_INFO ("    -minimum_size_of_handle_cluster          = ");
-    ROS_INFO ("    -handle_clustering_tolerance             = ");
+    ROS_INFO ("    -minimum_size_of_plane_cluster           = Minimum cluster size of plane inliers.");
+    ROS_INFO ("    -plane_inliers_clustering_tolerance      = The clustering tolerance of plane inliers");
+    ROS_INFO ("    -minimum_size_of_handle_cluster          = Minimum cluster size of handle points.");
+    ROS_INFO ("    -handle_clustering_tolerance             = The clustering tolerance of handle points.");
     ROS_INFO (" ");
-    ROS_INFO ("    -step B                                  = wait or not wait");
-    ROS_INFO ("    -clean B                                 = remove or not remove");
-    ROS_INFO ("    -verbose B                               = display step by step info");
-    ROS_INFO ("    -size_of_points D                        = set the size of points");
+    ROS_INFO ("    -step B                                  = Wait or not wait.");
+    ROS_INFO ("    -clean B                                 = Remove or not remove.");
+    ROS_INFO ("    -verbose B                               = Display step by step info.");
+    ROS_INFO ("    -size_of_points D                        = Set the size of points");
     ROS_INFO (" ");
     return (-1);
   }
@@ -784,7 +767,6 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-std_limit", std_limit);
   terminal_tools::parse_argument (argc, argv, "-min_pts_per_cluster", min_pts_per_cluster);
   terminal_tools::parse_argument (argc, argv, "-fixture_min_pts_per_cluster", fixture_min_pts_per_cluster);
-
 
   // Parse arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-step", step);
@@ -832,8 +814,6 @@ int main (int argc, char** argv)
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
   viewer.updateCamera ();
-  
-
 
   // --------------------------------------------------------------- //
   // ------------------ Load the point cloud data ------------------ //

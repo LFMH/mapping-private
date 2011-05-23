@@ -30,8 +30,12 @@ rosbuild_add_library(DistanceFilter src/distance_filter.cpp)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
 # ------ [ Data
+# typedef pcl::PointXYZINormal PointT;
 rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/september2010scan_iros2011.pcd data/september2010scan_iros2011.pcd 48b159ee285daf220340c932ce12fa84)
+# typedef pcl::PointXYZRGB PointT;
 rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/high_res_rgb_right_of_oven.pcd data/high_res_rgb_right_of_oven.pcd d7a3739730a30edea9104417b4012270)
+# typedef pcl::PointXYZ PointT;
+rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/26_August_ICS_no_downsample_12.pcd data/26_August_ICS_no_downsample_12.pcd 1878e90b51c32030e359c907ea406f3b)
 
 # ------ [ Segmentation
 rosbuild_add_executable (segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
