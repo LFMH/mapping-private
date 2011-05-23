@@ -17,6 +17,7 @@
 
   <depend package="tf"/>
   <depend package="pcl"/>
+  <depend package="flann"/>
   <depend package="roscpp"/>
   <depend package="terminal_tools"/>
   <depend package="pcl_visualization"/>
