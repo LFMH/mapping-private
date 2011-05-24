@@ -859,7 +859,12 @@ int main (int argc, char** argv)
 
 
 
-  pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
+  //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> ());
+  //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
+  
+  pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (false));
+  kdtree_-> setInputCloud (circle_parameters_cloud);
+
 
 //  cloud_kdtree::KdTree *kdtree_;
 //  kdtree_ = new cloud_kdtree::KdTreeANN (*circle_parameters_cloud);
@@ -869,8 +874,8 @@ int main (int argc, char** argv)
   std::vector<std::vector<float> > points_sqr_distances_;
 
   // clear
-  points_indices_.clear ();
-  points_sqr_distances_.clear ();
+//  points_indices_.clear ();
+//  points_sqr_distances_.clear ();
 
   // Allocate enough space for point indices and distances
   points_indices_.resize (circle_parameters_cloud->points.size ());
@@ -880,17 +885,31 @@ int main (int argc, char** argv)
   //  ts = ros::Time::now ();
 
   int neighborhood_size_ = 2;
+  double radius_ = 0.0250;
+  int max_nn_ = 25;
+
+//  cerr << circle_parameters_cloud->points.size () << endl ; 
 
   //int k_min = max_nn_, k_max = 0;
   for (size_t cp = 0; cp < circle_parameters_cloud->points.size (); cp++)
   {
-    kdtree_->nearestKSearch (cp, neighborhood_size_, points_indices_[cp], points_sqr_distances_[cp]);
-    //kdtree_->radiusSearch (cp, radius_, points_indices_[cp], points_sqr_distances_[cp], max_nn_);
+//    cerr << cp << endl ; 
+
+    points_indices_[cp].resize (max_nn_);
+    points_sqr_distances_[cp].resize (max_nn_);
+
+    //kdtree_->nearestKSearch (cp, neighborhood_size_, points_indices_[cp], points_sqr_distances_[cp]);
+    kdtree_->radiusSearch (*circle_parameters_cloud, cp, radius_, points_indices_[cp], points_sqr_distances_[cp], max_nn_);
     //int k = points_indices_[cp].size ();
     //if (k > k_max) k_max = k;
     //if (k < k_min) k_min = k;
-  }
+    
 
+    cerr << " index : " << cp << " found : " << points_indices_[cp].size() << " points " << endl ; 
+
+
+
+  }
 
 
 
