@@ -69,10 +69,14 @@ double minimum_radius = 0.010; /// [meters]
 double maximum_radius = 0.100; /// [meters]
 int minimum_line_inliers   = 10; /// [points]
 int minimum_circle_inliers = 50; /// [points]
-int maximum_line_iterations   = 100; /// [iterations]
-int maximum_circle_iterations = 100; /// [iterations]
+int maximum_line_iterations   = 1000; /// [iterations]
+int maximum_circle_iterations = 1000; /// [iterations]
 double   line_inliers_clustering_tolerance = 0.010; /// [meters]
 double circle_inliers_clustering_tolerance = 0.010; /// [meters]
+
+//
+double circle_space_radius = 0.010;
+double circle_space_percentage = 0.75;
 
 // Visualization's Parameters
 bool verbose = false;
@@ -177,6 +181,9 @@ int main (int argc, char** argv)
     ROS_INFO ("    -minimum_size_of_objects_clusters X        = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X         = ");
     ROS_INFO (" ");
+    ROS_INFO ("    -circle_space_radius X                     = bla to the bla-bla");
+    ROS_INFO ("    -circle_space_percentage X                 = bla to the bla-bla");
+    ROS_INFO (" ");
     ROS_INFO ("    -verbose B                                 = verbose");
     ROS_INFO ("    -normals B                                 = verbose");
     ROS_INFO ("    -clusters B                                = verbose");
@@ -214,6 +221,10 @@ int main (int argc, char** argv)
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_objects_clusters", minimum_size_of_objects_clusters);
+
+  //
+  terminal_tools::parse_argument (argc, argv, "-circle_space_radius", circle_space_radius);
+  terminal_tools::parse_argument (argc, argv, "-circle_space_percentage", circle_space_percentage);
 
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
@@ -683,6 +694,10 @@ int main (int argc, char** argv)
           // Save also circle inliers ids
           circles_inliers_ids.push_back (circle_inliers_id.str());
 
+          // Fit only one model for each cluster in every iteration
+          // No need for fitting circles anymore
+          stop_circle_fitting = true;
+
         }
 
         // number of fitted circles
@@ -858,6 +873,10 @@ int main (int argc, char** argv)
 
 
 
+  // TODO Gaussian Filter for radii sizes ! 
+   
+
+
 
   //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> ());
   //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
@@ -884,33 +903,90 @@ int main (int argc, char** argv)
   //  // Get the nearest neighbors for all points to be fitted
   //  ts = ros::Time::now ();
 
-  int neighborhood_size_ = 2;
-  double radius_ = 0.0250;
-  int max_nn_ = 25;
+//  int neighborhood_size_ = 25;
+//  double radius_ = 0.015;
+//  int max_nn_ = 25;
 
 //  cerr << circle_parameters_cloud->points.size () << endl ; 
 
-  //int k_min = max_nn_, k_max = 0;
+
+// Space of parameters for fitted circle models
+  pcl::PointCloud<PointT>::Ptr those_points (new pcl::PointCloud<PointT> ());
+
+
+//int k_min = max_nn_, k_max = 0;
   for (size_t cp = 0; cp < circle_parameters_cloud->points.size (); cp++)
   {
-//    cerr << cp << endl ; 
+    //    cerr << cp << endl ; 
 
-    points_indices_[cp].resize (max_nn_);
-    points_sqr_distances_[cp].resize (max_nn_);
+    //    points_indices_[cp].resize (max_nn_);
+    //    points_sqr_distances_[cp].resize (max_nn_);
 
-    //kdtree_->nearestKSearch (cp, neighborhood_size_, points_indices_[cp], points_sqr_distances_[cp]);
-    kdtree_->radiusSearch (*circle_parameters_cloud, cp, radius_, points_indices_[cp], points_sqr_distances_[cp], max_nn_);
+    //kdtree_->nearestKSearch (*circle_parameters_cloud, cp, neighborhood_size_, points_indices_[cp], points_sqr_distances_[cp]);
+    kdtree_->radiusSearch (*circle_parameters_cloud, cp, circle_space_radius, points_indices_[cp], points_sqr_distances_[cp]);
+
     //int k = points_indices_[cp].size ();
     //if (k > k_max) k_max = k;
     //if (k < k_min) k_min = k;
-    
 
-    cerr << " index : " << cp << " found : " << points_indices_[cp].size() << " points " << endl ; 
+    if ( points_indices_[cp].size() > iterations * circle_space_percentage )
+    {
 
+      cerr << " index : " << cp << " found : " << points_indices_[cp].size() << " points " << endl ; 
 
+      those_points->points.push_back (circle_parameters_cloud->points[cp]);
+
+      //PointT point;
+      //point.x = circle_parameters_cloud->points[cp].x;
+      //point.y = circle_parameters_cloud->points[cp].y;
+      //point.z = circle_parameters_cloud->points[cp].z;
+
+    }
 
   }
 
+
+
+
+  // Get position of dot in path of file 
+  std::string file = argv [pFileIndicesPCD[0]];
+  size_t dot = file.find (".");
+
+  // Create file name for saving
+  std::string circle_space_filename = argv [pFileIndicesPCD [0]];
+  circle_space_filename.insert (dot, "-circles");
+
+  // Save these points to disk
+  pcl::io::savePCDFile (circle_space_filename, *those_points);
+
+  if ( verbose )
+  {
+    // Show the floor's number of points
+    ROS_INFO ("The space which is represented by the circles models has %d points and was saved !", (int) those_points->points.size ());
+  }
+
+
+
+
+
+
+
+  // Create ID for circle model
+  std::stringstream those_points_id;
+  those_points_id << "THOSE_POINTS_" << ros::Time::now();
+
+  // Add the point cloud data
+  circle_viewer.addPointCloud (*those_points, those_points_id.str ());
+
+  // Set the size of points for cloud
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * size_of_points, those_points_id.str ()); 
+
+  // Wait or not wait
+  if ( true )
+  {
+    // And wait until Q key is pressed
+    circle_viewer.spin ();
+  }
 
 
 
