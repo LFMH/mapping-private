@@ -812,13 +812,88 @@ int main (int argc, char** argv)
   tree-> setInputCloud (cloud.makeShared (), boost::make_shared <vector<int> > (indices));
 */
 
+/*
 
   // Build kd-tree structure for clusters
   pcl::KdTreeFLANN<PointT>::Ptr circle_parameter_tree (new pcl::KdTreeFLANN<PointT> ());
 
+  //const std::vector<int> &indices, const boost::shared_ptr<KdTree<PointT> > &tree,
+
+  KdTree<PointXYZ>::Ptr tree;
+  tree = boost::make_shared<KdTreeFLANN<PointXYZ> > (false);
+  tree-> setInputCloud (cloud.makeShared (), boost::make_shared <vector<int> > (indices));
+
+
   std::vector<int> nnIndices;
   std::vector<float> nnSqrDistances;
   circle_parameter_tree->radiusSearch (3, 0.03, nnIndices, nnSqrDistances);
+
+*/
+
+
+ /** \brief Search for k-nearest neighbors for the given query point.
+        * \param cloud the point cloud data
+        * \param index the index in \a cloud representing the query point
+        * \param k the number of neighbors to search for
+        * \param k_indices the resultant indices of the neighboring points (must be resized to \a k a priori!)
+        * \param k_distances the resultant squared distances to the neighboring points (must be resized to \a k 
+        * a priori!)
+        * \return number of neighbors found
+        */
+
+
+//  inline int nearestKSearch (const PointCloud &cloud, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
+
+/*
+
+  pcl::KdTreeFLANN<PointT>::Ptr circle_parameter_tree (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
+
+  std::vector<int> k_indices (25);
+  std::vector<float> k_distances (25);
+
+  circle_parameter_tree->nearestKSearch (*circle_parameters_cloud, 1, 25, k_indices, k_distances);
+
+*/
+
+
+
+
+
+  pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
+
+//  cloud_kdtree::KdTree *kdtree_;
+//  kdtree_ = new cloud_kdtree::KdTreeANN (*circle_parameters_cloud);
+
+  // decalre
+  std::vector<std::vector<int> > points_indices_;
+  std::vector<std::vector<float> > points_sqr_distances_;
+
+  // clear
+  points_indices_.clear ();
+  points_sqr_distances_.clear ();
+
+  // Allocate enough space for point indices and distances
+  points_indices_.resize (circle_parameters_cloud->points.size ());
+  points_sqr_distances_.resize (circle_parameters_cloud->points.size ());
+
+  //  // Get the nearest neighbors for all points to be fitted
+  //  ts = ros::Time::now ();
+
+  int neighborhood_size_ = 2;
+
+  //int k_min = max_nn_, k_max = 0;
+  for (size_t cp = 0; cp < circle_parameters_cloud->points.size (); cp++)
+  {
+    kdtree_->nearestKSearch (cp, neighborhood_size_, points_indices_[cp], points_sqr_distances_[cp]);
+    //kdtree_->radiusSearch (cp, radius_, points_indices_[cp], points_sqr_distances_[cp], max_nn_);
+    //int k = points_indices_[cp].size ();
+    //if (k > k_max) k_max = k;
+    //if (k < k_min) k_min = k;
+  }
+
+
+
+
 
 
 
