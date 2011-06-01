@@ -41,7 +41,7 @@ rosbuild_download_data (http://ias.cs.tum.edu/~goron/data/segmentation/26_August
 rosbuild_add_executable (segmentation_of_pointcloud src/segmentation/segmentation_of_pointcloud.cpp)
 rosbuild_add_executable (segment_difference src/segmentation/segment_differences.cpp)
 rosbuild_add_executable (project_segments src/segmentation/project_segments.cpp)
-rosbuild_add_executable (handle_removal src/segmentation/handle_removal.cpp)
-rosbuild_add_executable (visualize_segments src/segmentation/visualize_segments.cpp)
+#rosbuild_add_executable (handle_removal src/segmentation/handle_removal.cpp)
+#rosbuild_add_executable (visualize_segments src/segmentation/visualize_segments.cpp)
 
 #target_link_libraries(example ${PROJECT_NAME})

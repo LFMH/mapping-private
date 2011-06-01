@@ -33,7 +33,7 @@
 #include "ros/ros.h"
 
 // terminal tools dependecies
-#include "terminal_tools/parse.h"
+#include "pcl/console/parse.h"
 
 // pcl dependencies
 #include "pcl/io/pcd_io.h"
@@ -54,7 +54,7 @@
 #include "pcl/segmentation/extract_polygonal_prism_data.h"
 
 // pcl visualization dependencies
-#include "pcl_visualization/pcl_visualizer.h"
+#include "pcl/visualization/pcl_visualizer.h"
 
 // pcl ias sample consensus dependencies
 #include "pcl_ias_sample_consensus/pcl_sac_model_orientation.h"
@@ -65,9 +65,9 @@
 
 
 // Set up the right type definition of points
-//typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZ PointT;
 //typedef pcl::PointXYZRGB PointT;
-typedef pcl::PointXYZINormal PointT;
+//typedef pcl::PointXYZINormal PointT;
 
 
 
@@ -401,7 +401,7 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
                               std::vector<std::string> &planar_surfaces_ids,
                               std::vector<pcl::PointIndices::Ptr> &planar_surfaces_indices,
                               std::vector<pcl::ModelCoefficients::Ptr> &planar_surfaces_coefficients,
-                              pcl_visualization::PCLVisualizer &viewer)
+                              pcl::visualization::PCLVisualizer &viewer)
 {
 
   // Count number of fitted planes 
@@ -519,9 +519,9 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
       id_of_plane << "PLANE_" << ros::Time::now();
 
       // Add point cloud to viewer
-      viewer.addPointCloud (*plane_inliers_cloud, id_of_plane.str());
+      viewer.addPointCloud (plane_inliers_cloud, id_of_plane.str());
       // Set the size of points for cloud
-      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_plane.str()); 
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_plane.str()); 
 
       // Wait or not wait
       if ( step )
@@ -633,10 +633,10 @@ void getAxesOrientedSurfaces (pcl::PointCloud<PointT> &input_cloud,
         planar_surfaces_ids.push_back (id_of_surface.str());
 
         // Add point cloud to viewer
-        viewer.addPointCloud (*plane_clusters_clouds.at(c), id_of_surface.str());
+        viewer.addPointCloud (plane_clusters_clouds.at(c), id_of_surface.str());
 
         // Set the size of points for cloud
-        viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_surface.str()); 
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_surface.str()); 
 
         // Wait or not wait
         if ( step )
@@ -733,7 +733,7 @@ int main (int argc, char** argv)
   }
 
   // Take only the first .pcd file into account
-  std::vector<int> pFileIndicesPCD = terminal_tools::parse_file_extension_argument (argc, argv, ".pcd");
+  std::vector<int> pFileIndicesPCD = pcl::console::parse_file_extension_argument (argc, argv, ".pcd");
   if (pFileIndicesPCD.size () == 0)
   {
     ROS_ERROR ("No .pcd file given as input!");
@@ -741,42 +741,42 @@ int main (int argc, char** argv)
   }
 
   // Parse the arguments for filtering
-  terminal_tools::parse_argument (argc, argv, "-height_of_floor", height_of_floor);
-  terminal_tools::parse_argument (argc, argv, "-height_of_ceiling", height_of_ceiling);
-  terminal_tools::parse_argument (argc, argv, "-height_of_walls", height_of_walls);
+  pcl::console::parse_argument (argc, argv, "-height_of_floor", height_of_floor);
+  pcl::console::parse_argument (argc, argv, "-height_of_ceiling", height_of_ceiling);
+  pcl::console::parse_argument (argc, argv, "-height_of_walls", height_of_walls);
 
   // Parse arguments for fitting plane models
-  terminal_tools::parse_argument (argc, argv, "-epsilon_angle", epsilon_angle);
-  terminal_tools::parse_argument (argc, argv, "-plane_threshold", plane_threshold);
-  terminal_tools::parse_argument (argc, argv, "-minimum_plane_inliers", minimum_plane_inliers);
-  terminal_tools::parse_argument (argc, argv, "-maximum_plane_iterations", maximum_plane_iterations);
+  pcl::console::parse_argument (argc, argv, "-epsilon_angle", epsilon_angle);
+  pcl::console::parse_argument (argc, argv, "-plane_threshold", plane_threshold);
+  pcl::console::parse_argument (argc, argv, "-minimum_plane_inliers", minimum_plane_inliers);
+  pcl::console::parse_argument (argc, argv, "-maximum_plane_iterations", maximum_plane_iterations);
 
   // Parse arguments for clustering
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_plane_cluster", minimum_size_of_plane_cluster);
-  terminal_tools::parse_argument (argc, argv, "-plane_inliers_clustering_tolerance", plane_inliers_clustering_tolerance);
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_handle_cluster", minimum_size_of_handle_cluster);
-  terminal_tools::parse_argument (argc, argv, "-handle_clustering_tolerance", handle_clustering_tolerance);
+  pcl::console::parse_argument (argc, argv, "-minimum_size_of_plane_cluster", minimum_size_of_plane_cluster);
+  pcl::console::parse_argument (argc, argv, "-plane_inliers_clustering_tolerance", plane_inliers_clustering_tolerance);
+  pcl::console::parse_argument (argc, argv, "-minimum_size_of_handle_cluster", minimum_size_of_handle_cluster);
+  pcl::console::parse_argument (argc, argv, "-handle_clustering_tolerance", handle_clustering_tolerance);
 
   // Parse the arguments for segmenting by color and fixture
-  terminal_tools::parse_argument (argc, argv, "-cluster_tolerance", cluster_tolerance);
-  terminal_tools::parse_argument (argc, argv, "-fixture_cluster_tolerance", fixture_cluster_tolerance);
-  terminal_tools::parse_argument (argc, argv, "-center_radius", center_radius);
-  terminal_tools::parse_argument (argc, argv, "-init_radius", init_radius);
-  terminal_tools::parse_argument (argc, argv, "-color_radius", color_radius);
+  pcl::console::parse_argument (argc, argv, "-cluster_tolerance", cluster_tolerance);
+  pcl::console::parse_argument (argc, argv, "-fixture_cluster_tolerance", fixture_cluster_tolerance);
+  pcl::console::parse_argument (argc, argv, "-center_radius", center_radius);
+  pcl::console::parse_argument (argc, argv, "-init_radius", init_radius);
+  pcl::console::parse_argument (argc, argv, "-color_radius", color_radius);
 
-  terminal_tools::parse_argument (argc, argv, "-std_limit", std_limit);
-  terminal_tools::parse_argument (argc, argv, "-min_pts_per_cluster", min_pts_per_cluster);
-  terminal_tools::parse_argument (argc, argv, "-fixture_min_pts_per_cluster", fixture_min_pts_per_cluster);
+  pcl::console::parse_argument (argc, argv, "-std_limit", std_limit);
+  pcl::console::parse_argument (argc, argv, "-min_pts_per_cluster", min_pts_per_cluster);
+  pcl::console::parse_argument (argc, argv, "-fixture_min_pts_per_cluster", fixture_min_pts_per_cluster);
 
   // Parse arguments for visualization
-  terminal_tools::parse_argument (argc, argv, "-step", step);
-  terminal_tools::parse_argument (argc, argv, "-clean", clean);
-  terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
-  terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
+  pcl::console::parse_argument (argc, argv, "-step", step);
+  pcl::console::parse_argument (argc, argv, "-clean", clean);
+  pcl::console::parse_argument (argc, argv, "-verbose", verbose);
+  pcl::console::parse_argument (argc, argv, "-size_of_points", size_of_points);
 
   // Parsing the optional arguments
-  terminal_tools::parse_argument (argc, argv, "-find_box_model", find_box_model);
-  terminal_tools::parse_argument (argc, argv, "-segmentation_by_color_and_fixture", segmentation_by_color_and_fixture);
+  pcl::console::parse_argument (argc, argv, "-find_box_model", find_box_model);
+  pcl::console::parse_argument (argc, argv, "-segmentation_by_color_and_fixture", segmentation_by_color_and_fixture);
 
   // ----------------------------------------------------- //
   // ------------------ Initializations ------------------ //
@@ -789,7 +789,7 @@ int main (int argc, char** argv)
   ros::Time::init();
 
   // Declare the timer
-  terminal_tools::TicToc tt;
+  pcl::console::TicToc tt;
 
   // Starting timer
   tt.tic ();
@@ -805,7 +805,7 @@ int main (int argc, char** argv)
   // ---------------------------------------------------------------- //
 
   // Open a 3D viewer
-  pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
+  pcl::visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
   viewer.setBackgroundColor (0.0, 0.0, 0.0);
   // Add system coordiante to viewer
@@ -835,13 +835,13 @@ int main (int argc, char** argv)
 
  
   // Add the input cloud
-  viewer.addPointCloud (*input_cloud, "INPUT");
+  viewer.addPointCloud (input_cloud, "INPUT");
 
   // Color the cloud in white
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
 
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "INPUT"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "INPUT"); 
 
   // Wait or not wait
   if ( step )
@@ -901,9 +901,9 @@ int main (int argc, char** argv)
   ROS_INFO ("Statistical Outlier Removal ! before: %d points | after: %d points | filtered: %d points", input_cloud->points.size (),  filtered_cloud->points.size (), input_cloud->points.size () - filtered_cloud->points.size ());
 
   // Add the filtered cloud 
-  viewer.addPointCloud (*filtered_cloud, "FILTERED");
+  viewer.addPointCloud (filtered_cloud, "FILTERED");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "FILTERED"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "FILTERED"); 
 
   // Wait or not wait
   if ( step )
@@ -1036,11 +1036,11 @@ int main (int argc, char** argv)
   // -------------------------------------------------------------- //
 
   // Add point cloud to viewer
-  viewer.addPointCloud (*floor_cloud, "FLOOR");
+  viewer.addPointCloud (floor_cloud, "FLOOR");
   // Color the cloud in red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "FLOOR");
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "FLOOR");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "FLOOR"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "FLOOR"); 
 
   // Wait or not wait
   if ( step )
@@ -1064,11 +1064,11 @@ int main (int argc, char** argv)
   }
 
   // Add the input cloud
-  viewer.addPointCloud (*walls_cloud, "WALLS");
+  viewer.addPointCloud (walls_cloud, "WALLS");
   // Color the cloud in green
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "WALLS");
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "WALLS");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "WALLS"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "WALLS"); 
 
   // Wait or not wait
   if ( step )
@@ -1094,11 +1094,11 @@ int main (int argc, char** argv)
   /*
 
   // Add point cloud to viewer
-  viewer.addPointCloud (*ceiling_cloud, "CEILING");
+  viewer.addPointCloud (ceiling_cloud, "CEILING");
   // Color the cloud in blue
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "CEILING");
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "CEILING");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "CEILING"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points - 1, "CEILING"); 
 
   // Wait or not wait
   if ( step )
@@ -1185,13 +1185,14 @@ int main (int argc, char** argv)
     pcl::VoxelGrid<PointT> vgrid;
     vgrid.setLeafSize (0.05, 0.05, 0.05);
     vgrid.setInputCloud (input_cloud);
-    pcl::PointCloud<PointT> cloud_downsampled;
-    vgrid.filter (cloud_downsampled);
+    pcl::PointCloud<PointT>::Ptr cloud_downsampled (new pcl::PointCloud<PointT> ()); 
+//    pcl::PointCloud<PointT> cloud_downsampled;
+    vgrid.filter (*cloud_downsampled);
     std::vector<double> coefficients (15, 0.0);
 
     //bool yes_found_model = find_model (cloud_downsampled.makeShared(), *normals_cloud, coefficients);
 
-    if ( findBoxModel (cloud_downsampled.makeShared(), *normals_cloud, coefficients) )
+    if ( findBoxModel (cloud_downsampled, *normals_cloud, coefficients) )
     {
       ROS_INFO("Box Model found");
       X = Eigen::Vector3f (coefficients [6+0], coefficients [6+1], coefficients [6+2]); 
@@ -1210,9 +1211,9 @@ int main (int argc, char** argv)
     // Add the input cloud
     viewer.addPointCloud (cloud_downsampled, "DOWNSAMPLED");
     // Color the cloud in green
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "DOWNSAMPLED");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "DOWNSAMPLED");
     // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, "DOWNSAMPLED");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, "DOWNSAMPLED");
 
     // Wait or not wait
     if ( step )
@@ -1237,7 +1238,7 @@ int main (int argc, char** argv)
     downsampled_filename.insert (dot, "-downsampled");
 
     // Save these points to disk
-    pcl::io::savePCDFile (downsampled_filename, cloud_downsampled);
+    pcl::io::savePCDFile (downsampled_filename, *cloud_downsampled);
   }
   else 
   {
@@ -1442,14 +1443,14 @@ int main (int argc, char** argv)
 
       // TODO separate the part with projection of points from the sorting of surfaces
 
-      pcl::PointCloud<PointT> cloud_projected;
-
+//      pcl::PointCloud<PointT> cloud_projected;
+      pcl::PointCloud<PointT>::Ptr cloud_projected (new pcl::PointCloud<PointT> ()); 
       // Project the table inliers using the planar model coefficients    
       pcl::ProjectInliers<PointT> proj_;   
       proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
       proj_.setInputCloud (planar_surfaces.at (surface));
       proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
-      proj_.filter (cloud_projected);
+      proj_.filter (*cloud_projected);
 
       // // // // // //
       // Save all points of planar patches and handles which make up the furniture
@@ -1472,7 +1473,7 @@ int main (int argc, char** argv)
       id_of_proj << "PROJ_" << ros::Time::now();
       viewer.addPointCloud (cloud_projected, id_of_proj.str());
       // Set the size of points for cloud
-      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, id_of_proj.str());
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, id_of_proj.str());
 
       // Save id of handle
       projs_ids.push_back (id_of_proj.str());
@@ -1486,7 +1487,7 @@ int main (int argc, char** argv)
 
       // Save furniture surface
 //      furniture_surfaces.push_back (planar_surfaces.at (surface));
-      furniture_surfaces.push_back (cloud_projected.makeShared());
+      furniture_surfaces.push_back (cloud_projected);
 
       // Save id of that surface
       furniture_surfaces_ids.push_back (planar_surfaces_ids.at (surface));
@@ -1568,7 +1569,7 @@ int main (int argc, char** argv)
       // Visualize hull of cloud 
       viewer.addPointCloud (cloud_hull, id_of_hull.str());
       // Set the size of points for cloud
-      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_hull.str());     
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id_of_hull.str());     
       // Wait or not wait
       if ( step )
       {
@@ -1591,7 +1592,8 @@ int main (int argc, char** argv)
       if ( (int) cloud_object_indices->indices.size () != 0 )
       {
         // Extract handles
-        pcl::PointCloud<PointT> handle_cloud;
+        //pcl::PointCloud<PointT> handle_cloud;
+        pcl::PointCloud<PointT>::Ptr handle_cloud (new pcl::PointCloud<PointT> ()); 
         pcl::ExtractIndices<PointT> extraction_of_handle_inliers;
         // Set point cloud from where to extract
         extraction_of_handle_inliers.setInputCloud (auxiliary_input_cloud);
@@ -1600,13 +1602,13 @@ int main (int argc, char** argv)
         // Return the points which represent the inliers
         extraction_of_handle_inliers.setNegative (false);
         // Call the extraction function
-        extraction_of_handle_inliers.filter (handle_cloud);
+        extraction_of_handle_inliers.filter (*handle_cloud);
 
         // // // // // //
         // Save all points of furniture fixtures
         // // // // // //
         //      *furniture += handle_cloud;
-        fixtures += handle_cloud;
+        fixtures += *handle_cloud;
 
         // Visualize handles
         std::stringstream id_of_handle;
@@ -1614,7 +1616,7 @@ int main (int argc, char** argv)
         // Visualize handle
         viewer.addPointCloud (handle_cloud, id_of_handle.str());
         // Set the size of points for cloud
-        viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 3, id_of_handle.str());     
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 3, id_of_handle.str());     
         // Wait or not wait
         if ( step )
         {
@@ -1632,7 +1634,7 @@ int main (int argc, char** argv)
         // Instantiate cluster extraction object
         pcl::EuclideanClusterExtraction<PointT> clustering_of_handles;
         // Set as input the cloud of handle
-        clustering_of_handles.setInputCloud (handle_cloud.makeShared());
+        clustering_of_handles.setInputCloud (handle_cloud);
         // Radius of the connnectivity threshold
         clustering_of_handles.setClusterTolerance (handle_clustering_tolerance);
         // Minimum size of clusters
@@ -1657,7 +1659,7 @@ int main (int argc, char** argv)
           // Extract handle points from the input cloud
           pcl::ExtractIndices<PointT> extraction_of_handle_clusters;
           // Set point cloud from where to extract
-          extraction_of_handle_clusters.setInputCloud (handle_cloud.makeShared());
+          extraction_of_handle_clusters.setInputCloud (handle_cloud);
           // Set which indices to extract
           extraction_of_handle_clusters.setIndices (pointer_of_handle_cluster);
           // Return the points which represent the inliers
@@ -1739,9 +1741,9 @@ int main (int argc, char** argv)
             id_of_line << "LINE_" << ros::Time::now();
 
             // Add point cloud to viewer
-            viewer.addPointCloud (*line_inliers_cloud, id_of_line.str());
+            viewer.addPointCloud (line_inliers_cloud, id_of_line.str());
             // Set the size of points for cloud
-            viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_line.str()); 
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_line.str()); 
 
             // Wait or not wait
             if ( step )
@@ -1771,9 +1773,9 @@ int main (int argc, char** argv)
           id_of_handle_cluster << "HANDLE_CLUSTER_" << ros::Time::now();
           /*
           // Add point cloud to viewer
-          viewer.addPointCloud (*cluster_of_handle, id_of_handle_cluster.str());
+          viewer.addPointCloud (cluster_of_handle, id_of_handle_cluster.str());
           // Set the size of points for cloud
-          viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_handle_cluster.str()); 
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 4, id_of_handle_cluster.str()); 
 
           // Wait or not wait
           if ( step )
@@ -1958,13 +1960,13 @@ int main (int argc, char** argv)
   /*
 
   // Add the input cloud
-  viewer.addPointCloud (*furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
+  viewer.addPointCloud (furniture_and_fixtures, "FURNITURE_AND_FIXTURES");
 
   // Color the cloud in white
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "FURNITURE_AND_FIXTURES");
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "FURNITURE_AND_FIXTURES");
 
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FURNITURE_AND_FIXTURES"); 
+  viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FURNITURE_AND_FIXTURES"); 
 
   // Wait or not wait
   if ( step )
@@ -2073,10 +2075,10 @@ int main (int argc, char** argv)
     id_of_cluster << "CLUSTER_" << ros::Time::now();
 
     // Add point cloud to viewer
-    viewer.addPointCloud (*cluster_cloud, id_of_cluster.str());
+    viewer.addPointCloud (cluster_cloud, id_of_cluster.str());
 
     // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points + 1, id_of_cluster.str()); 
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points + 1, id_of_cluster.str()); 
 
     // Wait or not wait
     if ( step )
