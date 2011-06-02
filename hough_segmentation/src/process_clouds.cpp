@@ -57,7 +57,13 @@ typedef pcl::PointXYZINormal PointT;
 bool table = true; 
 bool filter = true; 
 bool project = true; 
+bool normals = true; 
 bool refinement = true; 
+
+int weight = 0.050; /// [meters]
+double epsilon = 1.1050; /// [radians]
+int iterations = 1000; /// [iterations]
+double threshold = 0.100; /// [meters]
 
 bool verbose = false;
 int size_of_points = 3;
@@ -80,7 +86,11 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("  where <options> are:");
-
+    ROS_INFO ("    -weight X                          = ");
+    ROS_INFO ("    -epsilon X                         = The maximum allowed difference between the plane normal and the given axis");
+    ROS_INFO ("    -threshold X                       = Distance to the fitted plane model");
+    ROS_INFO ("    -iterations X              = Maximum number of interations for fitting the plane model");
+    ROS_INFO (" ");
     ROS_INFO ("    -table B                     = Yes/No to segmenting the objects of the table");
     ROS_INFO ("    -filter B                    = Yes/No to filtering by statistical outlier removal");
     ROS_INFO ("    -project B                   = Yes/No to projecting points in xOy plane");
@@ -104,6 +114,11 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-filter", filter);
   terminal_tools::parse_argument (argc, argv, "-project", project);
   terminal_tools::parse_argument (argc, argv, "-refinement", refinement);
+
+  terminal_tools::parse_argument (argc, argv, "-weight", weight);
+  terminal_tools::parse_argument (argc, argv, "-epsilon", epsilon);
+  terminal_tools::parse_argument (argc, argv, "-threshold", threshold);
+  terminal_tools::parse_argument (argc, argv, "-iterations", iterations);
 
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
@@ -189,6 +204,54 @@ int main (int argc, char** argv)
   if ( table )
   {
 
+    // Point cloud of normals
+    pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
+    // Build kd-tree structure for normals
+    pcl::KdTreeFLANN<PointT>::Ptr tree (new pcl::KdTreeFLANN<PointT> ());
+
+    // Create object for normal estimation
+    pcl::NormalEstimation<PointT, pcl::Normal> estimation;
+    // Provide pointer to the search method
+    estimation.setSearchMethod (tree);
+    // Set for which point cloud to compute the normals
+    estimation.setInputCloud (working_cloud);
+    // Set number of k nearest neighbors to use
+    estimation.setKSearch (50);
+    // Estimate the normals
+    estimation.compute (*normals);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals->points.size ());
+    }
+
+    // Create the segmentation object and declare variables
+    pcl::SACSegmentationFromNormals<PointT, pcl::Normal> segmentation;
+    Eigen::Vector3f axis = Eigen::Vector3f (0.0, 0.0, 1.0); 
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+
+    // Set all the parameters for segmenting vertical planes
+    segmentation.setAxis (axis);
+    segmentation.setEpsAngle (epsilon);
+    segmentation.setInputNormals (normals);
+    segmentation.setInputCloud (working_cloud);
+    segmentation.setMaxIterations (iterations);
+    segmentation.setOptimizeCoefficients (true);
+    segmentation.setMethodType (pcl::SAC_RANSAC);
+    segmentation.setDistanceThreshold (threshold);
+    segmentation.setNormalDistanceWeight (weight);
+    segmentation.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+
+    // Obtain the plane inliers and coefficients
+    segmentation.segment (*inliers, *coefficients);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", (int) inliers->indices.size (),
+                coefficients->values [0], coefficients->values [1], coefficients->values [2], coefficients->values [3], iterations);
+    }
+
 
   }
 
@@ -268,104 +331,58 @@ int main (int argc, char** argv)
   // ------------------ Estimating Normals of Points ------------------ //
   // ------------------------------------------------------------------ //
 
-  // Point cloud of normals
-  pcl::PointCloud<pcl::Normal>::Ptr normals_cloud (new pcl::PointCloud<pcl::Normal> ());
-  // Build kd-tree structure for normals
-  pcl::KdTreeFLANN<PointT>::Ptr normals_tree (new pcl::KdTreeFLANN<PointT> ());
-
-  // Create object for normal estimation
-  pcl::NormalEstimation<PointT, pcl::Normal> ne;
-  // Provide pointer to the search method
-  ne.setSearchMethod (normals_tree);
-  // Set for which point cloud to compute the normals
-  ne.setInputCloud (working_cloud);
-  // Set number of k nearest neighbors to use
-  ne.setKSearch (50);
-  // Estimate the normals
-  ne.compute (*normals_cloud);
-
-  if ( verbose )
+  if ( normals )
   {
-    ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
-  }
+    // Point cloud of normals
+    pcl::PointCloud<pcl::Normal>::Ptr normals_cloud (new pcl::PointCloud<pcl::Normal> ());
+    // Build kd-tree structure for normals
+    pcl::KdTreeFLANN<PointT>::Ptr normals_tree (new pcl::KdTreeFLANN<PointT> ());
 
-  int level = 1;
-  double scale = 0.025;
-  // Add the normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 3D");
-  // Color the normals with red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS 3D"); 
-  // And wait until Q key is pressed 
-  viewer.spin ();
+    // Create object for normal estimation
+    pcl::NormalEstimation<PointT, pcl::Normal> ne;
+    // Provide pointer to the search method
+    ne.setSearchMethod (normals_tree);
+    // Set for which point cloud to compute the normals
+    ne.setInputCloud (working_cloud);
+    // Set number of k nearest neighbors to use
+    ne.setKSearch (50);
+    // Estimate the normals
+    ne.compute (*normals_cloud);
 
-  // Remove the point cloud data
-  viewer.removePointCloud ("NORMALS 3D");
-  // And wait until Q key is pressed
-  viewer.spin ();
+    if ( verbose )
+    {
+      ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
+    }
 
-// ------------------------------------------------------------
-
-//cerr << normals_cloud->points[10] << endl << endl ;
-
-cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
-
-//exit (0);
-
-// ------------------------------------------------------------
-
-  // --------------------------------------------------------------------- //
-  // ------------------ Refinement of Normals of Points ------------------ //
-  // --------------------------------------------------------------------- //
-
-  if ( refinement )
-  {
-    for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
-      normals_cloud->points[idx].normal_z = 0.0;  
-
+    int level = 1;
+    double scale = 0.025;
     // Add the normals
-    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
+    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 3D");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS 2D"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS 3D"); 
     // And wait until Q key is pressed 
     viewer.spin ();
 
     // Remove the point cloud data
-    viewer.removePointCloud ("NORMALS 2D");
+    viewer.removePointCloud ("NORMALS 3D");
     // And wait until Q key is pressed
     viewer.spin ();
-  }
 
-// ------------------------------------------------------------
 
-//cerr << normals_cloud->points[10] << endl << endl ;
 
-cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+    cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
 
-//exit (0);
 
-// ------------------------------------------------------------
- 
-  if ( refinement )
-  {
-    for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+
+    // --------------------------------------------------------------------- //
+    // ------------------ Refinement of Normals of Points ------------------ //
+    // --------------------------------------------------------------------- //
+
+    if ( refinement )
     {
-      double nx = normals_cloud->points[idx].normal_x;
-      double ny = normals_cloud->points[idx].normal_y;
-      double nz = normals_cloud->points[idx].normal_z;
+      for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+        normals_cloud->points[idx].normal_z = 0.0;  
 
-      double nl = sqrt (nx*nx + ny*ny + nz*nz);
-      nx = nx / nl;
-      ny = ny / nl;
-      nz = nz / nl;
-
-      normals_cloud->points[idx].normal_x = nx;
-      normals_cloud->points[idx].normal_y = ny;
-      normals_cloud->points[idx].normal_z = nz;
-
-  }
-
-
-  
       // Add the normals
       viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
       // Color the normals with red
@@ -379,19 +396,66 @@ cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].n
       viewer.spin ();
 
 
+
+      cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+
+
+    }
+
+    if ( refinement )
+    {
+      for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+      {
+        double nx = normals_cloud->points[idx].normal_x;
+        double ny = normals_cloud->points[idx].normal_y;
+        double nz = normals_cloud->points[idx].normal_z;
+
+        double nl = sqrt (nx*nx + ny*ny + nz*nz);
+        nx = nx / nl;
+        ny = ny / nl;
+        nz = nz / nl;
+
+        normals_cloud->points[idx].normal_x = nx;
+        normals_cloud->points[idx].normal_y = ny;
+        normals_cloud->points[idx].normal_z = nz;
+
+      }
+    
+      // Add the normals
+      viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
+      // Color the normals with red
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS 2D"); 
+      // And wait until Q key is pressed 
+      viewer.spin ();
+
+      // Remove the point cloud data
+      viewer.removePointCloud ("NORMALS 2D");
+      // And wait until Q key is pressed
+      viewer.spin ();
+
+
+
+      cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+
+
+    }
+
+
+
+    cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+
+
   }
 
 
 
-// ------------------------------------------------------------
 
-//cerr << normals_cloud->points[10] << endl << endl ;
 
-cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
 
-//exit (0);
 
-// ------------------------------------------------------------
 
 
 
