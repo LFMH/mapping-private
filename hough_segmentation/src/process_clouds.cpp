@@ -54,7 +54,10 @@ typedef pcl::PointXYZINormal PointT;
 
 
 
+bool table = true; 
+bool filter = true; 
 bool project = true; 
+bool refinement = true; 
 
 bool verbose = false;
 int size_of_points = 3;
@@ -77,7 +80,11 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("  where <options> are:");
+
+    ROS_INFO ("    -table B                     = Yes/No to segmenting the objects of the table");
+    ROS_INFO ("    -filter B                    = Yes/No to filtering by statistical outlier removal");
     ROS_INFO ("    -project B                   = Yes/No to projecting points in xOy plane");
+    ROS_INFO ("    -refinement B                = Yes/No to refinement of normals in 2D");
     ROS_INFO (" ");
     ROS_INFO ("    -verbose B                   = Yes/No to printing of useful messages");
     ROS_INFO ("    -size_of_points D            = Size of points for 3D viewer");
@@ -93,7 +100,10 @@ int main (int argc, char** argv)
     return (-1);
   }
 
-  terminal_tools::parse_argument (argc, argv,   "-project", project);
+  terminal_tools::parse_argument (argc, argv, "-table", table);
+  terminal_tools::parse_argument (argc, argv, "-filter", filter);
+  terminal_tools::parse_argument (argc, argv, "-project", project);
+  terminal_tools::parse_argument (argc, argv, "-refinement", refinement);
 
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
@@ -167,70 +177,92 @@ int main (int argc, char** argv)
   // And wait until Q key is pressed
   viewer.spin ();
 
+
+
+
+
+
+  // ----------------------------------------------------------------------- //
+  // ------------------ Segmenting Objects from the Table ------------------ //
+  // ----------------------------------------------------------------------- //
+
+  if ( table )
+  {
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // -------------------------------------------------------------- //
   // ------------------ Filtering of Point Cloud ------------------ //
   // -------------------------------------------------------------- //
 
-  // Filtered point cloud
-  pcl::PointCloud<PointT>::Ptr filtered_cloud (new pcl::PointCloud<PointT> ());
-
-  // Create the filtering object
-  pcl::StatisticalOutlierRemoval<PointT> sor;
-  // Set which point cloud to filter
-  sor.setInputCloud (working_cloud);
-  // Set number of points for mean distance estimation
-  sor.setMeanK (25);
-  // Set the standard deviation multiplier threshold
-  sor.setStddevMulThresh (1.0);
-  // Call the filtering method
-  sor.filter (*working_cloud);
-
-  if ( verbose )
+  if ( filter )
   {
-    ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points",
-              (int) input_cloud->points.size (),  (int) working_cloud->points.size (), (int) input_cloud->points.size () - (int) working_cloud->points.size ());
-  }
+    // Filtered point cloud
+    pcl::PointCloud<PointT>::Ptr filtered_cloud (new pcl::PointCloud<PointT> ());
 
-  // Add the point cloud data
-  viewer.addPointCloud (*working_cloud, "FILTERED");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED"); 
-  // And wait until Q key is pressed
-  viewer.spin ();
+    // Create the filtering object
+    pcl::StatisticalOutlierRemoval<PointT> sor;
+    // Set which point cloud to filter
+    sor.setInputCloud (working_cloud);
+    // Set number of points for mean distance estimation
+    sor.setMeanK (25);
+    // Set the standard deviation multiplier threshold
+    sor.setStddevMulThresh (1.0);
+    // Call the filtering method
+    sor.filter (*working_cloud);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points",
+                (int) input_cloud->points.size (),  (int) working_cloud->points.size (), (int) input_cloud->points.size () - (int) working_cloud->points.size ());
+    }
+
+    // Add the point cloud data
+    viewer.addPointCloud (*working_cloud, "FILTERED");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED"); 
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // ---------------------------------------------------------------- //
   // ------------------ Projecting of Point Clouds ------------------ //
   // ---------------------------------------------------------------- //
 
-
-
-
-
-
-
-
-
-
-
-
   if ( project )
+  {
     for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
       working_cloud->points[idx].z = 0.0;  
 
-
-
-
-  // Add the point cloud data
-  viewer.addPointCloud (*working_cloud, "PROJECTED");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "PROJECTED"); 
-  // And wait until Q key is pressed
-  viewer.spin ();
-
-
-
-
-
+    // Add the point cloud data
+    viewer.addPointCloud (*working_cloud, "PROJECTED");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "PROJECTED"); 
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // ------------------------------------------------------------------ //
   // ------------------ Estimating Normals of Points ------------------ //
@@ -257,25 +289,112 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-
-
-
-
-
-
-
-
-
   int level = 1;
   double scale = 0.025;
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
+  // Add the normals
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 3D");
+  // Color the normals with red
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS 3D"); 
   // And wait until Q key is pressed 
   viewer.spin ();
 
-  // Color the cloud with red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS"); 
-  // And wait until Q key is pressed 
+  // Remove the point cloud data
+  viewer.removePointCloud ("NORMALS 3D");
+  // And wait until Q key is pressed
   viewer.spin ();
+
+// ------------------------------------------------------------
+
+//cerr << normals_cloud->points[10] << endl << endl ;
+
+cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+//exit (0);
+
+// ------------------------------------------------------------
+
+  // --------------------------------------------------------------------- //
+  // ------------------ Refinement of Normals of Points ------------------ //
+  // --------------------------------------------------------------------- //
+
+  if ( refinement )
+  {
+    for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+      normals_cloud->points[idx].normal_z = 0.0;  
+
+    // Add the normals
+    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
+    // Color the normals with red
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS 2D"); 
+    // And wait until Q key is pressed 
+    viewer.spin ();
+
+    // Remove the point cloud data
+    viewer.removePointCloud ("NORMALS 2D");
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+// ------------------------------------------------------------
+
+//cerr << normals_cloud->points[10] << endl << endl ;
+
+cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+//exit (0);
+
+// ------------------------------------------------------------
+ 
+  if ( refinement )
+  {
+    for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+    {
+      double nx = normals_cloud->points[idx].normal_x;
+      double ny = normals_cloud->points[idx].normal_y;
+      double nz = normals_cloud->points[idx].normal_z;
+
+      double nl = sqrt (nx*nx + ny*ny + nz*nz);
+      nx = nx / nl;
+      ny = ny / nl;
+      nz = nz / nl;
+
+      normals_cloud->points[idx].normal_x = nx;
+      normals_cloud->points[idx].normal_y = ny;
+      normals_cloud->points[idx].normal_z = nz;
+
+  }
+
+
+  
+      // Add the normals
+      viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
+      // Color the normals with red
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS 2D"); 
+      // And wait until Q key is pressed 
+      viewer.spin ();
+
+      // Remove the point cloud data
+      viewer.removePointCloud ("NORMALS 2D");
+      // And wait until Q key is pressed
+      viewer.spin ();
+
+
+  }
+
+
+
+// ------------------------------------------------------------
+
+//cerr << normals_cloud->points[10] << endl << endl ;
+
+cerr << normals_cloud->points[10].normal_x << " " << normals_cloud->points[10].normal_y << " " << normals_cloud->points[10].normal_z << " "<<   endl ;
+
+//exit (0);
+
+// ------------------------------------------------------------
+
+
+
 
 
 
@@ -301,9 +420,6 @@ int main (int argc, char** argv)
     //// Show the floor's number of points
     //ROS_INFO ("The space which is represented by the circles models has %d points and was saved !", (int) those_points->points.size ());
   //}
-
-
-
 
 
 
