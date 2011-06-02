@@ -29,5 +29,9 @@ bin/hough_segmentation data/clutters/b-1224512985-dsn-objects.pcd -cam 0.0036976
 
 bin/hough_segmentation data/clutters/a-1224512793-dsn-objects.pcd -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -normals 0 -clusters 1 -circle_step 0 -line_step 1 -size_of_points 5 -minimum_size_of_objects_clusters 50 -clustering_tolerance_of_objects 0.025 -circle_threshold 0.010 -circle_inliers_clustering_tolerance 0.025 -line_threshold 0.010 -line_inliers_clustering_tolerance 0.025 -iterations 250
 
+
+
+bin/hough_segmentation data/clutters/a-1224512793-dsn-objects.pcd                                                                                                                   -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -normals 0 -clusters 1 -circle_step 0 -line_step 1 -size_of_points 5                                   -minimum_size_of_objects_clusters 50 -clustering_tolerance_of_objects 0.025                                                                                                                                                                 -circle_threshold 0.010 -minimum_radius 0.010 -maximu_radius -0.025 -circle_inliers_clustering_tolerance 0.025 -line_threshold 0.010 -line_inliers_clustering_tolerance 0.025                                                               -iterations 100 -circle_space_radius 0.010 -circle_space_percentage 0.50
+
 ===============================================================================
 

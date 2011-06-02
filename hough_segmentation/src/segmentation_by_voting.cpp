@@ -50,7 +50,7 @@
 
 
 
-typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZINormal PointT;
 
 
 
@@ -309,7 +309,7 @@ int main (int argc, char** argv)
   *working_cloud = *filtered_cloud;
 
   // ------------------------------------------------------------------- //
-  // ------------------ Estiamte 3D normals of points ------------------ //
+  // ------------------ Estimate 3D normals of points ------------------ //
   // ------------------------------------------------------------------- //
 
   // Point cloud of normals
@@ -332,6 +332,15 @@ int main (int argc, char** argv)
   {
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
+
+
+cerr << *normals_cloud << endl ;
+
+cerr << normals_cloud->points[0] << endl ;
+
+cerr << normals_cloud->points[0].normal_x << " " << normals_cloud->points[0].normal_y << " " << normals_cloud->points[0].normal_z << " "<<   endl ;
+
+exit (0);
 
   // -------------------------------------------------------------- //
   // ------------------ Cluster point cloud data ------------------ //
@@ -407,6 +416,45 @@ int main (int argc, char** argv)
 
   }
 
+
+
+
+  
+  //sensor_msgs::PointCloud2 working_cld_msg;
+  //pcl::toROSMsg (*working_cloud, working_cld_msg);
+
+  // Get the index we need
+  //for (size_t d = 0; d < working_cld_msg.fields.size (); ++d)
+  //cerr << working_cld_msg.fields[d].name << endl ;
+
+      //if (cloud.fields[d].name == field_name)
+      //return (d);
+      //return (-1);
+
+
+
+      //std::string dimensions = pcl::getFieldsList (*working_cloud);
+      //cerr << dimensions << endl ;
+
+
+
+
+      //for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
+      //{
+
+
+    
+      //}
+
+
+
+
+
+
+
+
+
+
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
   // ------------------------------------ Computation of 2D circles ----------------------------------- //
@@ -423,6 +471,66 @@ int main (int argc, char** argv)
   circle_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
   circle_viewer.updateCamera ();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  int level = 1;
+  double scale = 0.025;
+  circle_viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
+  // And wait until Q key is pressed 
+  circle_viewer.spin ();
+
+  // Color the cloud with red
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "Filtered Point Cloud Data"); 
+  // And wait until Q key is pressed 
+  circle_viewer.spin ();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exit (0);
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Add the point cloud data
   circle_viewer.addPointCloud (*input_cloud, "INPUT");
@@ -990,9 +1098,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-exit (0);
 
 
 

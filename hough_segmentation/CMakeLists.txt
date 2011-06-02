@@ -29,13 +29,12 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+# TODO: Put data of table scenes with the segmetned objects
+
 # ------[ Data
 #rosbuild_download_data (http://pr.willowgarage.com/data/pcl/office_chair_model.pcd data/office_chair_model.pcd d23282d322e0d45cadbce2e23bfc9e60)
 
-# TODO: Put data of table scenes with the segmetned objects
-
 # ------[ Segment
 rosbuild_add_executable (hough_segmentation src/segmentation_by_voting.cpp)
-rosbuild_add_executable (hough_segmentation_node src/cloud_segmentation_by_voting.cpp)
-target_link_libraries (hough_segmentation_node pcl_io)
-
+rosbuild_add_executable (process_clouds src/process_clouds.cpp)
+target_link_libraries (hough_segmentation pcl_io)
