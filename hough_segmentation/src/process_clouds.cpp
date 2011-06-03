@@ -38,7 +38,9 @@
 // pcl dependencies
 #include "pcl/io/pcd_io.h"
 #include "pcl/features/normal_3d.h"
+#include "pcl/filters/passthrough.h"
 #include "pcl/filters/extract_indices.h"
+#include "pcl/filters/project_inliers.h"
 #include "pcl/filters/statistical_outlier_removal.h"
 #include "pcl/sample_consensus/method_types.h"
 #include "pcl/sample_consensus/sac_model_circle.h"
@@ -54,14 +56,17 @@ typedef pcl::PointXYZINormal PointT;
 
 
 
+bool pass = true; 
 bool table = true; 
 bool filter = true; 
+bool normal = true; 
+bool refine = true; 
 bool project = true; 
-bool normals = true; 
-bool refinement = true; 
 
-int weight = 0.050; /// [meters]
-double epsilon = 1.1050; /// [radians]
+double height = 0.500; /// [meters]
+
+int weight = 0.100; /// [meters]
+double epsilon = 0.100; /// [radians]
 int iterations = 1000; /// [iterations]
 double threshold = 0.100; /// [meters]
 
@@ -86,18 +91,22 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("  where <options> are:");
-    ROS_INFO ("    -weight X                          = ");
-    ROS_INFO ("    -epsilon X                         = The maximum allowed difference between the plane normal and the given axis");
-    ROS_INFO ("    -threshold X                       = Distance to the fitted plane model");
-    ROS_INFO ("    -iterations X              = Maximum number of interations for fitting the plane model");
+    ROS_INFO ("    -height X                   = ");
     ROS_INFO (" ");
-    ROS_INFO ("    -table B                     = Yes/No to segmenting the objects of the table");
-    ROS_INFO ("    -filter B                    = Yes/No to filtering by statistical outlier removal");
-    ROS_INFO ("    -project B                   = Yes/No to projecting points in xOy plane");
-    ROS_INFO ("    -refinement B                = Yes/No to refinement of normals in 2D");
+    ROS_INFO ("    -weight X              = ");
+    ROS_INFO ("    -epsilon X             = The maximum allowed difference between the plane normal and the given axis");
+    ROS_INFO ("    -threshold X           = Distance to the fitted plane model");
+    ROS_INFO ("    -iterations X          = Maximum number of interations for fitting the plane model");
     ROS_INFO (" ");
-    ROS_INFO ("    -verbose B                   = Yes/No to printing of useful messages");
-    ROS_INFO ("    -size_of_points D            = Size of points for 3D viewer");
+    ROS_INFO ("    -pass B                = Yes/No to passing through filter");
+    ROS_INFO ("    -table B               = Yes/No to segmenting the objects on the table");
+    ROS_INFO ("    -filter B              = Yes/No to filtering by statistical outlier removal");
+    ROS_INFO ("    -normal B              = Yes/No to computing the normals of points");
+    ROS_INFO ("    -refine B              = Yes/No to refinement of normals in 2D");
+    ROS_INFO ("    -project B             = Yes/No to projecting points in xOy plane");
+    ROS_INFO (" ");
+    ROS_INFO ("    -verbose B             = Yes/No to printing of useful messages");
+    ROS_INFO ("    -size_of_points D      = Size of points for 3D viewer");
     ROS_INFO (" ");
     return (-1);
   }
@@ -110,10 +119,14 @@ int main (int argc, char** argv)
     return (-1);
   }
 
+  terminal_tools::parse_argument (argc, argv, "-pass", pass);
   terminal_tools::parse_argument (argc, argv, "-table", table);
   terminal_tools::parse_argument (argc, argv, "-filter", filter);
+  terminal_tools::parse_argument (argc, argv, "-normal", normal);
+  terminal_tools::parse_argument (argc, argv, "-refine", refine);
   terminal_tools::parse_argument (argc, argv, "-project", project);
-  terminal_tools::parse_argument (argc, argv, "-refinement", refinement);
+
+  terminal_tools::parse_argument (argc, argv, "-height", height);
 
   terminal_tools::parse_argument (argc, argv, "-weight", weight);
   terminal_tools::parse_argument (argc, argv, "-epsilon", epsilon);
@@ -192,10 +205,55 @@ int main (int argc, char** argv)
   // And wait until Q key is pressed
   viewer.spin ();
 
+  // --------------------------------------------------------- //
+  // ------------------ Pass Through Filter ------------------ //
+  // --------------------------------------------------------- //
 
+  if ( pass )
+  {
+    // The minimum and maximum height of point cloud
+    PointT minimum, maximum;
+    pcl::getMinMax3D (*working_cloud, minimum, maximum);
 
+    if ( verbose )
+    {
+      ROS_INFO ("The point with minimum height is (%6.3f,%6.3f,%6.3f)", minimum.x, minimum.y, minimum.z);
+      ROS_INFO ("The point with maximum height is (%6.3f,%6.3f,%6.3f)", maximum.x, maximum.y, maximum.z);
+      ROS_INFO ("The height of point cloud is %5.3f meters", maximum.z - minimum.z);
+    } 
 
+    // Create the filtering object
+    pcl::PassThrough<pcl::PointXYZINormal> pass;
+    pcl::PointCloud<PointT>::Ptr through (new pcl::PointCloud<PointT> ());
 
+    // Set parameters for filtering
+    pass.setFilterFieldName ("z");
+    pass.setFilterLimits (0.0, height);
+    pass.setInputCloud (working_cloud);
+  
+    // Call the filtering function
+    pass.setFilterLimitsNegative (false);
+    pass.filter (*through);
+    pass.setFilterLimitsNegative (true);
+    pass.filter (*working_cloud);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Filtered cloud has %d points !", through->points.size ());
+      ROS_INFO ("Remaining cloud has %d points !", working_cloud->points.size ());
+    }
+
+    // Create ID for visualization
+    std::stringstream id;
+    id << "THROUGH_" << ros::Time::now();
+
+    // Add point cloud to viewer
+    viewer.addPointCloud (*through, id.str());
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id.str()); 
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // ----------------------------------------------------------------------- //
   // ------------------ Segmenting Objects from the Table ------------------ //
@@ -203,7 +261,6 @@ int main (int argc, char** argv)
 
   if ( table )
   {
-
     // Point cloud of normals
     pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
     // Build kd-tree structure for normals
@@ -217,6 +274,7 @@ int main (int argc, char** argv)
     estimation.setInputCloud (working_cloud);
     // Set number of k nearest neighbors to use
     estimation.setKSearch (50);
+
     // Estimate the normals
     estimation.compute (*normals);
 
@@ -231,7 +289,7 @@ int main (int argc, char** argv)
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 
-    // Set all the parameters for segmenting vertical planes
+    // Set all the parameters for segmenting 
     segmentation.setAxis (axis);
     segmentation.setEpsAngle (epsilon);
     segmentation.setInputNormals (normals);
@@ -251,6 +309,81 @@ int main (int argc, char** argv)
       ROS_INFO ("Plane has %5d inliers with parameters A = %f B = %f C = %f and D = %f found in maximum %d iterations", (int) inliers->indices.size (),
                 coefficients->values [0], coefficients->values [1], coefficients->values [2], coefficients->values [3], iterations);
     }
+
+    // Extract the inliers from the working cloud
+    pcl::ExtractIndices<PointT> extraction;
+    pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
+
+    // Set point cloud from where to extract
+    extraction.setInputCloud (working_cloud);
+    // Set which indices to extract
+    extraction.setIndices (inliers);
+
+    // Return the points which represent the inliers
+    extraction.setNegative (false);
+    // Call the extraction function
+    extraction.filter (*cloud);
+    // Return the remaining points of inliers
+    extraction.setNegative (true);
+    // Call the extraction function
+    extraction.filter (*working_cloud);
+
+
+
+
+
+    // Create ID for visualization
+    std::stringstream id;
+    id << "INLIERS_" << ros::Time::now();
+
+    // Add point cloud to viewer
+    viewer.addPointCloud (*cloud, id.str());
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id.str()); 
+    // And wait until Q key is pressed
+    viewer.spin ();
+
+
+
+
+
+
+
+//      pcl::PointCloud<PointT> cloud_projected;
+//
+      pcl::PointCloud<PointT>::Ptr projected_cloud (new pcl::PointCloud<PointT> ()); 
+
+      // Project the table inliers using the planar model coefficients    
+      pcl::ProjectInliers<PointT> projecting;   
+
+      proj_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+      proj_.setInputCloud (planar_surfaces.at (surface));
+      proj_.setModelCoefficients (planar_surfaces_coefficients.at (surface));
+      proj_.filter (*cloud_projected);
+
+      // // // // // //
+      // Save all points of planar patches and handles which make up the furniture
+      // // // // // //
+//      *furniture += cloud_projected;
+      // pcl::ProjectInliers DOES NOT KEEP RGB INFORMATION
+
+      // Remove the point cloud data
+      viewer.removePointCloud (planar_surfaces_ids.at (surface));
+
+      // Wait or not wait
+      if ( step )
+      {
+        // And wait until Q key is pressed
+        viewer.spin ();
+      }
+
+
+
+
+
+
+
+
 
 
   }
@@ -331,7 +464,7 @@ int main (int argc, char** argv)
   // ------------------ Estimating Normals of Points ------------------ //
   // ------------------------------------------------------------------ //
 
-  if ( normals )
+  if ( normal )
   {
     // Point cloud of normals
     pcl::PointCloud<pcl::Normal>::Ptr normals_cloud (new pcl::PointCloud<pcl::Normal> ());
@@ -378,7 +511,7 @@ int main (int argc, char** argv)
     // ------------------ Refinement of Normals of Points ------------------ //
     // --------------------------------------------------------------------- //
 
-    if ( refinement )
+    if ( refine )
     {
       for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
         normals_cloud->points[idx].normal_z = 0.0;  
@@ -403,7 +536,7 @@ int main (int argc, char** argv)
 
     }
 
-    if ( refinement )
+    if ( refine )
     {
       for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
       {
