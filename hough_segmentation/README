@@ -9,7 +9,10 @@
   No clustering stage. Fit models to point cloud, multiple times, and build the parameter space.
 
 * segmentation_by_voting.cpp
-  Clustering stage. Fit models to each cluster, multiple times, and build a parameter space for every one of them.
+  Porting to pcl 1.0 ! Clustering stage. Fit models to each cluster, multiple times, and build a parameter space for every one of them.
+
+* process_clouds.cpp
+  Port code to pcl 1.0. Clean and comment code. 
 
 ======================================================
 
@@ -44,5 +47,7 @@ bin/process_clouds data/a-ascii-1224512793-dsn-objects.pcd -cam 0.00489929,4.899
 bin/process_clouds data/e-ascii-table1-dbsv-ann-normal.pcd -cam 0.00437526,4.37526/-0.429246,-0.620819,1.23339/-0.141983,-0.21418,1.87717/-0.46592,-0.639312,0.611717/1278,997/1682,46 -verbose 1 -size_of_points 3 -tabel 1 -filter 1 -project 0 -normals 1 -weight 0.500 -epsilon 0.100 -threshold 0.025
 
 bin/process_clouds data/e-ascii-table1-dbsv-ann-normal.pcd -cam 0.00437526,4.37526/-0.429246,-0.620819,1.23339/-0.141983,-0.21418,1.87717/-0.46592,-0.639312,0.611717/1278,997/1682,46 -verbose 1 -size_of_points 3 -pass 1 -height 0.435 -table 1 -weight 0.100 -epsilon 0.100 -threshold 0.005 -iterations 10000 -filter 1 -project 0 -normals 1
+
+bin/process_clouds data/f-ascii-table2-dbsv-ann-normal.pcd -cam 0.00437526,4.37526/-0.429246,-0.620819,1.23339/-0.141983,-0.21418,1.87717/-0.46592,-0.639312,0.611717/1278,997/1682,46 -verbose 1 -size_of_points 3 -pass 1 -height 0.450 -table 1 -weight 0.100 -epsilon 0.100 -threshold 0.005 -iterations 10000 -filter 0 -project 0 -normal 0
 
 ======================================================================================
