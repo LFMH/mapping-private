@@ -27,15 +27,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// ------------------------------------------------------------------------- //
+// -------------------- Specify all needed dependencies -------------------- //
+// ------------------------------------------------------------------------- //
 
-
-// ros dependencies
 #include "ros/ros.h"
 
-// terminal tools dependecies
 #include "terminal_tools/parse.h"
 
-// pcl dependencies
 #include "pcl/io/pcd_io.h"
 #include "pcl/features/normal_3d.h"
 #include "pcl/filters/extract_indices.h"
@@ -45,14 +44,17 @@
 #include "pcl/segmentation/sac_segmentation.h"
 #include "pcl/segmentation/extract_clusters.h"
 
-// pcl visualization dependencies
 #include "pcl_visualization/pcl_visualizer.h"
 
-
+// --------------------------------------------------------------- //
+// -------------------- Declare defs of types -------------------- //
+// --------------------------------------------------------------- //
 
 typedef pcl::PointXYZINormal PointT;
 
-
+// --------------------------------------------------------------------- //
+// -------------------- Declare method's parameters -------------------- //
+// --------------------------------------------------------------------- //
 
 // // // 
 int iterations = 100; 
@@ -79,9 +81,8 @@ double circle_space_radius = 0.010;
 double circle_space_percentage = 0.75;
 
 // Visualization's Parameters
+bool step = false;
 bool verbose = false;
-bool normals = false;
-bool clusters = false;
 int size_of_points = 3;
 bool   line_step = false;
 bool circle_step = false;
@@ -148,15 +149,15 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** \brief Main routine of the method. Segmentation of point cloud data based on Hough-voting of RANSAC-fitted models
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Main routine of the method. Segmentation of point cloud data based on Hough-voting of RANSAC-fitted models.
  */
 int main (int argc, char** argv)
 {
  
-  // --------------------------------------------------------------- //
-  // ------------------ Check and parse arguments ------------------ //
-  // --------------------------------------------------------------- //
+  // ------------------------------------------------------------------- //
+  // -------------------- Check and parse arguments -------------------- //
+  // ------------------------------------------------------------------- //
 
   // Argument check and info about
   if (argc < 2)
@@ -181,12 +182,11 @@ int main (int argc, char** argv)
     ROS_INFO ("    -minimum_size_of_objects_clusters X        = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X         = ");
     ROS_INFO (" ");
-    ROS_INFO ("    -circle_space_radius X                     = bla to the bla-bla");
-    ROS_INFO ("    -circle_space_percentage X                 = bla to the bla-bla");
+    ROS_INFO ("    -circle_space_radius X                     = ");
+    ROS_INFO ("    -circle_space_percentage X                 = ");
     ROS_INFO (" ");
-    ROS_INFO ("    -verbose B                                 = verbose");
-    ROS_INFO ("    -normals B                                 = verbose");
-    ROS_INFO ("    -clusters B                                = verbose");
+    ROS_INFO ("    -step B                                    = ");
+    ROS_INFO ("    -verbose B                                 = ");
     ROS_INFO ("    -line_step B                               = wait or not wait");
     ROS_INFO ("    -circle_step B                             = wait or not wait");
     ROS_INFO ("    -size_of_points B                          = ");
@@ -227,16 +227,15 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-circle_space_percentage", circle_space_percentage);
 
   // Parsing the arguments for visualization
+  terminal_tools::parse_argument (argc, argv, "-step", step);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
-  terminal_tools::parse_argument (argc, argv, "-normals", normals);
-  terminal_tools::parse_argument (argc, argv, "-clusters", clusters);
-  terminal_tools::parse_argument (argc, argv,   "-line_step",   line_step);
+  terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
   terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
   terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
 
-  // ----------------------------------------------------- //
-  // ------------------ Initializations ------------------ //
-  // ----------------------------------------------------- //
+  // --------------------------------------------------------- //
+  // -------------------- Initializations -------------------- //
+  // --------------------------------------------------------- //
 
   // Initialize random number generator
   srand (time(0));
@@ -256,12 +255,30 @@ int main (int argc, char** argv)
     ROS_WARN ("Timer started !");
   }
 
-  // --------------------------------------------------------------- //
-  // ------------------ Load the point cloud data ------------------ //
-  // --------------------------------------------------------------- //
+  // --------------------------------------------------- //
+  // -------------------- 3D Viewer -------------------- //
+  // --------------------------------------------------- //
+
+  // Open a 3D viewer
+  pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
+  // Set the background of viewer
+  viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  // Add system coordiante to viewer
+  viewer.addCoordinateSystem (1.0f);
+  // Parse the camera settings and update the internal camera
+  viewer.getCameraParameters (argc, argv);
+  // Update camera parameters and render
+  viewer.updateCamera ();
+
+  // ----------------------------------------------------------- //
+  // ------------------ Load point cloud data ------------------ //
+  // ----------------------------------------------------------- //
 
   // Input point cloud data
   pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
+
+  // Working point cloud data 
+  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
 
   // Load point cloud data
   if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *input_cloud) == -1)
@@ -275,8 +292,18 @@ int main (int argc, char** argv)
     ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
   }
 
-  // Working point cloud data 
-  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+  // Add the point cloud data
+  viewer.addPointCloud (*input_cloud, "INPUT");
+  // Color the cloud in white
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "INPUT"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // Update working point cloud
   *working_cloud = *input_cloud;
@@ -303,6 +330,19 @@ int main (int argc, char** argv)
   {
     ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points",
               (int) working_cloud->points.size (),  (int) filtered_cloud->points.size (), (int) working_cloud->points.size () - (int) filtered_cloud->points.size ());
+  }
+
+  // Add the filtered point cloud data in the same viewer
+  viewer.addPointCloud (*filtered_cloud, "FILTERED");
+  // Color the filtered points in blue
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
   }
 
   // Update working point cloud
@@ -333,14 +373,90 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
+  int level = 1;
+  double scale = 0.025;
+  // Add the point cloud of normals
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "3D NORMALS");
+  // Color the normals with red
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
-cerr << *normals_cloud << endl ;
+  // Remove the point cloud data
+  viewer.removePointCloud ("3D NORMALS");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
-cerr << normals_cloud->points[0] << endl ;
+  // --------------------------------------------------------------------- //
+  // -------------------- Refine 2D normals of points -------------------- //
+  // --------------------------------------------------------------------- //
 
-cerr << normals_cloud->points[0].normal_x << " " << normals_cloud->points[0].normal_y << " " << normals_cloud->points[0].normal_z << " "<<   endl ;
+  for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+    normals_cloud->points[idx].normal_z = 0.0;  
 
-exit (0);
+  // Add the normals
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "2D NORMALS");
+  // Color the normals with red
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "2D NORMALS"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Remove the point cloud data
+  viewer.removePointCloud ("2D NORMALS");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
+  {
+    double nx = normals_cloud->points[idx].normal_x;
+    double ny = normals_cloud->points[idx].normal_y;
+    double nz = normals_cloud->points[idx].normal_z;
+
+    double nl = sqrt (nx*nx + ny*ny + nz*nz);
+    nx = nx / nl;
+    ny = ny / nl;
+    nz = nz / nl;
+
+    normals_cloud->points[idx].normal_x = nx;
+    normals_cloud->points[idx].normal_y = ny;
+    normals_cloud->points[idx].normal_z = nz;
+  }
+
+  // Add the normals
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
+  // Color the normals with red
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Remove the point cloud data
+  viewer.removePointCloud ("NORMALS");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
 
   // -------------------------------------------------------------- //
   // ------------------ Cluster point cloud data ------------------ //
@@ -373,35 +489,34 @@ exit (0);
   // ------------------ Extract object clusters ------------------ //
   // ------------------------------------------------------------- //
 
-  // Vector of indices which make up the objects clusters
-  std::vector<pcl::PointIndices::Ptr> objects_clusters_indices;
   // Point clouds which represent the clusters of the objects
   std::vector<pcl::PointCloud<PointT>::Ptr> objects_clusters_clouds;
-//  // Auxiliary vector of object clusters
-//  std::vector<pcl::PointCloud<PointT>::Ptr> auxiliary_clusters_clouds;
 
+  // Vector of indices which make up the objects clusters
+  std::vector<pcl::PointIndices::Ptr> objects_clusters_indices;
 
-  for (int c = 0; c < (int) objects_clusters.size(); c++)
+  for (int clu = 0; clu < (int) objects_clusters.size(); clu++)
   {
     // Cloud of the cluster obejct
     pcl::PointCloud<PointT>::Ptr object_cluster_cloud (new pcl::PointCloud<PointT> ());
+
     // Pointer to the cluster object
-    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(c)));
+    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(clu)));
 
     // Extract handle points from the input cloud
-    pcl::ExtractIndices<PointT> extraction_of_objects_clusters;
+    pcl::ExtractIndices<PointT> ei;
     // Set point cloud from where to extract
-    extraction_of_objects_clusters.setInputCloud (working_cloud);
+    ei.setInputCloud (working_cloud);
     // Set which indices to extract
-    extraction_of_objects_clusters.setIndices (object_cluster_indices);
+    ei.setIndices (object_cluster_indices);
     // Return the points which represent the inliers
-    extraction_of_objects_clusters.setNegative (false);
+    ei.setNegative (false);
     // Call the extraction function
-    extraction_of_objects_clusters.filter (*object_cluster_cloud);
+    ei.filter (*object_cluster_cloud);
 
     if ( verbose )
     {
-      ROS_INFO ("  Objet %2d has %4d points", c, (int) object_cluster_cloud->points.size());
+      ROS_INFO ("  Object %2d has %4d points", clu, (int) object_cluster_cloud->points.size());
     }
 
     // Save the cloud of object cluster
@@ -409,42 +524,34 @@ exit (0);
 
     // Save indices of object
     objects_clusters_indices.push_back (object_cluster_indices);
-
-//    // Update auxiliary clusters
-//    auxiliary_clusters_clouds.push_back (object_cluster_cloud);
-
-
   }
 
+  // --------------------------------------------------------------- //
+  // ------------------ Visualize object clusters ------------------ //
+  // --------------------------------------------------------------- //
 
+  // Vector of ids of handles
+  std::vector<std::string> objects_clusters_ids;
 
+  for (int clu = 0; clu < (int) objects_clusters_clouds.size(); clu++)
+  {
+    // Create id for visualization
+    std::stringstream object_cluster_id;
+    object_cluster_id << "OBJECT_CLUSTER_" << ros::Time::now();
+    // Add point cloud to viewer
+    viewer.addPointCloud (*objects_clusters_clouds.at(clu), object_cluster_id.str());
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, object_cluster_id.str()); 
+    // Wait or not wait
+    if ( step )
+    {
+      // And wait until Q key is pressed
+      viewer.spin ();
+    }
 
-  
-  //sensor_msgs::PointCloud2 working_cld_msg;
-  //pcl::toROSMsg (*working_cloud, working_cld_msg);
-
-  // Get the index we need
-  //for (size_t d = 0; d < working_cld_msg.fields.size (); ++d)
-  //cerr << working_cld_msg.fields[d].name << endl ;
-
-      //if (cloud.fields[d].name == field_name)
-      //return (d);
-      //return (-1);
-
-
-
-      //std::string dimensions = pcl::getFieldsList (*working_cloud);
-      //cerr << dimensions << endl ;
-
-
-
-
-      //for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
-      //{
-
-
-    
-      //}
+    // Save id of object
+    objects_clusters_ids.push_back (object_cluster_id.str());
+  }
 
 
 
@@ -472,66 +579,6 @@ exit (0);
   // Update camera parameters and render
   circle_viewer.updateCamera ();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  int level = 1;
-  double scale = 0.025;
-  circle_viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
-  // And wait until Q key is pressed 
-  circle_viewer.spin ();
-
-  // Color the cloud with red
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "Filtered Point Cloud Data"); 
-  // And wait until Q key is pressed 
-  circle_viewer.spin ();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-exit (0);
-
-
-
-
-
-
-
-
-
-
-
-
-
   // Add the point cloud data
   circle_viewer.addPointCloud (*input_cloud, "INPUT");
   // Color the cloud in white
@@ -541,79 +588,18 @@ exit (0);
   // And wait until Q key is pressed
   circle_viewer.spin ();
 
-  // Remove the point cloud data
-  circle_viewer.removePointCloud ("INPUT");
-  // And wait until Q key is pressed
-  circle_viewer.spin ();
 
-  // Add the filtered point cloud data in the same viewer
-  circle_viewer.addPointCloud (*filtered_cloud, "FILTERED");
-  // Color the filtered points in blue
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
-  // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED");
-  // And wait until Q key is pressed
-  circle_viewer.spin ();
 
-  if ( normals )
-  {
-    int level = 1;
-    double scale = 0.025;
 
-    // Add normals of points in the same viewer
-    circle_viewer.addPointCloudNormals (*filtered_cloud, *normals_cloud, level, scale, "NORMALS");
 
-    // Color the filtered points in blue
-    circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS");
 
-    // And wait until Q key is pressed
-    circle_viewer.spin ();
-  }
 
-  if ( clusters )
-  {
-    // Vector of ids of handles
-    std::vector<std::string> objects_clusters_ids;
 
-    for (int c = 0; c < (int) objects_clusters_clouds.size(); c++)
-    {
-      // Create id for visualization
-      std::stringstream object_cluster_id;
-      object_cluster_id << "OBJECT_CLUSTER_" << ros::Time::now();
 
-      // Add point cloud to viewer
-      circle_viewer.addPointCloud (*objects_clusters_clouds.at(c), object_cluster_id.str());
 
-      // Set the size of points for cloud
-      circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, object_cluster_id.str()); 
 
-      // Wait or not wait
-      if ( circle_step )
-      {
-        // And wait until Q key is pressed
-        circle_viewer.spin ();
-      }
 
-      /*
-      // Remove or not remove the cloud from viewer
-      if ( circle_clean )
-      {
-      // Remove the point cloud data
-      circle_viewer.removePointCloud (object_cluster_id.str());
 
-      // Wait or not wait
-      if ( circle_step )
-      {
-      // And wait until Q key is pressed
-      circle_viewer.spin ();
-      }
-      }
-      */
-
-      // Save id of object
-      objects_clusters_ids.push_back (object_cluster_id.str());
-    }
-  }
 
 
 
@@ -804,7 +790,7 @@ exit (0);
 
           // Fit only one model for each cluster in every iteration
           // No need for fitting circles anymore
-          stop_circle_fitting = true;
+//          stop_circle_fitting = true;
 
         }
 
@@ -881,6 +867,11 @@ exit (0);
 
 
 
+
+
+
+
+
   // Create ID for circle model
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
@@ -911,6 +902,14 @@ exit (0);
     // And wait until Q key is pressed
     circle_viewer.spin ();
   }
+
+
+
+
+  exit (0);
+
+
+
 
 
 
