@@ -75,7 +75,7 @@ int main( int argc, char** argv )
   // Concatenate XYZ + Normal fields
   pcl::PointCloud<pcl::PointNormal> cloud_xyz_normals;
   pcl::concatenateFields (*input_cloud, *cloud_normals, cloud_xyz_normals);
-  writer.write(for_normals, cloud_xyz_normals, true);
+//  writer.write(for_normals, cloud_xyz_normals, true);
 
   // Create the voxel grid
   pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud (new pcl::PointCloud<pcl::PointNormal> (cloud_xyz_normals));
