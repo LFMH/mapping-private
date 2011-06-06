@@ -22,10 +22,10 @@ int main( int argc, char** argv ){
   hlac.extractGray( feature_gray, img_gray );
 
   // output
-  for( int i=0; i<feature.size(); i++ )
+  for( int i=0; i<(int)feature.size(); i++ )
     std::cout << feature[i] << std::endl;
   std::cout << std::endl;
-  for( int i=0; i<feature_gray.size(); i++ )
+  for( int i=0; i<(int)feature_gray.size(); i++ )
     std::cout << feature_gray[i] << std::endl;
 
   return(0);

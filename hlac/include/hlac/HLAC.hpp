@@ -223,21 +223,19 @@ void HLAC::_extractBin1_3( std::vector<float> &result, const cv::Mat &img,
 			      const int &left, const int &right,
 			      const int &up, const int &down )
 {
-  const int width_step = img.step;
-  
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC1_3 ];
   for(int i=0; i<DIM_OF_BIN_HLAC1_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	tmp[ 0 ] += (double)img.data[   i        +   j        * width_step ];
-	tmp[ 1 ] += (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-	tmp[ 2 ] += (double)img.data[   i        + ( j - ry ) * width_step ];
-	tmp[ 3 ] += (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-	tmp[ 4 ] += (double)img.data[ ( i - rx ) +   j        * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	tmp[ 0 ] += (double)img.at<uchar>(  i,       j       );
+	tmp[ 1 ] += (double)img.at<uchar>(  i - rx,  j - ry  );
+	tmp[ 2 ] += (double)img.at<uchar>(  i,       j - ry  );
+	tmp[ 3 ] += (double)img.at<uchar>(  i + rx,  j - ry  );
+	tmp[ 4 ] += (double)img.at<uchar>(  i - rx,  j       );
       }
     }
   }
@@ -259,25 +257,24 @@ void HLAC::_extractBin2_3( std::vector<float> &result, const cv::Mat &img,
 			      const int &up, const int &down )
 {
   double a[ 9 ];
-  const int width_step = img.step;
-  
+
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC2_3 ];
   for(int i=0; i<DIM_OF_BIN_HLAC2_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-	a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-	a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-	a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-	a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-	a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-	a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-	a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-	a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	a[  0 ] = (double)img.at<uchar>(  i - rx, j - ry  );
+	a[  1 ] = (double)img.at<uchar>(  i,      j - ry  );
+	a[  2 ] = (double)img.at<uchar>(  i + rx, j - ry  );
+	a[  3 ] = (double)img.at<uchar>(  i - rx, j       );
+	a[  4 ] = (double)img.at<uchar>(  i,      j       );
+	a[  5 ] = (double)img.at<uchar>(  i + rx, j       );
+	a[  6 ] = (double)img.at<uchar>(  i - rx, j + ry  );
+	a[  7 ] = (double)img.at<uchar>(  i,      j + ry  );
+	a[  8 ] = (double)img.at<uchar>(  i + rx, j + ry  );
 	tmp[ 0 ] += a[ 4 ];
 	tmp[ 1 ] += a[ 0 ];
 	tmp[ 2 ] += a[ 1 ];
@@ -324,25 +321,24 @@ void HLAC::_extractBin3_3( std::vector<float> &result, const cv::Mat &img,
 			      const int &up, const int &down )
 {
   double a[ 9 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC3_3 ];
   for(int i=0; i<DIM_OF_BIN_HLAC3_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-	a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-	a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-	a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-	a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-	a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-	a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-	a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-	a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	a[  0 ] = (double)img.at<uchar>(  i - rx, j - ry  );
+	a[  1 ] = (double)img.at<uchar>(  i,      j - ry  );
+	a[  2 ] = (double)img.at<uchar>(  i + rx, j - ry  );
+	a[  3 ] = (double)img.at<uchar>(  i - rx, j       );
+	a[  4 ] = (double)img.at<uchar>(  i,      j       );
+	a[  5 ] = (double)img.at<uchar>(  i + rx, j       );
+	a[  6 ] = (double)img.at<uchar>(  i - rx, j + ry  );
+	a[  7 ] = (double)img.at<uchar>(  i,      j + ry  );
+	a[  8 ] = (double)img.at<uchar>(  i + rx, j + ry  );
 	tmp[ 0 ] += a[ 4 ];
 	tmp[ 1 ] += a[ 0 ];
 	tmp[ 2 ] += a[ 1 ];
@@ -433,29 +429,27 @@ void HLAC::_extractBin1_5( std::vector<float> &result, const cv::Mat &img,
 			      const int &left, const int &right,
 			      const int &up, const int &down )
 {
-  const int width_step = img.step;
-  
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC1_5 ];
   for(int i=0; i<DIM_OF_BIN_HLAC1_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	tmp[  0 ] += (double)img.data[   i          +   j          * width_step ];
-	tmp[  1 ] += (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-	tmp[  2 ] += (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-	tmp[  3 ] += (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-	tmp[  4 ] += (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-	tmp[  5 ] += (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-	tmp[  6 ] += (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-	tmp[  7 ] += (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-	tmp[  8 ] += (double)img.data[   i          + ( j -   ry ) * width_step ];
-	tmp[  9 ] += (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-	tmp[ 10 ] += (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-	tmp[ 11 ] += (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-	tmp[ 12 ] += (double)img.data[ ( i -   rx ) +   j          * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	tmp[  0 ] += (double)img.at<uchar>(  i,        j         );
+	tmp[  1 ] += (double)img.at<uchar>(  i - 2*rx, j - 2*ry  );
+	tmp[  2 ] += (double)img.at<uchar>(  i -   rx, j - 2*ry  );
+	tmp[  3 ] += (double)img.at<uchar>(  i,        j - 2*ry  );
+	tmp[  4 ] += (double)img.at<uchar>(  i +   rx, j - 2*ry  );
+	tmp[  5 ] += (double)img.at<uchar>(  i + 2*rx, j - 2*ry  );
+	tmp[  6 ] += (double)img.at<uchar>(  i - 2*rx, j -   ry  );
+	tmp[  7 ] += (double)img.at<uchar>(  i -   rx, j -   ry  );
+	tmp[  8 ] += (double)img.at<uchar>(  i,        j -   ry  );
+	tmp[  9 ] += (double)img.at<uchar>(  i +   rx, j -   ry  );
+	tmp[ 10 ] += (double)img.at<uchar>(  i + 2*rx, j -   ry  );
+	tmp[ 11 ] += (double)img.at<uchar>(  i - 2*rx, j         );
+	tmp[ 12 ] += (double)img.at<uchar>(  i -   rx, j         );
       }
     }
   }
@@ -476,41 +470,40 @@ void HLAC::_extractBin2_5( std::vector<float> &result, const cv::Mat &img,
 			      const int &up, const int &down )
 {
   double a[ 25 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC2_5 ];
   for(int i=0; i<DIM_OF_BIN_HLAC2_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	a[  0 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-	a[  1 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-	a[  2 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-	a[  3 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-	a[  4 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-	a[  5 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-	a[  6 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-	a[  7 ] = (double)img.data[   i          + ( j -   ry ) * width_step ];
-	a[  8 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-	a[  9 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-	a[ 10 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-	a[ 11 ] = (double)img.data[ ( i -   rx ) +   j          * width_step ];
-	a[ 12 ] = (double)img.data[   i          +   j          * width_step ];
-	a[ 13 ] = (double)img.data[ ( i +   rx ) +   j          * width_step ];
-	a[ 14 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step ];
-	a[ 15 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step ];
-	a[ 16 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step ];
-	a[ 17 ] = (double)img.data[   i          + ( j +   ry ) * width_step ];
-	a[ 18 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step ];
-	a[ 19 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step ];
-	a[ 20 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step ];
-	a[ 21 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step ];
-	a[ 22 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step ];
-	a[ 23 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step ];
-	a[ 24 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	a[  0 ] = (double)img.at<uchar>(  i - 2*rx, j - 2*ry  );
+	a[  1 ] = (double)img.at<uchar>(  i -   rx, j - 2*ry  );
+	a[  2 ] = (double)img.at<uchar>(  i,        j - 2*ry  );
+	a[  3 ] = (double)img.at<uchar>(  i +   rx, j - 2*ry  );
+	a[  4 ] = (double)img.at<uchar>(  i + 2*rx, j - 2*ry  );
+	a[  5 ] = (double)img.at<uchar>(  i - 2*rx, j -   ry  );
+	a[  6 ] = (double)img.at<uchar>(  i -   rx, j -   ry  );
+	a[  7 ] = (double)img.at<uchar>(  i,        j -   ry  );
+	a[  8 ] = (double)img.at<uchar>(  i +   rx, j -   ry  );
+	a[  9 ] = (double)img.at<uchar>(  i + 2*rx, j -   ry  );
+	a[ 10 ] = (double)img.at<uchar>(  i - 2*rx, j         );
+	a[ 11 ] = (double)img.at<uchar>(  i -   rx, j         );
+	a[ 12 ] = (double)img.at<uchar>(  i,        j         );
+	a[ 13 ] = (double)img.at<uchar>(  i +   rx, j         );
+	a[ 14 ] = (double)img.at<uchar>(  i + 2*rx, j         );
+	a[ 15 ] = (double)img.at<uchar>(  i - 2*rx, j +   ry  );
+	a[ 16 ] = (double)img.at<uchar>(  i -   rx, j +   ry  );
+	a[ 17 ] = (double)img.at<uchar>(  i,        j +   ry  );
+	a[ 18 ] = (double)img.at<uchar>(  i +   rx, j +   ry  );
+	a[ 19 ] = (double)img.at<uchar>(  i + 2*rx, j +   ry  );
+	a[ 20 ] = (double)img.at<uchar>(  i - 2*rx, j + 2*ry  );
+	a[ 21 ] = (double)img.at<uchar>(  i -   rx, j + 2*ry  );
+	a[ 22 ] = (double)img.at<uchar>(  i,        j + 2*ry  );
+	a[ 23 ] = (double)img.at<uchar>(  i +   rx, j + 2*ry  );
+	a[ 24 ] = (double)img.at<uchar>(  i + 2*rx, j + 2*ry  );
 	tmp[ 0 ] += a[ 12 ];
 	tmp[ 1 ] += a[ 0 ];
 	tmp[ 2 ] += a[ 1 ];
@@ -726,41 +719,40 @@ void HLAC::_extractBin3_5( std::vector<float> &result, const cv::Mat &img,
 			      const int &up, const int &down )
 {
   double a[ 25 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_BIN_HLAC3_5 ];
   for(int i=0; i<DIM_OF_BIN_HLAC3_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      if( img.data[ i + j * width_step ] ){
-	a[  0 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-	a[  1 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-	a[  2 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-	a[  3 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-	a[  4 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-	a[  5 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-	a[  6 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-	a[  7 ] = (double)img.data[   i          + ( j -   ry ) * width_step ];
-	a[  8 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-	a[  9 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-	a[ 10 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-	a[ 11 ] = (double)img.data[ ( i -   rx ) +   j          * width_step ];
-	a[ 12 ] = (double)img.data[   i          +   j          * width_step ];
-	a[ 13 ] = (double)img.data[ ( i +   rx ) +   j          * width_step ];
-	a[ 14 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step ];
-	a[ 15 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step ];
-	a[ 16 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step ];
-	a[ 17 ] = (double)img.data[   i          + ( j +   ry ) * width_step ];
-	a[ 18 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step ];
-	a[ 19 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step ];
-	a[ 20 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step ];
-	a[ 21 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step ];
-	a[ 22 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step ];
-	a[ 23 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step ];
-	a[ 24 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      if( img.at<uchar>( i, j ) ){
+	a[  0 ] = (double)img.at<uchar>(  i - 2*rx, j - 2*ry  );
+	a[  1 ] = (double)img.at<uchar>(  i -   rx, j - 2*ry  );
+	a[  2 ] = (double)img.at<uchar>(  i,        j - 2*ry  );
+	a[  3 ] = (double)img.at<uchar>(  i +   rx, j - 2*ry  );
+	a[  4 ] = (double)img.at<uchar>(  i + 2*rx, j - 2*ry  );
+	a[  5 ] = (double)img.at<uchar>(  i - 2*rx, j -   ry  );
+	a[  6 ] = (double)img.at<uchar>(  i -   rx, j -   ry  );
+	a[  7 ] = (double)img.at<uchar>(  i,        j -   ry  );
+	a[  8 ] = (double)img.at<uchar>(  i +   rx, j -   ry  );
+	a[  9 ] = (double)img.at<uchar>(  i + 2*rx, j -   ry  );
+	a[ 10 ] = (double)img.at<uchar>(  i - 2*rx, j         );
+	a[ 11 ] = (double)img.at<uchar>(  i -   rx, j         );
+	a[ 12 ] = (double)img.at<uchar>(  i,        j         );
+	a[ 13 ] = (double)img.at<uchar>(  i +   rx, j         );
+	a[ 14 ] = (double)img.at<uchar>(  i + 2*rx, j         );
+	a[ 15 ] = (double)img.at<uchar>(  i - 2*rx, j +   ry  );
+	a[ 16 ] = (double)img.at<uchar>(  i -   rx, j +   ry  );
+	a[ 17 ] = (double)img.at<uchar>(  i,        j +   ry  );
+	a[ 18 ] = (double)img.at<uchar>(  i +   rx, j +   ry  );
+	a[ 19 ] = (double)img.at<uchar>(  i + 2*rx, j +   ry  );
+	a[ 20 ] = (double)img.at<uchar>(  i - 2*rx, j + 2*ry  );
+	a[ 21 ] = (double)img.at<uchar>(  i -   rx, j + 2*ry  );
+	a[ 22 ] = (double)img.at<uchar>(  i,        j + 2*ry  );
+	a[ 23 ] = (double)img.at<uchar>(  i +   rx, j + 2*ry  );
+	a[ 24 ] = (double)img.at<uchar>(  i + 2*rx, j + 2*ry  );
 	tmp[ 0 ] += a[ 12 ];
 	tmp[ 1 ] += a[ 0 ];
 	tmp[ 2 ] += a[ 1 ];
@@ -2429,21 +2421,20 @@ void HLAC::_extractGray1_3( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a;
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC1_3 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC1_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a = (double)img.data[ i + j * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a = (double)img.at<uchar>( i, j );
       tmp[ 0 ] += a;
-      tmp[ 1 ] += a * (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-      tmp[ 2 ] += a * (double)img.data[   i        + ( j - ry ) * width_step ];
-      tmp[ 3 ] += a * (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-      tmp[ 4 ] += a * (double)img.data[ ( i - rx ) +   j        * width_step ];
+      tmp[ 1 ] += a * (double)img.at<uchar>(  i - rx, j - ry  );
+      tmp[ 2 ] += a * (double)img.at<uchar>(  i,      j - ry  );
+      tmp[ 3 ] += a * (double)img.at<uchar>(  i + rx, j - ry  );
+      tmp[ 4 ] += a * (double)img.at<uchar>(  i - rx, j       );
       tmp[ 5 ] += a * a;
     }    
   }
@@ -2468,24 +2459,23 @@ void HLAC::_extractGray2_3( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a[ 9 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC2_3 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC2_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-      a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-      a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-      a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-      a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-      a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at<uchar>(  i - rx, j - ry  );
+      a[  1 ] = (double)img.at<uchar>(  i,      j - ry  );
+      a[  2 ] = (double)img.at<uchar>(  i + rx, j - ry  );
+      a[  3 ] = (double)img.at<uchar>(  i - rx, j       );
+      a[  4 ] = (double)img.at<uchar>(  i,      j       );
+      a[  5 ] = (double)img.at<uchar>(  i + rx, j       );
+      a[  6 ] = (double)img.at<uchar>(  i - rx, j + ry  );
+      a[  7 ] = (double)img.at<uchar>(  i,      j + ry  );
+      a[  8 ] = (double)img.at<uchar>(  i + rx, j + ry  );
       tmp[ 0 ] += a[ 4 ];
       tmp[ 1 ] += a[ 4 ] * a[ 0 ];
       tmp[ 2 ] += a[ 4 ] * a[ 1 ];
@@ -2555,24 +2545,23 @@ void HLAC::_extractGray3_3( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a[ 9 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC3_3 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC3_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-      a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-      a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-      a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-      a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-      a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at<uchar>(  i - rx, j - ry  );
+      a[  1 ] = (double)img.at<uchar>(  i,      j - ry  );
+      a[  2 ] = (double)img.at<uchar>(  i + rx, j - ry  );
+      a[  3 ] = (double)img.at<uchar>(  i - rx, j       );
+      a[  4 ] = (double)img.at<uchar>(  i,      j       );
+      a[  5 ] = (double)img.at<uchar>(  i + rx, j       );
+      a[  6 ] = (double)img.at<uchar>(  i - rx, j + ry  );
+      a[  7 ] = (double)img.at<uchar>(  i,      j + ry  );
+      a[  8 ] = (double)img.at<uchar>(  i + rx, j + ry  );
       tmp[ 0 ] += a[ 4 ];
       tmp[ 1 ] += a[ 4 ] * a[ 0 ];
       tmp[ 2 ] += a[ 4 ] * a[ 1 ];
@@ -2767,29 +2756,28 @@ void HLAC::_extractGray1_5( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a;
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC1_5 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC1_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a = (double)img.data[ i + j * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a = (double)img.at<uchar>( i, j );
       tmp[ 0 ] += a;
-      tmp[ 1 ] += a * (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-      tmp[ 2 ] += a * (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-      tmp[ 3 ] += a * (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-      tmp[ 4 ] += a * (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-      tmp[ 5 ] += a * (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-      tmp[ 6 ] += a * (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-      tmp[ 7 ] += a * (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-      tmp[ 8 ] += a * (double)img.data[   i          + ( j -   ry ) * width_step ];
-      tmp[ 9 ] += a * (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-      tmp[ 10 ] += a * (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-      tmp[ 11 ] += a * (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-      tmp[ 12 ] += a * (double)img.data[ ( i -   rx ) +   j          * width_step ];
+      tmp[ 1 ] += a * (double)img.at<uchar>(  i - 2*rx,  j - 2*ry  );
+      tmp[ 2 ] += a * (double)img.at<uchar>(  i -   rx,  j - 2*ry  );
+      tmp[ 3 ] += a * (double)img.at<uchar>(  i,         j - 2*ry  );
+      tmp[ 4 ] += a * (double)img.at<uchar>(  i +   rx,  j - 2*ry  );
+      tmp[ 5 ] += a * (double)img.at<uchar>(  i + 2*rx,  j - 2*ry  );
+      tmp[ 6 ] += a * (double)img.at<uchar>(  i - 2*rx,  j -   ry  );
+      tmp[ 7 ] += a * (double)img.at<uchar>(  i -   rx,  j -   ry  );
+      tmp[ 8 ] += a * (double)img.at<uchar>(  i,         j -   ry  );
+      tmp[ 9 ] += a * (double)img.at<uchar>(  i +   rx,  j -   ry  );
+      tmp[ 10 ] += a * (double)img.at<uchar>(  i + 2*rx,  j -   ry  );
+      tmp[ 11 ] += a * (double)img.at<uchar>(  i - 2*rx,  j         );
+      tmp[ 12 ] += a * (double)img.at<uchar>(  i -   rx,  j         );
       tmp[ 13 ] += a * a;
     }
   }
@@ -2818,40 +2806,39 @@ void HLAC::_extractGray2_5( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a[ 25 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC2_5 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC2_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  1 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-      a[  2 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-      a[  4 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  5 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-      a[  6 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i          + ( j -   ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-      a[  9 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-      a[ 10 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-      a[ 11 ] = (double)img.data[ ( i -   rx ) +   j          * width_step ];
-      a[ 12 ] = (double)img.data[   i          +   j          * width_step ];
-      a[ 13 ] = (double)img.data[ ( i +   rx ) +   j          * width_step ];
-      a[ 14 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step ];
-      a[ 15 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step ];
-      a[ 16 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step ];
-      a[ 17 ] = (double)img.data[   i          + ( j +   ry ) * width_step ];
-      a[ 18 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step ];
-      a[ 19 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step ];
-      a[ 20 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step ];
-      a[ 21 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step ];
-      a[ 22 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step ];
-      a[ 23 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step ];
-      a[ 24 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at<uchar>(  i - 2*rx, j - 2*ry  );
+      a[  1 ] = (double)img.at<uchar>(  i -   rx, j - 2*ry  );
+      a[  2 ] = (double)img.at<uchar>(  i,        j - 2*ry  );
+      a[  3 ] = (double)img.at<uchar>(  i +   rx, j - 2*ry  );
+      a[  4 ] = (double)img.at<uchar>(  i + 2*rx, j - 2*ry  );
+      a[  5 ] = (double)img.at<uchar>(  i - 2*rx, j -   ry  );
+      a[  6 ] = (double)img.at<uchar>(  i -   rx, j -   ry  );
+      a[  7 ] = (double)img.at<uchar>(  i,        j -   ry  );
+      a[  8 ] = (double)img.at<uchar>(  i +   rx, j -   ry  );
+      a[  9 ] = (double)img.at<uchar>(  i + 2*rx, j -   ry  );
+      a[ 10 ] = (double)img.at<uchar>(  i - 2*rx, j         );
+      a[ 11 ] = (double)img.at<uchar>(  i -   rx, j         );
+      a[ 12 ] = (double)img.at<uchar>(  i,        j         );
+      a[ 13 ] = (double)img.at<uchar>(  i +   rx, j         );
+      a[ 14 ] = (double)img.at<uchar>(  i + 2*rx, j         );
+      a[ 15 ] = (double)img.at<uchar>(  i - 2*rx, j +   ry  );
+      a[ 16 ] = (double)img.at<uchar>(  i -   rx, j +   ry  );
+      a[ 17 ] = (double)img.at<uchar>(  i,        j +   ry  );
+      a[ 18 ] = (double)img.at<uchar>(  i +   rx, j +   ry  );
+      a[ 19 ] = (double)img.at<uchar>(  i + 2*rx, j +   ry  );
+      a[ 20 ] = (double)img.at<uchar>(  i - 2*rx, j + 2*ry  );
+      a[ 21 ] = (double)img.at<uchar>(  i -   rx, j + 2*ry  );
+      a[ 22 ] = (double)img.at<uchar>(  i,        j + 2*ry  );
+      a[ 23 ] = (double)img.at<uchar>(  i +   rx, j + 2*ry  );
+      a[ 24 ] = (double)img.at<uchar>(  i + 2*rx, j + 2*ry  );
       tmp[ 0 ] += a[ 12 ];
       tmp[ 1 ] += a[ 12 ] * a[ 0 ];
       tmp[ 2 ] += a[ 12 ] * a[ 1 ];
@@ -3106,40 +3093,39 @@ void HLAC::_extractGray3_5( std::vector<float> &result, const cv::Mat &img,
 			       const int &up, const int &down )
 {
   double a[ 25 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_GRAY_HLAC3_5 ];
   for(int i=0; i<DIM_OF_GRAY_HLAC3_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  1 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-      a[  2 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-      a[  4 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  5 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-      a[  6 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i          + ( j -   ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-      a[  9 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-      a[ 10 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-      a[ 11 ] = (double)img.data[ ( i -   rx ) +   j          * width_step ];
-      a[ 12 ] = (double)img.data[   i          +   j          * width_step ];
-      a[ 13 ] = (double)img.data[ ( i +   rx ) +   j          * width_step ];
-      a[ 14 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step ];
-      a[ 15 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step ];
-      a[ 16 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step ];
-      a[ 17 ] = (double)img.data[   i          + ( j +   ry ) * width_step ];
-      a[ 18 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step ];
-      a[ 19 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step ];
-      a[ 20 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step ];
-      a[ 21 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step ];
-      a[ 22 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step ];
-      a[ 23 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step ];
-      a[ 24 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at<uchar>(  i - 2*rx, j - 2*ry  );
+      a[  1 ] = (double)img.at<uchar>(  i -   rx, j - 2*ry  );
+      a[  2 ] = (double)img.at<uchar>(  i,        j - 2*ry  );
+      a[  3 ] = (double)img.at<uchar>(  i +   rx, j - 2*ry  );
+      a[  4 ] = (double)img.at<uchar>(  i + 2*rx, j - 2*ry  );
+      a[  5 ] = (double)img.at<uchar>(  i - 2*rx, j -   ry  );
+      a[  6 ] = (double)img.at<uchar>(  i -   rx, j -   ry  );
+      a[  7 ] = (double)img.at<uchar>(  i,        j -   ry  );
+      a[  8 ] = (double)img.at<uchar>(  i +   rx, j -   ry  );
+      a[  9 ] = (double)img.at<uchar>(  i + 2*rx, j -   ry  );
+      a[ 10 ] = (double)img.at<uchar>(  i - 2*rx, j         );
+      a[ 11 ] = (double)img.at<uchar>(  i -   rx, j         );
+      a[ 12 ] = (double)img.at<uchar>(  i,        j         );
+      a[ 13 ] = (double)img.at<uchar>(  i +   rx, j         );
+      a[ 14 ] = (double)img.at<uchar>(  i + 2*rx, j         );
+      a[ 15 ] = (double)img.at<uchar>(  i - 2*rx, j +   ry  );
+      a[ 16 ] = (double)img.at<uchar>(  i -   rx, j +   ry  );
+      a[ 17 ] = (double)img.at<uchar>(  i,        j +   ry  );
+      a[ 18 ] = (double)img.at<uchar>(  i +   rx, j +   ry  );
+      a[ 19 ] = (double)img.at<uchar>(  i + 2*rx, j +   ry  );
+      a[ 20 ] = (double)img.at<uchar>(  i - 2*rx, j + 2*ry  );
+      a[ 21 ] = (double)img.at<uchar>(  i -   rx, j + 2*ry  );
+      a[ 22 ] = (double)img.at<uchar>(  i,        j + 2*ry  );
+      a[ 23 ] = (double)img.at<uchar>(  i +   rx, j + 2*ry  );
+      a[ 24 ] = (double)img.at<uchar>(  i + 2*rx, j + 2*ry  );
       tmp[ 0 ] += a[ 12 ];
       tmp[ 1 ] += a[ 12 ] * a[ 0 ];
       tmp[ 2 ] += a[ 12 ] * a[ 1 ];
@@ -5431,42 +5417,41 @@ void HLAC::_extractColor1_3( std::vector<float> &result, const cv::Mat &img,
 				const int &up, const int &down )
 {
   double a[ 27 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_COLOR_HLAC1_3 ];
   for(int i=0; i<DIM_OF_COLOR_HLAC1_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-      a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-      a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-      a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-      a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-      a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
-      a[  9 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step +1 ];
-      a[ 10 ] = (double)img.data[   i        + ( j - ry ) * width_step +1 ];
-      a[ 11 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step +1 ];
-      a[ 12 ] = (double)img.data[ ( i - rx ) +   j        * width_step +1 ];
-      a[ 13 ] = (double)img.data[   i        +   j        * width_step +1 ];
-      a[ 14 ] = (double)img.data[ ( i + rx ) +   j        * width_step +1 ];
-      a[ 15 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step +1 ];
-      a[ 16 ] = (double)img.data[   i        + ( j + ry ) * width_step +1 ];
-      a[ 17 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step +1 ];
-      a[ 18 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step +2 ];
-      a[ 19 ] = (double)img.data[   i        + ( j - ry ) * width_step +2 ];
-      a[ 20 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step +2 ];
-      a[ 21 ] = (double)img.data[ ( i - rx ) +   j        * width_step +2 ];
-      a[ 22 ] = (double)img.data[   i        +   j        * width_step +2 ];
-      a[ 23 ] = (double)img.data[ ( i + rx ) +   j        * width_step +2 ];
-      a[ 24 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step +2 ];
-      a[ 25 ] = (double)img.data[   i        + ( j + ry ) * width_step +2 ];
-      a[ 26 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step +2 ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 0 ];
+      a[  1 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 0 ];
+      a[  2 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 0 ];
+      a[  3 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 0 ];
+      a[  4 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 0 ];
+      a[  5 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 0 ];
+      a[  6 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 0 ];
+      a[  7 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 0 ];
+      a[  8 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 0 ];
+      a[  9 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 1 ];
+      a[ 10 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 1 ];
+      a[ 11 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 1 ];
+      a[ 12 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 1 ];
+      a[ 13 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 1 ];
+      a[ 14 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 1 ];
+      a[ 15 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 1 ];
+      a[ 16 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 1 ];
+      a[ 17 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 1 ];
+      a[ 18 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 2 ];
+      a[ 19 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 2 ];
+      a[ 20 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 2 ];
+      a[ 21 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 2 ];
+      a[ 22 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 2 ];
+      a[ 23 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 2 ];
+      a[ 24 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 2 ];
+      a[ 25 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 2 ];
+      a[ 26 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 2 ];
       tmp[ 0 ] += a[ 4 ];
       tmp[ 1 ] += a[ 13 ];
       tmp[ 2 ] += a[ 22 ];
@@ -5539,42 +5524,41 @@ void HLAC::_extractColor2_3( std::vector<float> &result, const cv::Mat &img,
 				const int &up, const int &down )
 {
   double a[ 27 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_COLOR_HLAC2_3 ];
   for(int i=0; i<DIM_OF_COLOR_HLAC2_3; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step ];
-      a[  1 ] = (double)img.data[   i        + ( j - ry ) * width_step ];
-      a[  2 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i - rx ) +   j        * width_step ];
-      a[  4 ] = (double)img.data[   i        +   j        * width_step ];
-      a[  5 ] = (double)img.data[ ( i + rx ) +   j        * width_step ];
-      a[  6 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i        + ( j + ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step ];
-      a[  9 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step +1 ];
-      a[ 10 ] = (double)img.data[   i        + ( j - ry ) * width_step +1 ];
-      a[ 11 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step +1 ];
-      a[ 12 ] = (double)img.data[ ( i - rx ) +   j        * width_step +1 ];
-      a[ 13 ] = (double)img.data[   i        +   j        * width_step +1 ];
-      a[ 14 ] = (double)img.data[ ( i + rx ) +   j        * width_step +1 ];
-      a[ 15 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step +1 ];
-      a[ 16 ] = (double)img.data[   i        + ( j + ry ) * width_step +1 ];
-      a[ 17 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step +1 ];
-      a[ 18 ] = (double)img.data[ ( i - rx ) + ( j - ry ) * width_step +2 ];
-      a[ 19 ] = (double)img.data[   i        + ( j - ry ) * width_step +2 ];
-      a[ 20 ] = (double)img.data[ ( i + rx ) + ( j - ry ) * width_step +2 ];
-      a[ 21 ] = (double)img.data[ ( i - rx ) +   j        * width_step +2 ];
-      a[ 22 ] = (double)img.data[   i        +   j        * width_step +2 ];
-      a[ 23 ] = (double)img.data[ ( i + rx ) +   j        * width_step +2 ];
-      a[ 24 ] = (double)img.data[ ( i - rx ) + ( j + ry ) * width_step +2 ];
-      a[ 25 ] = (double)img.data[   i        + ( j + ry ) * width_step +2 ];
-      a[ 26 ] = (double)img.data[ ( i + rx ) + ( j + ry ) * width_step +2 ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 0 ];
+      a[  1 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 0 ];
+      a[  2 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 0 ];
+      a[  3 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 0 ];
+      a[  4 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 0 ];
+      a[  5 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 0 ];
+      a[  6 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 0 ];
+      a[  7 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 0 ];
+      a[  8 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 0 ];
+      a[  9 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 1 ];
+      a[ 10 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 1 ];
+      a[ 11 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 1 ];
+      a[ 12 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 1 ];
+      a[ 13 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 1 ];
+      a[ 14 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 1 ];
+      a[ 15 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 1 ];
+      a[ 16 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 1 ];
+      a[ 17 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 1 ];
+      a[ 18 ] = (double)img.at< cv::Vec3b >(  i - rx,  j - ry  )[ 2 ];
+      a[ 19 ] = (double)img.at< cv::Vec3b >(  i,       j - ry  )[ 2 ];
+      a[ 20 ] = (double)img.at< cv::Vec3b >(  i + rx,  j - ry  )[ 2 ];
+      a[ 21 ] = (double)img.at< cv::Vec3b >(  i - rx,  j       )[ 2 ];
+      a[ 22 ] = (double)img.at< cv::Vec3b >(  i,       j       )[ 2 ];
+      a[ 23 ] = (double)img.at< cv::Vec3b >(  i + rx,  j       )[ 2 ];
+      a[ 24 ] = (double)img.at< cv::Vec3b >(  i - rx,  j + ry  )[ 2 ];
+      a[ 25 ] = (double)img.at< cv::Vec3b >(  i,       j + ry  )[ 2 ];
+      a[ 26 ] = (double)img.at< cv::Vec3b >(  i + rx,  j + ry  )[ 2 ];
       tmp[ 0 ] += a[ 4 ];
       tmp[ 1 ] += a[ 13 ];
       tmp[ 2 ] += a[ 22 ];
@@ -6327,90 +6311,89 @@ void HLAC::_extractColor1_5( std::vector<float> &result, const cv::Mat &img,
 				const int &up, const int &down )
 {
   double a[ 75 ];
-  const int width_step = img.step;
   
   /*** initialize ***/
   double tmp[ DIM_OF_COLOR_HLAC1_5 ];
   for(int i=0; i<DIM_OF_COLOR_HLAC1_5; ++i) tmp[ i ] = 0.0;
   
   /*** feature extraction ***/
-  for(int j=up; j<down; ++j){
-    for(int i=left; i<right; ++i){
-      a[  0 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  1 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step ];
-      a[  2 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step ];
-      a[  3 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step ];
-      a[  4 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step ];
-      a[  5 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step ];
-      a[  6 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step ];
-      a[  7 ] = (double)img.data[   i          + ( j -   ry ) * width_step ];
-      a[  8 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step ];
-      a[  9 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step ];
-      a[ 10 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step ];
-      a[ 11 ] = (double)img.data[ ( i -   rx ) +   j          * width_step ];
-      a[ 12 ] = (double)img.data[   i          +   j          * width_step ];
-//       a[ 13 ] = (double)img.data[ ( i +   rx ) +   j          * width_step ];
-//       a[ 14 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step ];
-//       a[ 15 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step ];
-//       a[ 16 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step ];
-//       a[ 17 ] = (double)img.data[   i          + ( j +   ry ) * width_step ];
-//       a[ 18 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step ];
-//       a[ 19 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step ];
-//       a[ 20 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step ];
-//       a[ 21 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step ];
-//       a[ 22 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step ];
-//       a[ 23 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step ];
-//       a[ 24 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step ];
-      a[ 25 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step +1 ];
-      a[ 26 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step +1 ];
-      a[ 27 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step +1 ];
-      a[ 28 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step +1 ];
-      a[ 29 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step +1 ];
-      a[ 30 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step +1 ];
-      a[ 31 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step +1 ];
-      a[ 32 ] = (double)img.data[   i          + ( j -   ry ) * width_step +1 ];
-      a[ 33 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step +1 ];
-      a[ 34 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step +1 ];
-      a[ 35 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step +1 ];
-      a[ 36 ] = (double)img.data[ ( i -   rx ) +   j          * width_step +1 ];
-      a[ 37 ] = (double)img.data[   i          +   j          * width_step +1 ];
-      a[ 38 ] = (double)img.data[ ( i +   rx ) +   j          * width_step +1 ];
-      a[ 39 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step +1 ];
-      a[ 40 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step +1 ];
-      a[ 41 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step +1 ];
-      a[ 42 ] = (double)img.data[   i          + ( j +   ry ) * width_step +1 ];
-      a[ 43 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step +1 ];
-      a[ 44 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step +1 ];
-      a[ 45 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step +1 ];
-      a[ 46 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step +1 ];
-      a[ 47 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step +1 ];
-      a[ 48 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step +1 ];
-      a[ 49 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step +1 ];
-      a[ 50 ] = (double)img.data[ ( i - 2*rx ) + ( j - 2*ry ) * width_step +2 ];
-      a[ 51 ] = (double)img.data[ ( i -   rx ) + ( j - 2*ry ) * width_step +2 ];
-      a[ 52 ] = (double)img.data[   i          + ( j - 2*ry ) * width_step +2 ];
-      a[ 53 ] = (double)img.data[ ( i +   rx ) + ( j - 2*ry ) * width_step +2 ];
-      a[ 54 ] = (double)img.data[ ( i + 2*rx ) + ( j - 2*ry ) * width_step +2 ];
-      a[ 55 ] = (double)img.data[ ( i - 2*rx ) + ( j -   ry ) * width_step +2 ];
-      a[ 56 ] = (double)img.data[ ( i -   rx ) + ( j -   ry ) * width_step +2 ];
-      a[ 57 ] = (double)img.data[   i          + ( j -   ry ) * width_step +2 ];
-      a[ 58 ] = (double)img.data[ ( i +   rx ) + ( j -   ry ) * width_step +2 ];
-      a[ 59 ] = (double)img.data[ ( i + 2*rx ) + ( j -   ry ) * width_step +2 ];
-      a[ 60 ] = (double)img.data[ ( i - 2*rx ) +   j          * width_step +2 ];
-      a[ 61 ] = (double)img.data[ ( i -   rx ) +   j          * width_step +2 ];
-      a[ 62 ] = (double)img.data[   i          +   j          * width_step +2 ];
-      a[ 63 ] = (double)img.data[ ( i +   rx ) +   j          * width_step +2 ];
-      a[ 64 ] = (double)img.data[ ( i + 2*rx ) +   j          * width_step +2 ];
-      a[ 65 ] = (double)img.data[ ( i - 2*rx ) + ( j +   ry ) * width_step +2 ];
-      a[ 66 ] = (double)img.data[ ( i -   rx ) + ( j +   ry ) * width_step +2 ];
-      a[ 67 ] = (double)img.data[   i          + ( j +   ry ) * width_step +2 ];
-      a[ 68 ] = (double)img.data[ ( i +   rx ) + ( j +   ry ) * width_step +2 ];
-      a[ 69 ] = (double)img.data[ ( i + 2*rx ) + ( j +   ry ) * width_step +2 ];
-      a[ 70 ] = (double)img.data[ ( i - 2*rx ) + ( j + 2*ry ) * width_step +2 ];
-      a[ 71 ] = (double)img.data[ ( i -   rx ) + ( j + 2*ry ) * width_step +2 ];
-      a[ 72 ] = (double)img.data[   i          + ( j + 2*ry ) * width_step +2 ];
-      a[ 73 ] = (double)img.data[ ( i +   rx ) + ( j + 2*ry ) * width_step +2 ];
-      a[ 74 ] = (double)img.data[ ( i + 2*rx ) + ( j + 2*ry ) * width_step +2 ];
+  for(int i=up; i<down; ++i){
+    for(int j=left; j<right; ++j){
+      a[  0 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j - 2*ry  )[ 0 ];
+      a[  1 ] = (double)img.at< cv::Vec3b >(  i -   rx, j - 2*ry  )[ 0 ];
+      a[  2 ] = (double)img.at< cv::Vec3b >(  i,        j - 2*ry  )[ 0 ];
+      a[  3 ] = (double)img.at< cv::Vec3b >(  i +   rx, j - 2*ry  )[ 0 ];
+      a[  4 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j - 2*ry  )[ 0 ];
+      a[  5 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j -   ry  )[ 0 ];
+      a[  6 ] = (double)img.at< cv::Vec3b >(  i -   rx, j -   ry  )[ 0 ];
+      a[  7 ] = (double)img.at< cv::Vec3b >(  i,        j -   ry  )[ 0 ];
+      a[  8 ] = (double)img.at< cv::Vec3b >(  i +   rx, j -   ry  )[ 0 ];
+      a[  9 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j -   ry  )[ 0 ];
+      a[ 10 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j         )[ 0 ];
+      a[ 11 ] = (double)img.at< cv::Vec3b >(  i -   rx, j         )[ 0 ];
+      a[ 12 ] = (double)img.at< cv::Vec3b >(  i       , j         )[ 0 ];
+//       a[ 13 ] = (double)img.at< cv::Vec3b >(  i +   rx, j         )[ 0 ];
+//       a[ 14 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j         )[ 0 ];
+//       a[ 15 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j +   ry  )[ 0 ];
+//       a[ 16 ] = (double)img.at< cv::Vec3b >(  i -   rx, j +   ry  )[ 0 ];
+//       a[ 17 ] = (double)img.at< cv::Vec3b >(  i,        j +   ry  )[ 0 ];
+//       a[ 18 ] = (double)img.at< cv::Vec3b >(  i +   rx, j +   ry  )[ 0 ];
+//       a[ 19 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j +   ry  )[ 0 ];
+//       a[ 20 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j + 2*ry  )[ 0 ];
+//       a[ 21 ] = (double)img.at< cv::Vec3b >(  i -   rx, j + 2*ry  )[ 0 ];
+//       a[ 22 ] = (double)img.at< cv::Vec3b >(  i,        j + 2*ry  )[ 0 ];
+//       a[ 23 ] = (double)img.at< cv::Vec3b >(  i +   rx, j + 2*ry  )[ 0 ];
+//       a[ 24 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j + 2*ry  )[ 0 ];
+      a[ 25 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j - 2*ry  )[ 1 ];
+      a[ 26 ] = (double)img.at< cv::Vec3b >(  i -   rx, j - 2*ry  )[ 1 ];
+      a[ 27 ] = (double)img.at< cv::Vec3b >(  i,        j - 2*ry  )[ 1 ];
+      a[ 28 ] = (double)img.at< cv::Vec3b >(  i +   rx, j - 2*ry  )[ 1 ];
+      a[ 29 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j - 2*ry  )[ 1 ];
+      a[ 30 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j -   ry  )[ 1 ];
+      a[ 31 ] = (double)img.at< cv::Vec3b >(  i -   rx, j -   ry  )[ 1 ];
+      a[ 32 ] = (double)img.at< cv::Vec3b >(  i,        j -   ry  )[ 1 ];
+      a[ 33 ] = (double)img.at< cv::Vec3b >(  i +   rx, j -   ry  )[ 1 ];
+      a[ 34 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j -   ry  )[ 1 ];
+      a[ 35 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j         )[ 1 ];
+      a[ 36 ] = (double)img.at< cv::Vec3b >(  i -   rx, j         )[ 1 ];
+      a[ 37 ] = (double)img.at< cv::Vec3b >(  i       , j         )[ 1 ];
+      a[ 38 ] = (double)img.at< cv::Vec3b >(  i +   rx, j         )[ 1 ];
+      a[ 39 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j         )[ 1 ];
+      a[ 40 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j +   ry  )[ 1 ];
+      a[ 41 ] = (double)img.at< cv::Vec3b >(  i -   rx, j +   ry  )[ 1 ];
+      a[ 42 ] = (double)img.at< cv::Vec3b >(  i,        j +   ry  )[ 1 ];
+      a[ 43 ] = (double)img.at< cv::Vec3b >(  i +   rx, j +   ry  )[ 1 ];
+      a[ 44 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j +   ry  )[ 1 ];
+      a[ 45 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j + 2*ry  )[ 1 ];
+      a[ 46 ] = (double)img.at< cv::Vec3b >(  i -   rx, j + 2*ry  )[ 1 ];
+      a[ 47 ] = (double)img.at< cv::Vec3b >(  i,        j + 2*ry  )[ 1 ];
+      a[ 48 ] = (double)img.at< cv::Vec3b >(  i +   rx, j + 2*ry  )[ 1 ];
+      a[ 49 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j + 2*ry  )[ 1 ];
+      a[ 50 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j - 2*ry  )[ 2 ];
+      a[ 51 ] = (double)img.at< cv::Vec3b >(  i -   rx, j - 2*ry  )[ 2 ];
+      a[ 52 ] = (double)img.at< cv::Vec3b >(  i,        j - 2*ry  )[ 2 ];
+      a[ 53 ] = (double)img.at< cv::Vec3b >(  i +   rx, j - 2*ry  )[ 2 ];
+      a[ 54 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j - 2*ry  )[ 2 ];
+      a[ 55 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j -   ry  )[ 2 ];
+      a[ 56 ] = (double)img.at< cv::Vec3b >(  i -   rx, j -   ry  )[ 2 ];
+      a[ 57 ] = (double)img.at< cv::Vec3b >(  i,        j -   ry  )[ 2 ];
+      a[ 58 ] = (double)img.at< cv::Vec3b >(  i +   rx, j -   ry  )[ 2 ];
+      a[ 59 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j -   ry  )[ 2 ];
+      a[ 60 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j         )[ 2 ];
+      a[ 61 ] = (double)img.at< cv::Vec3b >(  i -   rx, j         )[ 2 ];
+      a[ 62 ] = (double)img.at< cv::Vec3b >(  i       , j         )[ 2 ];
+      a[ 63 ] = (double)img.at< cv::Vec3b >(  i +   rx, j         )[ 2 ];
+      a[ 64 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j         )[ 2 ];
+      a[ 65 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j +   ry  )[ 2 ];
+      a[ 66 ] = (double)img.at< cv::Vec3b >(  i -   rx, j +   ry  )[ 2 ];
+      a[ 67 ] = (double)img.at< cv::Vec3b >(  i,        j +   ry  )[ 2 ];
+      a[ 68 ] = (double)img.at< cv::Vec3b >(  i +   rx, j +   ry  )[ 2 ];
+      a[ 69 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j +   ry  )[ 2 ];
+      a[ 70 ] = (double)img.at< cv::Vec3b >(  i - 2*rx, j + 2*ry  )[ 2 ];
+      a[ 71 ] = (double)img.at< cv::Vec3b >(  i -   rx, j + 2*ry  )[ 2 ];
+      a[ 72 ] = (double)img.at< cv::Vec3b >(  i,        j + 2*ry  )[ 2 ];
+      a[ 73 ] = (double)img.at< cv::Vec3b >(  i +   rx, j + 2*ry  )[ 2 ];
+      a[ 74 ] = (double)img.at< cv::Vec3b >(  i + 2*rx, j + 2*ry  )[ 2 ];
       tmp[ 0 ] += a[ 12 ];
       tmp[ 1 ] += a[ 37 ];
       tmp[ 2 ] += a[ 62 ];
