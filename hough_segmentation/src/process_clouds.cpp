@@ -737,14 +737,14 @@ int main (int argc, char** argv)
       }
     
       // Add the normals
-      viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS 2D");
+      viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
       // Color the normals with red
-      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS 2D"); 
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMALS"); 
       // And wait until Q key is pressed 
       viewer.spin ();
 
       // Remove the point cloud data
-      viewer.removePointCloud ("NORMALS 2D");
+      viewer.removePointCloud ("NORMALS");
       // And wait until Q key is pressed
       viewer.spin ();
 
