@@ -41,7 +41,7 @@ bin/hough_segmentation data/clutters/a-1224512793-dsn-objects.pcd               
 
 
 
-======================== Commands for processing point clouds ========================
+======================== Commands for process point ========================
 bin/process_clouds data/a-ascii-1224512793-dsn-objects.pcd -cam 0.00489929,4.89929/1.40893,0.368041,0.533069/-0.139939,-0.0105007,2.12851/0.686008,0.172371,0.706881/1678,975/2,71 -verbose 1 -size_of_points 3 -tabel 0 -filter 1 -project 0 -normals 1
 
 bin/process_clouds data/e-ascii-table1-dbsv-ann-normal.pcd -cam 0.00437526,4.37526/-0.429246,-0.620819,1.23339/-0.141983,-0.21418,1.87717/-0.46592,-0.639312,0.611717/1278,997/1682,46 -verbose 1 -size_of_points 3 -tabel 1 -filter 1 -project 0 -normals 1 -weight 0.500 -epsilon 0.100 -threshold 0.025
@@ -50,4 +50,10 @@ bin/process_clouds data/e-ascii-table1-dbsv-ann-normal.pcd -cam 0.00437526,4.375
 
 bin/process_clouds data/f-ascii-table2-dbsv-ann-normal.pcd -cam 0.00437526,4.37526/-0.429246,-0.620819,1.23339/-0.141983,-0.21418,1.87717/-0.46592,-0.639312,0.611717/1278,997/1682,46 -verbose 1 -size_of_points 3 -pass 1 -height 0.450 -table 1 -weight 0.100 -epsilon 0.100 -threshold 0.005 -iterations 10000 -filter 0 -project 0 -normal 0
 
-======================================================================================
+============================================================================
+
+
+======================== Commands for rsd ========================
+
+==================================================================
+
