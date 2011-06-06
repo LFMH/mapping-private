@@ -14,6 +14,7 @@ using namespace terminal_tools;
 // Needed for normal estimation
 typedef pcl::KdTree<pcl::PointXYZ>::Ptr KdTreePtr;
 typedef pcl::KdTree<pcl::PointNormal>::Ptr KdTreePtr2;
+
 // Needed for time profiling
 double t1,t2;
 double my_clock()
@@ -22,23 +23,35 @@ double my_clock()
   gettimeofday(&tv, NULL);
   return tv.tv_sec + (double)tv.tv_usec*1e-6;
 }
+
 int main( int argc, char** argv )
 {
   // Parameter parsing
   if( argc < 2 )
   {
-    std::cerr << "Need one parameter! Syntax is: %s {input_pointcloud_filename.pcd}\n" << argv[0] << std::endl;
+    std::cerr << "Need one parameter! Syntax is: " << argv [0] << " {input_point_cloud_filename.pcd}\n" << std::endl;
     return(-1);
   }
 
+  // Get position of dot in path of file 
+  std::string file = argv [1];
+  size_t dot = file.find (".");
+
+  // Create names for saving pcd files
+  std::string for_normals = argv [1];
+  for_normals.insert (dot, "-normals");
+
+  std::string for_radii = argv [1];
+  for_radii.insert (dot, "-radii");
+
   // Radius search, shall be approximately the same as downsample_leaf (voxel size)
-  double rsd_radius_search = 0.01;
+  double rsd_radius_search = 0.001;
   parse_argument (argc, argv, "-rsd", rsd_radius_search);  
   // We use radius search-based normal estimation
-  double normals_radius_search = 0.02;
+  double normals_radius_search = 0.001;
   parse_argument (argc, argv, "-normals", normals_radius_search);
   // Voxel size
-  double downsample_leaf = 0.01;                          
+  double downsample_leaf = 0.001;
   parse_argument (argc, argv, "-leaf", downsample_leaf);
   std::cerr << "rsd: " << rsd_radius_search << " normals: " << normals_radius_search <<  " leaf: " << downsample_leaf << std::endl;
 
@@ -62,7 +75,7 @@ int main( int argc, char** argv )
   // Concatenate XYZ + Normal fields
   pcl::PointCloud<pcl::PointNormal> cloud_xyz_normals;
   pcl::concatenateFields (*input_cloud, *cloud_normals, cloud_xyz_normals);
-  writer.write("normals.pcd", cloud_xyz_normals, true);
+  writer.write(for_normals, cloud_xyz_normals, true);
 
   // Create the voxel grid
   pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud (new pcl::PointCloud<pcl::PointNormal> (cloud_xyz_normals));
@@ -96,6 +109,7 @@ int main( int argc, char** argv )
   // Concatenate radii values with the fields of the downsampled cloud and save as pcd
   pcl::PointCloud<pcl::PointNormalRADII> cloud_downsampled_radii;
   pcl::concatenateFields (cloud_downsampled, radii, cloud_downsampled_radii);
-  writer.write("radii.pcd", cloud_downsampled_radii, false);
+  writer.write(for_radii, cloud_downsampled_radii, false);
+
   return(0);
 }
