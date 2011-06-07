@@ -739,35 +739,6 @@ int main (int argc, char** argv)
 
 
 
-        // Vector of clusters from input cloud
-        std::vector<pcl::PointIndices> circle_clusters;
-        // Build kd-tree structure for clusters
-        pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
-
-        // Instantiate cluster extraction object
-        pcl::EuclideanClusterExtraction<PointT> clustering_of_circle;
-        // Set as input the cloud of handle
-        clustering_of_circle.setInputCloud (circle_inliers_cloud);
-        // Radius of the connnectivity threshold
-        clustering_of_circle.setClusterTolerance (circle_clustering_tolerance);
-        // Minimum size of clusters
-        clustering_of_circle.setMinClusterSize (minimum_size_of_circle_cluster);
-        // Provide pointer to the search method
-        clustering_of_circle.setSearchMethod (circle_clusters_tree);
-        // Call the extraction function
-        clustering_of_circle.extract (circle_clusters);
-
-        if ( verbose )
-        {
-          ROS_INFO ("  Inliers of circle present %d clusters", (int) circle_clusters.size ());
-        }
-
-
-
-
-
-
-
 
         // Check if the fitted circle has enough inliers in order to be accepted
         if ((int) circle_inliers->indices.size () < minimum_circle_inliers)
@@ -780,8 +751,6 @@ int main (int argc, char** argv)
         }
         else
         {
-          if ((int) circle_clusters.size () < 3)
-          {
             ROS_INFO ("ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
                 circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
 
@@ -837,7 +806,6 @@ int main (int argc, char** argv)
             
 
 
-          }
         }
 
         // number of fitted circles
