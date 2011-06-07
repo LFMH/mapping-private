@@ -36,6 +36,7 @@
 #include "terminal_tools/parse.h"
 
 #include "pcl/io/pcd_io.h"
+#include "pcl/features/rsd.h"
 #include "pcl/features/normal_3d.h"
 #include "pcl/filters/extract_indices.h"
 #include "pcl/filters/statistical_outlier_removal.h"
@@ -45,6 +46,8 @@
 #include "pcl/segmentation/extract_clusters.h"
 
 #include "pcl_visualization/pcl_visualizer.h"
+
+#include "pcl_cloud_algos/pcl_cloud_algos_point_types.h"
 
 // --------------------------------------------------------------- //
 // -------------------- Declare defs of types -------------------- //
@@ -61,7 +64,7 @@ int iterations = 100;
 
 // Clustering's Parameters
 int minimum_size_of_objects_clusters = 100; /* [points] */
-double clustering_tolerance_of_objects = 0.100; /* [meters] */
+double clustering_tolerance_of_objects = 0.025; /* [meters] */
 
 // Fitting's Parameters
 double   line_threshold = 0.010; /// [meters]
@@ -82,9 +85,12 @@ int minimum_size_of_circle_cluster = 1; /// [points]
 
 
 
-int knn_for_normals = 10;
-double radius_for_normals = 0.010;
+int normals_search_knn = 10;
+double normals_search_radius = 0.010;
 double angle_threshold = 45.0; /// [degrees]
+
+
+double rsd_search_radius = 0.010;
 
 
 //
@@ -196,10 +202,11 @@ int main (int argc, char** argv)
 
 
 
-    ROS_INFO ("    -knn_for_normals X                         = ");
-    ROS_INFO ("    -radius_for_normals X                      = ");
+    ROS_INFO ("    -normals_search_knn X                         = ");
+    ROS_INFO ("    -normals_search_radius X                      = ");
     ROS_INFO ("    -angle_threshold X                         = ");
 
+    ROS_INFO ("    -rsd_search_radius X                         = ");
 
     ROS_INFO ("    -circle_space_radius X                     = ");
     ROS_INFO ("    -circle_space_percentage X                 = ");
@@ -243,9 +250,12 @@ int main (int argc, char** argv)
 
 
 
-  terminal_tools::parse_argument (argc, argv, "-knn_for_normals", knn_for_normals);
-  terminal_tools::parse_argument (argc, argv, "-radius_for_normals", radius_for_normals);
+  terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
+  terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
   terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
+
+
+  terminal_tools::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);  
 
 
   //
@@ -379,12 +389,12 @@ int main (int argc, char** argv)
   // ------------------------------------------------------------------- //
 
   // Point cloud of normals
-  pcl::PointCloud<pcl::Normal>::Ptr normals_cloud (new pcl::PointCloud<pcl::Normal> ());
+  pcl::PointCloud<PointT>::Ptr normals_cloud (new pcl::PointCloud<PointT> ());
   // Build kd-tree structure for normals
   pcl::KdTreeFLANN<PointT>::Ptr normals_tree (new pcl::KdTreeFLANN<PointT> ());
 
   // Create object for normal estimation
-  pcl::NormalEstimation<PointT, pcl::Normal> ne;
+  pcl::NormalEstimation<PointT, PointT> ne;
   // Provide pointer to the search method
   ne.setSearchMethod (normals_tree);
   // Set for which point cloud to compute the normals
@@ -392,11 +402,11 @@ int main (int argc, char** argv)
 
   // Set number of k nearest neighbors to use
 //  ne.setKSearch (10);
-//  ne.setKSearch (knn_for_normals);
+//  ne.setKSearch (normals_search_knn);
 
   // Sphere radius used as the maximum distance to consider a point as neighbor
 //  ne.setRadiusSearch (0.010);
-  ne.setRadiusSearch (radius_for_normals);
+  ne.setRadiusSearch (normals_search_radius);
 
   // Estimate the normals
   ne.compute (*normals_cloud);
@@ -428,9 +438,57 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
-  // --------------------------------------------------------------------- //
-  // -------------------- Refine 2D normals of points -------------------- //
-  // --------------------------------------------------------------------- //
+
+
+
+
+
+
+  // ----------------------------------------------------------------------- //
+  // -------------------- Estimate RSD values of points -------------------- //
+  // ----------------------------------------------------------------------- //
+
+  // Create the object for RSD estimation
+  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
+  pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
+  //rsd_tree->setInputCloud (working_cloud);
+  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
+
+  rsd.setInputCloud (working_cloud);
+  rsd.setInputNormals (normals_cloud);
+  rsd.setRadiusSearch (rsd_search_radius);
+  rsd.setSearchMethod (rsd_tree);
+  rsd.compute (rsd_cloud);
+
+
+  // Get position of full stop in path of file 
+  std::string path =  argv [pFileIndicesPCD [0]];
+  size_t fullstop = path.find (".");
+
+  // Create name for saving pcd files
+  std::string name = argv [1];
+  name.insert (fullstop, "-rsd");
+
+
+  // Concatenate radii values with the working cloud
+  //pcl::PointCloud<pcl::PointNormalRADII> rsd_working_cloud;
+  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
+  pcl::PointCloud<pcl::PointNormal> _rsd_working_cloud_;
+
+  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
+
+  // Save these points to disk
+  pcl::io::savePCDFile (name, rsd_working_cloud);
+
+
+
+
+
+
+
+  // ----------------------------------------------------------------------- //
+  // -------------------- Estimate 2D normals of points -------------------- //
+  // ----------------------------------------------------------------------- //
 
   for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
     normals_cloud->points[idx].normal_z = 0.0;  
@@ -490,6 +548,10 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
+
+
+
+
 
   // -------------------------------------------------------------- //
   // ------------------ Cluster point cloud data ------------------ //
@@ -1225,14 +1287,14 @@ int main (int argc, char** argv)
 
 
 
-
-  // Get position of dot in path of file 
+/*
+  // Get position of full stop in path of file 
   std::string file = argv [pFileIndicesPCD[0]];
-  size_t dot = file.find (".");
-
+  size_t fullstop = file.find (".");
+*/
   // Create file name for saving
   std::string circle_space_filename = argv [pFileIndicesPCD [0]];
-  circle_space_filename.insert (dot, "-circles");
+  circle_space_filename.insert (fullstop, "-circles");
 
   // Save these points to disk
   pcl::io::savePCDFile (circle_space_filename, *those_points);

@@ -40,6 +40,13 @@ bin/hough_segmentation data/clutters/a-1224512793-dsn-objects.pcd               
 
 bin/hough_segmentation data/1-1224512793-dsn-objects.pcd                                                                                                                            -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -step 1 -size_of_points 5                                                                              -clustering_tolerance_of_objects 0.025 -minimum_size_of_objects_clusters 50                                                                                                                                                                 -circle_step 0 -circle_threshold 0.010 -circle_clustering_tolerance 0.020                                                                                                                                                                   -iterations 100 -circle_space_radius 0.010 -circle_space_percentage 0.50
 
+
+
+
+
+
+bin/hough_segmentation data/1-1224512793-dsn-objects.pcd                                                                                                                            -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -step 1 -size_of_points 5                                                                              -normals_search_radius 0.020 -rsd_search_radius 0.010                                                                                                                                                                                       -clustering_tolerance_of_objects 0.025 -minimum_size_of_objects_clusters 100                                                                                                                                                                -circle_step 0 -circle_threshold 0.010 -circle_clustering_tolerance 0.020                                                                                                                                                                   -iterations 100 -circle_space_radius 0.010 -circle_space_percentage 0.50
+
 =================================================================================
 
 
@@ -58,5 +65,7 @@ bin/process_clouds data/f-ascii-table2-dbsv-ann-normal.pcd -cam 0.00437526,4.375
 ========================= Commands for rsd =========================
 
 bin/rsd data/1-1224512793-dsn-objects.pcd -rsd 0.030 -normals 0.020 -leaf 0.001
+
+bin/rsd data/1-1224512793-dsn-objects.pcd -rsd 0.010 -normals 0.020 -leaf 0.001
 
 ====================================================================
