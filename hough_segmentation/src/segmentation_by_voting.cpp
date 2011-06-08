@@ -85,12 +85,12 @@ int minimum_size_of_circle_cluster = 1; /// [points]
 
 
 
-int normals_search_knn = 10;
-double normals_search_radius = 0.010;
+int normals_search_knn = 10; /// [points]
+double normals_search_radius = 0.010; /// [meters]
+double rsd_search_radius = 0.010; /// [meters]
 double angle_threshold = 45.0; /// [degrees]
+double radius_threshold = 0.010; /// [meters]
 
-
-double rsd_search_radius = 0.010;
 
 
 //
@@ -202,11 +202,11 @@ int main (int argc, char** argv)
 
 
 
-    ROS_INFO ("    -normals_search_knn X                         = ");
-    ROS_INFO ("    -normals_search_radius X                      = ");
+    ROS_INFO ("    -normals_search_knn X                      = ");
+    ROS_INFO ("    -normals_search_radius X                   = ");
+    ROS_INFO ("    -rsd_search_radius X                       = ");
     ROS_INFO ("    -angle_threshold X                         = ");
-
-    ROS_INFO ("    -rsd_search_radius X                         = ");
+    ROS_INFO ("    -radius_threshold X                        = ");
 
     ROS_INFO ("    -circle_space_radius X                     = ");
     ROS_INFO ("    -circle_space_percentage X                 = ");
@@ -252,10 +252,10 @@ int main (int argc, char** argv)
 
   terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
-  terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
-
-
   terminal_tools::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);  
+  terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
+  terminal_tools::parse_argument (argc, argv, "-radius_threshold", radius_threshold);
+
 
 
   //
@@ -444,46 +444,6 @@ int main (int argc, char** argv)
 
 
 
-  // ----------------------------------------------------------------------- //
-  // -------------------- Estimate RSD values of points -------------------- //
-  // ----------------------------------------------------------------------- //
-
-  // Create the object for RSD estimation
-  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
-  pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
-  //rsd_tree->setInputCloud (working_cloud);
-  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
-
-  rsd.setInputCloud (working_cloud);
-  rsd.setInputNormals (normals_cloud);
-  rsd.setRadiusSearch (rsd_search_radius);
-  rsd.setSearchMethod (rsd_tree);
-  rsd.compute (rsd_cloud);
-
-
-  // Get position of full stop in path of file 
-  std::string path =  argv [pFileIndicesPCD [0]];
-  size_t fullstop = path.find (".");
-
-  // Create name for saving pcd files
-  std::string name = argv [1];
-  name.insert (fullstop, "-rsd");
-
-
-  // Concatenate radii values with the working cloud
-  //pcl::PointCloud<pcl::PointNormalRADII> rsd_working_cloud;
-  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
-  pcl::PointCloud<pcl::PointNormal> _rsd_working_cloud_;
-
-  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
-
-  // Save these points to disk
-  pcl::io::savePCDFile (name, rsd_working_cloud);
-
-
-
-
-
 
 
   // ----------------------------------------------------------------------- //
@@ -548,6 +508,61 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
+
+
+
+
+
+
+
+
+
+  // ----------------------------------------------------------------------- //
+  // -------------------- Estimate RSD values of points -------------------- //
+  // ----------------------------------------------------------------------- //
+
+  // Create the object for RSD estimation
+  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
+  pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
+  //rsd_tree->setInputCloud (working_cloud);
+  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
+
+  rsd.setInputCloud (working_cloud);
+  rsd.setInputNormals (normals_cloud);
+  rsd.setRadiusSearch (rsd_search_radius);
+  rsd.setSearchMethod (rsd_tree);
+  rsd.compute (rsd_cloud);
+
+
+  // Get position of full stop in path of file
+  std::string path =  argv [pFileIndicesPCD [0]];
+  size_t fullstop = path.find (".");
+
+  // Create name for saving pcd files
+  std::string name = argv [1];
+  name.insert (fullstop, "-rsd");
+
+  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
+
+  // Concatenate radii values with the working cloud
+  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
+
+  // Save the fresh computed normal and curvature values of points
+  for (int idx = 0; idx < (int) rsd_working_cloud.points.size (); idx++)
+  {
+    rsd_working_cloud.points.at (idx).normal_x = normals_cloud->points.at (idx).normal_x;
+    rsd_working_cloud.points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
+    rsd_working_cloud.points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
+    rsd_working_cloud.points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
+  }
+
+  // Save these points to disk
+  pcl::io::savePCDFile (name, rsd_working_cloud);
+
+
+
+
+
 
 
 
@@ -826,15 +841,19 @@ int main (int argc, char** argv)
         //ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
 
 
+// START W/ ANGELS OF VECTORS //
 
+        //
+ 
         /*
         cerr << "  " << circle_inliers->indices.size() << endl ;
-        for (int idx = 0; idx < circle_inliers->indices.size(); idx++)
+        for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
           cerr << circle_inliers->indices.at (idx) << " " ;
         cerr << endl ;
         circle_viewer.spin ();
         */
 
+        /*
         std::stringstream id1;
         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
@@ -842,12 +861,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id1.str());
         circle_viewer.spin ();
+        */
 
-
-
-
-
-
+        /*
         pcl::PointIndices::Ptr vectorial_circle_inliers (new pcl::PointIndices ());
 
         float c[2];
@@ -880,18 +896,15 @@ int main (int argc, char** argv)
           float dot = c2p[0]*np[0] + c2p[1]*np[1];
           float ang = acos (dot) * 180.0 / M_PI;
 
-/*
-          cerr << " dot: " << dot << " ang: " << ang << endl;
-          circle_viewer.spin ();
-*/
+          //cerr << " dot: " << dot << " ang: " << ang << endl;
+          //circle_viewer.spin ();
 
           if ( ((180.0 - angle_threshold) < ang) || (ang < angle_threshold) )
           {
-/*
-            cerr << 180 - angle_threshold << " < ang < " << angle_threshold << endl ;
-            cerr << " ang: " << ang << endl ;
-            circle_viewer.spin ();
-*/
+            //cerr << 180 - angle_threshold << " < ang < " << angle_threshold << endl ;
+            //cerr << " ang: " << ang << endl ;
+            //circle_viewer.spin ();
+
             //vectorial_circle_inliers->indices.push_back (idx);
             vectorial_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
           }
@@ -915,15 +928,17 @@ int main (int argc, char** argv)
         vectorial_extraction_of_circle.setNegative (false);
         // Call the extraction function
         vectorial_extraction_of_circle.filter (*vectorial_circle_inliers_cloud);
+        */
 
         /*
         cerr << "  " << vectorial_circle_inliers->indices.size() << endl ;
-        for (int idx = 0; idx < vectorial_circle_inliers->indices.size(); idx++)
+        for (int idx = 0; idx < (int) vectorial_circle_inliers->indices.size(); idx++)
           cerr << vectorial_circle_inliers->indices.at (idx) << " " ;
         cerr << endl ;
         circle_viewer.spin ();
         */
 
+        /*
         std::stringstream id2;
         id2 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*vectorial_circle_inliers_cloud, id2.str ());
@@ -931,6 +946,91 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id2.str());
         circle_viewer.spin ();
+        */
+
+// START W/ RSD VALUES //
+
+        //
+        
+        ///*
+        cerr << "  " << circle_inliers->indices.size() << endl ;
+        for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
+          cerr << circle_inliers->indices.at (idx) << " " ;
+        cerr << endl ;
+        circle_viewer.spin ();
+        //*/
+
+        ///*
+        std::stringstream id1;
+        id1 << "CIRCLE_INLIERS_" << ros::Time::now();
+        circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id1.str ()); 
+        circle_viewer.spin ();
+        circle_viewer.removePointCloud (id1.str());
+        circle_viewer.spin ();
+        //*/
+
+        ///*
+        pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
+
+        double rc = circle_coefficients.values [2];
+
+        for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
+        {
+          double rp = rsd_cloud.points.at (idx).r_min;
+
+          if ( fabs (rc - rp) < radius_threshold )
+          {
+            cerr << " rc: " << rc << " and " << " rp: " << rp << " fabs: " << fabs (rc - rp) << endl;
+            circle_viewer.spin ();
+
+            rsd_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
+          }
+        }
+
+        // ---------------------------- //
+        // Start the extraction process //
+        // ---------------------------- //
+
+        // Point cloud of circle inliers
+        pcl::PointCloud<PointT>::Ptr rsd_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+        // Extract the circular inliers 
+        pcl::ExtractIndices<PointT> rsd_extraction_of_circle;
+        // Set which indices to extract
+        rsd_extraction_of_circle.setIndices (rsd_circle_inliers);
+        // Set point cloud from where to extract
+        rsd_extraction_of_circle.setInputCloud (working_cluster_cloud);
+
+        // Return the points which represent the inliers
+        rsd_extraction_of_circle.setNegative (false);
+        // Call the extraction function
+        rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
+        //*/
+
+        ///*
+        cerr << "  " << rsd_circle_inliers->indices.size() << endl ;
+        for (int idx = 0; idx < (int) rsd_circle_inliers->indices.size(); idx++)
+          cerr << rsd_circle_inliers->indices.at (idx) << " " ;
+        cerr << endl ;
+        circle_viewer.spin ();
+        //*/
+
+        ///*
+        std::stringstream id3;
+        id3 << "CIRCLE_INLIERS_" << ros::Time::now();
+        circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, id3.str ());
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id3.str ()); 
+        circle_viewer.spin ();
+        circle_viewer.removePointCloud (id3.str());
+        circle_viewer.spin ();
+        //*/
+
+
+
+
+
+
 
 
 
@@ -957,6 +1057,7 @@ int main (int argc, char** argv)
         extraction_of_circle.setNegative (true);
         // Call the extraction function
         extraction_of_circle.filter (*working_cluster_cloud);
+
 
 
         // Check if the fitted circle has enough inliers in order to be accepted
@@ -1288,7 +1389,7 @@ int main (int argc, char** argv)
 
 
 /*
-  // Get position of full stop in path of file 
+  // Get position of full stop in path of file
   std::string file = argv [pFileIndicesPCD[0]];
   size_t fullstop = file.find (".");
 */
