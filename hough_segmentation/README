@@ -69,8 +69,8 @@ bin/process_clouds data/f-ascii-table2-dbsv-ann-normal.pcd -cam 0.00437526,4.375
 
 ========================= Commands for rsd =========================
 
-bin/rsd data/1-1224512793-dsn-objects.pcd -rsd 0.030 -normals 0.020 -leaf 0.001
+bin/rsd data/1-1224512793-dsn-objects.pcd -normals 0.020 -rsd 0.030 -leaf 0.001
 
-bin/rsd data/1-1224512793-dsn-objects.pcd -rsd 0.010 -normals 0.020 -leaf 0.001
+bin/rsd data/1-1224512793-dsn-objects.pcd -normals 0.020 -rsd 0.010 -leaf 0.001
 
 ====================================================================

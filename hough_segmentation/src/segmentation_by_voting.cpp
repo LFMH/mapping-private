@@ -445,6 +445,50 @@ int main (int argc, char** argv)
 
 
 
+  // ----------------------------------------------------------------------- //
+  // -------------------- Estimate RSD values of points -------------------- //
+  // ----------------------------------------------------------------------- //
+
+  // Create the object for RSD estimation
+  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
+  pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
+  //rsd_tree->setInputCloud (working_cloud);
+  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
+
+  rsd.setInputCloud (working_cloud);
+  rsd.setInputNormals (normals_cloud);
+  rsd.setRadiusSearch (rsd_search_radius);
+  rsd.setSearchMethod (rsd_tree);
+  rsd.compute (rsd_cloud);
+
+
+  // Get position of full stop in path of file
+  std::string path =  argv [pFileIndicesPCD [0]];
+  size_t fullstop = path.find (".");
+
+  // Create name for saving pcd files
+  std::string name = argv [1];
+  name.insert (fullstop, "-rsd");
+
+  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
+
+  // Concatenate radii values with the working cloud
+  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
+
+  // Save the fresh computed normal and curvature values of points
+  for (int idx = 0; idx < (int) rsd_working_cloud.points.size (); idx++)
+  {
+    rsd_working_cloud.points.at (idx).normal_x = normals_cloud->points.at (idx).normal_x;
+    rsd_working_cloud.points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
+    rsd_working_cloud.points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
+    rsd_working_cloud.points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
+  }
+
+  // Save these points to disk
+  pcl::io::savePCDFile (name, rsd_working_cloud);
+
+
+
 
   // ----------------------------------------------------------------------- //
   // -------------------- Estimate 2D normals of points -------------------- //
@@ -511,53 +555,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
-  // ----------------------------------------------------------------------- //
-  // -------------------- Estimate RSD values of points -------------------- //
-  // ----------------------------------------------------------------------- //
-
-  // Create the object for RSD estimation
-  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
-  pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
-  //rsd_tree->setInputCloud (working_cloud);
-  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
-
-  rsd.setInputCloud (working_cloud);
-  rsd.setInputNormals (normals_cloud);
-  rsd.setRadiusSearch (rsd_search_radius);
-  rsd.setSearchMethod (rsd_tree);
-  rsd.compute (rsd_cloud);
-
-
-  // Get position of full stop in path of file
-  std::string path =  argv [pFileIndicesPCD [0]];
-  size_t fullstop = path.find (".");
-
-  // Create name for saving pcd files
-  std::string name = argv [1];
-  name.insert (fullstop, "-rsd");
-
-  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
-
-  // Concatenate radii values with the working cloud
-  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
-
-  // Save the fresh computed normal and curvature values of points
-  for (int idx = 0; idx < (int) rsd_working_cloud.points.size (); idx++)
-  {
-    rsd_working_cloud.points.at (idx).normal_x = normals_cloud->points.at (idx).normal_x;
-    rsd_working_cloud.points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
-    rsd_working_cloud.points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
-    rsd_working_cloud.points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
-  }
-
-  // Save these points to disk
-  pcl::io::savePCDFile (name, rsd_working_cloud);
 
 
 
@@ -952,13 +949,13 @@ int main (int argc, char** argv)
 
         //
         
-        ///*
+        /*
         cerr << "  " << circle_inliers->indices.size() << endl ;
         for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
           cerr << circle_inliers->indices.at (idx) << " " ;
         cerr << endl ;
         circle_viewer.spin ();
-        //*/
+        */
 
         ///*
         std::stringstream id1;
@@ -981,8 +978,8 @@ int main (int argc, char** argv)
 
           if ( fabs (rc - rp) < radius_threshold )
           {
-            cerr << " rc: " << rc << " and " << " rp: " << rp << " fabs: " << fabs (rc - rp) << endl;
-            circle_viewer.spin ();
+            //cerr << " rc: " << rc << " and " << " rp: " << rp << " fabs: " << fabs (rc - rp) << endl;
+            //circle_viewer.spin ();
 
             rsd_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
           }
@@ -1008,13 +1005,13 @@ int main (int argc, char** argv)
         rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
         //*/
 
-        ///*
+        /*
         cerr << "  " << rsd_circle_inliers->indices.size() << endl ;
         for (int idx = 0; idx < (int) rsd_circle_inliers->indices.size(); idx++)
           cerr << rsd_circle_inliers->indices.at (idx) << " " ;
         cerr << endl ;
         circle_viewer.spin ();
-        //*/
+        */
 
         ///*
         std::stringstream id3;
