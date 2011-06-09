@@ -49,6 +49,9 @@
 
 #include "pcl_cloud_algos/pcl_cloud_algos_point_types.h"
 
+
+#include <pcl_visualization/pcl_visualizer.h>
+
 // --------------------------------------------------------------- //
 // -------------------- Declare defs of types -------------------- //
 // --------------------------------------------------------------- //
@@ -100,7 +103,7 @@ double circle_space_percentage = 0.75;
 // Visualization's Parameters
 bool step = false;
 bool verbose = false;
-int size_of_points = 3;
+int size = 3;
 bool   line_step = false;
 bool circle_step = false;
 
@@ -215,7 +218,7 @@ int main (int argc, char** argv)
     ROS_INFO ("    -verbose B                                 = ");
     ROS_INFO ("    -line_step B                               = wait or not wait");
     ROS_INFO ("    -circle_step B                             = wait or not wait");
-    ROS_INFO ("    -size_of_points B                          = ");
+    ROS_INFO ("    -size B                          = ");
     ROS_INFO (" ");
     return (-1);
   }
@@ -267,7 +270,7 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
   terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
-  terminal_tools::parse_argument (argc, argv, "-size_of_points", size_of_points);
+  terminal_tools::parse_argument (argc, argv, "-size", size);
 
   // --------------------------------------------------------- //
   // -------------------- Initializations -------------------- //
@@ -333,7 +336,7 @@ int main (int argc, char** argv)
   // Color the cloud in white
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "INPUT"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
   // Wait or not wait
   if ( step )
   {
@@ -344,6 +347,7 @@ int main (int argc, char** argv)
   // Update working point cloud
   *working_cloud = *input_cloud;
 
+  /*
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
   // ------------------------------------------------------------- //
@@ -373,7 +377,7 @@ int main (int argc, char** argv)
   // Color the filtered points in blue
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED");
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
   // Wait or not wait
   if ( step )
   {
@@ -383,6 +387,7 @@ int main (int argc, char** argv)
 
   // Update working point cloud
   *working_cloud = *filtered_cloud;
+  */
 
   // ------------------------------------------------------------------- //
   // ------------------ Estimate 3D normals of points ------------------ //
@@ -442,9 +447,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
   // ----------------------------------------------------------------------- //
   // -------------------- Estimate RSD values of points -------------------- //
   // ----------------------------------------------------------------------- //
@@ -470,6 +472,11 @@ int main (int argc, char** argv)
   std::string name = argv [1];
   name.insert (fullstop, "-rsd");
 
+
+
+
+
+
   pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
 
   // Concatenate radii values with the working cloud
@@ -486,6 +493,53 @@ int main (int argc, char** argv)
 
   // Save these points to disk
   pcl::io::savePCDFile (name, rsd_working_cloud);
+
+
+
+  // Set the color handler for curvature
+  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> curvature_handler (rsd_working_cloud, "curvature");
+  // Add the point cloud of curvature values
+  viewer.addPointCloud (rsd_working_cloud, curvature_handler, "CURVATURE");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+  viewer.removePointCloud ("CURVATURE");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+
+
+  // Set the color handler for curvature
+  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (rsd_working_cloud, "r_min");
+  // Add the point cloud of curvature values
+  viewer.addPointCloud (rsd_working_cloud, rsd_handler, "R_MIN");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN"); 
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+  viewer.removePointCloud ("R_MIN");
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+
+
 
 
 
@@ -558,7 +612,7 @@ int main (int argc, char** argv)
 
 
 
-
+exit (0);
 
 
 
@@ -648,7 +702,7 @@ int main (int argc, char** argv)
     // Add point cloud to viewer
     viewer.addPointCloud (*objects_clusters_clouds.at(clu), object_cluster_id.str());
     // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, object_cluster_id.str()); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
     // Wait or not wait
     if ( step )
     {
@@ -691,7 +745,7 @@ int main (int argc, char** argv)
   // Color the cloud in white
   circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "INPUT"); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
   // And wait until Q key is pressed
   circle_viewer.spin ();
 
@@ -854,7 +908,7 @@ int main (int argc, char** argv)
         std::stringstream id1;
         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
-        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id1.str ()); 
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id1.str ()); 
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id1.str());
         circle_viewer.spin ();
@@ -939,7 +993,7 @@ int main (int argc, char** argv)
         std::stringstream id2;
         id2 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*vectorial_circle_inliers_cloud, id2.str ());
-        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id2.str ()); 
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id2.str ()); 
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id2.str());
         circle_viewer.spin ();
@@ -961,7 +1015,7 @@ int main (int argc, char** argv)
         std::stringstream id1;
         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
-        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id1.str ()); 
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id1.str ()); 
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id1.str());
         circle_viewer.spin ();
@@ -1017,7 +1071,7 @@ int main (int argc, char** argv)
         std::stringstream id3;
         id3 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, id3.str ());
-        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, id3.str ()); 
+        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id3.str ()); 
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id3.str());
         circle_viewer.spin ();
@@ -1103,7 +1157,7 @@ int main (int argc, char** argv)
             circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
 
             // Set the size of points for cloud data
-            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, circle_inliers_id.str ()); 
+            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
 
             // Wait or not wait
             if ( circle_step )
@@ -1136,7 +1190,7 @@ int main (int argc, char** argv)
         if ( (int) working_cluster_cloud->points.size () < minimum_circle_inliers )
           ROS_ERROR (" %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
         else
-          if ( (int) filtered_cloud->points.size () > minimum_circle_inliers )
+          if ( (int) working_cluster_cloud->points.size () > minimum_circle_inliers )
             ROS_WARN (" %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
           else
             ROS_WARN (" %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
@@ -1211,7 +1265,7 @@ int main (int argc, char** argv)
   circle_viewer.addPointCloud (*circle_parameters_cloud, circle_parameters_id.str ());
 
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, circle_parameters_id.str ()); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_parameters_id.str ()); 
 
   // Wait or not wait
   if ( true )
@@ -1417,7 +1471,7 @@ int main (int argc, char** argv)
   circle_viewer.addPointCloud (*those_points, those_points_id.str ());
 
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * size_of_points, those_points_id.str ()); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size * size, those_points_id.str ()); 
 
   // Wait or not wait
   if ( true )
@@ -1692,7 +1746,7 @@ int main (int argc, char** argv)
     circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
 
     // Set the size of points for cloud
-    circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, circle_inliers_id.str ()); 
+    circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
 
     // Wait or not wait
     if ( circle_step )
@@ -1729,7 +1783,7 @@ int main (int argc, char** argv)
   circle_viewer.addPointCloud (*circle_parameters_cloud, "CIRCLE_PARAMETER");
 
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, "CIRCLE_PARAMETER"); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size * 2, "CIRCLE_PARAMETER"); 
 
   // Save these points to disk
   pcl::io::savePCDFile ("data/circle-rest-cloud.pcd", *filtered_cloud);
@@ -1743,11 +1797,11 @@ int main (int argc, char** argv)
   // ---------------------------------------------------------------------- //
   // ------------------ Recover filtered point cloud data ----------------- //
   // ---------------------------------------------------------------------- //
-
+/*
   filtered_cloud = working_cloud;
+*/
 
-
-
+/*
   // ------------------------------------------------------------ //
   // ------------------ Computation of 2D lines ----------------- //
   // ------------------------------------------------------------ //
@@ -1770,7 +1824,7 @@ int main (int argc, char** argv)
   // Color the cloud in white
   line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
   // Set the size of points for cloud
-  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "INPUT"); 
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
   // And wait until Q key is pressed
   line_viewer.spin ();
 
@@ -1784,9 +1838,10 @@ int main (int argc, char** argv)
   // Color the filtered points in blue
   line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
   // Set the size of points for cloud
-  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, "FILTERED");
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
   // And wait until Q key is pressed
   line_viewer.spin ();
+  */
 
   /*
 
@@ -1804,7 +1859,7 @@ int main (int argc, char** argv)
   // ---------------------- //
   // Start fitting 2D lines //
   // ---------------------- //
-
+/*
   int line_fit = 0;
 
   bool stop_lines = false;
@@ -1845,7 +1900,7 @@ int main (int argc, char** argv)
       pcl::PointCloud<PointT>::Ptr line_unfitted_cloud (new pcl::PointCloud<PointT> ());
       // Save these points to disk
       pcl::io::savePCDFile ("data/line-unfitted-cloud.pcd", *line_unfitted_cloud);
-
+*/
       /*
 
       // Open a 3D viewer
@@ -1865,7 +1920,7 @@ int main (int argc, char** argv)
       v.spin ();
 
       */
-
+/*
       return (-1);
     }
 
@@ -1922,7 +1977,7 @@ int main (int argc, char** argv)
     line_extraction.setNegative (true);
     // Call the extraction function
     line_extraction.filter (*filtered_cloud);
-
+*/
     /*
 
     ROS_INFO ("Line has %d inliers", line_inliers_cloud->points.size());
@@ -1933,7 +1988,7 @@ int main (int argc, char** argv)
     // --------------------------- //
     // Start visualization process //
     // --------------------------- //
-
+/*
     // Create ID for line model
     std::stringstream line_id;
     line_id << "LINE_" << line_fit;
@@ -1949,7 +2004,7 @@ int main (int argc, char** argv)
     // Add the point cloud data
     line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
     // Set the size of points for cloud
-    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points, line_inliers_id.str ()); 
+    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_inliers_id.str ()); 
 
     // Wait or not wait
     if ( line_step )
@@ -1979,15 +2034,15 @@ int main (int argc, char** argv)
     line_clustering.setSearchMethod (line_clusters_tree);
     // Call the extraction function
     line_clustering.extract (line_clusters);
-
-    ///*
+*/
+    /*
 
     ROS_WARN (" has %d clusters where", (int) line_clusters.size() );
     for (int c = 0; c < (int) line_clusters.size(); c++)
       ROS_WARN ("       cluster %d has %d points", c, (int) line_clusters.at(c).indices.size() );
 
-    //*/
-
+    */
+/*
     // Wait or not wait
     if ( line_step )
     {
@@ -2023,7 +2078,7 @@ int main (int argc, char** argv)
   line_viewer.addPointCloud (*line_parameters_cloud, "LINE_PARAMETER");
 
   // Set the size of points for cloud
-  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size_of_points * 2, "LINE_PARAMETER"); 
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size * 2, "LINE_PARAMETER"); 
 
   // Save these points to disk
   pcl::io::savePCDFile ("data/line-rest-cloud.pcd", *filtered_cloud);
@@ -2031,6 +2086,13 @@ int main (int argc, char** argv)
   // Done with 2D line models
   ROS_WARN ("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
   ROS_WARN ("Done with 2D line models in %5.3g [s]", tt.toc ());
+
+
+*/
+
+
+
+
 
 
 
@@ -2047,8 +2109,10 @@ int main (int argc, char** argv)
   // And wait until Q key is pressed
   circle_viewer.spin ();
 
+/*
   // And wait until Q key is pressed
   line_viewer.spin ();
+*/
 
   return (0);
 }
