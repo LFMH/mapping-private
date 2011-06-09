@@ -90,6 +90,7 @@ int minimum_size_of_circle_cluster = 1; /// [points]
 
 int normals_search_knn = 10; /// [points]
 double normals_search_radius = 0.010; /// [meters]
+double curvature_threshold = 0.010; /// 
 double rsd_search_radius = 0.010; /// [meters]
 double angle_threshold = 45.0; /// [degrees]
 double radius_threshold = 0.010; /// [meters]
@@ -207,6 +208,7 @@ int main (int argc, char** argv)
 
     ROS_INFO ("    -normals_search_knn X                      = ");
     ROS_INFO ("    -normals_search_radius X                   = ");
+    ROS_INFO ("    -curvature_threshold X                     = ");
     ROS_INFO ("    -rsd_search_radius X                       = ");
     ROS_INFO ("    -angle_threshold X                         = ");
     ROS_INFO ("    -radius_threshold X                        = ");
@@ -255,6 +257,7 @@ int main (int argc, char** argv)
 
   terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
+  terminal_tools::parse_argument (argc, argv, "-curvature_threshold", curvature_threshold);
   terminal_tools::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);  
   terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
   terminal_tools::parse_argument (argc, argv, "-radius_threshold", radius_threshold);
@@ -404,13 +407,7 @@ int main (int argc, char** argv)
   ne.setSearchMethod (normals_tree);
   // Set for which point cloud to compute the normals
   ne.setInputCloud (working_cloud);
-
-  // Set number of k nearest neighbors to use
-//  ne.setKSearch (10);
-//  ne.setKSearch (normals_search_knn);
-
   // Sphere radius used as the maximum distance to consider a point as neighbor
-//  ne.setRadiusSearch (0.010);
   ne.setRadiusSearch (normals_search_radius);
 
   // Estimate the normals
@@ -421,12 +418,11 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-  int level = 1;
-  double scale = 0.025;
   // Add the point cloud of normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "3D NORMALS");
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
   // Color the normals with red
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
+
   // Wait or not wait
   if ( step )
   {
@@ -436,12 +432,122 @@ int main (int argc, char** argv)
 
   // Remove the point cloud data
   viewer.removePointCloud ("3D NORMALS");
+
   // Wait or not wait
   if ( step )
   {
     // And wait until Q key is pressed
     viewer.spin ();
   }
+
+  // Save the fresh computed normal and curvature values to the working cloud
+  for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
+  {
+    working_cloud->points.at (idx).normal_x = normals_cloud->points.at (idx).normal_x;
+    working_cloud->points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
+    working_cloud->points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
+    working_cloud->points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
+  }
+
+  // Set the color handler for curvature
+  pcl_visualization::PointCloudColorHandlerGenericField<PointT> curvature_handler (*working_cloud, "curvature");
+  // Add the point cloud of curvature values
+  viewer.addPointCloud (*working_cloud, curvature_handler, "CURVATURE");
+  // Set the size of points for cloud
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE"); 
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Remove curvature point cloud
+  viewer.removePointCloud ("CURVATURE");
+
+  // Wait or not wait
+  if ( step )
+  {
+    // And wait until Q key is pressed
+    viewer.spin ();
+  }
+
+  // Split the planar from the circular curvature points 
+  pcl::PointIndices::Ptr curvature_planar_indices (new pcl::PointIndices ());
+  pcl::PointIndices::Ptr curvature_circular_indices (new pcl::PointIndices ());
+
+  for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
+  {
+    double curvature = working_cloud->points.at (idx).curvature;
+
+    if ( curvature < curvature_threshold )
+    {
+      //cerr << " c: " << curvature << " < ct " << curvature_threshold << endl;
+      //viewer.spin ();
+
+      curvature_planar_indices->indices.push_back (idx);
+    }
+    else
+    {
+      //cerr << " c: " << curvature << " > ct " << curvature_threshold << endl;
+      //viewer.spin ();
+
+      curvature_circular_indices->indices.push_back (idx);
+    }
+  }
+
+  // Extract the planar and circulare curvatore points from the working cloud
+  pcl::PointCloud<PointT>::Ptr curvature_planar_cloud (new pcl::PointCloud<PointT> ());
+  pcl::PointCloud<PointT>::Ptr curvature_circular_cloud (new pcl::PointCloud<PointT> ());
+
+  pcl::ExtractIndices<PointT> curvature_extraction;
+  curvature_extraction.setInputCloud (working_cloud);
+
+  curvature_extraction.setIndices (curvature_planar_indices);
+  curvature_extraction.setNegative (false);
+  curvature_extraction.filter (*curvature_planar_cloud);
+
+  curvature_extraction.setIndices (curvature_circular_indices);
+  curvature_extraction.setNegative (false);
+  curvature_extraction.filter (*curvature_circular_cloud);
+
+/*
+  std::stringstream curvature_planar_id;
+  curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
+  viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
+  viewer.spin ();
+  viewer.removePointCloud (curvature_planar_id.str());
+  viewer.spin ();
+
+  std::stringstream curvature_circular_id;
+  curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+  viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
+  viewer.spin ();
+  viewer.removePointCloud (curvature_circular_id.str());
+  viewer.spin ();
+*/
+
+  std::stringstream curvature_planar_id;
+  curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
+  viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
+
+  std::stringstream curvature_circular_id;
+  curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+  viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
+
+  viewer.spin ();
+
+  viewer.removePointCloud (curvature_planar_id.str());
+  viewer.removePointCloud (curvature_circular_id.str());
+
+  viewer.spin ();
+
+
 
 
 
@@ -452,91 +558,57 @@ int main (int argc, char** argv)
   // ----------------------------------------------------------------------- //
 
   // Create the object for RSD estimation
-  pcl::RSDEstimation <PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation<PointT, PointT, pcl::PrincipalRadiiRSD> rsd;
   pcl::KdTreeFLANN<PointT>::Ptr rsd_tree (new pcl::KdTreeFLANN<PointT> (working_cloud));
-  //rsd_tree->setInputCloud (working_cloud);
-  pcl::PointCloud <pcl::PrincipalRadiiRSD> rsd_cloud;
+
+  pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
+  //pcl::PointCloud<pcl::PrincipalRadiiRSD> rsd_cloud;
 
   rsd.setInputCloud (working_cloud);
   rsd.setInputNormals (normals_cloud);
   rsd.setRadiusSearch (rsd_search_radius);
   rsd.setSearchMethod (rsd_tree);
-  rsd.compute (rsd_cloud);
-
+  rsd.compute (*rsd_cloud);
 
   // Get position of full stop in path of file
   std::string path =  argv [pFileIndicesPCD [0]];
   size_t fullstop = path.find (".");
-
   // Create name for saving pcd files
   std::string name = argv [1];
   name.insert (fullstop, "-rsd");
 
-
-
-
-
-
-  pcl::PointCloud<pcl::PointXYZINormalRSD> rsd_working_cloud;
-
+  // Declare the rsd working cloud of points
+  pcl::PointCloud<pcl::PointXYZINormalRSD>::Ptr rsd_working_cloud (new pcl::PointCloud<pcl::PointXYZINormalRSD> ());
   // Concatenate radii values with the working cloud
-  pcl::concatenateFields (*working_cloud, rsd_cloud, rsd_working_cloud);
-
-  // Save the fresh computed normal and curvature values of points
-  for (int idx = 0; idx < (int) rsd_working_cloud.points.size (); idx++)
-  {
-    rsd_working_cloud.points.at (idx).normal_x = normals_cloud->points.at (idx).normal_x;
-    rsd_working_cloud.points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
-    rsd_working_cloud.points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
-    rsd_working_cloud.points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
-  }
-
+  pcl::concatenateFields (*working_cloud, *rsd_cloud, *rsd_working_cloud);
   // Save these points to disk
-  pcl::io::savePCDFile (name, rsd_working_cloud);
-
-
+  pcl::io::savePCDFile (name, *rsd_working_cloud);
 
   // Set the color handler for curvature
-  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> curvature_handler (rsd_working_cloud, "curvature");
+  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (*rsd_working_cloud, "r_min");
   // Add the point cloud of curvature values
-  viewer.addPointCloud (rsd_working_cloud, curvature_handler, "CURVATURE");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE"); 
-  // Wait or not wait
-  if ( step )
-  {
-    // And wait until Q key is pressed
-    viewer.spin ();
-  }
-  viewer.removePointCloud ("CURVATURE");
-  // Wait or not wait
-  if ( step )
-  {
-    // And wait until Q key is pressed
-    viewer.spin ();
-  }
-
-
-
-  // Set the color handler for curvature
-  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (rsd_working_cloud, "r_min");
-  // Add the point cloud of curvature values
-  viewer.addPointCloud (rsd_working_cloud, rsd_handler, "R_MIN");
+  viewer.addPointCloud (*rsd_working_cloud, rsd_handler, "R_MIN");
   // Set the size of points for cloud
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN"); 
+
   // Wait or not wait
   if ( step )
   {
     // And wait until Q key is pressed
     viewer.spin ();
   }
+
+  // Remove r min point cloud
   viewer.removePointCloud ("R_MIN");
+
   // Wait or not wait
   if ( step )
   {
     // And wait until Q key is pressed
     viewer.spin ();
   }
+
+
 
 
 
@@ -552,7 +624,7 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
 
   // Add the normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "2D NORMALS");
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "2D NORMALS");
   // Color the normals with red
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "2D NORMALS"); 
   // Wait or not wait
@@ -588,7 +660,7 @@ int main (int argc, char** argv)
   }
 
   // Add the normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, level, scale, "NORMALS");
+  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
   // Color the normals with red
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
   // Wait or not wait
@@ -612,7 +684,7 @@ int main (int argc, char** argv)
 
 
 
-exit (0);
+  //exit (0);
 
 
 
@@ -1028,7 +1100,7 @@ exit (0);
 
         for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
         {
-          double rp = rsd_cloud.points.at (idx).r_min;
+          double rp = rsd_cloud->points.at (idx).r_min;
 
           if ( fabs (rc - rp) < radius_threshold )
           {
