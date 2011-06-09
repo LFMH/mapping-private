@@ -92,6 +92,8 @@ int normals_search_knn = 10; /// [points]
 double normals_search_radius = 0.010; /// [meters]
 double curvature_threshold = 0.010; /// 
 double rsd_search_radius = 0.010; /// [meters]
+double low_r_min = 0.020; /// [meters]
+double high_r_min = 0.050; /// [meters]
 double angle_threshold = 45.0; /// [degrees]
 double radius_threshold = 0.010; /// [meters]
 
@@ -210,6 +212,8 @@ int main (int argc, char** argv)
     ROS_INFO ("    -normals_search_radius X                   = ");
     ROS_INFO ("    -curvature_threshold X                     = ");
     ROS_INFO ("    -rsd_search_radius X                       = ");
+    ROS_INFO ("    -low_r_min X                               = ");
+    ROS_INFO ("    -high_r_min X                              = ");
     ROS_INFO ("    -angle_threshold X                         = ");
     ROS_INFO ("    -radius_threshold X                        = ");
 
@@ -259,6 +263,8 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
   terminal_tools::parse_argument (argc, argv, "-curvature_threshold", curvature_threshold);
   terminal_tools::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);  
+  terminal_tools::parse_argument (argc, argv, "-low_r_min", low_r_min);  
+  terminal_tools::parse_argument (argc, argv, "-high_r_min", high_r_min);  
   terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
   terminal_tools::parse_argument (argc, argv, "-radius_threshold", radius_threshold);
 
@@ -392,6 +398,16 @@ int main (int argc, char** argv)
   *working_cloud = *filtered_cloud;
   */
 
+
+
+
+
+
+
+
+
+
+
   // ------------------------------------------------------------------- //
   // ------------------ Estimate 3D normals of points ------------------ //
   // ------------------------------------------------------------------- //
@@ -403,12 +419,20 @@ int main (int argc, char** argv)
 
   // Create object for normal estimation
   pcl::NormalEstimation<PointT, PointT> ne;
-  // Provide pointer to the search method
-  ne.setSearchMethod (normals_tree);
   // Set for which point cloud to compute the normals
   ne.setInputCloud (working_cloud);
+  // Provide pointer to the search method
+  ne.setSearchMethod (normals_tree);
+
+  ///*
+  // Set number of k nearest neighbors to use
+  ne.setKSearch (normals_search_knn);
+  //*/
+
+  /*
   // Sphere radius used as the maximum distance to consider a point as neighbor
   ne.setRadiusSearch (normals_search_radius);
+  */
 
   // Estimate the normals
   ne.compute (*normals_cloud);
@@ -497,7 +521,7 @@ int main (int argc, char** argv)
     }
   }
 
-  // Extract the planar and circulare curvatore points from the working cloud
+  // Extract the planar and circular curvature points from the working cloud
   pcl::PointCloud<PointT>::Ptr curvature_planar_cloud (new pcl::PointCloud<PointT> ());
   pcl::PointCloud<PointT>::Ptr curvature_circular_cloud (new pcl::PointCloud<PointT> ());
 
@@ -517,17 +541,17 @@ int main (int argc, char** argv)
   curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
   viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
-  viewer.spin ();
+  if ( step ) viewer.spin ();
   viewer.removePointCloud (curvature_planar_id.str());
-  viewer.spin ();
+  if ( step ) viewer.spin ();
 
   std::stringstream curvature_circular_id;
   curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
   viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
-  viewer.spin ();
+  if ( step ) viewer.spin ();
   viewer.removePointCloud (curvature_circular_id.str());
-  viewer.spin ();
+  if ( step ) viewer.spin ();
 */
 
   std::stringstream curvature_planar_id;
@@ -540,12 +564,12 @@ int main (int argc, char** argv)
   viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
   viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
 
-  viewer.spin ();
+  if ( step ) viewer.spin ();
 
   viewer.removePointCloud (curvature_planar_id.str());
   viewer.removePointCloud (curvature_circular_id.str());
 
-  viewer.spin ();
+  if ( step ) viewer.spin ();
 
 
 
@@ -608,8 +632,79 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
+  // Split the plausible from the implausible r min values
+  pcl::PointIndices::Ptr r_min_plausible_indices (new pcl::PointIndices ());
+  pcl::PointIndices::Ptr r_min_implausible_indices (new pcl::PointIndices ());
 
+  for (int idx = 0; idx < (int) rsd_working_cloud->points.size(); idx++)
+  {
+    double r_min = rsd_working_cloud->points.at (idx).r_min;
 
+    if ( (low_r_min < r_min) && (r_min < high_r_min) )
+    {
+      //cerr << " low < " << r_min << " < high " << endl;
+      //viewer.spin ();
+
+      r_min_plausible_indices->indices.push_back (idx);
+    }
+    else
+    {
+      //cerr << r_min << endl;
+      //viewer.spin ();
+
+      r_min_implausible_indices->indices.push_back (idx);
+    }
+  }
+
+  // Extract the plausible and implausible r min values from the working cloud
+  pcl::PointCloud<PointT>::Ptr r_min_plausible_cloud (new pcl::PointCloud<PointT> ());
+  pcl::PointCloud<PointT>::Ptr r_min_implausible_cloud (new pcl::PointCloud<PointT> ());
+
+  pcl::ExtractIndices<PointT> r_min_extraction;
+  r_min_extraction.setInputCloud (working_cloud);
+
+  r_min_extraction.setIndices (r_min_plausible_indices);
+  r_min_extraction.setNegative (false);
+  r_min_extraction.filter (*r_min_plausible_cloud);
+
+  r_min_extraction.setIndices (r_min_implausible_indices);
+  r_min_extraction.setNegative (false);
+  r_min_extraction.filter (*r_min_implausible_cloud);
+
+/*
+  std::stringstream r_min_plausible_id;
+  r_min_plausible_id << "CURVATURE_PLANAR_" << ros::Time::now();
+  viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
+  if ( step ) viewer.spin ();
+  viewer.removePointCloud (r_min_plausible_id.str());
+  if ( step ) viewer.spin ();
+
+  std::stringstream r_min_implausible_id;
+  r_min_implausible_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+  viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
+  if ( step ) viewer.spin ();
+  viewer.removePointCloud (r_min_implausible_id.str());
+  if ( step ) viewer.spin ();
+*/
+
+  std::stringstream r_min_plausible_id;
+  r_min_plausible_id << "R_MIN_PLAUSIBLE_" << ros::Time::now();
+  viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
+
+  std::stringstream r_min_implausible_id;
+  r_min_implausible_id << "R_MIN_IMPLAUSIBLE_" << ros::Time::now();
+  viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
+
+  if ( step ) viewer.spin ();
+
+  viewer.removePointCloud (r_min_plausible_id.str());
+  viewer.removePointCloud (r_min_implausible_id.str());
+
+  if ( step ) viewer.spin ();
 
 
 
@@ -684,7 +779,7 @@ int main (int argc, char** argv)
 
 
 
-  //exit (0);
+  exit (0);
 
 
 
@@ -964,10 +1059,12 @@ int main (int argc, char** argv)
         //ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
 
 
+
+
+
+
 // START W/ ANGELS OF VECTORS //
 
-        //
- 
         /*
         cerr << "  " << circle_inliers->indices.size() << endl ;
         for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
@@ -976,7 +1073,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        /*
+        ///*
         std::stringstream id1;
         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
@@ -984,9 +1081,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id1.str());
         circle_viewer.spin ();
-        */
+        //*/
 
-        /*
+        ///*
         pcl::PointIndices::Ptr vectorial_circle_inliers (new pcl::PointIndices ());
 
         float c[2];
@@ -1015,7 +1112,6 @@ int main (int argc, char** argv)
           np[0] = np[0] / lnp;
           np[1] = np[1] / lnp;
 
-
           float dot = c2p[0]*np[0] + c2p[1]*np[1];
           float ang = acos (dot) * 180.0 / M_PI;
 
@@ -1028,7 +1124,6 @@ int main (int argc, char** argv)
             //cerr << " ang: " << ang << endl ;
             //circle_viewer.spin ();
 
-            //vectorial_circle_inliers->indices.push_back (idx);
             vectorial_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
           }
         }
@@ -1051,7 +1146,7 @@ int main (int argc, char** argv)
         vectorial_extraction_of_circle.setNegative (false);
         // Call the extraction function
         vectorial_extraction_of_circle.filter (*vectorial_circle_inliers_cloud);
-        */
+        //*/
 
         /*
         cerr << "  " << vectorial_circle_inliers->indices.size() << endl ;
@@ -1061,7 +1156,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        /*
+        ///*
         std::stringstream id2;
         id2 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*vectorial_circle_inliers_cloud, id2.str ());
@@ -1069,12 +1164,15 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id2.str());
         circle_viewer.spin ();
-        */
+        //*/
+
+
+
+
+
 
 // START W/ RSD VALUES //
 
-        //
-        
         /*
         cerr << "  " << circle_inliers->indices.size() << endl ;
         for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
@@ -1083,7 +1181,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream id1;
         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
@@ -1091,9 +1189,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id1.str());
         circle_viewer.spin ();
-        //*/
+        */
 
-        ///*
+        /*
         pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
 
         double rc = circle_coefficients.values [2];
@@ -1129,7 +1227,7 @@ int main (int argc, char** argv)
         rsd_extraction_of_circle.setNegative (false);
         // Call the extraction function
         rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
-        //*/
+        */
 
         /*
         cerr << "  " << rsd_circle_inliers->indices.size() << endl ;
@@ -1139,7 +1237,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream id3;
         id3 << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, id3.str ());
@@ -1147,7 +1245,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (id3.str());
         circle_viewer.spin ();
-        //*/
+        */
 
 
 
