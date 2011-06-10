@@ -717,18 +717,6 @@ int main (int argc, char** argv)
 
 
 
-cerr << " working cloud  " << working_cloud->points.size () << endl ;
-cerr << " rsd working cloud  " << rsd_working_cloud->points.size () << endl ; 
-viewer.spin ();
-
-cerr << " rsd 66 cloud" << rsd_cloud->points.at (66).r_min << endl ;
-cerr << " rsd 66 working cloud " << rsd_working_cloud->points.at (66).r_min << endl ;
-viewer.spin ();
-
-cerr << " rsd 123 cloud" << rsd_cloud->points.at (123).r_min << endl ;
-cerr << " rsd 123 working cloud " << rsd_working_cloud->points.at (123).r_min << endl ;
-viewer.spin ();
-
 
   // ----------------------------------------------------------------------- //
   // -------------------- Estimate 2D normals of points -------------------- //
@@ -977,25 +965,6 @@ viewer.spin ();
 
     ROS_ERROR ("ITERATION = %d \n", it);
 
-//    // Update the clouds of objects clusters 
-//    objects_clusters_clouds = auxiliary_clusters_clouds;
-
-//cerr << objects_clusters.size() << endl ;
-//cerr << objects_clusters_clouds.size() << endl ;
-//cerr << auxiliary_clusters_clouds.size() << endl ;
-//
-//cerr << endl ;
-//
-//cerr << objects_clusters_clouds.at(0)->points.size() << endl ;
-//cerr << objects_clusters_clouds.at(1)->points.size() << endl ;
-//cerr << objects_clusters_clouds.at(2)->points.size() << endl ;
-//
-//cerr << endl ;
-//
-//cerr << auxiliary_clusters_clouds.at(0)->points.size() << endl ;
-//cerr << auxiliary_clusters_clouds.at(1)->points.size() << endl ;
-//cerr << auxiliary_clusters_clouds.at(2)->points.size() << endl ;
-
     // Vector of circle ids
     std::vector<std::string> circles_ids;
     // Vector of circle inliers ids
@@ -1008,7 +977,7 @@ viewer.spin ();
       pcl::PointIndices working_cluster_indices;
 
       // Update the working cluster cloud 
-//      working_cluster_indices = objects_clusters.at (clu);
+      //working_cluster_indices = objects_clusters.at (clu);
       working_cluster_indices = *objects_clusters_indices.at (clu);
 
       // Working cluster cloud which represents an object
@@ -1016,14 +985,6 @@ viewer.spin ();
 
       // Update the working cluster cloud 
       *working_cluster_cloud = *objects_clusters_clouds.at (clu);
-
-
-
-      //cerr << endl ;
-      //cerr << working_cluster_cloud->points.size() << endl ;
-      //cerr << endl ;
-
-
 
       int circle_fit = 0;
 
@@ -1198,30 +1159,24 @@ viewer.spin ();
 
         double rc = circle_coefficients.values [2];
 
-        for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
+        for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
         {
-          int idxy = circle_inliers->indices.at (idx);
+          int idx = circle_inliers->indices.at (inl);
 
-          int idxyz = working_cluster_indices.indices.at (idxy);
-          //int idxyz = objects_clusters.at (clu).indices.at (idxy);
+          //double r_min = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min; 
 
-          //double rp = rsd_working_cloud->points.at (idxyz).r_min;
-          //if ( fabs (rc - rp) < radius_threshold )
+          //if ( (low_r_min < r_min) && (r_min < high_r_min) ) 
 
-          double r_min = rsd_working_cloud->points.at (idxyz).r_min;
+          double rp = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min;
 
-          if ( (low_r_min < r_min) && (r_min < high_r_min) )
-            //if ( true )
+          if ( fabs (rc - rp) < radius_threshold )
           {
-            //cerr << " " << idxyz ;
             //cerr << " rc: " << rc << " and " << " rp: " << rp << " fabs: " << fabs (rc - rp) << endl;
             //circle_viewer.spin ();
 
-            rsd_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
-            //rsd_circle_inliers->indices.push_back (idxyz);
+            rsd_circle_inliers->indices.push_back (idx);
           }
         }
-        //cerr << endl ;
 
         // ---------------------------- //
         // Start the extraction process //
@@ -1262,84 +1217,14 @@ viewer.spin ();
         circle_viewer.spin ();
         //*/
 
-
-
-        cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
-
-        pcl::PointIndices aux_working_cluster_indices;
-        aux_working_cluster_indices = working_cluster_indices;
-
-        //cerr << aux_working_cluster_indices.indices.size () << endl ;
-        //cerr << working_cluster_indices.indices.size () << endl ;
-        //circle_viewer.spin ();
-
-
-        //cerr << aux_working_cluster_indices.indices.at (66) << endl ;
-        //cerr << working_cluster_indices.indices.at (66) << endl ;
-        //circle_viewer.spin ();
-
-
-        std::vector<int>::iterator it = aux_working_cluster_indices.indices.begin();
-
-        //for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
-        for (int idx = circle_inliers->indices.size() - 1; idx >= 0; idx--)
+        ///*
+        std::vector<int>::iterator it = working_cluster_indices.indices.begin();
+        for (int inl = circle_inliers->indices.size() - 1; inl >= 0; inl--)
         {
-          int idxy = circle_inliers->indices.at (idx);
-
-          cerr <<  idxy << endl; 
-          cerr <<  working_cluster_indices.indices.size() << endl ;
-          cerr <<  aux_working_cluster_indices.indices.size() << endl << endl ;
-
-          //working_cluster_indices.indices.erase (working_cluster_indices.indices.begin() + idxy);
-          aux_working_cluster_indices.indices.erase (it + idxy);
+          int idx = circle_inliers->indices.at (inl);
+          working_cluster_indices.indices.erase (it + idx);
         }
-
-cerr << " circle inliers " << circle_inliers->indices.size() << endl ;
-cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
-cerr << " aux working cluster indices " << aux_working_cluster_indices.indices.size() << endl ;
-
-working_cluster_indices = aux_working_cluster_indices;
-cerr << " !!! working_cluster_indices = aux_working_cluster_indices " << endl ;
-cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
-
-circle_viewer.spin ();
-
-
-/*
-
-/// Subtract subset vector V2 from vector V1 ///
-
-vector<int> subtractSubset (vector<int> &v1, vector<int> &v2)
-{
-  sort (v1.begin(), v1.end());
-  sort (v2.begin(), v2.end());
-  
-  v1.erase ( unique(v1.begin(), v1.end()), v1.end());
-  v2.erase ( unique(v2.begin(), v2.end()), v2.end());
-  
-  int i=0, j=0;
-  do
-  {
-    if (v1[i] == v2[j])
-    {
-      v1.erase(v1.begin() + i);
-      j++;
-    }
-    else
-    {
-      i++;
-    }
-  } while ( ( i < (int)v1.size() ) ||  ( j < (int)v2.size() ) );
-  
-  return v1;
-}
-
-*/
-
-
-
-
-
+        //*/
 
 
 
@@ -1468,17 +1353,12 @@ vector<int> subtractSubset (vector<int> &v1, vector<int> &v2)
 
 
 
-cerr << endl ;
-cerr << " working cluster cloud " << working_cluster_cloud->points.size() << endl ;
 
         // THIS IS ON, BECAUSE WE DO NOT NEED THE ANYMORE
         // Return the remaining points of inliers
         extraction_of_circle.setNegative (true);
         // Call the extraction function
         extraction_of_circle.filter (*working_cluster_cloud);
-
-cerr << " working cluster cloud " << working_cluster_cloud->points.size() << endl ;
-circle_viewer.spin ();
 
 
 
