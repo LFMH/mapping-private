@@ -58,6 +58,8 @@
 
 typedef pcl::PointXYZINormal PointT;
 
+//typedef pcl::PointNormalRADII PointT;
+
 // --------------------------------------------------------------------- //
 // -------------------- Declare method's parameters -------------------- //
 // --------------------------------------------------------------------- //
@@ -715,6 +717,18 @@ int main (int argc, char** argv)
 
 
 
+cerr << " working cloud  " << working_cloud->points.size () << endl ;
+cerr << " rsd working cloud  " << rsd_working_cloud->points.size () << endl ; 
+viewer.spin ();
+
+cerr << " rsd 66 cloud" << rsd_cloud->points.at (66).r_min << endl ;
+cerr << " rsd 66 working cloud " << rsd_working_cloud->points.at (66).r_min << endl ;
+viewer.spin ();
+
+cerr << " rsd 123 cloud" << rsd_cloud->points.at (123).r_min << endl ;
+cerr << " rsd 123 working cloud " << rsd_working_cloud->points.at (123).r_min << endl ;
+viewer.spin ();
+
 
   // ----------------------------------------------------------------------- //
   // -------------------- Estimate 2D normals of points -------------------- //
@@ -994,7 +1008,8 @@ int main (int argc, char** argv)
       pcl::PointIndices working_cluster_indices;
 
       // Update the working cluster cloud 
-      working_cluster_indices = objects_clusters.at (clu);
+//      working_cluster_indices = objects_clusters.at (clu);
+      working_cluster_indices = *objects_clusters_indices.at (clu);
 
       // Working cluster cloud which represents an object
       pcl::PointCloud<PointT>::Ptr working_cluster_cloud (new pcl::PointCloud<PointT> ());
@@ -1168,7 +1183,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        /*
+        ///*
         std::stringstream before_rsd_id;
         before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
@@ -1176,9 +1191,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (before_rsd_id.str());
         circle_viewer.spin ();
-        */
+        //*/
 
-        /*
+        ///*
         pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
 
         double rc = circle_coefficients.values [2];
@@ -1188,6 +1203,7 @@ int main (int argc, char** argv)
           int idxy = circle_inliers->indices.at (idx);
 
           int idxyz = working_cluster_indices.indices.at (idxy);
+          //int idxyz = objects_clusters.at (clu).indices.at (idxy);
 
           //double rp = rsd_working_cloud->points.at (idxyz).r_min;
           //if ( fabs (rc - rp) < radius_threshold )
@@ -1195,15 +1211,17 @@ int main (int argc, char** argv)
           double r_min = rsd_working_cloud->points.at (idxyz).r_min;
 
           if ( (low_r_min < r_min) && (r_min < high_r_min) )
+            //if ( true )
           {
-            cerr << " " << idxyz ;
+            //cerr << " " << idxyz ;
             //cerr << " rc: " << rc << " and " << " rp: " << rp << " fabs: " << fabs (rc - rp) << endl;
             //circle_viewer.spin ();
 
             rsd_circle_inliers->indices.push_back (circle_inliers->indices.at (idx));
+            //rsd_circle_inliers->indices.push_back (idxyz);
           }
         }
-        cerr << endl ;
+        //cerr << endl ;
 
         // ---------------------------- //
         // Start the extraction process //
@@ -1217,13 +1235,14 @@ int main (int argc, char** argv)
         // Set which indices to extract
         rsd_extraction_of_circle.setIndices (rsd_circle_inliers);
         // Set point cloud from where to extract
+        //rsd_extraction_of_circle.setInputCloud (working_cluster_cloud);
         rsd_extraction_of_circle.setInputCloud (working_cluster_cloud);
 
         // Return the points which represent the inliers
         rsd_extraction_of_circle.setNegative (false);
         // Call the extraction function
         rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
-        */
+        //*/
 
         /*
         cerr << "  " << rsd_circle_inliers->indices.size() << endl ;
@@ -1233,7 +1252,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        /*
+        ///*
         std::stringstream after_rsd_id;
         after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
@@ -1241,10 +1260,81 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (after_rsd_id.str());
         circle_viewer.spin ();
-        */
+        //*/
 
 
 
+        cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
+
+        pcl::PointIndices aux_working_cluster_indices;
+        aux_working_cluster_indices = working_cluster_indices;
+
+        //cerr << aux_working_cluster_indices.indices.size () << endl ;
+        //cerr << working_cluster_indices.indices.size () << endl ;
+        //circle_viewer.spin ();
+
+
+        //cerr << aux_working_cluster_indices.indices.at (66) << endl ;
+        //cerr << working_cluster_indices.indices.at (66) << endl ;
+        //circle_viewer.spin ();
+
+
+        std::vector<int>::iterator it = aux_working_cluster_indices.indices.begin();
+
+        //for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
+        for (int idx = circle_inliers->indices.size() - 1; idx >= 0; idx--)
+        {
+          int idxy = circle_inliers->indices.at (idx);
+
+          cerr <<  idxy << endl; 
+          cerr <<  working_cluster_indices.indices.size() << endl ;
+          cerr <<  aux_working_cluster_indices.indices.size() << endl << endl ;
+
+          //working_cluster_indices.indices.erase (working_cluster_indices.indices.begin() + idxy);
+          aux_working_cluster_indices.indices.erase (it + idxy);
+        }
+
+cerr << " circle inliers " << circle_inliers->indices.size() << endl ;
+cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
+cerr << " aux working cluster indices " << aux_working_cluster_indices.indices.size() << endl ;
+
+working_cluster_indices = aux_working_cluster_indices;
+cerr << " !!! working_cluster_indices = aux_working_cluster_indices " << endl ;
+cerr << " working cluster indices " << working_cluster_indices.indices.size() << endl ;
+
+circle_viewer.spin ();
+
+
+/*
+
+/// Subtract subset vector V2 from vector V1 ///
+
+vector<int> subtractSubset (vector<int> &v1, vector<int> &v2)
+{
+  sort (v1.begin(), v1.end());
+  sort (v2.begin(), v2.end());
+  
+  v1.erase ( unique(v1.begin(), v1.end()), v1.end());
+  v2.erase ( unique(v2.begin(), v2.end()), v2.end());
+  
+  int i=0, j=0;
+  do
+  {
+    if (v1[i] == v2[j])
+    {
+      v1.erase(v1.begin() + i);
+      j++;
+    }
+    else
+    {
+      i++;
+    }
+  } while ( ( i < (int)v1.size() ) ||  ( j < (int)v2.size() ) );
+  
+  return v1;
+}
+
+*/
 
 
 
@@ -1265,7 +1355,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream before_normals_id;
         before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
@@ -1273,9 +1363,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (before_normals_id.str());
         circle_viewer.spin ();
-        //*/
+        */
 
-        ///*
+        /*
         pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
 
         float c[2];
@@ -1340,7 +1430,7 @@ int main (int argc, char** argv)
         normals_extraction_of_circle.setNegative (false);
         // Call the extraction function
         normals_extraction_of_circle.filter (*normals_circle_inliers_cloud);
-        //*/
+        */
 
         /*
         cerr << "  " << normals_circle_inliers->indices.size() << endl ;
@@ -1350,7 +1440,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream after_normals_id;
         after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
@@ -1358,7 +1448,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (after_normals_id.str());
         circle_viewer.spin ();
-        //*/
+        */
 
 
 
@@ -1378,16 +1468,17 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
+cerr << endl ;
+cerr << " working cluster cloud " << working_cluster_cloud->points.size() << endl ;
 
         // THIS IS ON, BECAUSE WE DO NOT NEED THE ANYMORE
         // Return the remaining points of inliers
         extraction_of_circle.setNegative (true);
         // Call the extraction function
         extraction_of_circle.filter (*working_cluster_cloud);
+
+cerr << " working cluster cloud " << working_cluster_cloud->points.size() << endl ;
+circle_viewer.spin ();
 
 
 
