@@ -49,9 +49,6 @@
 
 #include "pcl_cloud_algos/pcl_cloud_algos_point_types.h"
 
-
-#include <pcl_visualization/pcl_visualizer.h>
-
 // --------------------------------------------------------------- //
 // -------------------- Declare defs of types -------------------- //
 // --------------------------------------------------------------- //
@@ -85,8 +82,8 @@ int maximum_circle_iterations = 1000; /// [iterations]
 double   line_inliers_clustering_tolerance = 0.010; /// [meters]
 double circle_clustering_tolerance = 0.010; /// [meters]
 
-int minimum_size_of_line_cluster = 1; /// [points]
-int minimum_size_of_circle_cluster = 1; /// [points]
+int minimum_size_of_line_cluster = 10; /// [points]
+int minimum_size_of_circle_cluster = 10; /// [points]
 
 
 
@@ -244,6 +241,10 @@ int main (int argc, char** argv)
   // // // 
   terminal_tools::parse_argument (argc, argv,   "-iterations", iterations);
 
+  // Parsing parameters for clustering
+  terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_objects_clusters", minimum_size_of_objects_clusters);
+
   // Parsing the arguments of the method
   terminal_tools::parse_argument (argc, argv,   "-line_threshold",   line_threshold);
   terminal_tools::parse_argument (argc, argv, "-circle_threshold", circle_threshold);
@@ -256,10 +257,8 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
   terminal_tools::parse_argument (argc, argv,   "-line_inliers_clustering_tolerance",   line_inliers_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-circle_clustering_tolerance", circle_clustering_tolerance);
-
-  // Parsing parameters for clustering
-  terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_objects_clusters", minimum_size_of_objects_clusters);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_cluster", minimum_size_of_circle_cluster);
 
 
 
@@ -361,7 +360,7 @@ int main (int argc, char** argv)
   // Update working point cloud
   *working_cloud = *input_cloud;
 
-  /*
+  ///*
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
   // ------------------------------------------------------------- //
@@ -401,10 +400,7 @@ int main (int argc, char** argv)
 
   // Update working point cloud
   *working_cloud = *filtered_cloud;
-  */
-
-
-
+  //*/
 
 
 
@@ -824,19 +820,20 @@ int main (int argc, char** argv)
   // ------------------ Extract object clusters ------------------ //
   // ------------------------------------------------------------- //
 
-  // Point clouds which represent the clusters of the objects
-  std::vector<pcl::PointCloud<PointT>::Ptr> objects_clusters_clouds;
-
   // Vector of indices which make up the objects clusters
   std::vector<pcl::PointIndices::Ptr> objects_clusters_indices;
 
+  // Point clouds which represent the clusters of the objects
+  std::vector<pcl::PointCloud<PointT>::Ptr> objects_clusters_clouds;
+
   for (int clu = 0; clu < (int) objects_clusters.size(); clu++)
   {
+    // Pointer to the cluster object
+    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(clu)));
+
     // Cloud of the cluster obejct
     pcl::PointCloud<PointT>::Ptr object_cluster_cloud (new pcl::PointCloud<PointT> ());
 
-    // Pointer to the cluster object
-    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(clu)));
 
     // Extract handle points from the input cloud
     pcl::ExtractIndices<PointT> ei;
@@ -851,14 +848,14 @@ int main (int argc, char** argv)
 
     if ( verbose )
     {
-      ROS_INFO ("  Object %2d has %4d points", clu, (int) object_cluster_cloud->points.size());
+      ROS_INFO ("  Object cluster %2d has %4d points", clu, (int) object_cluster_cloud->points.size());
     }
-
-    // Save the cloud of object cluster
-    objects_clusters_clouds.push_back (object_cluster_cloud);
 
     // Save indices of object
     objects_clusters_indices.push_back (object_cluster_indices);
+
+    // Save the cloud of object cluster
+    objects_clusters_clouds.push_back (object_cluster_cloud);
   }
 
   // --------------------------------------------------------------- //
@@ -915,11 +912,11 @@ int main (int argc, char** argv)
   circle_viewer.updateCamera ();
 
   // Add the point cloud data
-  circle_viewer.addPointCloud (*input_cloud, "INPUT");
+  circle_viewer.addPointCloud (*working_cloud, "WORKING");
   // Color the cloud in white
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
   // And wait until Q key is pressed
   circle_viewer.spin ();
 
@@ -954,16 +951,13 @@ int main (int argc, char** argv)
   // Start fitting 2D circles //
   // ------------------------ //
 
-
   // Space of parameters for fitted circle models
   pcl::PointCloud<PointT>::Ptr circle_parameters_cloud (new pcl::PointCloud<PointT> ());
 
-
-
-  for (int it = 0; it < iterations; it++)
+  for (int ite = 0; ite < iterations; ite++)
   {
-
-    ROS_ERROR ("ITERATION = %d \n", it);
+    // Print current iteration number
+    ROS_ERROR ("AT ITERATION = %d", ite);
 
     // Vector of circle ids
     std::vector<std::string> circles_ids;
@@ -975,19 +969,16 @@ int main (int argc, char** argv)
 
       // Working vector of indices which represents a cluster
       pcl::PointIndices working_cluster_indices;
-
       // Update the working cluster cloud 
-      //working_cluster_indices = objects_clusters.at (clu);
       working_cluster_indices = *objects_clusters_indices.at (clu);
 
       // Working cluster cloud which represents an object
       pcl::PointCloud<PointT>::Ptr working_cluster_cloud (new pcl::PointCloud<PointT> ());
-
       // Update the working cluster cloud 
       *working_cluster_cloud = *objects_clusters_clouds.at (clu);
 
       int circle_fit = 0;
-
+      bool valid_circle = true;
       bool stop_circle_fitting = false;
 
       do
@@ -996,6 +987,10 @@ int main (int argc, char** argv)
         pcl::ModelCoefficients circle_coefficients;
         // Inliers of circle model
         pcl::PointIndices::Ptr circle_inliers (new pcl::PointIndices ());
+
+        // --------------------- //
+        // Start fitting process //
+        // --------------------- //
 
         // Create the segmentation object
         pcl::SACSegmentation<PointT> segmentation_of_circle;
@@ -1017,9 +1012,9 @@ int main (int argc, char** argv)
         // Call the segmenting method
         segmentation_of_circle.segment (*circle_inliers, circle_coefficients);
 
-        // ---------------------------- //
-        // Start the extraction process //
-        // ---------------------------- //
+        // ------------------------ //
+        // Start extraction process //
+        // ------------------------ //
 
         // Point cloud of circle inliers
         pcl::PointCloud<PointT>::Ptr circle_inliers_cloud (new pcl::PointCloud<PointT> ());
@@ -1036,37 +1031,150 @@ int main (int argc, char** argv)
         // Call the extraction function
         extraction_of_circle.filter (*circle_inliers_cloud);
 
-// THIS IS OFF, BECAUSE WE NEED THE INLIERS IN THE WORKING CLOUD
-        // Return the remaining points of inliers
-//        extraction_of_circle.setNegative (true);
-        // Call the extraction function
-//        extraction_of_circle.filter (*working_cluster_cloud);
+        // ------------------------ //
+        // Start backing up process //
+        // ------------------------ //
 
-        //ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
-        //ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
+        // Declare the backup for the circle inliers 
+        pcl::PointIndices::Ptr original_circle_inliers (new pcl::PointIndices ());
+        // Declare the backup for the circle inliers cloud
+        pcl::PointCloud<PointT>::Ptr original_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+        // Back up the circle inliers
+        *original_circle_inliers = *circle_inliers;
+        // Back up the circle inliers cloud
+        *original_circle_inliers_cloud = *circle_inliers_cloud;
 
 
 
-// START W/ THE CURVATURE FEATURE //
 
-        //
-               
-        /*
-        cerr << "  " << circle_inliers->indices.size() << endl ;
-        for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
-          cerr << circle_inliers->indices.at (idx) << " " ;
-        cerr << endl ;
-        circle_viewer.spin ();
-        */
 
-        /*
-        std::stringstream id1;
-        id1 << "CIRCLE_INLIERS_" << ros::Time::now();
-        circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
-        circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id1.str ()); 
-        circle_viewer.spin ();
-        circle_viewer.removePointCloud (id1.str());
-        circle_viewer.spin ();
+
+        // START W/ THE CLUSTERING FEATURE //
+
+        ///*
+        if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+        {
+          // The current circle model will be rejected
+          valid_circle = false;
+        }
+        else
+        {
+          std::stringstream before_clustering_id;
+          before_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
+          circle_viewer.addPointCloud (*circle_inliers_cloud, before_clustering_id.str ());
+          circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
+          circle_viewer.spin ();
+          circle_viewer.removePointCloud (before_clustering_id.str());
+          circle_viewer.spin ();
+
+          // Vector of clusters from inliers
+          std::vector<pcl::PointIndices> circle_clusters;
+          // Build kd-tree structure for clusters
+          pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+          // Instantiate cluster extraction object
+          pcl::EuclideanClusterExtraction<PointT> clustering_of_circle;
+          // Set as input the cloud of circle inliers
+          clustering_of_circle.setInputCloud (circle_inliers_cloud);
+          // Radius of the connnectivity threshold
+          clustering_of_circle.setClusterTolerance (circle_clustering_tolerance);
+          // Minimum number of points of any cluster
+          clustering_of_circle.setMinClusterSize (minimum_size_of_circle_cluster);
+          // Provide pointer to the search method
+          clustering_of_circle.setSearchMethod (circle_clusters_tree);
+
+          // Call the extraction function
+          clustering_of_circle.extract (circle_clusters);
+
+          ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
+          for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
+            ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
+
+          // Filtered Inliers of circle model
+          pcl::PointIndices::Ptr filtered_circle_inliers (new pcl::PointIndices ());
+
+          // Leave only the two biggest clusters
+          if ( circle_clusters.size() > 0 )
+          {
+            for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
+            {
+              int inl = circle_clusters.at (0).indices.at (idx);
+              filtered_circle_inliers->indices.push_back (circle_inliers->indices.at (inl));
+            }
+
+            if ( circle_clusters.size() > 1 )
+            {
+              for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
+              {
+                int inl = circle_clusters.at (1).indices.at (idx);
+                filtered_circle_inliers->indices.push_back (circle_inliers->indices.at (inl));
+              }
+            }
+          }
+
+          // ------------------------ //
+          // Start extraction process //
+          // ------------------------ //
+
+          // Point cloud of filtered circle inliers
+          pcl::PointCloud<PointT>::Ptr filtered_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+          // Extract the circular inliers 
+          pcl::ExtractIndices<PointT> filtered_extraction_of_circle;
+          // Set which indices to extract
+          filtered_extraction_of_circle.setIndices (filtered_circle_inliers);
+          // Set point cloud from where to extract
+          filtered_extraction_of_circle.setInputCloud (working_cluster_cloud);
+
+          // Return the points which represent the inliers
+          filtered_extraction_of_circle.setNegative (false);
+          // Call the extraction function
+          filtered_extraction_of_circle.filter (*filtered_circle_inliers_cloud);
+
+          std::stringstream after_clustering_id;
+          after_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
+          circle_viewer.addPointCloud (*filtered_circle_inliers_cloud, after_clustering_id.str ());
+          circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
+          circle_viewer.spin ();
+          circle_viewer.removePointCloud (after_clustering_id.str());
+          circle_viewer.spin ();
+
+          // Update the circle inliers cloud
+          *circle_inliers_cloud = *filtered_circle_inliers_cloud;
+
+          // Update the circle inliers
+          *circle_inliers = *filtered_circle_inliers;
+        }
+        //*/
+
+
+
+
+
+
+
+
+      // START W/ THE CURVATURE FEATURE //
+
+      //
+
+      /*
+         cerr << "  " << circle_inliers->indices.size() << endl ;
+         for (int idx = 0; idx < (int) circle_inliers->indices.size(); idx++)
+         cerr << circle_inliers->indices.at (idx) << " " ;
+         cerr << endl ;
+         circle_viewer.spin ();
+         */
+
+      /*
+         std::stringstream id1;
+         id1 << "CIRCLE_INLIERS_" << ros::Time::now();
+         circle_viewer.addPointCloud (*circle_inliers_cloud, id1.str ());
+         circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id1.str ()); 
+         circle_viewer.spin ();
+         circle_viewer.removePointCloud (id1.str());
+         circle_viewer.spin ();
         */
 
         /*
@@ -1132,6 +1240,9 @@ int main (int argc, char** argv)
 
 
 
+
+
+
 // START W/ RSD VALUES // 
 
         // //
@@ -1144,7 +1255,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream before_rsd_id;
         before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
@@ -1152,9 +1263,9 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (before_rsd_id.str());
         circle_viewer.spin ();
-        //*/
+        */
 
-        ///*
+        /*
         pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
 
         double rc = circle_coefficients.values [2];
@@ -1197,7 +1308,7 @@ int main (int argc, char** argv)
         rsd_extraction_of_circle.setNegative (false);
         // Call the extraction function
         rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
-        //*/
+        */
 
         /*
         cerr << "  " << rsd_circle_inliers->indices.size() << endl ;
@@ -1207,7 +1318,7 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         */
 
-        ///*
+        /*
         std::stringstream after_rsd_id;
         after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
         circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
@@ -1215,16 +1326,19 @@ int main (int argc, char** argv)
         circle_viewer.spin ();
         circle_viewer.removePointCloud (after_rsd_id.str());
         circle_viewer.spin ();
-        //*/
+        */
 
-        ///*
+        /*
         std::vector<int>::iterator it = working_cluster_indices.indices.begin();
-        for (int inl = circle_inliers->indices.size() - 1; inl >= 0; inl--)
+        for (int inl = circle_inliers->indices.size() - 1; inl > -1; inl--)
         {
           int idx = circle_inliers->indices.at (inl);
           working_cluster_indices.indices.erase (it + idx);
         }
-        //*/
+        */
+
+
+
 
 
 
@@ -1360,10 +1474,16 @@ int main (int argc, char** argv)
         // Call the extraction function
         extraction_of_circle.filter (*working_cluster_cloud);
 
+        //ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
+        //ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
 
 
-        // Check if the fitted circle has enough inliers in order to be accepted
-        if ((int) circle_inliers->indices.size () < minimum_circle_inliers)
+
+
+        valid_circle = true;
+//        // Check if the fitted circle has enough inliers in order to be accepted
+//        if ((int) circle_inliers->indices.size () < minimum_circle_inliers)
+        if ( !valid_circle )
         {
           ROS_ERROR ("NOT ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
               circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
@@ -1439,12 +1559,12 @@ int main (int argc, char** argv)
 
         // Print the number of points left for model fitting
         if ( (int) working_cluster_cloud->points.size () < minimum_circle_inliers )
-          ROS_ERROR (" %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+          ROS_WARN ("  %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
         else
           if ( (int) working_cluster_cloud->points.size () > minimum_circle_inliers )
-            ROS_WARN (" %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+            ROS_WARN ("  %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
           else
-            ROS_WARN (" %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+            ROS_WARN ("  %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
 
       } while ((int) working_cluster_cloud->points.size () > minimum_circle_inliers && stop_circle_fitting == false);
 
@@ -1834,87 +1954,6 @@ int main (int argc, char** argv)
 
 
 
-    // ---------------------------- //
-    // Start the clustering process //
-    // ---------------------------- //
-
-    // Vector of clusters from inliers
-    std::vector<pcl::PointIndices> circle_clusters;
-    // Build kd-tree structure for clusters
-    pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
-
-    // Instantiate cluster extraction object
-    pcl::EuclideanClusterExtraction<PointT> circle_clustering;
-    // Set as input the cloud of circle inliers
-    circle_clustering.setInputCloud (circle_inliers_cloud);
-    // Radius of the connnectivity threshold
-    circle_clustering.setClusterTolerance (circle_clustering_tolerance);
-    // Provide pointer to the search method
-    circle_clustering.setSearchMethod (circle_clusters_tree);
-    // Call the extraction function
-    circle_clustering.extract (circle_clusters);
-
-    int maximum_circle_clusters_size = -1;
-    int maximum_circle_clusters_index = -1;
-    for (int c = 0; c < (int) circle_clusters.size(); c++)
-    {
-      if (maximum_circle_clusters_size < (int) circle_clusters.at(c).indices.size())
-      {
-        maximum_circle_clusters_size = circle_clusters.at(c).indices.size();
-        maximum_circle_clusters_index = c;
-      }
-    }
-
-    ROS_WARN (" has %d clusters where", (int) circle_clusters.size());
-    for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
-      ROS_WARN ("       cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
-    ROS_WARN (" and biggest cluster is %d with %d points", maximum_circle_clusters_index, maximum_circle_clusters_size);
-
-    // -------------------------------------------------------------------------------------------------------------------------------
-
-    // The biggest cluster of the circle inliers
-    pcl::PointIndices::Ptr biggest_cluster_of_circle_inliers (new pcl::PointIndices ());
-    *biggest_cluster_of_circle_inliers = circle_clusters.at(0);
-
-    // Point cloud of the biggest cluster of the circle inliers
-    pcl::PointCloud<PointT>::Ptr biggest_cluster_of_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
-
-    ROS_WARN ("   before:");
-    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", (int) biggest_cluster_of_circle_inliers_cloud->points.size ());
-    ROS_WARN ("   circle_inliers_cloud has %d inliers", (int) circle_inliers_cloud->points.size ());
-    ROS_INFO ("   %d points remain after extraction", (int) filtered_cloud->points.size ());
-
-    // Extract the circular inliers from the input cloud
-    pcl::ExtractIndices<PointT> circle_clusters_extraction;
-    // Set point cloud from where to extract
-    circle_clusters_extraction.setInputCloud (circle_inliers_cloud);
-    // Set which indices to extract
-    circle_clusters_extraction.setIndices (biggest_cluster_of_circle_inliers);
-
-    // Return the points which represent the inliers
-    circle_clusters_extraction.setNegative (false);
-    // Call the extraction function
-    circle_clusters_extraction.filter (*biggest_cluster_of_circle_inliers_cloud);
-
-    // Return the remaining points of inliers
-    circle_clusters_extraction.setNegative (true);
-    // Call the extraction function
-    circle_clusters_extraction.filter (*circle_inliers_cloud);
-
-    // Set point cloud from where to extract
-    circle_extraction.setInputCloud (filtered_cloud);
-    // Set which indices to extract
-    circle_extraction.setIndices (biggest_cluster_of_circle_inliers);
-
-    // Return the remaining points of inliers
-    circle_extraction.setNegative (true);
-    // Call the extraction function
-    circle_extraction.filter (*filtered_cloud);
-
-    ROS_WARN ("   after:");
-    ROS_WARN ("   biggest_cluster_of_circle_inliers_cloud has %d inliers", (int) biggest_cluster_of_circle_inliers_cloud->points.size ());
-    ROS_WARN ("   circle_inliers_cloud has %d inliers left", (int) circle_inliers_cloud->points.size ());
-    ROS_INFO ("   %d points remain after extraction", (int) filtered_cloud->points.size ());
 
     // -------------------------------------------------------------------------------------------------------------------------------
 
