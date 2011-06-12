@@ -107,11 +107,12 @@ double circle_space_radius = 0.010;
 double circle_space_percentage = 0.75;
 
 // Visualization's Parameters
+int size = 3;
 bool step = false;
 bool verbose = false;
-int size = 3;
-bool   line_step = false;
-bool circle = false;
+bool line_step = false;
+bool circle_step = false;
+bool circle_feature_step = false;
 
 
 
@@ -233,11 +234,12 @@ int main (int argc, char** argv)
     ROS_INFO ("    -circle_space_radius X                     = ");
     ROS_INFO ("    -circle_space_percentage X                 = ");
     ROS_INFO (" ");
+    ROS_INFO ("    -size B                                    = ");
     ROS_INFO ("    -step B                                    = ");
     ROS_INFO ("    -verbose B                                 = ");
     ROS_INFO ("    -line_step B                               = wait or not wait");
-    ROS_INFO ("    -circle B                             = wait or not wait");
-    ROS_INFO ("    -size B                          = ");
+    ROS_INFO ("    -circle_step B                             = wait or not wait");
+    ROS_INFO ("    -circle_feature_step B                     = wait or not wait");
     ROS_INFO (" ");
     return (-1);
   }
@@ -296,11 +298,12 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-circle_space_percentage", circle_space_percentage);
 
   // Parsing the arguments for visualization
+  terminal_tools::parse_argument (argc, argv, "-size", size);
   terminal_tools::parse_argument (argc, argv, "-step", step);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
-  terminal_tools::parse_argument (argc, argv, "-circle", circle);
-  terminal_tools::parse_argument (argc, argv, "-size", size);
+  terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
+  terminal_tools::parse_argument (argc, argv, "-circle_feature_step", circle_feature_step);
 
   // --------------------------------------------------------- //
   // -------------------- Initializations -------------------- //
@@ -1002,9 +1005,9 @@ int main (int argc, char** argv)
             before_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*circle_inliers_cloud, before_clustering_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (before_clustering_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             // Vector of clusters from inliers
             std::vector<pcl::PointIndices> circle_clusters;
@@ -1072,9 +1075,9 @@ int main (int argc, char** argv)
             after_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (after_clustering_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             // Update the circle inliers
             *circle_inliers = *clustering_circle_inliers;
@@ -1099,9 +1102,9 @@ int main (int argc, char** argv)
             before_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*circle_inliers_cloud, before_curvature_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (before_curvature_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             pcl::PointIndices::Ptr curvature_circle_inliers (new pcl::PointIndices ());
 
@@ -1140,9 +1143,9 @@ int main (int argc, char** argv)
             after_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*curvature_circle_inliers_cloud, after_curvature_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (after_curvature_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             // Update the inliers of circle
             *circle_inliers = *curvature_circle_inliers;
@@ -1167,9 +1170,9 @@ int main (int argc, char** argv)
             before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (before_rsd_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
 
@@ -1216,9 +1219,9 @@ int main (int argc, char** argv)
             after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
             circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
             circle_viewer.removePointCloud (after_rsd_id.str());
-            circle_viewer.spin ();
+            if ( circle_feature_step ) circle_viewer.spin ();
 
             // Update the inliers of circle
             *circle_inliers = *rsd_circle_inliers;
@@ -1235,9 +1238,9 @@ int main (int argc, char** argv)
           before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
           circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
           circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
-          circle_viewer.spin ();
+          if ( circle_feature_step ) circle_viewer.spin ();
           circle_viewer.removePointCloud (before_normals_id.str());
-          circle_viewer.spin ();
+          if ( circle_feature_step ) circle_viewer.spin ();
 
           pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
 
@@ -1301,9 +1304,9 @@ int main (int argc, char** argv)
           after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
           circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
           circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
-          circle_viewer.spin ();
+          if ( circle_feature_step ) circle_viewer.spin ();
           circle_viewer.removePointCloud (after_normals_id.str());
-          circle_viewer.spin ();
+          if ( circle_feature_step ) circle_viewer.spin ();
 
           // Update the inliers of circle
           *circle_inliers = *normals_circle_inliers;
@@ -1386,7 +1389,7 @@ int main (int argc, char** argv)
           circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
 
           // Wait or not wait
-          if ( circle )
+          if ( circle_step )
           {
             // And wait until Q key is pressed
             circle_viewer.spin ();
@@ -1427,7 +1430,7 @@ int main (int argc, char** argv)
 
 
       // Wait or not wait
-      if ( circle )
+      if ( circle_step )
       {
         // And wait until Q key is pressed
         circle_viewer.spin ();
@@ -1450,7 +1453,7 @@ int main (int argc, char** argv)
     }
 
      // Wait or not wait
-      if ( circle )
+      if ( circle_step )
       {
         // And wait until Q key is pressed
         circle_viewer.spin ();
@@ -1463,7 +1466,7 @@ int main (int argc, char** argv)
     }
 
      // Wait or not wait
-      if ( circle )
+      if ( circle_step )
       {
         // And wait until Q key is pressed
         circle_viewer.spin ();
@@ -1894,7 +1897,7 @@ int main (int argc, char** argv)
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
 
     // Wait or not wait
-    if ( circle )
+    if ( circle_step )
     {
       // And wait until Q key is pressed
       circle_viewer.spin ();
