@@ -1240,7 +1240,7 @@ int main (int argc, char** argv)
 
 
 
-        // START W/ THE RSD VALUES // 
+        // START W/ THE RSD FEATURE // 
 
         if ( rsd_feature )
         {
@@ -1268,13 +1268,13 @@ int main (int argc, char** argv)
             {
               int idx = circle_inliers->indices.at (inl);
 
-              //double r_min = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min; 
+              double r_min = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min; 
 
-              double rp = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min;
+              //double rp = rsd_working_cloud->points.at (working_cluster_indices.indices.at (idx)).r_min;
 
-              //if ( (low_r_min < r_min) && (r_min < high_r_min) ) 
+              if ( (low_r_min < r_min) && (r_min < high_r_min) ) 
 
-              if ( fabs (rc - rp) < radius_threshold )
+              //if ( fabs (rc - rp) < radius_threshold )
               {
                 rsd_circle_inliers->indices.push_back (idx);
               }
@@ -1299,14 +1299,7 @@ int main (int argc, char** argv)
             // Call the extraction function
             rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
 
-            // Erase those indices which have an implausible rsd value
-            std::vector<int>::iterator it = working_cluster_indices.indices.begin();
-            for (int inl = circle_inliers->indices.size() - 1; inl > -1; inl--)
-            {
-              int idx = circle_inliers->indices.at (inl);
-              working_cluster_indices.indices.erase (it + idx);
-            }
-
+            
             std::stringstream after_rsd_id;
             after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
             circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
@@ -1414,16 +1407,36 @@ int main (int argc, char** argv)
 
 
 
-        // THIS IS ON, BECAUSE WE DO NOT NEED THE ANYMORE
+        // Erase those indices which have an implausible rsd value
+        std::vector<int>::iterator it = working_cluster_indices.indices.begin();
+        for (int inl = circle_inliers->indices.size() - 1; inl > -1; inl--)
+        {
+          int idx = circle_inliers->indices.at (inl);
+          working_cluster_indices.indices.erase (it + idx);
+        }
+
+
+
+        // THIS IS ON, BECAUSE WE DO NOT NEED THEM ANYMORE //
+
+        // Extract the circular inliers 
+        pcl::ExtractIndices<PointT> extraction_of_original_circle;
+        // Set which indices to extract
+        extraction_of_original_circle.setIndices (circle_inliers);
+        // Set point cloud from where to extract
+        extraction_of_original_circle.setInputCloud (working_cluster_cloud);
+
         // Return the remaining points of inliers
-        extraction_of_circle.setNegative (true);
+        extraction_of_original_circle.setNegative (true);
         // Call the extraction function
-        extraction_of_circle.filter (*working_cluster_cloud);
-
-        //ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
-        //ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
+        extraction_of_original_circle.filter (*working_cluster_cloud);
 
 
+
+        ROS_INFO ("Originaly %d inliers", (int) original_circle_inliers_cloud->points.size());
+        ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
+        ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
+        ROS_INFO ("%d indices", (int) working_cluster_indices.indices.size ());
 
         valid_circle = true;
         //        // Check if the fitted circle has enough inliers in order to be accepted
