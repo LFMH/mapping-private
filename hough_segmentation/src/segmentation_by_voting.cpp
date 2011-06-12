@@ -54,8 +54,8 @@
 // --------------------------------------------------------------- //
 
 typedef pcl::PointXYZINormal PointT;
-
 //typedef pcl::PointNormalRADII PointT;
+//typedef pcl::PointXYZINormalRSD PointT;
 
 // --------------------------------------------------------------------- //
 // -------------------- Declare method's parameters -------------------- //
@@ -1403,40 +1403,50 @@ int main (int argc, char** argv)
         }
 
 
-
+        ROS_INFO ("original circle inliers %d ! ", (int) original_circle_inliers->indices.size());
+        ROS_INFO ("original circle inliers cloud %d !", (int) original_circle_inliers_cloud->points.size());
 
 
 
         // Erase those indices which have an implausible rsd value
         std::vector<int>::iterator it = working_cluster_indices.indices.begin();
-        for (int inl = circle_inliers->indices.size() - 1; inl > -1; inl--)
+        for (int inl = original_circle_inliers->indices.size() - 1; inl > -1; inl--)
         {
-          int idx = circle_inliers->indices.at (inl);
+          int idx = original_circle_inliers->indices.at (inl);
           working_cluster_indices.indices.erase (it + idx);
         }
 
 
 
-        // THIS IS ON, BECAUSE WE DO NOT NEED THEM ANYMORE //
 
-        // Extract the circular inliers 
-        pcl::ExtractIndices<PointT> extraction_of_original_circle;
-        // Set which indices to extract
-        extraction_of_original_circle.setIndices (circle_inliers);
-        // Set point cloud from where to extract
-        extraction_of_original_circle.setInputCloud (working_cluster_cloud);
+        if ( original_circle_inliers->indices.size() == working_cluster_cloud->points.size () )
+        {
+          cerr << " CLEAR IT ! " << endl ;
+          working_cluster_cloud->points.clear ();
+        }
+        else
+        {
+          // THIS IS ON, BECAUSE WE DO NOT NEED THEM ANYMORE //
+          /*
+          // Extract the circular inliers 
+          pcl::ExtractIndices<PointT> extraction_of_original_circle;
+          // Set which indices to extract
+          extraction_of_original_circle.setIndices (original_circle_inliers);
+          // Set point cloud from where to extract
+          extraction_of_original_circle.setInputCloud (working_cluster_cloud);
+          */
+          // Return the remaining points of inliers
+          extraction_of_circle.setNegative (true);
+          // Call the extraction function
+          extraction_of_circle.filter (*working_cluster_cloud);
+        }
 
-        // Return the remaining points of inliers
-        extraction_of_original_circle.setNegative (true);
-        // Call the extraction function
-        extraction_of_original_circle.filter (*working_cluster_cloud);
 
 
+        ROS_INFO ("Circle has %d inliers left ! ", (int) circle_inliers_cloud->points.size());
 
-        ROS_INFO ("Originaly %d inliers", (int) original_circle_inliers_cloud->points.size());
-        ROS_INFO ("Circle has %d inliers", (int) circle_inliers_cloud->points.size());
         ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
-        ROS_INFO ("%d indices", (int) working_cluster_indices.indices.size ());
+        ROS_INFO ("and %d indices of course", (int) working_cluster_indices.indices.size ());
 
         valid_circle = true;
         //        // Check if the fitted circle has enough inliers in order to be accepted
