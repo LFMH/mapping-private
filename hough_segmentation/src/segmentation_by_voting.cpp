@@ -54,6 +54,19 @@
 // --------------------------------------------------------------- //
 
 typedef pcl::PointXYZINormal PointT;
+typedef pcl::PointXYZINormalRSD PointTrsd;
+
+// --------------------------------------------------------------- //
+// -------------------- Define useful structs -------------------- //
+// --------------------------------------------------------------- //
+
+struct shape
+{
+  std::string type;
+  pcl::PointIndices::Ptr inliers;
+  pcl::PointCloud<PointT>::Ptr points;
+  pcl::ModelCoefficients coefficients;
+};
 
 // --------------------------------------------------------------------- //
 // -------------------- Declare method's parameters -------------------- //
@@ -107,6 +120,10 @@ bool verbose = false;
 bool line_step = false;
 bool circle_step = false;
 bool circle_feature_step = false;
+
+
+
+#define _sqr(c) ((c)*(c))
 
 
 
@@ -593,7 +610,7 @@ int main (int argc, char** argv)
   name.insert (fullstop, "-rsd");
 
   // Declare the rsd working cloud of points
-  pcl::PointCloud<pcl::PointXYZINormalRSD>::Ptr rsd_working_cloud (new pcl::PointCloud<pcl::PointXYZINormalRSD> ());
+  pcl::PointCloud<PointTrsd>::Ptr rsd_working_cloud (new pcl::PointCloud<PointTrsd> ());
   // Concatenate radii values with the working cloud
   pcl::concatenateFields (*working_cloud, *rsd_cloud, *rsd_working_cloud);
   // Save these points to disk
@@ -602,7 +619,7 @@ int main (int argc, char** argv)
   if ( step )
   {
     // Set the color handler for curvature
-    pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (*rsd_working_cloud, "r_min");
+    pcl_visualization::PointCloudColorHandlerGenericField<PointTrsd> rsd_handler (*rsd_working_cloud, "r_min");
     // Add the point cloud of curvature values
     viewer.addPointCloud (*rsd_working_cloud, rsd_handler, "R_MIN");
     // Set the size of points for cloud
@@ -1493,6 +1510,9 @@ int main (int argc, char** argv)
 
 
 
+
+
+
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
   circle_viewer.addPointCloud (*circle_parameters_cloud, circle_parameters_id.str ());
@@ -1501,7 +1521,6 @@ int main (int argc, char** argv)
 
   std::string circle_parameters_filename = argv [pFileIndicesPCD [0]];
   circle_parameters_filename.insert (fullstop, "-circles");
-
   pcl::io::savePCDFile (circle_parameters_filename, *circle_parameters_cloud);
 
   if ( verbose )
@@ -1528,7 +1547,6 @@ int main (int argc, char** argv)
 
   std::vector<pcl::PointIndices::Ptr> circle_parameters_clusters_indices;
   std::vector<pcl::PointCloud<PointT>::Ptr> circle_parameters_clusters_clouds;
-  std::vector<std::string> circle_parameters_clusters_ids;
 
   for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
   {
@@ -1541,24 +1559,69 @@ int main (int argc, char** argv)
     circle_parameters_extraction_of_indices.setNegative (false);
     circle_parameters_extraction_of_indices.filter (*cluster_cloud);
 
+    circle_parameters_clusters_indices.push_back (cluster_indices);
+    circle_parameters_clusters_clouds.push_back (cluster_cloud);
+  }
+
+  std::vector<std::string> circle_parameters_clusters_ids;
+
+  for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
+  {
     std::stringstream cluster_id;
     cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
-    circle_viewer.addPointCloud (*cluster_cloud, cluster_id.str());
+    circle_viewer.addPointCloud (*circle_parameters_clusters_clouds.at (clu), cluster_id.str());
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 2, cluster_id.str()); 
     circle_viewer.spin ();
 
-    circle_parameters_clusters_indices.push_back (cluster_indices);
-    circle_parameters_clusters_clouds.push_back (cluster_cloud);
     circle_parameters_clusters_ids.push_back (cluster_id.str());
   }
 
+  std::vector<shape> shapes_of_circles;
 
+  for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
+  {
+    pcl::ModelCoefficients coefficients;
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+    pcl::PointCloud<PointT>::Ptr points (new pcl::PointCloud<PointT> ());
 
+    Eigen::VectorXf centroid;
+    pcl::computeNDCentroid (*circle_parameters_clusters_clouds.at (clu), centroid);
 
+    coefficients.values.push_back (centroid [0]); // cx
+    coefficients.values.push_back (centroid [1]); // cy
+    coefficients.values.push_back (centroid [2]); // r
 
+    double cx = coefficients.values.at (0);
+    double cy = coefficients.values.at (1);
+    double  r = coefficients.values.at (2);
 
+    for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
+    {
+      double x = working_cloud->points.at (idx).x;
+      double y = working_cloud->points.at (idx).y;
 
+      double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
 
+      if ( fabs (d) < circle_threshold / 2 )
+      {
+        // Save only the right indices
+        inliers->indices.push_back (idx);
+      }
+    }
+
+    pcl::ExtractIndices<PointT> extraction;
+    extraction.setIndices (inliers);
+    extraction.setInputCloud (working_cloud);
+
+    extraction.setNegative (false);
+    extraction.filter (*points);
+
+    std::stringstream id;
+    id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
+    circle_viewer.addPointCloud (*points, id.str());
+    circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+    circle_viewer.spin ();
+  }
 
 
 
