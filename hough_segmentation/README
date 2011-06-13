@@ -124,9 +124,7 @@ bin/hough_segmentation data/1-1224512793-dsn-objects.pcd -cam 0.00399577,3.99577
 
 bin/hough_segmentation data/1-1224512793-dsn-objects.pcd -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -step 0 -size 7              -normals_search_radius 0.030 -curvature_threshold 0.010 -rsd_search_radius 0.030 -rsd_plane_radius 0.100 -low_r_min 0.020 -high_r_min 0.060 -circle_clustering_tolerance 0.010 -minimum_size_of_circle_cluster 10 -radius_threshold 0.025 -angle_threshold 45.0                    -circle_step 0 -circle_threshold 0.010 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50 -clustering_tolerance_of_circle_parameters 0.025                                            -iterations 100
 
-
-
-
+bin/hough_segmentation data/1-1224512793-dsn-objects.pcd -cam 0.00399577,3.99577/1.3597,0.329901,0.938396/0.894784,-0.0128635,1.91964/0.761464,0.408334,0.503425/1678,1023/1682,46 -verbose 1 -step 0 -size 7              -normals_search_radius 0.030 -curvature_threshold 0.010 -rsd_search_radius 0.030 -rsd_plane_radius 0.100 -low_r_min 0.020 -high_r_min 0.060 -circle_clustering_tolerance 0.010 -minimum_size_of_circle_cluster 10 -radius_threshold 0.025 -angle_threshold 45.0                    -circle_step 0 -circle_threshold 0.010 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50                                                                                             -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 250 -iterations 1000
 
 
 

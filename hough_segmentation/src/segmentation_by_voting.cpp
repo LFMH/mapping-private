@@ -111,7 +111,7 @@ bool percentage_feature = true;
 
 double circle_percentage = 50;
 double clustering_tolerance_of_circle_parameters = 0.025;
-double minimum_size_of_circle_parameters_clusters = circle_percentage * iterations / 100;
+double minimum_size_of_circle_parameters_clusters = 50;
 
 // Visualization's Parameters
 int size = 3;
@@ -304,8 +304,6 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-circle_percentage", circle_percentage);
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_circle_parameters", clustering_tolerance_of_circle_parameters);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
-
-  minimum_size_of_circle_parameters_clusters = circle_percentage * iterations / 100;
 
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
@@ -1075,6 +1073,71 @@ int main (int argc, char** argv)
               if ( circle_feature_step ) circle_viewer.spin ();
               circle_viewer.removePointCloud (after_clustering_id.str());
               if ( circle_feature_step ) circle_viewer.spin ();
+            }
+
+
+
+
+            pcl::PointIndices::Ptr first_cluster_inliers (new pcl::PointIndices ());
+            pcl::PointIndices::Ptr second_cluster_inliers (new pcl::PointIndices ());
+
+            if ( circle_clusters.size() > 0 )
+            {
+              for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
+              {
+                int inl = circle_clusters.at (0).indices.at (idx);
+                first_cluster_inliers->indices.push_back (circle_inliers->indices.at (inl));
+              }
+
+              pcl::PointCloud<PointT>::Ptr first_cluster_cloud (new pcl::PointCloud<PointT> ());
+
+              pcl::ExtractIndices<PointT> extraction_of_first_cluster;
+              extraction_of_first_cluster.setIndices (first_cluster_inliers);
+              extraction_of_first_cluster.setInputCloud (working_cluster_cloud);
+              extraction_of_first_cluster.setNegative (false);
+              extraction_of_first_cluster.filter (*first_cluster_cloud);
+
+              PointT first_cluster_minimum, first_cluster_maximum;
+              pcl::getMinMax3D (*first_cluster_cloud, first_cluster_minimum, first_cluster_maximum);
+              double first_cluster_height = first_cluster_maximum.z - first_cluster_minimum.z;
+
+              if ( circle_clusters.size() > 1 )
+              {
+                for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
+                {
+                  int inl = circle_clusters.at (1).indices.at (idx);
+                  second_cluster_inliers->indices.push_back (circle_inliers->indices.at (inl));
+                }
+
+                pcl::PointCloud<PointT>::Ptr second_cluster_cloud (new pcl::PointCloud<PointT> ());
+
+                pcl::ExtractIndices<PointT> extraction_of_second_cluster;
+                extraction_of_second_cluster.setIndices (second_cluster_inliers);
+                extraction_of_second_cluster.setInputCloud (working_cluster_cloud);
+                extraction_of_second_cluster.setNegative (false);
+                extraction_of_second_cluster.filter (*second_cluster_cloud);
+
+                PointT second_cluster_minimum, second_cluster_maximum;
+                pcl::getMinMax3D (*second_cluster_cloud, second_cluster_minimum, second_cluster_maximum);
+                double second_cluster_height = second_cluster_maximum.z - second_cluster_minimum.z;
+
+                //cerr << " first_cluster_height  " << first_cluster_height  << endl ;
+                //cerr << " second_cluster_height  " << second_cluster_height  << endl ;
+
+                //cerr << " first_cluster_maximum.z " << first_cluster_maximum.z << endl ;
+                //cerr << " second_cluster_maximum.z " << second_cluster_maximum.z << endl ;
+
+                cerr << setprecision (3) << " difference " << fabs (first_cluster_maximum.z - second_cluster_maximum.z) << endl ;
+
+                double cluster_height_difference = fabs (first_cluster_maximum.z - second_cluster_maximum.z);
+
+                if ( cluster_height_difference > 0.025 ) /// meters
+                {
+                  clustering_circle_inliers->indices.clear ();
+                  cerr << " WOW ! clustering circle inliers was cleared !" << endl ;
+                  valid_circle = false;
+                }
+              }
             }
 
             // Update the circle inliers
