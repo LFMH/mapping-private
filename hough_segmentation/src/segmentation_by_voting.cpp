@@ -416,16 +416,14 @@ int main (int argc, char** argv)
               (int) working_cloud->points.size (),  (int) filtered_cloud->points.size (), (int) working_cloud->points.size () - (int) filtered_cloud->points.size ());
   }
 
-  // Add the filtered point cloud data in the same viewer
-  viewer.addPointCloud (*filtered_cloud, "FILTERED");
-  // Color the filtered points in blue
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
-
-  // Wait or not wait
   if ( step )
   {
+    // Add the filtered point cloud data in the same viewer
+    viewer.addPointCloud (*filtered_cloud, "FILTERED");
+    // Color the filtered points in blue
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "FILTERED");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
     // And wait until Q key is pressed
     viewer.spin ();
   }
@@ -469,24 +467,18 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-  // Add the point cloud of normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
-  // Color the normals with red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
 
-  // Wait or not wait
   if ( step )
   {
+    // Add the point cloud of normals
+    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
+    // Color the normals with red
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
-  }
 
-  // Remove the point cloud data
-  viewer.removePointCloud ("3D NORMALS");
-
-  // Wait or not wait
-  if ( step )
-  {
+    // Remove the point cloud data
+    viewer.removePointCloud ("3D NORMALS");
     // And wait until Q key is pressed
     viewer.spin ();
   }
@@ -500,26 +492,19 @@ int main (int argc, char** argv)
     working_cloud->points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
   }
 
-  // Set the color handler for curvature
-  pcl_visualization::PointCloudColorHandlerGenericField<PointT> curvature_handler (*working_cloud, "curvature");
-  // Add the point cloud of curvature values
-  viewer.addPointCloud (*working_cloud, curvature_handler, "CURVATURE");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE"); 
-
-  // Wait or not wait
   if ( step )
   {
+    // Set the color handler for curvature
+    pcl_visualization::PointCloudColorHandlerGenericField<PointT> curvature_handler (*working_cloud, "curvature");
+    // Add the point cloud of curvature values
+    viewer.addPointCloud (*working_cloud, curvature_handler, "CURVATURE");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE"); 
     // And wait until Q key is pressed
     viewer.spin ();
-  }
 
-  // Remove curvature point cloud
-  viewer.removePointCloud ("CURVATURE");
-
-  // Wait or not wait
-  if ( step )
-  {
+    // Remove curvature point cloud
+    viewer.removePointCloud ("CURVATURE");
     // And wait until Q key is pressed
     viewer.spin ();
   }
@@ -559,40 +544,48 @@ int main (int argc, char** argv)
   curvature_extraction.setNegative (false);
   curvature_extraction.filter (*curvature_circular_cloud);
 
-/*
-  std::stringstream curvature_planar_id;
-  curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
-  viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
-  if ( step ) viewer.spin ();
-  viewer.removePointCloud (curvature_planar_id.str());
-  if ( step ) viewer.spin ();
+  /*
+  if ( step )
+  {
+    std::stringstream curvature_planar_id;
+    curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
+    viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
+    viewer.spin ();
 
-  std::stringstream curvature_circular_id;
-  curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
-  viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
-  if ( step ) viewer.spin ();
-  viewer.removePointCloud (curvature_circular_id.str());
-  if ( step ) viewer.spin ();
-*/
+    viewer.removePointCloud (curvature_planar_id.str());
+    viewer.spin ();
 
-  std::stringstream curvature_planar_id;
-  curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
-  viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
+    std::stringstream curvature_circular_id;
+    curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+    viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
+    viewer.spin ();
 
-  std::stringstream curvature_circular_id;
-  curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
-  viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
+    viewer.removePointCloud (curvature_circular_id.str());
+    viewer.spin ();
+  }
+  */
 
-  if ( step ) viewer.spin ();
+  if ( step )
+  {
+    std::stringstream curvature_planar_id;
+    curvature_planar_id << "CURVATURE_PLANAR_" << ros::Time::now();
+    viewer.addPointCloud (*curvature_planar_cloud, curvature_planar_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_planar_id.str ()); 
 
-  viewer.removePointCloud (curvature_planar_id.str());
-  viewer.removePointCloud (curvature_circular_id.str());
+    std::stringstream curvature_circular_id;
+    curvature_circular_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+    viewer.addPointCloud (*curvature_circular_cloud, curvature_circular_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, curvature_circular_id.str ()); 
 
-  if ( step ) viewer.spin ();
+    viewer.spin ();
+
+    viewer.removePointCloud (curvature_planar_id.str());
+    viewer.removePointCloud (curvature_circular_id.str());
+
+    viewer.spin ();
+  }
 
   // ----------------------------------------------------------------------- //
   // -------------------- Estimate RSD values of points -------------------- //
@@ -626,26 +619,19 @@ int main (int argc, char** argv)
   // Save these points to disk
   pcl::io::savePCDFile (name, *rsd_working_cloud);
 
-  // Set the color handler for curvature
-  pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (*rsd_working_cloud, "r_min");
-  // Add the point cloud of curvature values
-  viewer.addPointCloud (*rsd_working_cloud, rsd_handler, "R_MIN");
-  // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN"); 
-
-  // Wait or not wait
   if ( step )
   {
+    // Set the color handler for curvature
+    pcl_visualization::PointCloudColorHandlerGenericField<pcl::PointXYZINormalRSD> rsd_handler (*rsd_working_cloud, "r_min");
+    // Add the point cloud of curvature values
+    viewer.addPointCloud (*rsd_working_cloud, rsd_handler, "R_MIN");
+    // Set the size of points for cloud
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN"); 
     // And wait until Q key is pressed
     viewer.spin ();
-  }
 
-  // Remove r min point cloud
-  viewer.removePointCloud ("R_MIN");
-
-  // Wait or not wait
-  if ( step )
-  {
+    // Remove r min point cloud
+    viewer.removePointCloud ("R_MIN");
     // And wait until Q key is pressed
     viewer.spin ();
   }
@@ -685,40 +671,48 @@ int main (int argc, char** argv)
   r_min_extraction.setNegative (false);
   r_min_extraction.filter (*r_min_implausible_cloud);
 
-/*
-  std::stringstream r_min_plausible_id;
-  r_min_plausible_id << "CURVATURE_PLANAR_" << ros::Time::now();
-  viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
-  if ( step ) viewer.spin ();
-  viewer.removePointCloud (r_min_plausible_id.str());
-  if ( step ) viewer.spin ();
+  /*
+  if ( step )
+  {
+    std::stringstream r_min_plausible_id;
+    r_min_plausible_id << "CURVATURE_PLANAR_" << ros::Time::now();
+    viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
+    viewer.spin ();
 
-  std::stringstream r_min_implausible_id;
-  r_min_implausible_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
-  viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
-  if ( step ) viewer.spin ();
-  viewer.removePointCloud (r_min_implausible_id.str());
-  if ( step ) viewer.spin ();
-*/
+    viewer.removePointCloud (r_min_plausible_id.str());
+    viewer.spin ();
 
-  std::stringstream r_min_plausible_id;
-  r_min_plausible_id << "R_MIN_PLAUSIBLE_" << ros::Time::now();
-  viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
+    std::stringstream r_min_implausible_id;
+    r_min_implausible_id << "CURVATURE_CIRCULAR_" << ros::Time::now();
+    viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
+    viewer.spin ();
 
-  std::stringstream r_min_implausible_id;
-  r_min_implausible_id << "R_MIN_IMPLAUSIBLE_" << ros::Time::now();
-  viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
+    viewer.removePointCloud (r_min_implausible_id.str());
+    viewer.spin ();
+  }
+  */
 
-  if ( step ) viewer.spin ();
+  if ( step )
+  {
+    std::stringstream r_min_plausible_id;
+    r_min_plausible_id << "R_MIN_PLAUSIBLE_" << ros::Time::now();
+    viewer.addPointCloud (*r_min_plausible_cloud, r_min_plausible_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_plausible_id.str ()); 
 
-  viewer.removePointCloud (r_min_plausible_id.str());
-  viewer.removePointCloud (r_min_implausible_id.str());
+    std::stringstream r_min_implausible_id;
+    r_min_implausible_id << "R_MIN_IMPLAUSIBLE_" << ros::Time::now();
+    viewer.addPointCloud (*r_min_implausible_cloud, r_min_implausible_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, r_min_implausible_id.str ()); 
 
-  if ( step ) viewer.spin ();
+    viewer.spin ();
+
+    viewer.removePointCloud (r_min_plausible_id.str());
+    viewer.removePointCloud (r_min_implausible_id.str());
+
+    viewer.spin ();
+  }
 
   // ATTENTION // 
 
@@ -739,28 +733,21 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
-  // Add the normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "2D NORMALS");
-  // Color the normals with red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "2D NORMALS"); 
-
-  // Wait or not wait
   if ( step )
   {
+    // Add the normals
+    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "2D NORMALS");
+    // Color the normals with red
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "2D NORMALS"); 
+    // And wait until Q key is pressed
+    viewer.spin ();
+
+    // Remove the point cloud data
+    viewer.removePointCloud ("2D NORMALS");
     // And wait until Q key is pressed
     viewer.spin ();
   }
-
-  // Remove the point cloud data
-  viewer.removePointCloud ("2D NORMALS");
-
-  // Wait or not wait
-  if ( step )
-  {
-    // And wait until Q key is pressed
-    viewer.spin ();
-  }
-
+ 
   for (int idx = 0; idx < (int) normals_cloud->points.size (); idx++)
   {
     double nx = normals_cloud->points[idx].normal_x;
@@ -777,24 +764,17 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = nz;
   }
 
-  // Add the normals
-  viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
-  // Color the normals with red
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
-
-  // Wait or not wait
   if ( step )
   {
+    // Add the normals
+    viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
+    // Color the normals with red
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
-  }
 
-  // Remove the point cloud data
-  viewer.removePointCloud ("NORMALS");
-
-  // Wait or not wait
-  if ( step )
-  {
+    // Remove the point cloud data
+    viewer.removePointCloud ("NORMALS");
     // And wait until Q key is pressed
     viewer.spin ();
   }
@@ -868,29 +848,27 @@ int main (int argc, char** argv)
   // ------------------ Visualize object clusters ------------------ //
   // --------------------------------------------------------------- //
 
-  // Vector of ids of handles
-  std::vector<std::string> objects_clusters_ids;
-
-  for (int clu = 0; clu < (int) objects_clusters_clouds.size(); clu++)
+  if ( step )
   {
-    // Create id for visualization
-    std::stringstream object_cluster_id;
-    object_cluster_id << "OBJECT_CLUSTER_" << ros::Time::now();
+    // Vector of ids of handles
+    std::vector<std::string> objects_clusters_ids;
 
-    // Add point cloud to viewer
-    viewer.addPointCloud (*objects_clusters_clouds.at(clu), object_cluster_id.str());
-    // Set the size of points for cloud
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
-
-    // Wait or not wait
-    if ( step )
+    for (int clu = 0; clu < (int) objects_clusters_clouds.size(); clu++)
     {
+      // Create id for visualization
+      std::stringstream object_cluster_id;
+      object_cluster_id << "OBJECT_CLUSTER_" << ros::Time::now();
+
+      // Add point cloud to viewer
+      viewer.addPointCloud (*objects_clusters_clouds.at(clu), object_cluster_id.str());
+      // Set the size of points for cloud
+      viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
       // And wait until Q key is pressed
       viewer.spin ();
-    }
 
-    // Save id of object
-    objects_clusters_ids.push_back (object_cluster_id.str());
+      // Save id of object
+      objects_clusters_ids.push_back (object_cluster_id.str());
+    }
   }
 
   // -------------------------------------------------------------------------------------------------- //
@@ -1431,41 +1409,37 @@ int main (int argc, char** argv)
           // Start visualization process //
           // --------------------------- //
 
-          // Create ID for circle model
-          std::stringstream circle_id;
-          circle_id << "CIRCLE_" << ros::Time::now();
-
-          // Create ID for circle inliers
-          std::stringstream circle_inliers_id;
-          circle_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
-
-          // Add circle model to point cloud data
-          circle_viewer.addCircle (circle_coefficients, circle_id.str ());
-
-          // Add the point cloud data
-          circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
-
-          // Set the size of points for cloud data
-          circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
-
-          // Wait or not wait
           if ( circle_step )
           {
+            // Create ID for circle model
+            std::stringstream circle_id;
+            circle_id << "CIRCLE_" << ros::Time::now();
+
+            // Create ID for circle inliers
+            std::stringstream circle_inliers_id;
+            circle_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
+
+            // Add circle model to point cloud data
+            circle_viewer.addCircle (circle_coefficients, circle_id.str ());
+
+            // Add the point cloud data
+            circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
+
+            // Set the size of points for cloud data
+            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
+
             // And wait until Q key is pressed
             circle_viewer.spin ();
-          }
 
-          // Save circle ids for cleaning the viewer afterwards
-          circles_ids.push_back (circle_id.str());
-          // Save also circle inliers ids
-          circles_inliers_ids.push_back (circle_inliers_id.str());
+            // Save circle ids for cleaning the viewer afterwards
+            circles_ids.push_back (circle_id.str());
+            // Save also circle inliers ids
+            circles_inliers_ids.push_back (circle_inliers_id.str());
+          }
 
           // Fit only one model for each cluster in every iteration
           // No need for fitting circles anymore
           //          stop_circle_fitting = true;
-
-
-
         }
 
         // number of fitted circles
@@ -1485,55 +1459,29 @@ int main (int argc, char** argv)
             ROS_WARN ("  %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
 
       } while ((int) working_cluster_cloud->points.size () > minimum_circle_inliers && stop_circle_fitting == false);
-
-
-
-
-      // Wait or not wait
-      if ( circle_step )
-      {
-        // And wait until Q key is pressed
-        circle_viewer.spin ();
-      }
-
-
-
-
-
     }
 
     // ---------------------- //
     // Start cleaning process //
     // ---------------------- //
 
-    for (int id = 0; id < (int) circles_ids.size(); id++)
+    if ( circle_step )
     {
-      // Remove circle from the viewer
-      circle_viewer.removeShape (circles_ids[id]);
-    }
-
-     // Wait or not wait
-      if ( circle_step )
+      for (int id = 0; id < (int) circles_ids.size(); id++)
       {
-        // And wait until Q key is pressed
-        circle_viewer.spin ();
+        // Remove circle from the viewer
+        circle_viewer.removeShape (circles_ids[id]);
       }
 
-    for (int id = 0; id < (int) circles_inliers_ids.size(); id++)
-    {
-      // Remove circle from the viewer
-      circle_viewer.removePointCloud (circles_inliers_ids[id]);
-    }
-
-     // Wait or not wait
-      if ( circle_step )
+      for (int id = 0; id < (int) circles_inliers_ids.size(); id++)
       {
-        // And wait until Q key is pressed
-        circle_viewer.spin ();
+        // Remove circle from the viewer
+        circle_viewer.removePointCloud (circles_inliers_ids[id]);
       }
 
-
-
+      // And wait until Q key is pressed
+      circle_viewer.spin ();
+    }
   }
 
 
@@ -1556,21 +1504,7 @@ int main (int argc, char** argv)
   circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_parameters_id.str ()); 
 
   // Wait or not wait
-  if ( true )
-  {
-    // And wait until Q key is pressed
-    circle_viewer.spin ();
-  }
-
- // Wait or not wait
-  if ( true )
-  {
-    // And wait until Q key is pressed
-    circle_viewer.spin ();
-  }
-
- // Wait or not wait
-  if ( true )
+  if ( circle_step )
   {
     // And wait until Q key is pressed
     circle_viewer.spin ();
