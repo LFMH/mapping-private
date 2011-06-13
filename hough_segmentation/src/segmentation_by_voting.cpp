@@ -467,7 +467,6 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-
   if ( step )
   {
     // Add the point cloud of normals
@@ -907,7 +906,7 @@ int main (int argc, char** argv)
   for (int ite = 0; ite < iterations; ite++)
   {
     // Print current iteration number
-    ROS_ERROR ("AT ITERATION = %d", ite);
+    ROS_INFO ("AT ITERATION = %d", ite);
 
     // Vector of circle ids
     std::vector<std::string> circles_ids;
@@ -1023,9 +1022,12 @@ int main (int argc, char** argv)
             // Call the extraction function
             clustering_of_circle.extract (circle_clusters);
 
-            ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
-            for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
-              ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
+            if ( verbose )
+            {
+              ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
+              for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
+                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
+            }
 
             pcl::PointIndices::Ptr clustering_circle_inliers (new pcl::PointIndices ());
 
@@ -1090,7 +1092,6 @@ int main (int argc, char** argv)
 
         if ( curvature_feature )
         {
-
           if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
           {
             // The current circle model will be rejected
@@ -1166,7 +1167,6 @@ int main (int argc, char** argv)
 
         if ( rsd_feature )
         {
-
           if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
           {
             // The current circle model will be rejected
@@ -1250,94 +1250,128 @@ int main (int argc, char** argv)
 
         if ( normals_feature )
         {
-          if ( circle_feature_step )
+          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
           {
-            std::stringstream before_normals_id;
-            before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-            circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
-            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
-            if ( circle_feature_step ) circle_viewer.spin ();
-            circle_viewer.removePointCloud (before_normals_id.str());
-            if ( circle_feature_step ) circle_viewer.spin ();
+            // The current circle model will be rejected
+            valid_circle = false;
           }
-
-          pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
-
-          float c[2];
-          c[0] = circle_coefficients.values.at (0);
-          c[1] = circle_coefficients.values.at (1);
-
-          for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
+          else
           {
-            int idx = circle_inliers->indices.at (inl);
-
-            float p[2];
-            p[0] = working_cluster_cloud->points.at (idx).x;
-            p[1] = working_cluster_cloud->points.at (idx).y;
-
-            float c2p[2];
-            c2p[0] = p[0] - c[0];
-            c2p[1] = p[1] - c[1];
-
-            float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
-            c2p[0] = c2p[0] / lc2p;
-            c2p[1] = c2p[1] / lc2p;
-
-            float np[2];
-            np[0] = working_cluster_cloud->points.at (idx).normal_x;
-            np[1] = working_cluster_cloud->points.at (idx).normal_y;
-
-            float lnp = sqrt (np[0]*np[0] + np[1]*np[1]);
-            np[0] = np[0] / lnp;
-            np[1] = np[1] / lnp;
-
-            float dot = c2p[0]*np[0] + c2p[1]*np[1];
-            float ang = acos (dot) * 180.0 / M_PI;
-
-            if ( ((180.0 - angle_threshold) < ang) || (ang < angle_threshold) )
+            if ( circle_feature_step )
             {
-              // Save the right indices of points
-              normals_circle_inliers->indices.push_back (idx);
+              std::stringstream before_normals_id;
+              before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
+              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
+              if ( circle_feature_step ) circle_viewer.spin ();
+              circle_viewer.removePointCloud (before_normals_id.str());
+              if ( circle_feature_step ) circle_viewer.spin ();
             }
+
+            pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
+
+            float c[2];
+            c[0] = circle_coefficients.values.at (0);
+            c[1] = circle_coefficients.values.at (1);
+
+            for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
+            {
+              int idx = circle_inliers->indices.at (inl);
+
+              float p[2];
+              p[0] = working_cluster_cloud->points.at (idx).x;
+              p[1] = working_cluster_cloud->points.at (idx).y;
+
+              float c2p[2];
+              c2p[0] = p[0] - c[0];
+              c2p[1] = p[1] - c[1];
+
+              float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
+              c2p[0] = c2p[0] / lc2p;
+              c2p[1] = c2p[1] / lc2p;
+
+              float np[2];
+              np[0] = working_cluster_cloud->points.at (idx).normal_x;
+              np[1] = working_cluster_cloud->points.at (idx).normal_y;
+
+              float lnp = sqrt (np[0]*np[0] + np[1]*np[1]);
+              np[0] = np[0] / lnp;
+              np[1] = np[1] / lnp;
+
+              float dot = c2p[0]*np[0] + c2p[1]*np[1];
+              float ang = acos (dot) * 180.0 / M_PI;
+
+              if ( ((180.0 - angle_threshold) < ang) || (ang < angle_threshold) )
+              {
+                // Save the right indices of points
+                normals_circle_inliers->indices.push_back (idx);
+              }
+            }
+
+            // ---------------------------- //
+            // Start the extraction process //
+            // ---------------------------- //
+
+            pcl::PointCloud<PointT>::Ptr normals_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+            // Extract the circular inliers 
+            pcl::ExtractIndices<PointT> normals_extraction_of_circle;
+            // Set which indices to extract
+            normals_extraction_of_circle.setIndices (normals_circle_inliers);
+            // Set point cloud from where to extract
+            normals_extraction_of_circle.setInputCloud (working_cluster_cloud);
+
+            // Return the points which represent the inliers
+            normals_extraction_of_circle.setNegative (false);
+            // Call the extraction function
+            normals_extraction_of_circle.filter (*normals_circle_inliers_cloud);
+
+            if ( circle_feature_step )
+            {
+              std::stringstream after_normals_id;
+              after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
+              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
+              if ( circle_feature_step ) circle_viewer.spin ();
+              circle_viewer.removePointCloud (after_normals_id.str());
+              if ( circle_feature_step ) circle_viewer.spin ();
+            }
+
+            // Update the inliers of circle
+            *circle_inliers = *normals_circle_inliers;
+            // Update the points of inliers
+            *circle_inliers_cloud = *normals_circle_inliers_cloud;
           }
-
-          // ---------------------------- //
-          // Start the extraction process //
-          // ---------------------------- //
-
-          pcl::PointCloud<PointT>::Ptr normals_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
-
-          // Extract the circular inliers 
-          pcl::ExtractIndices<PointT> normals_extraction_of_circle;
-          // Set which indices to extract
-          normals_extraction_of_circle.setIndices (normals_circle_inliers);
-          // Set point cloud from where to extract
-          normals_extraction_of_circle.setInputCloud (working_cluster_cloud);
-
-          // Return the points which represent the inliers
-          normals_extraction_of_circle.setNegative (false);
-          // Call the extraction function
-          normals_extraction_of_circle.filter (*normals_circle_inliers_cloud);
-
-          if ( circle_feature_step )
-          {
-            std::stringstream after_normals_id;
-            after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-            circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
-            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
-            if ( circle_feature_step ) circle_viewer.spin ();
-            circle_viewer.removePointCloud (after_normals_id.str());
-            if ( circle_feature_step ) circle_viewer.spin ();
-          }
-
-          // Update the inliers of circle
-          *circle_inliers = *normals_circle_inliers;
-          // Update the points of inliers
-          *circle_inliers_cloud = *normals_circle_inliers_cloud;
         }
 
 
 
+        // START W/ THE PERCENTAGE FEATURE //
+
+        // Percentage of fitted inleirs 
+        double the_percentage_of_the_remaining_circle_inliers = 0;
+
+        if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+        {
+          // The current circle model will be rejected
+          valid_circle = false;
+        }
+        else
+        {
+          // Percentage of fitted inleirs 
+          the_percentage_of_the_remaining_circle_inliers = round ((double) circle_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_circle * 100);
+
+          if ( the_percentage_of_the_remaining_circle_inliers < circle_percentage )
+          {
+            // The current circle model will be rejected
+            valid_circle = false;
+          }
+          else
+          {
+            // The current circle model will be accepted
+            valid_circle = true;
+          }
+        }
 
 
 
@@ -1357,28 +1391,19 @@ int main (int argc, char** argv)
           extraction_of_circle.filter (*working_cluster_cloud);
         }
 
-        ROS_INFO ("The actual number of points from the fitted circle is %d !", the_actual_number_of_points_from_the_fitted_circle);
-        ROS_INFO ("Circle has %d inliers left", (int) circle_inliers_cloud->points.size());
-        ROS_INFO ("%d points remain after extraction", (int) working_cluster_cloud->points.size ());
 
-        /*
-        // Check if the fitted circle has enough inliers in order to be accepte * d
-        if ((int) circle_inliers->indices.size () < minimum_circle_inliers)
-        */
 
-        double the_percentage_of_the_remaining_circle_inliers;
+        if ( verbose )
+        {
+          ROS_INFO ("  The actual number of points from the fitted circle is %d !", the_actual_number_of_points_from_the_fitted_circle);
+          ROS_INFO ("  Circle has %d inliers left", (int) circle_inliers_cloud->points.size());
+          ROS_INFO ("  %d points remain after extraction", (int) working_cluster_cloud->points.size ());
+        }
 
         if ( !valid_circle )
-          the_percentage_of_the_remaining_circle_inliers = 0;
-        else
-          the_percentage_of_the_remaining_circle_inliers = round ((double) circle_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_circle * 100);
-
-        if ( the_percentage_of_the_remaining_circle_inliers < circle_percentage )
         {
-          cerr << " the_percentage_of_the_remaining_circle_inliers " << the_percentage_of_the_remaining_circle_inliers << " [%]" << endl ;
-
-          ROS_ERROR ("NOT ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-              circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
+                the_percentage_of_the_remaining_circle_inliers, circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
 
           /*
           // No need for fitting circles anymore
@@ -1387,10 +1412,8 @@ int main (int argc, char** argv)
         }
         else
         {
-          cerr << " the_percentage_of_the_remaining_circle_inliers " << the_percentage_of_the_remaining_circle_inliers << " [%]" << endl ;
-
-          ROS_INFO ("ACCEPTED ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-              circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
+                the_percentage_of_the_remaining_circle_inliers, circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
 
           // ------------------------------------- //
           // Build the parameter space for circles //
@@ -1451,12 +1474,12 @@ int main (int argc, char** argv)
 
         // Print the number of points left for model fitting
         if ( (int) working_cluster_cloud->points.size () < minimum_circle_inliers )
-          ROS_WARN ("  %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+          ROS_WARN ("    %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
         else
           if ( (int) working_cluster_cloud->points.size () > minimum_circle_inliers )
-            ROS_WARN ("  %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+            ROS_WARN ("    %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
           else
-            ROS_WARN ("  %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+            ROS_WARN ("    %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
 
       } while ((int) working_cluster_cloud->points.size () > minimum_circle_inliers && stop_circle_fitting == false);
     }
