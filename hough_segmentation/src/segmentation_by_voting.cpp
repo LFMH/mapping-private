@@ -75,14 +75,10 @@ int minimum_line_inliers   = 10; /// [points]
 int minimum_circle_inliers = 50; /// [points]
 int maximum_line_iterations   = 1000; /// [iterations]
 int maximum_circle_iterations = 1000; /// [iterations]
-
-double   line_inliers_clustering_tolerance = 0.010; /// [meters]
+double   line_clustering_tolerance = 0.010; /// [meters]
 double circle_clustering_tolerance = 0.010; /// [meters]
-
 int minimum_size_of_line_cluster = 10; /// [points]
 int minimum_size_of_circle_cluster = 10; /// [points]
-
-
 
 int normals_search_knn = 0; /// [points]
 double normals_search_radius = 0.000; /// [meters]
@@ -94,21 +90,15 @@ double high_r_min = 0.060; /// [meters]
 double angle_threshold = 45.0; /// [degrees]
 double radius_threshold = 0.025; /// [meters]
 
-
-
-double circle_percentage = 50; /// [percentage]
-
-
-
 bool clustering_feature = true;
 bool curvature_feature = true;
 bool rsd_feature = true;
 bool normals_feature = true;
+bool percentage_feature = true;
 
-
-
-double circle_space_radius = 0.010;
-double circle_space_percentage = 0.75;
+double circle_percentage = 50;
+double clustering_tolerance_of_circle_parameters = 0.025;
+double minimum_size_of_circle_parameters_clusters = circle_percentage * iterations / 100;
 
 // Visualization's Parameters
 int size = 3;
@@ -185,7 +175,7 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
  */
 int main (int argc, char** argv)
 {
- 
+
   // ------------------------------------------------------------------- //
   // -------------------- Check and parse arguments -------------------- //
   // ------------------------------------------------------------------- //
@@ -196,58 +186,55 @@ int main (int argc, char** argv)
     ROS_INFO (" ");
     ROS_INFO ("Syntax is: %s <input>.pcd <options>", argv[0]);
     ROS_INFO ("  where <options> are:");
-    ROS_INFO ("    -iterations X                              = How many times to run the fitting routine.");
+    ROS_INFO ("    -iterations X                                      = How many times to run the fitting routine.");
     ROS_INFO (" ");
-    ROS_INFO ("    -line_threshold X                          = threshold for line inlier selection");
-    ROS_INFO ("    -circle_threshold X                        = threshold for circle inlier selection");
-    ROS_INFO ("    -voting_threshold X                        = threshold for Hough-based model voting");
-    ROS_INFO ("    -minimum_radius X                          = ");
-    ROS_INFO ("    -maximum_radius X                          = ");
-    ROS_INFO ("    -minimum_line_inliers D                    = ");
-    ROS_INFO ("    -minimum_circle_inliers D                  = ");
-    ROS_INFO ("    -maximum_line_iterations D                 = ");
-    ROS_INFO ("    -maximum_circle_iterations D               = ");
-    ROS_INFO ("    -line_inliers_clustering_tolerance X       = ");
-    ROS_INFO ("    -circle_clustering_tolerance X     = ");
+    ROS_INFO ("    -line_threshold X                                  = threshold for line inlier selection");
+    ROS_INFO ("    -circle_threshold X                                = threshold for circle inlier selection");
+    ROS_INFO ("    -voting_threshold X                                = threshold for Hough-based model voting");
+    ROS_INFO ("    -minimum_radius X                                  = ");
+    ROS_INFO ("    -maximum_radius X                                  = ");
+    ROS_INFO ("    -minimum_line_inliers D                            = ");
+    ROS_INFO ("    -minimum_circle_inliers D                          = ");
+    ROS_INFO ("    -maximum_line_iterations D                         = ");
+    ROS_INFO ("    -maximum_circle_iterations D                       = ");
+    ROS_INFO ("    -line_clustering_tolerance X                       = ");
+    ROS_INFO ("    -circle_clustering_tolerance X                     = ");
     ROS_INFO (" ");
-    ROS_INFO ("    -minimum_size_of_objects_clusters X        = ");
-    ROS_INFO ("    -clustering_tolerance_of_objects X         = ");
+    ROS_INFO ("    -minimum_size_of_objects_clusters X                = ");
+    ROS_INFO ("    -clustering_tolerance_of_objects X                 = ");
     ROS_INFO (" ");
 
 
 
-    ROS_INFO ("    -normals_search_knn X                      = ");
-    ROS_INFO ("    -normals_search_radius X                   = ");
-    ROS_INFO ("    -curvature_threshold X                     = ");
-    ROS_INFO ("    -rsd_search_radius X                       = ");
-    ROS_INFO ("    -rsd_plane_radius X                        = ");
-    ROS_INFO ("    -low_r_min X                               = ");
-    ROS_INFO ("    -high_r_min X                              = ");
-    ROS_INFO ("    -angle_threshold X                         = ");
-    ROS_INFO ("    -radius_threshold X                        = ");
+    ROS_INFO ("    -normals_search_knn X                              = ");
+    ROS_INFO ("    -normals_search_radius X                           = ");
+    ROS_INFO ("    -curvature_threshold X                             = ");
+    ROS_INFO ("    -rsd_search_radius X                               = ");
+    ROS_INFO ("    -rsd_plane_radius X                                = ");
+    ROS_INFO ("    -low_r_min X                                       = ");
+    ROS_INFO ("    -high_r_min X                                      = ");
+    ROS_INFO ("    -angle_threshold X                                 = ");
+    ROS_INFO ("    -radius_threshold X                                = ");
 
 
 
-    ROS_INFO ("    -clustering_feature X                      = ");
-    ROS_INFO ("    -curvature_feature X                       = ");
-    ROS_INFO ("    -rsd_feature X                             = ");
-    ROS_INFO ("    -normals_feature X                         = ");
+    ROS_INFO ("    -clustering_feature X                              = ");
+    ROS_INFO ("    -curvature_feature X                               = ");
+    ROS_INFO ("    -rsd_feature X                                     = ");
+    ROS_INFO ("    -normals_feature X                                 = ");
+    ROS_INFO ("    -percentage_feature X                              = ");
 
 
+    ROS_INFO ("    -circle_percentage X                               = ");
+    ROS_INFO ("    -clustering_tolerance_of_circle_parameters X       = ");
+    ROS_INFO ("    -minimum_size_of_circle_parameters_clusters X      = ");
 
-    ROS_INFO ("    -circle_percentage X                         = ");
-
-
-
-    ROS_INFO ("    -circle_space_radius X                     = ");
-    ROS_INFO ("    -circle_space_percentage X                 = ");
-    ROS_INFO (" ");
-    ROS_INFO ("    -size B                                    = ");
-    ROS_INFO ("    -step B                                    = ");
-    ROS_INFO ("    -verbose B                                 = ");
-    ROS_INFO ("    -line_step B                               = wait or not wait");
-    ROS_INFO ("    -circle_step B                             = wait or not wait");
-    ROS_INFO ("    -circle_feature_step B                     = wait or not wait");
+    ROS_INFO ("    -size B                                            = ");
+    ROS_INFO ("    -step B                                            = ");
+    ROS_INFO ("    -verbose B                                         = ");
+    ROS_INFO ("    -line_step B                                       = wait or not wait");
+    ROS_INFO ("    -circle_step B                                     = wait or not wait");
+    ROS_INFO ("    -circle_feature_step B                             = wait or not wait");
     ROS_INFO (" ");
     return (-1);
   }
@@ -276,12 +263,10 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-minimum_circle_inliers", minimum_circle_inliers);
   terminal_tools::parse_argument (argc, argv, "-maximum_line_iterations",   maximum_line_iterations);
   terminal_tools::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
-  terminal_tools::parse_argument (argc, argv,   "-line_inliers_clustering_tolerance",   line_inliers_clustering_tolerance);
+  terminal_tools::parse_argument (argc, argv,   "-line_clustering_tolerance",   line_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-circle_clustering_tolerance", circle_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_cluster", minimum_size_of_circle_cluster);
-
-
 
   terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
@@ -293,21 +278,17 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-angle_threshold", angle_threshold);
   terminal_tools::parse_argument (argc, argv, "-radius_threshold", radius_threshold);
 
-
-
   terminal_tools::parse_argument (argc, argv, "-clustering_feature", clustering_feature);  
   terminal_tools::parse_argument (argc, argv, "-curvature_feature", curvature_feature);  
   terminal_tools::parse_argument (argc, argv, "-rsd_feature", rsd_feature);  
   terminal_tools::parse_argument (argc, argv, "-normals_feature", normals_feature);
-
-
+  terminal_tools::parse_argument (argc, argv, "-percentage_feature", percentage_feature);
 
   terminal_tools::parse_argument (argc, argv, "-circle_percentage", circle_percentage);
+  terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_circle_parameters", clustering_tolerance_of_circle_parameters);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
 
-
-
-  terminal_tools::parse_argument (argc, argv, "-circle_space_radius", circle_space_radius);
-  terminal_tools::parse_argument (argc, argv, "-circle_space_percentage", circle_space_percentage);
+  minimum_size_of_circle_parameters_clusters = circle_percentage * iterations / 100;
 
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
@@ -817,7 +798,7 @@ int main (int argc, char** argv)
   for (int clu = 0; clu < (int) objects_clusters.size(); clu++)
   {
     // Pointer to the cluster object
-    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(clu)));
+    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at (clu)));
     // Cloud of the cluster obejct
     pcl::PointCloud<PointT>::Ptr object_cluster_cloud (new pcl::PointCloud<PointT> ());
 
@@ -859,7 +840,7 @@ int main (int argc, char** argv)
       object_cluster_id << "OBJECT_CLUSTER_" << ros::Time::now();
 
       // Add point cloud to viewer
-      viewer.addPointCloud (*objects_clusters_clouds.at(clu), object_cluster_id.str());
+      viewer.addPointCloud (*objects_clusters_clouds.at (clu), object_cluster_id.str());
       // Set the size of points for cloud
       viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
       // And wait until Q key is pressed
@@ -1025,8 +1006,8 @@ int main (int argc, char** argv)
             if ( verbose )
             {
               ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
-              for (int c = 0; c < (int) (int) circle_clusters.size(); c++)
-                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at(c).indices.size());
+              for (int c = 0; c < (int) circle_clusters.size(); c++)
+                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at (c).indices.size());
             }
 
             pcl::PointIndices::Ptr clustering_circle_inliers (new pcl::PointIndices ());
@@ -1347,29 +1328,32 @@ int main (int argc, char** argv)
 
 
         // START W/ THE PERCENTAGE FEATURE //
-
-        // Percentage of fitted inleirs 
+ 
+        // Percentage of fitted inliers 
         double the_percentage_of_the_remaining_circle_inliers = 0;
 
-        if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+        if ( percentage_feature )
         {
-          // The current circle model will be rejected
-          valid_circle = false;
-        }
-        else
-        {
-          // Percentage of fitted inleirs 
-          the_percentage_of_the_remaining_circle_inliers = round ((double) circle_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_circle * 100);
-
-          if ( the_percentage_of_the_remaining_circle_inliers < circle_percentage )
+          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
           {
             // The current circle model will be rejected
             valid_circle = false;
           }
           else
           {
-            // The current circle model will be accepted
-            valid_circle = true;
+            // Percentage of fitted inleirs 
+            the_percentage_of_the_remaining_circle_inliers = round ((double) circle_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_circle * 100);
+
+            if ( the_percentage_of_the_remaining_circle_inliers < circle_percentage )
+            {
+              // The current circle model will be rejected
+              valid_circle = false;
+            }
+            else
+            {
+              // The current circle model will be accepted
+              valid_circle = true;
+            }
           }
         }
 
@@ -1509,42 +1493,68 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
-
-
-  // Create ID for circle model
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
-
-  // Add the point cloud data
   circle_viewer.addPointCloud (*circle_parameters_cloud, circle_parameters_id.str ());
-  // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_parameters_id.str ()); 
+  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, circle_parameters_id.str ()); 
+  circle_viewer.spin ();
 
-  // Wait or not wait
-  if ( circle_step )
-  {
-    // And wait until Q key is pressed
-    circle_viewer.spin ();
-  }
-
-  // Create file name for saving
   std::string circle_parameters_filename = argv [pFileIndicesPCD [0]];
   circle_parameters_filename.insert (fullstop, "-circles");
 
-  // Save these points to disk
   pcl::io::savePCDFile (circle_parameters_filename, *circle_parameters_cloud);
 
   if ( verbose )
   {
-    // Show the floor's number of points
-    ROS_INFO ("The space which is represented by the circles models has %d points and was saved !", (int) circle_parameters_cloud->points.size ());
+    ROS_INFO ("The parameters space of circle models has %d votes !", (int) circle_parameters_cloud->points.size ());
   }
+
+  std::vector<pcl::PointIndices> circle_parameters_clusters;
+  pcl::KdTreeFLANN<PointT>::Ptr circle_parameters_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+  pcl::EuclideanClusterExtraction<PointT> circle_parameters_extraction_of_clusters;
+  circle_parameters_extraction_of_clusters.setInputCloud (circle_parameters_cloud);
+  circle_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_circle_parameters);
+  circle_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_circle_parameters_clusters);
+  circle_parameters_extraction_of_clusters.setSearchMethod (circle_parameters_clusters_tree);
+  circle_parameters_extraction_of_clusters.extract (circle_parameters_clusters);
+
+  if ( verbose )
+  {
+    ROS_INFO ("The parameters space has also %d clusters", (int) circle_parameters_clusters.size ());
+    for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
+      ROS_INFO ("  Cluster %d has %d points", clu, (int) circle_parameters_clusters.at (clu).indices.size());
+  }
+
+  std::vector<pcl::PointIndices::Ptr> circle_parameters_clusters_indices;
+  std::vector<pcl::PointCloud<PointT>::Ptr> circle_parameters_clusters_clouds;
+  std::vector<std::string> circle_parameters_clusters_ids;
+
+  for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
+  {
+    pcl::PointIndices::Ptr  cluster_indices (new pcl::PointIndices (circle_parameters_clusters.at (clu)));
+    pcl::PointCloud<PointT>::Ptr cluster_cloud (new pcl::PointCloud<PointT> ());
+
+    pcl::ExtractIndices<PointT> circle_parameters_extraction_of_indices;
+    circle_parameters_extraction_of_indices.setInputCloud (circle_parameters_cloud);
+    circle_parameters_extraction_of_indices.setIndices (cluster_indices);
+    circle_parameters_extraction_of_indices.setNegative (false);
+    circle_parameters_extraction_of_indices.filter (*cluster_cloud);
+
+    std::stringstream cluster_id;
+    cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
+    circle_viewer.addPointCloud (*cluster_cloud, cluster_id.str());
+    circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 2, cluster_id.str()); 
+    circle_viewer.spin ();
+
+    circle_parameters_clusters_indices.push_back (cluster_indices);
+    circle_parameters_clusters_clouds.push_back (cluster_cloud);
+    circle_parameters_clusters_ids.push_back (cluster_id.str());
+  }
+
+
+
+
 
 
 
@@ -1623,7 +1633,7 @@ int main (int argc, char** argv)
    
 
 
-
+/*
   //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> ());
   //pcl::KdTreeFLANN<PointT>::Ptr kdtree_ (new pcl::KdTreeFLANN<PointT> (circle_parameters_cloud));
   
@@ -1690,29 +1700,22 @@ int main (int argc, char** argv)
     }
 
   }
+*/
 
-
-
-
-
-
-  // Create ID for circle model
+/*
   std::stringstream those_points_id;
   those_points_id << "THOSE_POINTS_" << ros::Time::now();
 
-  // Add the point cloud data
   circle_viewer.addPointCloud (*those_points, those_points_id.str ());
 
-  // Set the size of points for cloud
   circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size * size, those_points_id.str ()); 
 
-  // Wait or not wait
   if ( true )
   {
-    // And wait until Q key is pressed
     circle_viewer.spin ();
   }
 
+*/
 
 
   exit (0);
