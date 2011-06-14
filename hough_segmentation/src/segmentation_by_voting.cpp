@@ -2062,6 +2062,96 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
 
 
+
+  for (int clu = 0; clu < (int) line_objects_clusters_clouds.size(); clu++)
+  {
+
+    pcl::PointCloud<PointT>::Ptr line_working_cluster_cloud (new pcl::PointCloud<PointT> ());
+    *line_working_cluster_cloud = *line_objects_clusters_clouds.at (clu);
+
+   /// TRICK ///
+
+   for (int idx = 0; idx < line_working_cluster_cloud->points.size (); idx++)
+     line_working_cluster_cloud->points.at (idx).z = 0.0;
+
+    pcl::ModelCoefficients line_coefficients;
+    pcl::PointIndices::Ptr line_inliers (new pcl::PointIndices ());
+
+    pcl::SACSegmentation<PointT> segmentation_of_line;
+    segmentation_of_line.setProbability (0.99);
+    segmentation_of_line.setOptimizeCoefficients (true);
+    segmentation_of_line.setMethodType (pcl::SAC_RANSAC);
+    segmentation_of_line.setModelType (pcl::SACMODEL_LINE);
+    segmentation_of_line.setDistanceThreshold (line_threshold);
+    segmentation_of_line.setMaxIterations (maximum_line_iterations);
+    segmentation_of_line.setInputCloud (line_working_cluster_cloud);
+
+    //segmentation_of_line.setAxis (axis);
+    //segmentation_of_line.setEpsAngle (epsilon_angle);
+    //segmentation_of_line.setNormalDistanceWeight (0.05);
+    //segmentation_of_line.setInputNormals (normals_cloud);
+
+    segmentation_of_line.segment (*line_inliers, line_coefficients);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Line has %3d inliers with parameters P1 = (%6.3f,%6.3f,%6.3f) and P2 = (%6.3f,%6.3f,%6.3f) found in maximum %d iterations",
+          (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3],  line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
+    }
+
+   /// TRICK ///
+
+   *line_working_cluster_cloud = *line_objects_clusters_clouds.at (clu);
+
+    pcl::PointCloud<PointT>::Ptr line_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+    pcl::ExtractIndices<PointT> extraction_of_line;
+    extraction_of_line.setIndices (line_inliers);
+    extraction_of_line.setInputCloud (line_working_cluster_cloud);
+    extraction_of_line.setNegative (false);
+    extraction_of_line.filter (*line_inliers_cloud);
+    extraction_of_line.setNegative (true);
+    extraction_of_line.filter (*line_working_cluster_cloud);
+
+    if ( verbose )
+    {
+      ROS_INFO ("Line has %d inliers", line_inliers_cloud->points.size());
+      ROS_INFO ("%d points remain after extraction", line_working_cluster_cloud->points.size ());
+    }
+
+    if ( line_step )
+    {
+      std::stringstream line_id;
+      line_id << "LINE_" << ros::Time::now();
+
+      std::stringstream line_inliers_id;
+      line_inliers_id << "LINE_INLIERS_" << ros::Time::now();
+
+      adjustLine (line_inliers_cloud, line_coefficients);
+
+      line_viewer.addLine (line_coefficients, line_id.str ());
+      line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
+      line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_inliers_id.str ()); 
+
+      line_viewer.spin ();
+    }
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   exit (0);
 
 
