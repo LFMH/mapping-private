@@ -1474,9 +1474,38 @@ int main (int argc, char** argv)
 
           // A vote consists of the actual circle parameters
           PointT circle_vot;
-          circle_vot.x = circle_coefficients.values [0];
-          circle_vot.y = circle_coefficients.values [1];
-          circle_vot.z = circle_coefficients.values [2];
+          circle_vot.x = circle_coefficients.values [0]; // cx
+          circle_vot.y = circle_coefficients.values [1]; // cy
+          circle_vot.z = circle_coefficients.values [2]; // r
+
+
+
+
+
+/*
+          PointT min, max;
+
+          pcl::getMinMax3D (*circle_inliers_cloud, min, max);
+
+          circle_vot.intensity = max.z; // h
+*/
+
+
+
+          double maximus = -DBL_MAX;
+
+          for (int point = 0; point < (int) circle_inliers_cloud->points.size(); point++)
+          {
+            double Z = circle_inliers_cloud->points.at (point).z;
+
+            if ( maximus < Z ) maximus = Z;
+          }
+
+          circle_vot.intensity = maximus; // h
+
+
+
+
 
           // Cast one vot for the current circle
           circle_parameters_cloud->points.push_back (circle_vot);
@@ -1560,10 +1589,9 @@ int main (int argc, char** argv)
     }
   }
 
-
-
-
-
+  // -------------------------------------------------------------- //
+  // ------------------ Circles Parameters Space ------------------ //
+  // -------------------------------------------------------------- //
 
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
@@ -1629,6 +1657,9 @@ int main (int argc, char** argv)
   }
 
   std::vector<shape> shapes_of_circles;
+  pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
+
+  *cloud = *working_cloud;
 
   for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
   {
@@ -1636,44 +1667,193 @@ int main (int argc, char** argv)
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
     pcl::PointCloud<PointT>::Ptr points (new pcl::PointCloud<PointT> ());
 
-    Eigen::VectorXf centroid;
-    pcl::computeNDCentroid (*circle_parameters_clusters_clouds.at (clu), centroid);
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid (*circle_parameters_clusters_clouds.at (clu), centroid);
 
     coefficients.values.push_back (centroid [0]); // cx
     coefficients.values.push_back (centroid [1]); // cy
     coefficients.values.push_back (centroid [2]); // r
 
+    double sum = 0;
+    for (int idx = 0; idx < (int) circle_parameters_clusters_clouds.at (clu)->points.size(); idx++)
+      sum = sum + circle_parameters_clusters_clouds.at (clu)->points.at (idx).intensity;
+
+    double h = sum / circle_parameters_clusters_clouds.at (clu)->points.size ();
+
+    h = h + circle_threshold ;
+
+    cerr << endl <<" h = " << h << endl << endl ;
+
     double cx = coefficients.values.at (0);
     double cy = coefficients.values.at (1);
     double  r = coefficients.values.at (2);
 
-    for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
+    for (int idx = 0; idx < (int) cloud->points.size(); idx++)
     {
-      double x = working_cloud->points.at (idx).x;
-      double y = working_cloud->points.at (idx).y;
+      double z = cloud->points.at (idx).z;
 
-      double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
-
-      if ( fabs (d) < circle_threshold / 2 )
+      if ( z < h )
       {
-        // Save only the right indices
-        inliers->indices.push_back (idx);
+        double x = cloud->points.at (idx).x;
+        double y = cloud->points.at (idx).y;
+
+        double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
+
+        if ( d < circle_threshold ) 
+        {
+          // Save only the right indices
+          inliers->indices.push_back (idx);
+        }
       }
     }
 
     pcl::ExtractIndices<PointT> extraction;
     extraction.setIndices (inliers);
-    extraction.setInputCloud (working_cloud);
+    extraction.setInputCloud (cloud);
 
     extraction.setNegative (false);
     extraction.filter (*points);
 
+   
     std::stringstream id;
     id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
     circle_viewer.addPointCloud (*points, id.str());
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
     circle_viewer.spin ();
+
+
+
+
+
+
+/*
+
+
+            // Vector of clusters from inliers
+            std::vector<pcl::PointIndices> circle_clusters;
+            // Build kd-tree structure for clusters
+            pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+            // Instantiate cluster extraction object
+            pcl::EuclideanClusterExtraction<PointT> clustering_of_circle;
+            // Set as input the cloud of circle inliers
+            clustering_of_circle.setInputCloud (points);
+            // Radius of the connnectivity threshold
+            clustering_of_circle.setClusterTolerance (circle_clustering_tolerance);
+            // Minimum number of points of any cluster
+            clustering_of_circle.setMinClusterSize (minimum_size_of_circle_cluster);
+            // Provide pointer to the search method
+            clustering_of_circle.setSearchMethod (circle_clusters_tree);
+
+            // Call the extraction function
+            clustering_of_circle.extract (circle_clusters);
+
+            if ( verbose )
+            {
+              ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
+              for (int c = 0; c < (int) circle_clusters.size(); c++)
+                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at (c).indices.size());
+            }
+
+            pcl::PointIndices::Ptr clustering_circle_inliers (new pcl::PointIndices ());
+
+            // Leave only the two biggest clusters
+            if ( circle_clusters.size() > 0 )
+            {
+              for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
+              {
+                int inl = circle_clusters.at (0).indices.at (idx);
+                clustering_circle_inliers->indices.push_back (inliers->indices.at (inl));
+              }
+
+              if ( circle_clusters.size() > 1 )
+              {
+                for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
+                {
+                  int inl = circle_clusters.at (1).indices.at (idx);
+                  clustering_circle_inliers->indices.push_back (inliers->indices.at (inl));
+                }
+              }
+            }
+
+            // ------------------------ //
+            // Start extraction process //
+            // ------------------------ //
+
+            pcl::PointCloud<PointT>::Ptr clustering_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+
+            // Extract the circular inliers 
+            pcl::ExtractIndices<PointT> clustering_extraction_of_circle;
+            // Set which indices to extract
+            clustering_extraction_of_circle.setIndices (clustering_circle_inliers);
+            // Set point cloud from where to extract
+            clustering_extraction_of_circle.setInputCloud (cloud);
+
+            // Return the points which represent the inliers
+            clustering_extraction_of_circle.setNegative (false);
+            // Call the extraction function
+            clustering_extraction_of_circle.filter (*clustering_circle_inliers_cloud);
+
+            //if ( circle_feature_step )
+            //{
+              std::stringstream after_clustering_id;
+              after_clustering_id << "_" << ros::Time::now();
+              circle_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
+              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
+              circle_viewer.spin ();
+              circle_viewer.removePointCloud (after_clustering_id.str());
+              circle_viewer.spin ();
+              //}
+
+
+
+
+    *inliers = *clustering_circle_inliers;
+*/
+
+    extraction.setIndices (inliers);
+    extraction.setInputCloud (cloud);
+
+
+
+   extraction.setNegative (true);
+   extraction.filter (*cloud);
+
   }
+
+  *working_cloud = *cloud;
+
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------ Computation of 2D lines ----------------------------------- //
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------------------------------------------------------------------ //
+
+  // Open a 3D viewer
+  pcl_visualization::PCLVisualizer line_viewer ("LINE VIEWER");
+  // Set the background of viewer
+  line_viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  // Add system coordiante to viewer
+  line_viewer.addCoordinateSystem (1.0f);
+  // Parse the camera settings and update the internal camera
+  line_viewer.getCameraParameters (argc, argv);
+  // Update camera parameters and render
+  line_viewer.updateCamera ();
+
+  // Add the point cloud data
+  line_viewer.addPointCloud (*working_cloud, "WORKING");
+  // Color the cloud in white
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
+  // Set the size of points for cloud
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING");
+  // And wait until Q key is pressed
+  line_viewer.spin ();
+
+
+
+
+
+
 
 
 
