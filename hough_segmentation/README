@@ -132,5 +132,11 @@ bin/hough_segmentation data/1-1224512793-dsn-objects.pcd -cam 0.00399577,3.99577
 
 
 
+
+
+
+
+bin/hough_segmentation data/6-table2-dbsv-objects.pcd -cam 0.00363407,3.63407/-0.55329,-0.796628,0.759716/-0.502019,-0.0185898,1.55211/-0.047415,-0.711203,0.701386/1678,973/2,71 -verbose 1 -step 1 -size 3     -mean_k_filter 25 -std_dev_filter 3.0 -clustering_tolerance_of_objects 0.025 -minimum_size_of_objects_clusters 100                                                                                                                                                                 -normals_search_radius 0.030 -curvature_threshold 0.005 -rsd_search_radius 0.030 -rsd_plane_radius 0.100 -low_r_min 0.020 -high_r_min 0.060 -circle_clustering_tolerance 0.015 -minimum_size_of_circle_cluster 10 -radius_threshold 0.025 -angle_threshold 22.5                    -circle_step 0 -circle_threshold 0.010 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50                                                                                             -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 25 -iterations 100
+
 ===================================================================================================================================
 

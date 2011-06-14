@@ -74,6 +74,9 @@ struct shape
 
 int iterations = 100; 
 
+int mean_k_filter = 25; /* [points] */
+int std_dev_filter = 1.0; 
+
 // Clustering's Parameters
 int minimum_size_of_objects_clusters = 100; /* [points] */
 double clustering_tolerance_of_objects = 0.025; /* [meters] */
@@ -217,6 +220,10 @@ int main (int argc, char** argv)
     ROS_INFO ("    -line_clustering_tolerance X                       = ");
     ROS_INFO ("    -circle_clustering_tolerance X                     = ");
     ROS_INFO (" ");
+
+    ROS_INFO ("    -mean_k_filter X                 = ");
+    ROS_INFO ("    -std_dev_filter X                 = ");
+
     ROS_INFO ("    -minimum_size_of_objects_clusters X                = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X                 = ");
     ROS_INFO (" ");
@@ -265,6 +272,9 @@ int main (int argc, char** argv)
   }
 
   terminal_tools::parse_argument (argc, argv,   "-iterations", iterations);
+
+  terminal_tools::parse_argument (argc, argv, "-mean_k_filter", mean_k_filter);
+  terminal_tools::parse_argument (argc, argv, "-std_dev_filter", std_dev_filter);
 
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
@@ -400,9 +410,11 @@ int main (int argc, char** argv)
   // Set which point cloud to filter
   sor.setInputCloud (working_cloud);
   // Set number of points for mean distance estimation
-  sor.setMeanK (25);
+cerr << mean_k_filter << endl ;
+  sor.setMeanK (mean_k_filter);
   // Set the standard deviation multiplier threshold
-  sor.setStddevMulThresh (1.0);
+cerr << std_dev_filter << endl ;
+  sor.setStddevMulThresh (std_dev_filter);
   // Call the filtering method
   sor.filter (*filtered_cloud);
 
