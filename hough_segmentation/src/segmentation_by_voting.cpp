@@ -1651,6 +1651,7 @@ cerr << std_dev_filter << endl ;
   circle_parameters_extraction_of_clusters.setInputCloud (circle_parameters_cloud);
   circle_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_circle_parameters);
   circle_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_circle_parameters_clusters);
+cerr << minimum_size_of_circle_parameters_clusters << endl ;
   circle_parameters_extraction_of_clusters.setSearchMethod (circle_parameters_clusters_tree);
   circle_parameters_extraction_of_clusters.extract (circle_parameters_clusters);
 
@@ -1687,7 +1688,7 @@ cerr << std_dev_filter << endl ;
     cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
     circle_viewer.addPointCloud (*circle_parameters_clusters_clouds.at (clu), cluster_id.str());
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 2, cluster_id.str()); 
-    circle_viewer.spin ();
+//    circle_viewer.spin ();
 
     circle_parameters_clusters_ids.push_back (cluster_id.str());
   }
@@ -1710,6 +1711,7 @@ cerr << std_dev_filter << endl ;
     coefficients.values.push_back (centroid [1]); // cy
     coefficients.values.push_back (centroid [2]); // r
 
+    ///*
     double sum_of_z = 0.0;
     double sum_of_Z = 0.0;
 
@@ -1722,16 +1724,19 @@ cerr << std_dev_filter << endl ;
     double h_of_z = sum_of_z / circle_parameters_clusters_clouds.at (clu)->points.size ();
     double h_of_Z = sum_of_Z / circle_parameters_clusters_clouds.at (clu)->points.size ();
 
+    h_of_z = h_of_z - 0.0025 ;
+    h_of_Z = h_of_Z + 0.0025 ;
+
+    cerr << endl <<" h_of_z = " << h_of_z << endl ;
+    cerr << " h_of_Z = " << h_of_Z << endl ;
+    //*/
+
 /*
     h_of_z = h_of_z - circle_threshold ;
     h_of_Z = h_of_Z + circle_threshold ;
 */
 
-    h_of_z = h_of_z - 0.005 ;
-    h_of_Z = h_of_Z + 0.005 ;
 
-    cerr << endl <<" h_of_z = " << h_of_z << endl ;
-    cerr << endl <<" h_of_Z = " << h_of_Z << endl << endl ;
 
     double cx = coefficients.values.at (0);
     double cy = coefficients.values.at (1);
@@ -1767,10 +1772,37 @@ cerr << std_dev_filter << endl ;
     id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
     circle_viewer.addPointCloud (*points, id.str());
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+//    circle_viewer.spin ();
+
+
+
+    PointT mini, maxi;
+    pcl::getMinMax3D (*points, mini, maxi);
+
+    double _h_of_z_ = mini.z - 0.0025 ;
+    double _h_of_Z_ = maxi.z + 0.0025 ;
+
+    cerr << endl <<" _h_of_z_ = " << _h_of_z_ << endl ;
+    cerr << " _h_of_Z_ = " << _h_of_Z_ << endl ;
+
+    pcl::ModelCoefficients cyl_coeffs;
+
+    cyl_coeffs.values.push_back (cx);
+    cyl_coeffs.values.push_back (cy);
+    cyl_coeffs.values.push_back (_h_of_z_);
+    cyl_coeffs.values.push_back (0.0);
+    cyl_coeffs.values.push_back (0.0);
+    cyl_coeffs.values.push_back (_h_of_Z_ - _h_of_z_);
+    cyl_coeffs.values.push_back (r);
+
+    std::stringstream cyl_id;
+    cyl_id << "CYL_" << ros::Time::now();
+    circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
     circle_viewer.spin ();
 
 
 
+/*
     pcl::ModelCoefficients int_cyl_coeffs;
 
     int_cyl_coeffs.values.push_back (cx);
@@ -1786,8 +1818,6 @@ cerr << std_dev_filter << endl ;
     circle_viewer.addCylinder (int_cyl_coeffs, int_cyl_id.str());
     circle_viewer.spin ();
 
-
-
     pcl::ModelCoefficients ext_cyl_coeffs;
 
     ext_cyl_coeffs.values.push_back (cx);
@@ -1802,12 +1832,11 @@ cerr << std_dev_filter << endl ;
     ext_cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (ext_cyl_coeffs, ext_cyl_id.str());
     circle_viewer.spin ();
+*/
 
 
 
 /*
-
-
             // Vector of clusters from inliers
             std::vector<pcl::PointIndices> circle_clusters;
             // Build kd-tree structure for clusters
@@ -1884,21 +1913,20 @@ cerr << std_dev_filter << endl ;
               circle_viewer.spin ();
               //}
 
-
-
-
     *inliers = *clustering_circle_inliers;
 */
 
-    extraction.setIndices (inliers);
-    extraction.setInputCloud (cloud);
 
 
+   extraction.setIndices (inliers);
+   extraction.setInputCloud (cloud);
 
    extraction.setNegative (true);
    extraction.filter (*cloud);
 
   }
+
+  circle_viewer.spin ();
 
   *working_cloud = *cloud;
 
