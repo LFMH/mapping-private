@@ -63,9 +63,10 @@ typedef pcl::PointXYZINormalRSD PointTrsd;
 struct shape
 {
   std::string type;
-  pcl::PointIndices::Ptr inliers;
-  pcl::PointCloud<PointT>::Ptr points;
   pcl::ModelCoefficients coefficients;
+  pcl::PointIndices inliers;
+  pcl::PointCloud<PointT> points;
+  pcl::PointCloud<PointT> cluster;
 };
 
 // --------------------------------------------------------------------- //
@@ -2003,10 +2004,10 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
   std::vector<pcl::PointIndices::Ptr> line_objects_clusters_indices;
   std::vector<pcl::PointCloud<PointT>::Ptr> line_objects_clusters_clouds;
 
-  for (int c = 0; c < (int) line_objects_clusters.size(); c++)
+  for (int clu = 0; clu < (int) line_objects_clusters.size(); clu++)
   {
     pcl::PointCloud<PointT>::Ptr line_object_cluster_cloud (new pcl::PointCloud<PointT> ());
-    pcl::PointIndices::Ptr line_object_cluster_indices (new pcl::PointIndices (line_objects_clusters.at(c)));
+    pcl::PointIndices::Ptr line_object_cluster_indices (new pcl::PointIndices (line_objects_clusters.at (clu)));
 
     pcl::ExtractIndices<PointT> line_extraction_of_objects_clusters;
     line_extraction_of_objects_clusters.setInputCloud (working_cloud);
@@ -2016,7 +2017,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
     if ( verbose )
     {
-      ROS_INFO ("  Line Object %2d has %4d points", c, (int) line_object_cluster_cloud->points.size());
+      ROS_INFO ("  Line Object %2d has %4d points", clu, (int) line_object_cluster_cloud->points.size ());
     }
 
     line_objects_clusters_clouds.push_back (line_object_cluster_cloud);
@@ -2030,7 +2031,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
   if ( line_step )
   {
-    for (int clu = 0; clu < (int) line_objects_clusters_clouds.size(); clu++)
+    for (int clu = 0; clu < (int) line_objects_clusters.size(); clu++)
     {
       std::stringstream line_object_cluster_id;
       line_object_cluster_id << "LINE_OBJECT_CLUSTER_" << ros::Time::now();
@@ -2058,12 +2059,12 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
 
 
+  std::vector<pcl::ModelCoefficients> shapes_lines_coefficients;
+  std::vector<pcl::PointIndices::Ptr> shapes_lines_inliers;
+  std::vector<pcl::PointCloud<PointT>::Ptr> shapes_lines_points;
+  std::vector<pcl::PointCloud<PointT>::Ptr> shapes_lines_clusters;
 
-
-
-
-
-  for (int clu = 0; clu < (int) line_objects_clusters_clouds.size(); clu++)
+  for (int clu = 0; clu < (int) line_objects_clusters.size(); clu++)
   {
 
     pcl::PointCloud<PointT>::Ptr line_working_cluster_cloud (new pcl::PointCloud<PointT> ());
@@ -2071,7 +2072,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
    /// TRICK ///
 
-   for (int idx = 0; idx < line_working_cluster_cloud->points.size (); idx++)
+   for (int idx = 0; idx < (int) line_working_cluster_cloud->points.size (); idx++)
      line_working_cluster_cloud->points.at (idx).z = 0.0;
 
     pcl::ModelCoefficients line_coefficients;
@@ -2106,12 +2107,23 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     pcl::PointCloud<PointT>::Ptr line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
     pcl::ExtractIndices<PointT> extraction_of_line;
+
     extraction_of_line.setIndices (line_inliers);
     extraction_of_line.setInputCloud (line_working_cluster_cloud);
+
     extraction_of_line.setNegative (false);
     extraction_of_line.filter (*line_inliers_cloud);
-    extraction_of_line.setNegative (true);
-    extraction_of_line.filter (*line_working_cluster_cloud);
+
+    if ( (int) line_working_cluster_cloud->points.size () == (int) line_inliers->indices.size () )
+    {
+      // Clear manually the working cluster cloud
+      line_working_cluster_cloud->points.clear ();
+    }
+    else
+    {
+      extraction_of_line.setNegative (true);
+      extraction_of_line.filter (*line_working_cluster_cloud);
+    }
 
     if ( verbose )
     {
@@ -2136,16 +2148,115 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
       line_viewer.spin ();
     }
 
+    shapes_lines_coefficients.push_back (line_coefficients);
+    shapes_lines_inliers.push_back (line_inliers);
+    shapes_lines_points.push_back (line_inliers_cloud);
+    shapes_lines_clusters.push_back (line_objects_clusters_clouds.at (clu));
   }
 
 
 
+  for (int clu = 0; clu < (int) shapes_lines_clusters.size(); clu++)
+  {
+
+    double p1[3];
+    p1[0] = shapes_lines_coefficients.at (clu).values.at (0);
+    p1[1] = shapes_lines_coefficients.at (clu).values.at (1);
+    p1[2] = shapes_lines_coefficients.at (clu).values.at (2);
+
+    double p2[3];
+    p2[0] = shapes_lines_coefficients.at (clu).values.at (3);
+    p2[1] = shapes_lines_coefficients.at (clu).values.at (4);
+    p2[2] = shapes_lines_coefficients.at (clu).values.at (5);
+
+    /// Vector of Line ///
+    double l[3];
+    l[0] = p2[0] - p1[0];
+    l[1] = p2[1] - p1[1];
+    l[2] = 0.0;
+
+    /// Normalize Vector of Line ///
+    double nl = sqrt ( _sqr(l[0]) + _sqr(l[1]) + _sqr(l[2]) );
+    l[0] = l[0] / nl;
+    l[1] = l[1] / nl;
+    l[2] = l[2] / nl;
+
+    /// Unit Vector of Z Axis ///
+    double n[3];
+    n[0] = 0.0;
+    n[1] = 0.0;
+    n[2] = 1.0;
+
+    /// Dot Product ///
+    double m[3];
+    m[0] = l[1]*n[2] - l[2]*n[1];
+    m[1] = l[2]*n[0] - l[0]*n[2];
+    m[2] = l[0]*n[1] - l[1]*n[0];
 
 
 
+    double vectors[2][2];
+
+    vectors[0][0] = l[0];
+    vectors[0][1] = l[1];
+
+    vectors[1][0] = m[0];
+    vectors[1][1] = m[1];
 
 
 
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid (*shapes_lines_clusters.at (clu), centroid);
+
+
+
+    double max_u = -DBL_MAX;
+    double min_u =  DBL_MAX;
+    double max_v = -DBL_MAX;
+    double min_v =  DBL_MAX;
+
+    for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
+    {
+      int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
+
+      double c2p[2];
+      c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
+      c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
+
+    double width = vectors[0][0]*c2p[0] + vectors[0][1]*c2p[1];
+    if (width > max_u) max_u = width;
+    if (width < min_u) min_u = width;
+    
+    double length = vectors[1][0]*c2p[0] + vectors[1][1]*c2p[1];
+    if (length > max_v) max_v = length;
+    if (length < min_v) min_v = length;
+  }
+  
+  double edges[4][2];
+
+  edges[0][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*max_v;
+  edges[0][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*max_v;
+  
+  edges[1][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*min_v;
+  edges[1][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*min_v;
+  
+  edges[2][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*min_v;
+  edges[2][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*min_v;
+  
+  edges[3][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*max_v;
+  edges[3][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*max_v;
+
+  /*
+  /// Print the New Axes of the Bounding Box ///
+  if ( axes )
+    printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[0][0]*max_u, centroid[1] + vectors[0][1]*max_u, maxZ, 0.001, ren, iren, 1.0, 0.0, 0.0);
+    printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[1][0]*max_v, centroid[1] + vectors[1][1]*max_v, maxZ, 0.001, ren, iren, 0.0, 1.0, 0.0);
+    printLine (centroid[0], centroid[1], maxZ, centroid[0], centroid[1], maxZ + 0.050, 0.001, ren, iren, 0.0, 0.0, 1.0);
+  }
+  */
+  
+
+}
 
 
 
