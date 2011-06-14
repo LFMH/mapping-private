@@ -1480,30 +1480,54 @@ int main (int argc, char** argv)
 
 
 
+/*
+          double cx = circle_coefficients.values.at (0);
+          double cy = circle_coefficients.values.at (1);
+          double  r = circle_coefficients.values.at (2);
+
+          for (int idx = 0; idx < (int) circle_inliers_cloud->points.size(); idx++)
+          {
+            double z = circle_inliers_cloud->points.at (idx).z;
+
+            if ( z < h_of_Z )
+            {
+              double x = circle_inliers_cloud->points.at (idx).x;
+              double y = circle_inliers_cloud->points.at (idx).y;
+
+              double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
+
+              if ( d < circle_threshold ) 
+              {
+                // Save only the right indices
+                inliers->indices.push_back (idx);
+              }
+            }
+          }
+*/
+
 
 
 /*
           PointT min, max;
-
           pcl::getMinMax3D (*circle_inliers_cloud, min, max);
-
           circle_vot.intensity = max.z; // h
 */
 
 
 
+          double minimus = +DBL_MAX;
           double maximus = -DBL_MAX;
 
           for (int point = 0; point < (int) circle_inliers_cloud->points.size(); point++)
           {
             double Z = circle_inliers_cloud->points.at (point).z;
 
+            if ( minimus > Z ) minimus = Z;
             if ( maximus < Z ) maximus = Z;
           }
 
-          circle_vot.intensity = maximus; // h
-
-
+          circle_vot.intensity = minimus; // h
+          circle_vot.curvature = maximus; // h
 
 
 
@@ -1674,15 +1698,28 @@ int main (int argc, char** argv)
     coefficients.values.push_back (centroid [1]); // cy
     coefficients.values.push_back (centroid [2]); // r
 
-    double sum = 0;
+    double sum_of_z = 0.0;
+    double sum_of_Z = 0.0;
+
     for (int idx = 0; idx < (int) circle_parameters_clusters_clouds.at (clu)->points.size(); idx++)
-      sum = sum + circle_parameters_clusters_clouds.at (clu)->points.at (idx).intensity;
+    {
+      sum_of_z = sum_of_z + circle_parameters_clusters_clouds.at (clu)->points.at (idx).intensity;
+      sum_of_Z = sum_of_Z + circle_parameters_clusters_clouds.at (clu)->points.at (idx).curvature;
+    }
+ 
+    double h_of_z = sum_of_z / circle_parameters_clusters_clouds.at (clu)->points.size ();
+    double h_of_Z = sum_of_Z / circle_parameters_clusters_clouds.at (clu)->points.size ();
 
-    double h = sum / circle_parameters_clusters_clouds.at (clu)->points.size ();
+/*
+    h_of_z = h_of_z - circle_threshold ;
+    h_of_Z = h_of_Z + circle_threshold ;
+*/
 
-    h = h + circle_threshold ;
+    h_of_z = h_of_z - 0.005 ;
+    h_of_Z = h_of_Z + 0.005 ;
 
-    cerr << endl <<" h = " << h << endl << endl ;
+    cerr << endl <<" h_of_z = " << h_of_z << endl ;
+    cerr << endl <<" h_of_Z = " << h_of_Z << endl << endl ;
 
     double cx = coefficients.values.at (0);
     double cy = coefficients.values.at (1);
@@ -1692,7 +1729,7 @@ int main (int argc, char** argv)
     {
       double z = cloud->points.at (idx).z;
 
-      if ( z < h )
+      if ( z < h_of_Z )
       {
         double x = cloud->points.at (idx).x;
         double y = cloud->points.at (idx).y;
@@ -1713,7 +1750,6 @@ int main (int argc, char** argv)
 
     extraction.setNegative (false);
     extraction.filter (*points);
-
    
     std::stringstream id;
     id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
@@ -1723,6 +1759,37 @@ int main (int argc, char** argv)
 
 
 
+    pcl::ModelCoefficients int_cyl_coeffs;
+
+    int_cyl_coeffs.values.push_back (cx);
+    int_cyl_coeffs.values.push_back (cy);
+    int_cyl_coeffs.values.push_back (h_of_z);
+    int_cyl_coeffs.values.push_back (0.0);
+    int_cyl_coeffs.values.push_back (0.0);
+    int_cyl_coeffs.values.push_back (h_of_Z - h_of_z);
+    int_cyl_coeffs.values.push_back (r - circle_threshold);
+
+    std::stringstream int_cyl_id;
+    int_cyl_id << "CYL_" << ros::Time::now();
+    circle_viewer.addCylinder (int_cyl_coeffs, int_cyl_id.str());
+    circle_viewer.spin ();
+
+
+
+    pcl::ModelCoefficients ext_cyl_coeffs;
+
+    ext_cyl_coeffs.values.push_back (cx);
+    ext_cyl_coeffs.values.push_back (cy);
+    ext_cyl_coeffs.values.push_back (h_of_z);
+    ext_cyl_coeffs.values.push_back (0.0);
+    ext_cyl_coeffs.values.push_back (0.0);
+    ext_cyl_coeffs.values.push_back (h_of_Z - h_of_z);
+    ext_cyl_coeffs.values.push_back (r + circle_threshold);
+
+    std::stringstream ext_cyl_id;
+    ext_cyl_id << "CYL_" << ros::Time::now();
+    circle_viewer.addCylinder (ext_cyl_coeffs, ext_cyl_id.str());
+    circle_viewer.spin ();
 
 
 
