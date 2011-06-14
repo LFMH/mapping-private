@@ -81,6 +81,9 @@ int std_dev_filter = 1.0;
 int minimum_size_of_objects_clusters = 100; /* [points] */
 double clustering_tolerance_of_objects = 0.025; /* [meters] */
 
+int line_minimum_size_of_objects_clusters = 10; /* [points] */
+double line_clustering_tolerance_of_objects = 0.010; /* [meters] */
+
 // Fitting's Parameters
 double   line_threshold = 0.010; /// [meters]
 double circle_threshold = 0.010; /// [meters]
@@ -279,6 +282,9 @@ int main (int argc, char** argv)
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_objects_clusters", minimum_size_of_objects_clusters);
+
+  terminal_tools::parse_argument (argc, argv, "-line_clustering_tolerance_of_objects", line_clustering_tolerance_of_objects);
+  terminal_tools::parse_argument (argc, argv, "-line_minimum_size_of_objects_clusters", line_minimum_size_of_objects_clusters);
 
   // Parsing the arguments of the method
   terminal_tools::parse_argument (argc, argv,   "-line_threshold",   line_threshold);
@@ -1798,7 +1804,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     std::stringstream cyl_id;
     cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
-    circle_viewer.spin ();
+//    circle_viewer.spin ();
 
 
 
@@ -1948,11 +1954,11 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
   line_viewer.updateCamera ();
 
   // Add the point cloud data
-  line_viewer.addPointCloud (*working_cloud, "WORKING");
+  line_viewer.addPointCloud (*working_cloud, "LINE WORKING");
   // Color the cloud in white
-  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "LINE WORKING");
   // Set the size of points for cloud
-  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING");
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "LINE WORKING");
   // And wait until Q key is pressed
   line_viewer.spin ();
 
@@ -1964,116 +1970,103 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
 
 
-  // TODO Gaussian Filter for radii sizes ! 
-   
+
+
+
+
+
+
+
+
+
+
+  std::vector<pcl::PointIndices> line_objects_clusters;
+  pcl::KdTreeFLANN<PointT>::Ptr line_objects_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+
+  pcl::EuclideanClusterExtraction<PointT> line_ece;
+  line_ece.setInputCloud (working_cloud);
+  line_ece.setClusterTolerance (line_clustering_tolerance_of_objects);
+  line_ece.setMinClusterSize (line_minimum_size_of_objects_clusters);
+  line_ece.setSearchMethod (line_objects_clusters_tree);
+  line_ece.extract (line_objects_clusters);
+
+  if ( verbose )
+  {
+    ROS_INFO ("Line Euclidean Cluster Extraction ! Returned: %d clusters", (int) line_objects_clusters.size ());
+  }
+
+
+
+
+
+
+  std::vector<pcl::PointIndices::Ptr> line_objects_clusters_indices;
+  std::vector<pcl::PointCloud<PointT>::Ptr> line_objects_clusters_clouds;
+
+  for (int c = 0; c < (int) line_objects_clusters.size(); c++)
+  {
+    pcl::PointCloud<PointT>::Ptr line_object_cluster_cloud (new pcl::PointCloud<PointT> ());
+    pcl::PointIndices::Ptr line_object_cluster_indices (new pcl::PointIndices (line_objects_clusters.at(c)));
+
+    pcl::ExtractIndices<PointT> line_extraction_of_objects_clusters;
+    line_extraction_of_objects_clusters.setInputCloud (working_cloud);
+    line_extraction_of_objects_clusters.setIndices (line_object_cluster_indices);
+    line_extraction_of_objects_clusters.setNegative (false);
+    line_extraction_of_objects_clusters.filter (*line_object_cluster_cloud);
+
+    if ( verbose )
+    {
+      ROS_INFO ("  Line Object %2d has %4d points", c, (int) line_object_cluster_cloud->points.size());
+    }
+
+    line_objects_clusters_clouds.push_back (line_object_cluster_cloud);
+    line_objects_clusters_indices.push_back (line_object_cluster_indices);
+  }
+
+
+
+
+  std::vector<std::string> line_objects_clusters_ids;
+
+  if ( line_step )
+  {
+    for (int clu = 0; clu < (int) line_objects_clusters_clouds.size(); clu++)
+    {
+      std::stringstream line_object_cluster_id;
+      line_object_cluster_id << "LINE_OBJECT_CLUSTER_" << ros::Time::now();
+
+      line_viewer.addPointCloud (*line_objects_clusters_clouds.at (clu), line_object_cluster_id.str());
+      line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_object_cluster_id.str()); 
+
+      line_objects_clusters_ids.push_back (line_object_cluster_id.str());
+    }
+
+    line_viewer.spin ();
+  }
+
+  if ( line_step )
+  {
+    for (int id = 0; id < (int) line_objects_clusters_ids.size(); id++)
+    {
+      line_viewer.removePointCloud (line_objects_clusters_ids.at (id));
+    }
+
+    line_viewer.spin ();
+  }
+
+
+
+
+
+
+
 
 
   exit (0);
 
 
 
-
-
-
-
 /*
-
-
-  // -------------------------------------------------------------- //
-  // ------------------ Cluster point cloud data ------------------ //
-  // -------------------------------------------------------------- //
-
-  // Vector of clusters from input cloud
-  std::vector<pcl::PointIndices> objects_clusters;
-  // Build kd-tree structure for clusters
-  pcl::KdTreeFLANN<PointT>::Ptr objects_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
-
-  // Instantiate cluster extraction object
-  pcl::EuclideanClusterExtraction<PointT> ece;
-  // Set as input the cloud of handle
-  ece.setInputCloud (working_cloud);
-  // Radius of the connnectivity threshold
-  ece.setClusterTolerance (clustering_tolerance_of_objects);
-  // Minimum size of clusters
-  ece.setMinClusterSize (minimum_size_of_objects_clusters);
-  // Provide pointer to the search method
-  ece.setSearchMethod (objects_clusters_tree);
-  // Call the extraction function
-  ece.extract (objects_clusters);
-
-  if ( verbose )
-  {
-    ROS_INFO ("Euclidean Cluster Extraction ! Returned: %d clusters", (int) objects_clusters.size ());
-  }
-
-  // ------------------------------------------------------------- //
-  // ------------------ Extract object clusters ------------------ //
-  // ------------------------------------------------------------- //
-
-  // Vector of indices which make up the objects clusters
-  std::vector<pcl::PointIndices::Ptr> objects_clusters_indices;
-  // Point clouds which represent the clusters of the objects
-  std::vector<pcl::PointCloud<PointT>::Ptr> objects_clusters_clouds;
-//  // Auxiliary vector of object clusters
-//  std::vector<pcl::PointCloud<PointT>::Ptr> auxiliary_clusters_clouds;
-
-
-  for (int c = 0; c < (int) objects_clusters.size(); c++)
-  {
-    // Cloud of the cluster obejct
-    pcl::PointCloud<PointT>::Ptr object_cluster_cloud (new pcl::PointCloud<PointT> ());
-    // Pointer to the cluster object
-    pcl::PointIndices::Ptr object_cluster_indices (new pcl::PointIndices (objects_clusters.at(c)));
-
-    // Extract handle points from the input cloud
-    pcl::ExtractIndices<PointT> extraction_of_objects_clusters;
-    // Set point cloud from where to extract
-    extraction_of_objects_clusters.setInputCloud (working_cloud);
-    // Set which indices to extract
-    extraction_of_objects_clusters.setIndices (object_cluster_indices);
-    // Return the points which represent the inliers
-    extraction_of_objects_clusters.setNegative (false);
-    // Call the extraction function
-    extraction_of_objects_clusters.filter (*object_cluster_cloud);
-
-    if ( verbose )
-    {
-      ROS_INFO ("  Objet %2d has %4d points", c, (int) object_cluster_cloud->points.size());
-    }
-
-    // Save the cloud of object cluster
-    objects_clusters_clouds.push_back (object_cluster_cloud);
-
-    // Save indices of object
-    objects_clusters_indices.push_back (object_cluster_indices);
-
-//    // Update auxiliary clusters
-//    auxiliary_clusters_clouds.push_back (object_cluster_cloud);
-
-
-  }
-
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-
 
     // -------------------------------------------------------------------------------------------------------------------------------
 
