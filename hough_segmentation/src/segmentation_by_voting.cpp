@@ -359,7 +359,7 @@ int main (int argc, char** argv)
   // Open a 3D viewer
   pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
-  viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  viewer.setBackgroundColor (1.0, 1.0, 1.0);
   // Add system coordiante to viewer
   viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
@@ -417,10 +417,8 @@ int main (int argc, char** argv)
   // Set which point cloud to filter
   sor.setInputCloud (working_cloud);
   // Set number of points for mean distance estimation
-cerr << mean_k_filter << endl ;
   sor.setMeanK (mean_k_filter);
   // Set the standard deviation multiplier threshold
-cerr << std_dev_filter << endl ;
   sor.setStddevMulThresh (std_dev_filter);
   // Call the filtering method
   sor.filter (*filtered_cloud);
@@ -894,7 +892,7 @@ cerr << std_dev_filter << endl ;
   // Open a 3D viewer
   pcl_visualization::PCLVisualizer circle_viewer ("CIRCLE VIEWER");
   // Set the background of viewer
-  circle_viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  circle_viewer.setBackgroundColor (1.0, 1.0, 1.0);
   // Add system coordiante to viewer
   circle_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
@@ -1566,7 +1564,7 @@ cerr << std_dev_filter << endl ;
             // Create ID for circle inliers
             std::stringstream circle_inliers_id;
             circle_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
-
+ 
             // Add circle model to point cloud data
             circle_viewer.addCircle (circle_coefficients, circle_id.str ());
 
@@ -1636,6 +1634,8 @@ cerr << std_dev_filter << endl ;
   // ------------------ Circles Parameters Space ------------------ //
   // -------------------------------------------------------------- //
 
+/*
+
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
   circle_viewer.addPointCloud (*circle_parameters_cloud, circle_parameters_id.str ());
@@ -1645,6 +1645,8 @@ cerr << std_dev_filter << endl ;
   std::string circle_parameters_filename = argv [pFileIndicesPCD [0]];
   circle_parameters_filename.insert (fullstop, "-circles");
   pcl::io::savePCDFile (circle_parameters_filename, *circle_parameters_cloud);
+
+*/
 
   if ( verbose )
   {
@@ -1658,7 +1660,6 @@ cerr << std_dev_filter << endl ;
   circle_parameters_extraction_of_clusters.setInputCloud (circle_parameters_cloud);
   circle_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_circle_parameters);
   circle_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_circle_parameters_clusters);
-cerr << minimum_size_of_circle_parameters_clusters << endl ;
   circle_parameters_extraction_of_clusters.setSearchMethod (circle_parameters_clusters_tree);
   circle_parameters_extraction_of_clusters.extract (circle_parameters_clusters);
 
@@ -1687,6 +1688,8 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     circle_parameters_clusters_clouds.push_back (cluster_cloud);
   }
 
+/*
+
   std::vector<std::string> circle_parameters_clusters_ids;
 
   for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
@@ -1695,10 +1698,12 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
     circle_viewer.addPointCloud (*circle_parameters_clusters_clouds.at (clu), cluster_id.str());
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 2, cluster_id.str()); 
-//    circle_viewer.spin ();
+    circle_viewer.spin ();
 
     circle_parameters_clusters_ids.push_back (cluster_id.str());
   }
+
+*/
 
   std::vector<shape> shapes_of_circles;
   pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
@@ -1734,16 +1739,14 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     h_of_z = h_of_z - 0.0025 ;
     h_of_Z = h_of_Z + 0.0025 ;
 
-    cerr << endl <<" h_of_z = " << h_of_z << endl ;
-    cerr << " h_of_Z = " << h_of_Z << endl ;
+    cerr << " h_of_z = " << h_of_z << endl ;
+    cerr << " h_of_Z = " << h_of_Z << endl << endl ;
     //*/
 
 /*
     h_of_z = h_of_z - circle_threshold ;
     h_of_Z = h_of_Z + circle_threshold ;
 */
-
-
 
     double cx = coefficients.values.at (0);
     double cy = coefficients.values.at (1);
@@ -1781,16 +1784,14 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
 //    circle_viewer.spin ();
 
-
-
     PointT mini, maxi;
     pcl::getMinMax3D (*points, mini, maxi);
 
     double _h_of_z_ = mini.z - 0.0025 ;
     double _h_of_Z_ = maxi.z + 0.0025 ;
 
-    cerr << endl <<" _h_of_z_ = " << _h_of_z_ << endl ;
-    cerr << " _h_of_Z_ = " << _h_of_Z_ << endl ;
+    cerr << " _h_of_z_ = " << _h_of_z_ << endl ;
+    cerr << " _h_of_Z_ = " << _h_of_Z_ << endl << endl ;
 
     pcl::ModelCoefficients cyl_coeffs;
 
@@ -1807,8 +1808,6 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
 //    circle_viewer.spin ();
 
-
-
 /*
     pcl::ModelCoefficients int_cyl_coeffs;
 
@@ -1823,7 +1822,6 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     std::stringstream int_cyl_id;
     int_cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (int_cyl_coeffs, int_cyl_id.str());
-    circle_viewer.spin ();
 
     pcl::ModelCoefficients ext_cyl_coeffs;
 
@@ -1838,99 +1836,13 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     std::stringstream ext_cyl_id;
     ext_cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (ext_cyl_coeffs, ext_cyl_id.str());
-    circle_viewer.spin ();
 */
-
-
-
-/*
-            // Vector of clusters from inliers
-            std::vector<pcl::PointIndices> circle_clusters;
-            // Build kd-tree structure for clusters
-            pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
-
-            // Instantiate cluster extraction object
-            pcl::EuclideanClusterExtraction<PointT> clustering_of_circle;
-            // Set as input the cloud of circle inliers
-            clustering_of_circle.setInputCloud (points);
-            // Radius of the connnectivity threshold
-            clustering_of_circle.setClusterTolerance (circle_clustering_tolerance);
-            // Minimum number of points of any cluster
-            clustering_of_circle.setMinClusterSize (minimum_size_of_circle_cluster);
-            // Provide pointer to the search method
-            clustering_of_circle.setSearchMethod (circle_clusters_tree);
-
-            // Call the extraction function
-            clustering_of_circle.extract (circle_clusters);
-
-            if ( verbose )
-            {
-              ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
-              for (int c = 0; c < (int) circle_clusters.size(); c++)
-                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at (c).indices.size());
-            }
-
-            pcl::PointIndices::Ptr clustering_circle_inliers (new pcl::PointIndices ());
-
-            // Leave only the two biggest clusters
-            if ( circle_clusters.size() > 0 )
-            {
-              for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
-              {
-                int inl = circle_clusters.at (0).indices.at (idx);
-                clustering_circle_inliers->indices.push_back (inliers->indices.at (inl));
-              }
-
-              if ( circle_clusters.size() > 1 )
-              {
-                for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
-                {
-                  int inl = circle_clusters.at (1).indices.at (idx);
-                  clustering_circle_inliers->indices.push_back (inliers->indices.at (inl));
-                }
-              }
-            }
-
-            // ------------------------ //
-            // Start extraction process //
-            // ------------------------ //
-
-            pcl::PointCloud<PointT>::Ptr clustering_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
-
-            // Extract the circular inliers 
-            pcl::ExtractIndices<PointT> clustering_extraction_of_circle;
-            // Set which indices to extract
-            clustering_extraction_of_circle.setIndices (clustering_circle_inliers);
-            // Set point cloud from where to extract
-            clustering_extraction_of_circle.setInputCloud (cloud);
-
-            // Return the points which represent the inliers
-            clustering_extraction_of_circle.setNegative (false);
-            // Call the extraction function
-            clustering_extraction_of_circle.filter (*clustering_circle_inliers_cloud);
-
-            //if ( circle_feature_step )
-            //{
-              std::stringstream after_clustering_id;
-              after_clustering_id << "_" << ros::Time::now();
-              circle_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_clustering_id.str());
-              circle_viewer.spin ();
-              //}
-
-    *inliers = *clustering_circle_inliers;
-*/
-
-
 
    extraction.setIndices (inliers);
    extraction.setInputCloud (cloud);
 
    extraction.setNegative (true);
    extraction.filter (*cloud);
-
   }
 
   circle_viewer.spin ();
@@ -1946,7 +1858,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
   // Open a 3D viewer
   pcl_visualization::PCLVisualizer line_viewer ("LINE VIEWER");
   // Set the background of viewer
-  line_viewer.setBackgroundColor (0.0, 0.0, 0.0);
+  line_viewer.setBackgroundColor (1.0, 1.0, 1.0);
   // Add system coordiante to viewer
   line_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
@@ -1963,23 +1875,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
   // And wait until Q key is pressed
   line_viewer.spin ();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // ---------------------------------------------------------------------------------------------------- 
 
   std::vector<pcl::PointIndices> line_objects_clusters;
   pcl::KdTreeFLANN<PointT>::Ptr line_objects_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
@@ -1996,10 +1892,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     ROS_INFO ("Line Euclidean Cluster Extraction ! Returned: %d clusters", (int) line_objects_clusters.size ());
   }
 
-
-
-
-
+  // ---------------------------------------------------------------------------------------------------- 
 
   std::vector<pcl::PointIndices::Ptr> line_objects_clusters_indices;
   std::vector<pcl::PointCloud<PointT>::Ptr> line_objects_clusters_clouds;
@@ -2024,8 +1917,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     line_objects_clusters_indices.push_back (line_object_cluster_indices);
   }
 
-
-
+  // ---------------------------------------------------------------------------------------------------- 
 
   std::vector<std::string> line_objects_clusters_ids;
 
@@ -2055,9 +1947,7 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     line_viewer.spin ();
   }
 
-
-
-
+  // ---------------------------------------------------------------------------------------------------- 
 
   std::vector<pcl::ModelCoefficients> shapes_lines_coefficients;
   std::vector<pcl::PointIndices::Ptr> shapes_lines_inliers;
@@ -2066,14 +1956,13 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
 
   for (int clu = 0; clu < (int) line_objects_clusters.size(); clu++)
   {
-
     pcl::PointCloud<PointT>::Ptr line_working_cluster_cloud (new pcl::PointCloud<PointT> ());
     *line_working_cluster_cloud = *line_objects_clusters_clouds.at (clu);
 
-   /// TRICK ///
+    /// TRICK ///
 
-   for (int idx = 0; idx < (int) line_working_cluster_cloud->points.size (); idx++)
-     line_working_cluster_cloud->points.at (idx).z = 0.0;
+    for (int idx = 0; idx < (int) line_working_cluster_cloud->points.size (); idx++)
+      line_working_cluster_cloud->points.at (idx).z = 0.0;
 
     pcl::ModelCoefficients line_coefficients;
     pcl::PointIndices::Ptr line_inliers (new pcl::PointIndices ());
@@ -2100,9 +1989,9 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
           (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], line_coefficients.values [3],  line_coefficients.values [4], line_coefficients.values [5], maximum_line_iterations);
     }
 
-   /// TRICK ///
+    /// TRICK ///
 
-   *line_working_cluster_cloud = *line_objects_clusters_clouds.at (clu);
+    *line_working_cluster_cloud = *line_objects_clusters_clouds.at (clu);
 
     pcl::PointCloud<PointT>::Ptr line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
@@ -2140,12 +2029,9 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
       line_inliers_id << "LINE_INLIERS_" << ros::Time::now();
 
       adjustLine (line_inliers_cloud, line_coefficients);
-
       line_viewer.addLine (line_coefficients, line_id.str ());
       line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
       line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_inliers_id.str ()); 
-
-      line_viewer.spin ();
     }
 
     shapes_lines_coefficients.push_back (line_coefficients);
@@ -2154,20 +2040,26 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     shapes_lines_clusters.push_back (line_objects_clusters_clouds.at (clu));
   }
 
+  // Wait or not wait
+  if ( line_step )
+  {
+    // And wait until Q key is pressed
+    line_viewer.spin ();
+  }
 
+  // ---------------------------------------------------------------------------------------------------- 
 
   for (int clu = 0; clu < (int) shapes_lines_clusters.size(); clu++)
   {
-
     double p1[3];
     p1[0] = shapes_lines_coefficients.at (clu).values.at (0);
     p1[1] = shapes_lines_coefficients.at (clu).values.at (1);
     p1[2] = shapes_lines_coefficients.at (clu).values.at (2);
 
     double p2[3];
-    p2[0] = shapes_lines_coefficients.at (clu).values.at (3);
-    p2[1] = shapes_lines_coefficients.at (clu).values.at (4);
-    p2[2] = shapes_lines_coefficients.at (clu).values.at (5);
+    p2[0] = shapes_lines_coefficients.at (clu).values.at (3) + shapes_lines_coefficients.at (clu).values.at (0);
+    p2[1] = shapes_lines_coefficients.at (clu).values.at (4) + shapes_lines_coefficients.at (clu).values.at (1);
+    p2[2] = shapes_lines_coefficients.at (clu).values.at (5) + shapes_lines_coefficients.at (clu).values.at (2);
 
     /// Vector of Line ///
     double l[3];
@@ -2193,8 +2085,6 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     m[1] = l[2]*n[0] - l[0]*n[2];
     m[2] = l[0]*n[1] - l[1]*n[0];
 
-
-
     double vectors[2][2];
 
     vectors[0][0] = l[0];
@@ -2203,62 +2093,249 @@ cerr << minimum_size_of_circle_parameters_clusters << endl ;
     vectors[1][0] = m[0];
     vectors[1][1] = m[1];
 
-
-
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid (*shapes_lines_clusters.at (clu), centroid);
-
-
 
     double max_u = -DBL_MAX;
     double min_u =  DBL_MAX;
     double max_v = -DBL_MAX;
     double min_v =  DBL_MAX;
 
+    /*
+
+    // Bounding box only for line inliers //
+
     for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
     {
-      int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
+    int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
 
-      double c2p[2];
-      c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
-      c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
+    double c2p[2];
+    c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
+    c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
 
     double width = vectors[0][0]*c2p[0] + vectors[0][1]*c2p[1];
     if (width > max_u) max_u = width;
     if (width < min_u) min_u = width;
-    
+
     double length = vectors[1][0]*c2p[0] + vectors[1][1]*c2p[1];
     if (length > max_v) max_v = length;
     if (length < min_v) min_v = length;
-  }
-  
-  double edges[4][2];
+    }
 
-  edges[0][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*max_v;
-  edges[0][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*max_v;
-  
-  edges[1][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*min_v;
-  edges[1][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*min_v;
-  
-  edges[2][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*min_v;
-  edges[2][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*min_v;
-  
-  edges[3][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*max_v;
-  edges[3][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*max_v;
+    */
 
-  /*
-  /// Print the New Axes of the Bounding Box ///
-  if ( axes )
+    // Bounding box for whole cluster //
+
+    for ( int idx = 0; idx < (int) shapes_lines_clusters.at (clu)->points.size(); idx++ )
+    {
+      double c2p[2];
+      c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
+      c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
+
+      double width = vectors[0][0]*c2p[0] + vectors[0][1]*c2p[1];
+      if (width > max_u) max_u = width;
+      if (width < min_u) min_u = width;
+
+      double length = vectors[1][0]*c2p[0] + vectors[1][1]*c2p[1];
+      if (length > max_v) max_v = length;
+      if (length < min_v) min_v = length;
+    }
+
+    double minimus = +DBL_MAX;
+    double maximus = -DBL_MAX;
+
+    /*
+
+    // Bounding box only for line inliers //
+
+    for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
+    {
+    int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
+
+    double Z = shapes_lines_clusters.at (clu)->points.at (idx).z;
+
+    if ( minimus > Z ) minimus = Z;
+    if ( maximus < Z ) maximus = Z;
+    }
+
+    */
+
+    // Bounding box for whole cluster //
+
+    for ( int idx = 0; idx < (int) shapes_lines_clusters.at (clu)->points.size(); idx++ )
+    {
+      double Z = shapes_lines_clusters.at (clu)->points.at (idx).z;
+
+      if ( minimus > Z ) minimus = Z;
+      if ( maximus < Z ) maximus = Z;
+    }
+
+    // The edges //
+
+    double edges[4][2];
+
+    edges[0][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*max_v;
+    edges[0][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*max_v;
+
+    edges[1][0] = centroid[0] + vectors[0][0]*max_u + vectors[1][0]*min_v;
+    edges[1][1] = centroid[1] + vectors[0][1]*max_u + vectors[1][1]*min_v;
+
+    edges[2][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*min_v;
+    edges[2][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*min_v;
+
+    edges[3][0] = centroid[0] + vectors[0][0]*min_u + vectors[1][0]*max_v;
+    edges[3][1] = centroid[1] + vectors[0][1]*min_u + vectors[1][1]*max_v;
+
+    pcl::ModelCoefficients e0, e1, e2, e3; 
+
+    e0.values.push_back (edges[0][0]);
+    e0.values.push_back (edges[0][1]); 
+    e0.values.push_back (minimus); 
+    e0.values.push_back (edges[1][0] - edges[0][0]); 
+    e0.values.push_back (edges[1][1] - edges[0][1]); 
+    e0.values.push_back (minimus - minimus); 
+
+    e1.values.push_back (edges[1][0]);
+    e1.values.push_back (edges[1][1]); 
+    e1.values.push_back (minimus); 
+    e1.values.push_back (edges[2][0] - edges[1][0]); 
+    e1.values.push_back (edges[2][1] - edges[1][1]); 
+    e1.values.push_back (minimus - minimus); 
+
+    e2.values.push_back (edges[2][0]);
+    e2.values.push_back (edges[2][1]); 
+    e2.values.push_back (minimus); 
+    e2.values.push_back (edges[3][0] - edges[2][0]); 
+    e2.values.push_back (edges[3][1] - edges[2][1]); 
+    e2.values.push_back (minimus - minimus); 
+
+    e3.values.push_back (edges[3][0]);
+    e3.values.push_back (edges[3][1]); 
+    e3.values.push_back (minimus); 
+    e3.values.push_back (edges[0][0] - edges[3][0]); 
+    e3.values.push_back (edges[0][1] - edges[3][1]); 
+    e3.values.push_back (minimus - minimus); 
+
+    /*
+
+       std::stringstream line_0;
+       line_0 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e0);
+    line_viewer.addLine (e0, line_0.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_1;
+    line_1 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e1);
+    line_viewer.addLine (e1, line_1.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_2;
+    line_2 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e2);
+    line_viewer.addLine (e2, line_2.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_3;
+    line_3 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e3);
+    line_viewer.addLine (e3, line_3.str ());
+    line_viewer.spin ();
+
+    */
+
+    pcl::ModelCoefficients e4, e5, e6, e7; 
+
+    e4.values.push_back (edges[0][0]);
+    e4.values.push_back (edges[0][1]); 
+    e4.values.push_back (maximus); 
+    e4.values.push_back (edges[1][0] - edges[0][0]); 
+    e4.values.push_back (edges[1][1] - edges[0][1]); 
+    e4.values.push_back (maximus - maximus); 
+
+    e5.values.push_back (edges[1][0]);
+    e5.values.push_back (edges[1][1]); 
+    e5.values.push_back (maximus); 
+    e5.values.push_back (edges[2][0] - edges[1][0]); 
+    e5.values.push_back (edges[2][1] - edges[1][1]); 
+    e5.values.push_back (maximus - maximus); 
+
+    e6.values.push_back (edges[2][0]);
+    e6.values.push_back (edges[2][1]); 
+    e6.values.push_back (maximus); 
+    e6.values.push_back (edges[3][0] - edges[2][0]); 
+    e6.values.push_back (edges[3][1] - edges[2][1]); 
+    e6.values.push_back (maximus - maximus); 
+
+    e7.values.push_back (edges[3][0]);
+    e7.values.push_back (edges[3][1]); 
+    e7.values.push_back (maximus); 
+    e7.values.push_back (edges[0][0] - edges[3][0]); 
+    e7.values.push_back (edges[0][1] - edges[3][1]); 
+    e7.values.push_back (maximus - maximus); 
+
+    /*
+
+       std::stringstream line_4;
+       line_4 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e4);
+    line_viewer.addLine (e4, line_4.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_5;
+    line_5 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e5);
+    line_viewer.addLine (e5, line_5.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_6;
+    line_6 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e6);
+    line_viewer.addLine (e6, line_6.str ());
+    line_viewer.spin ();
+
+    std::stringstream line_7;
+    line_7 << "LINE_" << ros::Time::now();
+    //adjustLine (shapes_lines_clusters.at (clu), e7);
+    line_viewer.addLine (e7, line_7.str ());
+    line_viewer.spin ();
+
+    */
+
+    std::vector<pcl::ModelCoefficients> cuboid; 
+
+    cuboid.push_back (e0);
+    cuboid.push_back (e1);
+    cuboid.push_back (e2);
+    cuboid.push_back (e3);
+    cuboid.push_back (e4);
+    cuboid.push_back (e5);
+    cuboid.push_back (e6);
+    cuboid.push_back (e7);
+
+    //addPlane 
+
+    std::stringstream cuboid_id;
+    cuboid_id << "CUBOID_" << ros::Time::now();
+    line_viewer.addCuboid (cuboid, cuboid_id.str ());
+
+
+
+
+    /*
+    /// Print the New Axes of the Bounding Box ///
+    if ( axes )
     printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[0][0]*max_u, centroid[1] + vectors[0][1]*max_u, maxZ, 0.001, ren, iren, 1.0, 0.0, 0.0);
     printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[1][0]*max_v, centroid[1] + vectors[1][1]*max_v, maxZ, 0.001, ren, iren, 0.0, 1.0, 0.0);
     printLine (centroid[0], centroid[1], maxZ, centroid[0], centroid[1], maxZ + 0.050, 0.001, ren, iren, 0.0, 0.0, 1.0);
+    */
+
+
+
   }
-  */
-  
-
-}
 
 
+  line_viewer.spin ();
 
 
 
