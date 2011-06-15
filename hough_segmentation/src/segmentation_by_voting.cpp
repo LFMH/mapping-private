@@ -1840,7 +1840,7 @@ int main (int argc, char** argv)
 
     double h = _h_of_Z_ - _h_of_z_;
 
-    textfile << setprecision (5) << "      radius " << r << " height " << h << "\n" << std::flush;
+    textfile << setprecision (5) << "      center (" << cx << ", " << cy << ") radius " << r << " height " << h << "\n" << std::flush;
 
 /*
     pcl::ModelCoefficients int_cyl_coeffs;
