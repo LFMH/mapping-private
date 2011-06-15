@@ -130,6 +130,10 @@ bool circle_feature_step = false;
 
 
 
+ofstream textfile;
+
+
+
 #define _sqr(c) ((c)*(c))
 
 
@@ -405,6 +409,30 @@ int main (int argc, char** argv)
   // Update working point cloud
   *working_cloud = *input_cloud;
 
+  // ------------------------------------------------------------------ //
+  // ------------------ TEXT FILE W/ SIZES OF MODELS ------------------ //
+  // ------------------------------------------------------------------ //
+
+  std::stringstream textname;
+
+//  textname << "cylinder-sizes-" << ros::Time::now() << ".txt";
+
+  textname << "cylinder-sizes-humanoids.txt";
+
+  textfile.open (textname.str ().c_str (), ios::app);
+
+  textfile << "\n" << std::flush;
+
+  std::string p =  argv [pFileIndicesPCD [0]];
+
+  size_t s = p.find_last_of ("/");
+
+  size_t l = p.length ();
+
+  std::string n = p.substr (s + 1, l);
+
+  textfile << "   file " << n << "\n" << std::flush;
+
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
   // ------------------------------------------------------------- //
@@ -617,7 +645,6 @@ int main (int argc, char** argv)
   rsd.setSearchMethod (rsd_tree);
   rsd.compute (*rsd_cloud);
 
-  // Get position of full stop in path of file
   std::string path =  argv [pFileIndicesPCD [0]];
   size_t fullstop = path.find (".");
   // Create name for saving pcd files
@@ -629,7 +656,7 @@ int main (int argc, char** argv)
   // Concatenate radii values with the working cloud
   pcl::concatenateFields (*working_cloud, *rsd_cloud, *rsd_working_cloud);
   // Save these points to disk
-  pcl::io::savePCDFile (name, *rsd_working_cloud);
+//  pcl::io::savePCDFile (name, *rsd_working_cloud);
 
   if ( step )
   {
@@ -1811,6 +1838,10 @@ int main (int argc, char** argv)
 
     cylinders.push_back (cyl_coeffs);
 
+    double h = _h_of_Z_ - _h_of_z_;
+
+    textfile << setprecision (5) << "      radius " << r << " height " << h << "\n" << std::flush;
+
 /*
     pcl::ModelCoefficients int_cyl_coeffs;
 
@@ -2869,15 +2900,13 @@ int main (int argc, char** argv)
   ROS_WARN ("Done with 2D line models in %5.3g [s]", tt.toc ());
 
 
-*/
+  */
 
 
 
+  textfile << "\n" << std::flush;
 
-
-
-
-  // TODO Computing the best votes and segmenting the point cloud data
+  textfile.close();
 
 
 
@@ -2888,12 +2917,7 @@ int main (int argc, char** argv)
   }
 
   // And wait until Q key is pressed
-  circle_viewer.spin ();
-
-/*
-  // And wait until Q key is pressed
-  line_viewer.spin ();
-*/
+  v.spin ();
 
   return (0);
 }
