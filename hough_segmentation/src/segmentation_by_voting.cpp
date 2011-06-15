@@ -1705,11 +1705,12 @@ int main (int argc, char** argv)
 
 */
 
-  std::vector<shape> shapes_of_circles;
+  std::vector<pcl::ModelCoefficients> cylinders; 
+
   pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
 
   *cloud = *working_cloud;
-
+  
   for (int clu = 0; clu < (int) circle_parameters_clusters.size(); clu++)
   {
     pcl::ModelCoefficients coefficients;
@@ -1807,6 +1808,8 @@ int main (int argc, char** argv)
     cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
 //    circle_viewer.spin ();
+
+    cylinders.push_back (cyl_coeffs);
 
 /*
     pcl::ModelCoefficients int_cyl_coeffs;
@@ -1949,6 +1952,9 @@ int main (int argc, char** argv)
 
   // ---------------------------------------------------------------------------------------------------- 
 
+  std::vector<std::string> lines_ids;
+  std::vector<std::string> lines_inliers_ids;
+
   std::vector<pcl::ModelCoefficients> shapes_lines_coefficients;
   std::vector<pcl::PointIndices::Ptr> shapes_lines_inliers;
   std::vector<pcl::PointCloud<PointT>::Ptr> shapes_lines_points;
@@ -2032,8 +2038,11 @@ int main (int argc, char** argv)
       line_viewer.addLine (line_coefficients, line_id.str ());
       line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
       line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_inliers_id.str ()); 
-    }
 
+      lines_ids.push_back (line_id.str());
+      lines_inliers_ids.push_back (line_inliers_id.str());
+    }
+  
     shapes_lines_coefficients.push_back (line_coefficients);
     shapes_lines_inliers.push_back (line_inliers);
     shapes_lines_points.push_back (line_inliers_cloud);
@@ -2047,7 +2056,31 @@ int main (int argc, char** argv)
     line_viewer.spin ();
   }
 
+  // ---------------------- //
+  // Start cleaning process //
+  // ---------------------- //
+
+  if ( line_step )
+  {
+    for (int id = 0; id < (int) lines_ids.size(); id++)
+    {
+      // Remove circle from the viewer
+      line_viewer.removeShape (lines_ids[id]);
+    }
+
+    for (int id = 0; id < (int) lines_inliers_ids.size(); id++)
+    {
+      // Remove circle from the viewer
+      line_viewer.removePointCloud (lines_inliers_ids[id]);
+    }
+
+    // And wait until Q key is pressed
+    line_viewer.spin ();
+  }
+
   // ---------------------------------------------------------------------------------------------------- 
+
+  std::vector<std::vector<pcl::ModelCoefficients> > cuboids; 
 
   for (int clu = 0; clu < (int) shapes_lines_clusters.size(); clu++)
   {
@@ -2103,24 +2136,24 @@ int main (int argc, char** argv)
 
     /*
 
-    // Bounding box only for line inliers //
+      // Bounding box only for line inliers //
 
-    for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
-    {
-    int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
+      for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
+      {
+      int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
 
-    double c2p[2];
-    c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
-    c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
+      double c2p[2];
+      c2p[0] = shapes_lines_clusters.at (clu)->points.at (idx).x - centroid[0];
+      c2p[1] = shapes_lines_clusters.at (clu)->points.at (idx).y - centroid[1];
 
-    double width = vectors[0][0]*c2p[0] + vectors[0][1]*c2p[1];
-    if (width > max_u) max_u = width;
-    if (width < min_u) min_u = width;
+      double width = vectors[0][0]*c2p[0] + vectors[0][1]*c2p[1];
+      if (width > max_u) max_u = width;
+      if (width < min_u) min_u = width;
 
-    double length = vectors[1][0]*c2p[0] + vectors[1][1]*c2p[1];
-    if (length > max_v) max_v = length;
-    if (length < min_v) min_v = length;
-    }
+      double length = vectors[1][0]*c2p[0] + vectors[1][1]*c2p[1];
+      if (length > max_v) max_v = length;
+      if (length < min_v) min_v = length;
+      }
 
     */
 
@@ -2146,17 +2179,17 @@ int main (int argc, char** argv)
 
     /*
 
-    // Bounding box only for line inliers //
+      // Bounding box only for line inliers //
 
-    for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
-    {
-    int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
+      for ( int inl = 0; inl < (int) shapes_lines_inliers.at (clu)->indices.size(); inl++ )
+      {
+      int idx = shapes_lines_inliers.at (clu)->indices.at (inl);
 
-    double Z = shapes_lines_clusters.at (clu)->points.at (idx).z;
+      double Z = shapes_lines_clusters.at (clu)->points.at (idx).z;
 
-    if ( minimus > Z ) minimus = Z;
-    if ( maximus < Z ) maximus = Z;
-    }
+      if ( minimus > Z ) minimus = Z;
+      if ( maximus < Z ) maximus = Z;
+      }
 
     */
 
@@ -2218,29 +2251,29 @@ int main (int argc, char** argv)
 
     /*
 
-       std::stringstream line_0;
-       line_0 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e0);
-    line_viewer.addLine (e0, line_0.str ());
-    line_viewer.spin ();
+      std::stringstream line_0;
+      line_0 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e0);
+      line_viewer.addLine (e0, line_0.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_1;
-    line_1 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e1);
-    line_viewer.addLine (e1, line_1.str ());
-    line_viewer.spin ();
+      std::stringstream line_1;
+      line_1 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e1);
+      line_viewer.addLine (e1, line_1.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_2;
-    line_2 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e2);
-    line_viewer.addLine (e2, line_2.str ());
-    line_viewer.spin ();
+      std::stringstream line_2;
+      line_2 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e2);
+      line_viewer.addLine (e2, line_2.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_3;
-    line_3 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e3);
-    line_viewer.addLine (e3, line_3.str ());
-    line_viewer.spin ();
+      std::stringstream line_3;
+      line_3 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e3);
+      line_viewer.addLine (e3, line_3.str ());
+      line_viewer.spin ();
 
     */
 
@@ -2276,29 +2309,29 @@ int main (int argc, char** argv)
 
     /*
 
-       std::stringstream line_4;
-       line_4 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e4);
-    line_viewer.addLine (e4, line_4.str ());
-    line_viewer.spin ();
+      std::stringstream line_4;
+      line_4 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e4);
+      line_viewer.addLine (e4, line_4.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_5;
-    line_5 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e5);
-    line_viewer.addLine (e5, line_5.str ());
-    line_viewer.spin ();
+      std::stringstream line_5;
+      line_5 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e5);
+      line_viewer.addLine (e5, line_5.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_6;
-    line_6 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e6);
-    line_viewer.addLine (e6, line_6.str ());
-    line_viewer.spin ();
+      std::stringstream line_6;
+      line_6 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e6);
+      line_viewer.addLine (e6, line_6.str ());
+      line_viewer.spin ();
 
-    std::stringstream line_7;
-    line_7 << "LINE_" << ros::Time::now();
-    //adjustLine (shapes_lines_clusters.at (clu), e7);
-    line_viewer.addLine (e7, line_7.str ());
-    line_viewer.spin ();
+      std::stringstream line_7;
+      line_7 << "LINE_" << ros::Time::now();
+      //adjustLine (shapes_lines_clusters.at (clu), e7);
+      line_viewer.addLine (e7, line_7.str ());
+      line_viewer.spin ();
 
     */
 
@@ -2313,34 +2346,101 @@ int main (int argc, char** argv)
     cuboid.push_back (e6);
     cuboid.push_back (e7);
 
-    //addPlane 
-
     std::stringstream cuboid_id;
     cuboid_id << "CUBOID_" << ros::Time::now();
     line_viewer.addCuboid (cuboid, cuboid_id.str ());
 
+    //addPlane 
 
-
+    cuboids.push_back (cuboid);
 
     /*
-    /// Print the New Axes of the Bounding Box ///
-    if ( axes )
-    printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[0][0]*max_u, centroid[1] + vectors[0][1]*max_u, maxZ, 0.001, ren, iren, 1.0, 0.0, 0.0);
-    printLine (centroid[0], centroid[1], maxZ, centroid[0] + vectors[1][0]*max_v, centroid[1] + vectors[1][1]*max_v, maxZ, 0.001, ren, iren, 0.0, 1.0, 0.0);
-    printLine (centroid[0], centroid[1], maxZ, centroid[0], centroid[1], maxZ + 0.050, 0.001, ren, iren, 0.0, 0.0, 1.0);
+
+      // Bounding box only for line inliers //
+
+      std::stringstream line_points_id;
+      line_points_id << "LINE_CLUSTER_" << ros::Time::now();
+      line_viewer.addPointCloud (*shapes_lines_points.at (clu), line_points_id.str ());
+      line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_points_id.str ()); 
+
     */
 
+    // Bounding box for whole cluster //
 
-
+    std::stringstream line_cluster_id;
+    line_cluster_id << "LINE_CLUSTER_" << ros::Time::now();
+    line_viewer.addPointCloud (*shapes_lines_clusters.at (clu), line_cluster_id.str ());
+    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_cluster_id.str ()); 
   }
-
 
   line_viewer.spin ();
 
 
 
 
+
+
+
+
+
+
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------ Visualization of Models ----------------------------------- //
+  // ------------------------------------------------------------------------------------------------ //
+  // ------------------------------------------------------------------------------------------------ //
+
+  pcl_visualization::PCLVisualizer v ("V");
+  v.setBackgroundColor (1.0, 1.0, 1.0);
+  v.addCoordinateSystem (1.0f);
+  v.getCameraParameters (argc, argv);
+  v.updateCamera ();
+
+  // ---------------------------------------------------------------------------------------------------- 
+
+  for ( int cyl = 0; cyl < (int) cylinders.size (); cyl++ )
+  {
+    std::stringstream cyl_id;
+    cyl_id << "CYL_" << ros::Time::now();
+    v.addCylinder (cylinders.at (cyl), cyl_id.str());
+  }
+
+  for ( int cub = 0; cub < (int) cuboids.size (); cub++ )
+  {
+    std::stringstream cuboid_id;
+    cuboid_id << "CUB_" << ros::Time::now();
+    v.addCuboid (cuboids.at (cub), cuboid_id.str ());
+  }
+
+  v.spin ();
+
+  // ---------------------------------------------------------------------------------------------------- 
+
+  v.addPointCloud (*input_cloud, "W");
+  v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "W");
+  v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "W");
+  v.spin ();
+
+  // ---------------------------------------------------------------------------------------------------- 
+
+
+
+
+
+
+
+
+
+
   exit (0);
+
+
+
+
+
+
+
+
 
 
 
