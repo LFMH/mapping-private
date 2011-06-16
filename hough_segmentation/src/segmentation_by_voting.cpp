@@ -77,6 +77,8 @@ int iterations = 100;
 
 int mean_k_filter = 25; /* [points] */
 int std_dev_filter = 1.0; 
+int line_mean_k_filter = 25; /* [points] */
+int line_std_dev_filter = 1.0; 
 
 // Clustering's Parameters
 int minimum_size_of_objects_clusters = 100; /* [points] */
@@ -231,6 +233,8 @@ int main (int argc, char** argv)
 
     ROS_INFO ("    -mean_k_filter X                 = ");
     ROS_INFO ("    -std_dev_filter X                 = ");
+    ROS_INFO ("    -line_mean_k_filter X                 = ");
+    ROS_INFO ("    -line_std_dev_filter X                 = ");
 
     ROS_INFO ("    -minimum_size_of_objects_clusters X                = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X                 = ");
@@ -283,6 +287,8 @@ int main (int argc, char** argv)
 
   terminal_tools::parse_argument (argc, argv, "-mean_k_filter", mean_k_filter);
   terminal_tools::parse_argument (argc, argv, "-std_dev_filter", std_dev_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_mean_k_filter", line_mean_k_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_std_dev_filter", line_std_dev_filter);
 
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
@@ -1784,7 +1790,7 @@ int main (int argc, char** argv)
     {
       double z = cloud->points.at (idx).z;
 
-      if ( z < h_of_Z )
+      if ( z < (h_of_Z + 0.010) )
       {
         double x = cloud->points.at (idx).x;
         double y = cloud->points.at (idx).y;
@@ -1908,6 +1914,39 @@ int main (int argc, char** argv)
   line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "LINE WORKING");
   // And wait until Q key is pressed
   line_viewer.spin ();
+  
+  // ---------------------------------------------------------------------------------------------------- 
+
+/*
+
+  // Add the point cloud data
+  line_viewer.removePointCloud ("LINE WORKING");
+
+  pcl::PointCloud<PointT>::Ptr line_filtered_cloud (new pcl::PointCloud<PointT> ());
+
+  pcl::StatisticalOutlierRemoval<PointT> line_sor;
+  line_sor.setInputCloud (working_cloud);
+  line_sor.setMeanK (line_mean_k_filter);
+  line_sor.setStddevMulThresh (line_std_dev_filter);
+  line_sor.filter (*line_filtered_cloud);
+
+  if ( verbose )
+  {
+    ROS_INFO ("Statistical Outlier Removal ! Before: %d points | After: %d points | Filtered: %d points",
+              (int) working_cloud->points.size (),  (int) line_filtered_cloud->points.size (), (int) working_cloud->points.size () - (int) line_filtered_cloud->points.size ());
+  }
+
+  if ( line_step )
+  {
+    line_viewer.addPointCloud (*line_filtered_cloud, "LINE FILTERED");
+    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "LINE FILTERED");
+    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "LINE FILTERED");
+    line_viewer.spin ();
+  }
+
+  *working_cloud = *line_filtered_cloud;
+
+*/
 
   // ---------------------------------------------------------------------------------------------------- 
 
