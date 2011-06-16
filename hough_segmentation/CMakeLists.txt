@@ -28,6 +28,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # ------[ Segment
 rosbuild_add_executable (hough_segmentation src/segmentation_by_voting.cpp)
+#rosbuild_add_executable (hough_segmentation src/segmentation_by_voting_using_lines.cpp)
 #rosbuild_add_executable (process_clouds src/process_clouds.cpp)
 #rosbuild_add_executable (rsd src/rsd.cpp)
 target_link_libraries (hough_segmentation pcl_io)
