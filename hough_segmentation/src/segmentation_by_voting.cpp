@@ -522,7 +522,7 @@ int main (int argc, char** argv)
     // Add the point cloud of normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "3D NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
@@ -817,7 +817,7 @@ int main (int argc, char** argv)
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
