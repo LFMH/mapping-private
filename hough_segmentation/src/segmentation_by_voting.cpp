@@ -473,6 +473,9 @@ int main (int argc, char** argv)
     viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
     // And wait until Q key is pressed
     viewer.spin ();
+
+    viewer.removePointCloud ("INPUT");
+    viewer.spin ();
   }
 
   // Update working point cloud
