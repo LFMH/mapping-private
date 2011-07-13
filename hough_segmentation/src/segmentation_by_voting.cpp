@@ -53,6 +53,7 @@
 // -------------------- Declare defs of types -------------------- //
 // --------------------------------------------------------------- //
 
+typedef pcl::PointXYZRGB Point;
 typedef pcl::PointXYZINormal PointT;
 typedef pcl::PointXYZINormalRSD PointTrsd;
 
@@ -370,8 +371,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
   viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -381,13 +382,11 @@ int main (int argc, char** argv)
   // ------------------ Load point cloud data ------------------ //
   // ----------------------------------------------------------- //
 
-  // Input point cloud data
-  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
-  // Working point cloud data 
-  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+  // The kinect input point cloud data
+  pcl::PointCloud<Point>::Ptr the_kinect_input_cloud (new pcl::PointCloud<Point> ());
 
   // Load point cloud data
-  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *the_kinect_input_cloud) == -1)
   {
     ROS_ERROR ("Couldn't read file %s", argv [pFileIndicesPCD [0]]);
     return (-1);
@@ -395,15 +394,15 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
+    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (the_kinect_input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*the_kinect_input_cloud).c_str ());
   }
 
   // Add the point cloud data
-  viewer.addPointCloud (*input_cloud, "INPUT");
+  viewer.addPointCloud (*the_kinect_input_cloud, "KINECT INPUT DATA");
   // Color the cloud in white
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "KINECT INPUT DATA");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "KINECT INPUT DATA"); 
 
   // Wait or not wait
   if ( step )
@@ -411,9 +410,6 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
-
-  // Update working point cloud
-  *working_cloud = *input_cloud;
 
   // ------------------------------------------------------------------ //
   // ------------------ TEXT FILE W/ SIZES OF MODELS ------------------ //
@@ -438,6 +434,42 @@ int main (int argc, char** argv)
   std::string n = p.substr (s + 1, l);
 
   textfile << "   file " << n << "\n" << std::flush;
+
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------ PATCH ------------------ //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+
+  // Input point cloud data
+  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
+
+  unsigned int size_of_the_kinect_input_cloud = the_kinect_input_cloud->points.size();
+
+  for (unsigned int kin = 0; kin < the_kinect_input_cloud->points.size (); kin++)
+  {
+    input_cloud->points.resize (size_of_the_kinect_input_cloud);
+
+    input_cloud->points.at (kin).x = the_kinect_input_cloud->points.at (kin).x;
+    input_cloud->points.at (kin).y = the_kinect_input_cloud->points.at (kin).y;
+    input_cloud->points.at (kin).z = the_kinect_input_cloud->points.at (kin).z;
+    
+    input_cloud->points.at (kin).intensity = 0.0;
+    input_cloud->points.at (kin).normal_x  = 0.0;
+    input_cloud->points.at (kin).normal_y  = 0.0;
+    input_cloud->points.at (kin).normal_z  = 0.0;
+    input_cloud->points.at (kin).curvature = 0.0;
+  }
+
+  // Working point cloud data 
+  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+
+  // Update working point cloud
+  *working_cloud = *input_cloud;
+
+/*
 
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
@@ -480,6 +512,8 @@ int main (int argc, char** argv)
 
   // Update working point cloud
   *working_cloud = *filtered_cloud;
+
+*/
 
   // ------------------------------------------------------------------- //
   // ------------------ Estimate 3D normals of points ------------------ //
@@ -929,8 +963,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer circle_viewer ("CIRCLE VIEWER");
   // Set the background of viewer
   circle_viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  circle_viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  circle_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   circle_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -1902,8 +1936,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer line_viewer ("LINE VIEWER");
   // Set the background of viewer
   line_viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  line_viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  line_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   line_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -2465,7 +2499,7 @@ int main (int argc, char** argv)
 
   pcl_visualization::PCLVisualizer v ("V");
   v.setBackgroundColor (1.0, 1.0, 1.0);
-  v.addCoordinateSystem (1.0f);
+//  v.addCoordinateSystem (1.0f);
   v.getCameraParameters (argc, argv);
   v.updateCamera ();
 
