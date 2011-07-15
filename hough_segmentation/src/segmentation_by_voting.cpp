@@ -551,7 +551,8 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-  if ( step )
+  if ( false )
+//  if ( step )
   {
     // Add the point cloud of normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
@@ -815,7 +816,8 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
-  if ( step )
+  if ( false )
+//  if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "2D NORMALS");
@@ -846,7 +848,8 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = nz;
   }
 
-  if ( step )
+  if ( false )
+//  if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
@@ -1810,8 +1813,8 @@ int main (int argc, char** argv)
     h_of_z = h_of_z - 0.0025 ;
     h_of_Z = h_of_Z + 0.0025 ;
 
-    cerr << " h_of_z = " << h_of_z << endl ;
-    cerr << " h_of_Z = " << h_of_Z << endl << endl ;
+    cerr << "  h_of_z = " << h_of_z << endl ;
+    cerr << "  h_of_Z = " << h_of_Z << endl << endl ;
     //*/
 
 /*
@@ -1861,8 +1864,8 @@ int main (int argc, char** argv)
     double _h_of_z_ = mini.z - 0.0025 ;
     double _h_of_Z_ = maxi.z + 0.0025 ;
 
-    cerr << " _h_of_z_ = " << _h_of_z_ << endl ;
-    cerr << " _h_of_Z_ = " << _h_of_Z_ << endl << endl ;
+    cerr << "    _h_of_z_ = " << _h_of_z_ << endl ;
+    cerr << "    _h_of_Z_ = " << _h_of_Z_ << endl << endl ;
 
     pcl::ModelCoefficients cyl_coeffs;
 
@@ -1877,7 +1880,7 @@ int main (int argc, char** argv)
     std::stringstream cyl_id;
     cyl_id << "CYL_" << ros::Time::now();
     circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
-//    circle_viewer.spin ();
+    circle_viewer.spin ();
 
     cylinders.push_back (cyl_coeffs);
 
