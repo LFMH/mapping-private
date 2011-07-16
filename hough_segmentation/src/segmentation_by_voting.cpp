@@ -1837,7 +1837,7 @@ int main (int argc, char** argv)
 
         double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
 
-        if ( d < circle_threshold ) 
+        if ( d < (circle_threshold + 0.0025) ) 
         {
           // Save only the right indices
           inliers->indices.push_back (idx);
