@@ -126,6 +126,7 @@ double minimum_size_of_circle_parameters_clusters = 50;
 // Visualization's Parameters
 int size = 3;
 bool step = false;
+bool color = false;
 bool verbose = false;
 bool line_step = false;
 bool circle_step = false;
@@ -336,6 +337,7 @@ int main (int argc, char** argv)
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
   terminal_tools::parse_argument (argc, argv, "-step", step);
+  terminal_tools::parse_argument (argc, argv, "-color", color);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
   terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
@@ -949,11 +951,13 @@ int main (int argc, char** argv)
       // Set the size of points for cloud
       viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
       // And wait until Q key is pressed
-      viewer.spin ();
+//      viewer.spin ();
 
       // Save id of object
       objects_clusters_ids.push_back (object_cluster_id.str());
     }
+
+    viewer.spin ();
   }
 
   // -------------------------------------------------------------------------------------------------- //
@@ -1778,7 +1782,8 @@ int main (int argc, char** argv)
 
 */
 
-  std::vector<pcl::ModelCoefficients> cylinders; 
+  std::vector<pcl::ModelCoefficients> cylinders_coeffs; 
+  std::vector<pcl::PointCloud<PointT>::Ptr> cylinders_inliers; 
 
   pcl::PointCloud<PointT>::Ptr cloud (new pcl::PointCloud<PointT> ());
 
@@ -1858,6 +1863,9 @@ int main (int argc, char** argv)
     circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
 //    circle_viewer.spin ();
 
+    // Backing up inlier points of cylinder //
+    cylinders_inliers.push_back (points);
+
     PointT mini, maxi;
     pcl::getMinMax3D (*points, mini, maxi);
 
@@ -1882,7 +1890,7 @@ int main (int argc, char** argv)
     circle_viewer.addCylinder (cyl_coeffs, cyl_id.str());
     circle_viewer.spin ();
 
-    cylinders.push_back (cyl_coeffs);
+    cylinders_coeffs.push_back (cyl_coeffs);
 
     double h = _h_of_Z_ - _h_of_z_;
 
@@ -2190,7 +2198,8 @@ int main (int argc, char** argv)
 
   // ---------------------------------------------------------------------------------------------------- 
 
-  std::vector<std::vector<pcl::ModelCoefficients> > cuboids; 
+  std::vector<std::vector<pcl::ModelCoefficients> > cuboids_coeffs; 
+  std::vector<pcl::PointCloud<PointT>::Ptr> cuboids_inliers; 
 
   for (int clu = 0; clu < (int) shapes_lines_clusters.size(); clu++)
   {
@@ -2462,7 +2471,7 @@ int main (int argc, char** argv)
 
     //addPlane 
 
-    cuboids.push_back (cuboid);
+    cuboids_coeffs.push_back (cuboid);
 
     /*
 
@@ -2481,13 +2490,12 @@ int main (int argc, char** argv)
     line_cluster_id << "LINE_CLUSTER_" << ros::Time::now();
     line_viewer.addPointCloud (*shapes_lines_clusters.at (clu), line_cluster_id.str ());
     line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_cluster_id.str ()); 
+
+    // Backing up inlier points of cuboid //
+    cuboids_inliers.push_back (shapes_lines_clusters.at (clu));
   }
 
   line_viewer.spin ();
-
-
-
-
 
 
 
@@ -2508,28 +2516,45 @@ int main (int argc, char** argv)
 
   // ---------------------------------------------------------------------------------------------------- 
 
-  for ( int cyl = 0; cyl < (int) cylinders.size (); cyl++ )
+  for ( int cyl = 0; cyl < (int) cylinders_coeffs.size (); cyl++ )
   {
     std::stringstream cyl_id;
     cyl_id << "CYL_" << ros::Time::now();
-    v.addCylinder (cylinders.at (cyl), cyl_id.str());
+    v.addCylinder (cylinders_coeffs.at (cyl), cyl_id.str());
+
+    if ( color )
+    {
+      cyl_id << "CYL_" << ros::Time::now();
+      v.addPointCloud (*cylinders_inliers.at (cyl), cyl_id.str());
+      v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id.str());
+    }
   }
 
-  for ( int cub = 0; cub < (int) cuboids.size (); cub++ )
+  for ( int cub = 0; cub < (int) cuboids_coeffs.size (); cub++ )
   {
-    std::stringstream cuboid_id;
-    cuboid_id << "CUB_" << ros::Time::now();
-    v.addCuboid (cuboids.at (cub), cuboid_id.str ());
+    std::stringstream cub_id;
+    cub_id << "CUB_" << ros::Time::now();
+    v.addCuboid (cuboids_coeffs.at (cub), cub_id.str ());
+
+    if ( color )
+    {
+      cub_id << "CUB_" << ros::Time::now();
+      v.addPointCloud (*cuboids_inliers.at (cub), cub_id.str());
+      v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str());
+    }
   }
 
   v.spin ();
 
   // ---------------------------------------------------------------------------------------------------- 
 
-  v.addPointCloud (*input_cloud, "W");
-  v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "W");
-  v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "W");
-  v.spin ();
+  if ( !color )
+  {
+    v.addPointCloud (*input_cloud, "W");
+    v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "W");
+    v.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "W");
+    v.spin ();
+  }
 
   // ---------------------------------------------------------------------------------------------------- 
 
