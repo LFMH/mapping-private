@@ -1214,14 +1214,14 @@ int main (int argc, char** argv)
                 pcl::getMinMax3D (*second_cluster_cloud, second_cluster_minimum, second_cluster_maximum);
                 double Z2 = second_cluster_maximum.z;
 
-                /*
+                ///*
                 if ( fabs (Z1 - Z2) > 0.025 ) /// meters
                 {
                   valid_circle = false;
                   circle_inliers->indices.clear ();
                   clustering_circle_inliers->indices.clear ();
                 }
-                */
+                //*/
 
               }
             }
@@ -1714,7 +1714,7 @@ int main (int argc, char** argv)
   // ------------------ Circles Parameters Space ------------------ //
   // -------------------------------------------------------------- //
 
-  ///*
+  /*
 
   std::stringstream circle_parameters_id;
   circle_parameters_id << "CIRCLE_PARAMETERS_" << ros::Time::now();
@@ -1726,7 +1726,7 @@ int main (int argc, char** argv)
   circle_parameters_filename.insert (fullstop, "-circles");
   pcl::io::savePCDFile (circle_parameters_filename, *circle_parameters_cloud);
 
-  //*/
+  */
 
   if ( verbose )
   {
@@ -1768,7 +1768,7 @@ int main (int argc, char** argv)
     circle_parameters_clusters_clouds.push_back (cluster_cloud);
   }
 
-  ///*
+  /*
 
   std::vector<std::string> circle_parameters_clusters_ids;
 
@@ -1783,7 +1783,7 @@ int main (int argc, char** argv)
     circle_parameters_clusters_ids.push_back (cluster_id.str());
   }
 
-  //*/
+  */
 
   std::vector<pcl::ModelCoefficients> cylinders_coeffs; 
   std::vector<pcl::PointCloud<PointT>::Ptr> cylinders_inliers; 
@@ -1838,14 +1838,14 @@ int main (int argc, char** argv)
     {
       double z = cloud->points.at (idx).z;
 
-      if ( z < (h_of_Z + 0.010) )
+      if ( z < (h_of_Z /* + 0.010 */ ) )
       {
         double x = cloud->points.at (idx).x;
         double y = cloud->points.at (idx).y;
 
         double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
 
-        if ( d < (circle_threshold + 0.0025) ) 
+        if ( d < (circle_threshold /* + 0.0025 */ ) )
         {
           // Save only the right indices
           inliers->indices.push_back (idx);
