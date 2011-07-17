@@ -123,6 +123,9 @@ double circle_percentage = 50;
 double clustering_tolerance_of_circle_parameters = 0.025;
 double minimum_size_of_circle_parameters_clusters = 50;
 
+double height = 0.010;
+double epsilon = 0.010;
+
 // Visualization's Parameters
 int size = 3;
 bool step = false;
@@ -333,6 +336,9 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-circle_percentage", circle_percentage);
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_circle_parameters", clustering_tolerance_of_circle_parameters);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
+
+  terminal_tools::parse_argument (argc, argv, "-height", height);
+  terminal_tools::parse_argument (argc, argv, "-epsilon", epsilon);
 
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
@@ -1838,14 +1844,20 @@ int main (int argc, char** argv)
     {
       double z = cloud->points.at (idx).z;
 
-      if ( z < (h_of_Z /* + 0.010 */ ) )
+      if ( z < (h_of_Z + height) )
       {
         double x = cloud->points.at (idx).x;
         double y = cloud->points.at (idx).y;
 
+/*
         double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
 
-        if ( d < (circle_threshold /* + 0.0025 */ ) )
+        if ( d < (circle_threshold + 0.0025) )
+*/
+
+        double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) );
+
+        if ( d < (r + circle_threshold + epsilon) )
         {
           // Save only the right indices
           inliers->indices.push_back (idx);
@@ -1872,8 +1884,8 @@ int main (int argc, char** argv)
     PointT mini, maxi;
     pcl::getMinMax3D (*points, mini, maxi);
 
-    double _h_of_z_ = mini.z - 0.0025 ;
-    double _h_of_Z_ = maxi.z + 0.0025 ;
+    double _h_of_z_ = mini.z  - 0.0025  ;
+    double _h_of_Z_ = maxi.z  + 0.0025  ;
 
     cerr << "    _h_of_z_ = " << _h_of_z_ << endl ;
     cerr << "    _h_of_Z_ = " << _h_of_Z_ << endl << endl ;
@@ -1958,7 +1970,8 @@ int main (int argc, char** argv)
   line_viewer.updateCamera ();
 
   // Add the point cloud data
-  line_viewer.addPointCloud (*working_cloud, "LINE WORKING");
+//  line_viewer.addPointCloud (*working_cloud, "LINE WORKING");
+  line_viewer.addPointCloud (*input_cloud, "LINE WORKING");
   // Color the cloud in white
   line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "LINE WORKING");
   // Set the size of points for cloud
