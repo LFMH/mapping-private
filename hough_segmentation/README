@@ -1,6 +1,8 @@
 
 
+
 vim -p                                                                                                                                                                                                                 /home/goron/ros/perception_pcl_addons/pcl_visualization/include/pcl_visualization/pcl_visualizer.h                                                                                                                                                                                 /home/goron/ros/perception_pcl_addons/pcl_visualization/src/libpcl_visualization/pcl_visualizer.cpp                                                                                                                                                                                /home/goron/ros/perception_pcl_addons/pcl_visualization/include/pcl_visualization/common/shapes.h                                                                                                                                                                                  /home/goron/ros/perception_pcl_addons/pcl_visualization/src/libpcl_visualization/common/shapes.cpp
+
 
 
 ================================================== TODO ==================================================
@@ -23,6 +25,7 @@ vim -p                                                                          
 ==========================================================================================================
 
 
+
 ================================================== Commands for process point ==================================================
 
 bin/process_clouds data/a-ascii-1224512793-dsn-objects.pcd -cam 0.00489929,4.89929/1.40893,0.368041,0.533069/-0.139939,-0.0105007,2.12851/0.686008,0.172371,0.706881/1678,975/2,71 -verbose 1 -size_of_points 3 -tabel 0 -filter 1 -project 0 -normals 1
@@ -36,6 +39,7 @@ bin/process_clouds data/f-ascii-table2-dbsv-ann-normal.pcd -cam 0.00437526,4.375
 ===============================================================================================================================
 
 
+
 ================================================== Commands for rsd ==================================================
 
 bin/rsd data/1-1224512793-dsn-objects.pcd -normals 0.020 -rsd 0.030 -leaf 0.001
@@ -43,6 +47,7 @@ bin/rsd data/1-1224512793-dsn-objects.pcd -normals 0.020 -rsd 0.030 -leaf 0.001
 bin/rsd data/1-1224512793-dsn-objects.pcd -normals 0.020 -rsd 0.010 -leaf 0.001
 
 ======================================================================================================================
+
 
 
 ================================================== Commands for running the code ==================================================
@@ -96,6 +101,7 @@ bin/hough_segmentation data/4-1224513253-dsn-objects-cut-box.pcd -cam 0.00410336
 bin/hough_segmentation data/4-1224513253-dsn-objects-cut-box.pcd -cam 0.00410336,4.10336/1.45315,0.456617,0.715476/0.581363,-0.226058,1.93638/0.628236,0.395726,0.669866/1278,997/1682,46 -verbose 1 -step 0 -size 7       -mean_k_filter 25 -std_dev_filter 3.0 -clustering_tolerance_of_objects 0.020 -minimum_size_of_objects_clusters  25                                                                                                                                                                 -normals_search_radius 0.030 -curvature_threshold 0.010 -rsd_search_radius 0.075 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.050 -circle_clustering_tolerance 0.015 -minimum_size_of_circle_cluster 10 -radius_threshold 0.025 -angle_threshold 45.0                    -circle_step 0 -circle_threshold 0.015 -minimum_circle_inliers 25 -minimum_radius 0.020 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 75                                                           -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 30 -iterations 100
 
 ===================================================================================================================================
+
 
 
 ================================================== Commands for hough segmentation of kinect data ==================================================
@@ -156,6 +162,16 @@ bin/hough_segmentation data/kinect/objects-hokuyo/_2_frame_20110707T161234.94421
 
 ----------------------------------------------------------------------------------------------------
 
+:-|
+
+bin/hough_segmentation data/kinect/objects-hokuyo/_5_frame_20110707T162130.327860-objects-downsampled.pcd                                                                                                                   -cam 0.627678,1.61436/0.467539,0.473642,0.142226/0.471745,-0.427733,0.806443/0.0149423,0.593205,0.804913/1678,977/2,71 -verbose 1 -step 1 -color 1 -size 10 -clustering_tolerance_of_objects 0.010                                                                                   -normals_search_radius 0.0225 -curvature_threshold 0.0075 -rsd_search_radius 0.020 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.080 -circle_clustering_tolerance 0.005 -minimum_size_of_circle_cluster 25 -radius_threshold 0.025 -angle_threshold 22.5                    -circle_step 0 -circle_threshold 0.0050 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50 -height 0.050 -epsilon 0.005                                                                                -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 1 -iterations 100                                                                                                                                                                     -line_step 0 -line_clustering_tolerance_of_objects 0.010 -line_minimum_size_of_objects_clusters 50 -maximum_line_iterations 1000 -line_threshold 0.010
+
+;)
+
+bin/hough_segmentation data/kinect/objects-hokuyo/_5_frame_20110707T162130.327860-objects-downsampled.pcd                                                                                                                   -cam 0.627678,1.61436/0.467539,0.473642,0.142226/0.471745,-0.427733,0.806443/0.0149423,0.593205,0.804913/1678,977/2,71 -verbose 1 -step 1 -color 1 -size 10 -clustering_tolerance_of_objects 0.010                                                                                   -normals_search_radius 0.015 -curvature_threshold 0.005 -rsd_search_radius 0.020 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.080 -circle_clustering_tolerance 0.005 -minimum_size_of_circle_cluster 25 -radius_threshold 0.025 -angle_threshold 22.5                    -circle_step 0 -circle_threshold 0.0050 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50 -height 0.050 -epsilon 0.005                                                                                -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 1 -iterations 100                                                                                                                                                                     -line_step 0 -line_clustering_tolerance_of_objects 0.010 -line_minimum_size_of_objects_clusters 50 -maximum_line_iterations 1000 -line_threshold 0.010
+
+----------------------------------------------------------------------------------------------------
+
  27.5 cm
 
 bin/hough_segmentation data/kinect/objects-hokuyo/_6_frame_20110707T162426.445233-objects-downsampled.pcd                                                                                                                   -cam 0.492432,1.67791/0.516141,0.441698,0.106567/0.506433,-0.40153,0.843147/0.0238195,0.657532,0.75305/1678,977/2,71 -verbose 1 -step 1 -color 1 -size 10 -clustering_tolerance_of_objects 0.0275                                                                                   -normals_search_radius 0.020 -curvature_threshold 0.005 -rsd_search_radius 0.020 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.080 -circle_clustering_tolerance 0.005 -minimum_size_of_circle_cluster 25 -radius_threshold 0.025 -angle_threshold 22.5                    -circle_step 0 -circle_threshold 0.0050 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50 -height 0.050 -epsilon 0.005                                                                                -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 25 -iterations 100                                                                                                                                                                     -line_step 0 -line_clustering_tolerance_of_objects 0.010 -line_minimum_size_of_objects_clusters 50 -maximum_line_iterations 1000 -line_threshold 0.010
@@ -168,10 +184,13 @@ bin/hough_segmentation data/kinect/objects-hokuyo/_6_frame_20110707T162426.44523
 
 bin/hough_segmentation data/kinect/objects-hokuyo/_6_frame_20110707T162426.445233-objects-downsampled.pcd                                                                                                                   -cam 0.492432,1.67791/0.516141,0.441698,0.106567/0.506433,-0.40153,0.843147/0.0238195,0.657532,0.75305/1678,977/2,71 -verbose 1 -step 1 -color 1 -size 10 -clustering_tolerance_of_objects 0.050                                                                                   -normals_search_radius 0.020 -curvature_threshold 0.005 -rsd_search_radius 0.020 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.080 -circle_clustering_tolerance 0.005 -minimum_size_of_circle_cluster 25 -radius_threshold 0.025 -angle_threshold 22.5                    -circle_step 0 -circle_threshold 0.005 -circle_feature_step 0 -clustering_feature 1 -curvature_feature 1 -rsd_feature 1 -normals_feature 1 -percentage_feature 1 -circle_percentage 50 -epsilon 0.005                                                                              -clustering_tolerance_of_circle_parameters 0.025 -minimum_size_of_circle_parameters_clusters 1 -iterations 100                                                                                                                                                                     -line_step 0 -line_clustering_tolerance_of_objects 0.010 -line_minimum_size_of_objects_clusters 50 -maximum_line_iterations 1000 -line_threshold 0.010
 
-
-
-
-
-
 ====================================================================================================================================================
+
+
+
+================================================== Commands for running the ISR-ROBOTIK code ==================================================
+
+x-isr data/kinect/medium-level/clusters/1_m_frame_20110714T193523.973917-objects-chips.pcd                                                                                                                           -line_thresh 0.0050 -circle_thresh 0.0050 -density_thresh 0.030 -min_nr_nn 25 -connectivity_thresh 0.020 -ang_thresh   75.0 -thickness_thresh 0.0125-min_reg_size 35 -negative_thresh 0.0125 -min_inliers_line 10 -min_inliers_circle 20 -line_merging_thresh 30.0                 -rectanguloid_approximation 0.050 -neg_per_thresh 0.40 -boundary_thresh 0.75 -size_of_point 6 -step 0 -cam "0.316073,0.79395/0.209919,0.428997,0.176472/0.392741,-0.00229346,0.419033/-0.189932,0.418882,0.887955/1678,977/2,71"                                                   -area_thresh 0.00125 -min_size_of_layer 30 -differentiate 1 -hoq 0.0150 -honq 0.0075 -type_of_mean "d" -res 0.001
+
+===============================================================================================================================================
 

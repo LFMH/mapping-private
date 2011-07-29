@@ -427,7 +427,7 @@ int main (int argc, char** argv)
 
 //  textname << "cylinder-sizes-" << ros::Time::now() << ".txt";
 
-  textname << "cylinder-sizes-humanoids.txt";
+  textname << "cylinder-sizes-hough-ransac.txt";
 
   textfile.open (textname.str ().c_str (), ios::app);
 
