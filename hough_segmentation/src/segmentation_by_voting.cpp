@@ -559,8 +559,8 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
-  if ( false )
-//  if ( step )
+//  if ( false )
+  if ( step )
   {
     // Add the point cloud of normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
@@ -824,8 +824,8 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
-  if ( false )
-//  if ( step )
+//  if ( false )
+  if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "2D NORMALS");
@@ -856,8 +856,8 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = nz;
   }
 
-  if ( false )
-//  if ( step )
+//  if ( false )
+  if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
