@@ -1,0 +1,20 @@
+<package>
+  <description brief="realtime_segmentation">
+
+     realtime_segmentation uses an urdf model and ("localized" (tf)) point clouds to filter points on regions of interest. It supports regex-based search expressions and several operations such as clustering, deleting points or fitting of drawers and doors.
+
+  </description>
+  <author>Nico Blodow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/realtime_segmentation</url>
+
+  <depend package="urdf" />
+  <depend package="tf" />
+  <depend package="pcl_ros" />
+  <depend package="openni_camera" />
+
+
+</package>
+
+

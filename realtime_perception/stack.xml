@@ -1,0 +1,13 @@
+<stack>
+  <description brief="realtime_perception">realtime_perception</description>
+  <author>Maintained by Nico Blodow</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/realtime_perception</url>
+  <depend stack="geometry" /> <!-- tf -->
+  <depend stack="openni_kinect" /> <!-- openni_camera -->
+  <depend stack="perception_pcl_unstable" /> <!-- pcl_ros -->
+  <depend stack="robot_model" /> <!-- urdf -->
+  <depend stack="ros" />
+
+</stack>
