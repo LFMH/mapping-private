@@ -104,3 +104,16 @@ bin/handle_removal data/segments/00.pcd -cam 3.67558,8.15058/0.432341,0.705564,0
 bin/visualize_segments data/segments/*.pcd -cam 3.23961,6.68576/0.441631,0.730633,0.669062/-4.23399,0.329129,1.09392/0.0898138,0.00794977,0.995927/1678,973/2,71 -step 1 -clean 1 -verbose 1 -size_of_hull 6 -size_of_projected 1
 
 =============================================================
+
+
+===================== Bosch data sets =======================
+
+bin/segmentation_of_pointcloud data/bosch/kitchen2_p1_mls_reg_combined.pcd -cam 1.9474,13.1864/1.37179,-0.354526,1.11025/-4.24674,2.15234,4.2685/0.436771,-0.140495,0.888534/1678,977/2,71 -step 1 -clean 0 -verbose 1 -size_of_points 3 -height_of_floor 0.075 -height_of_ceiling 0.125 -height_of_walls 0.750 -minimum_plane_inliers 3000 -minimum_size_of_plane_cluster 1500 -plane_inliers_clustering_tolerance 0.050 -plane_threshold 0.075 -epsilon_angle 0.075 -find_box_model 0 -detect_handels 0
+
+bin/segmentation_of_pointcloud data/bosch/base/kitchen1_base_link.pcd -cam 3.26053,10.5816/1.39636,-0.328261,1.14421/-4.5499,-0.214542,4.67348/0.510396,-9.32433e-05,0.859939/1678,977/2,71 -step 1 -clean 0 -verbose 1 -size_of_points 10 -height_of_floor 0.050 -height_of_ceiling 0.050 -height_of_walls 0.900 -minimum_plane_inliers 1000 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.075 -plane_threshold 0.075 -epsilon_angle 0.075 -find_box_model 0 -detect_handels 0
+
+bin/segmentation_of_pointcloud data/bosch/base/kitchen3_base_link.pcd -cam 3.26053,10.5816/1.37372,-0.0134505,1.09592/-4.57254,0.100269,4.62519/0.510396,-9.32433e-05,0.859939/1678,977/2,71 -step 1 -clean 0 -verbose 1 -size_of_points 10 -height_of_floor 0.050 -height_of_ceiling 0.050 -height_of_walls 0.900 -minimum_plane_inliers 1000 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.075 -plane_threshold 0.075 -epsilon_angle 0.075 -find_box_model 0 -detect_handels 0
+
+bin/segmentation_of_pointcloud data/bosch/base/kitchen4_base_link.pcd -cam 2.99971,11.2335/1.34845,-0.522851,1.03446/-5.0411,0.723588,3.3683/0.334227,-0.0490163,0.941217/1678,977/2,71 -step 1 -clean 0 -verbose 1 -size_of_points 10 -height_of_floor 0.050 -height_of_ceiling 0.050 -height_of_walls 0.850 -minimum_plane_inliers 1000 -minimum_size_of_plane_cluster 500 -plane_inliers_clustering_tolerance 0.075 -plane_threshold 0.075 -epsilon_angle 0.075 -find_box_model 0 -detect_handels 0
+
+=============================================================
