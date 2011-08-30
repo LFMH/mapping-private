@@ -27,8 +27,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_download_data (http://pr.willowgarage.com/data/pcl/office_chair_model.pcd data/office_chair_model.pcd d23282d322e0d45cadbce2e23bfc9e60)
 
 # ------[ Segment
+rosbuild_add_executable (rsd src/rsd.cpp)
+rosbuild_add_executable (process_clouds src/process_clouds.cpp)
 rosbuild_add_executable (hough_segmentation src/segmentation_by_voting.cpp)
-#rosbuild_add_executable (hough_segmentation src/segmentation_by_voting_using_lines.cpp)
-#rosbuild_add_executable (process_clouds src/process_clouds.cpp)
-#rosbuild_add_executable (rsd src/rsd.cpp)
+rosbuild_add_executable (hough_segmentation_with_lines src/using_lines_for_segmentation_by_voting.cpp)
+rosbuild_add_executable (hough_segmentation_with_circles src/using_circles_for_segmentation_by_voting.cpp)
 target_link_libraries (hough_segmentation pcl_io)
