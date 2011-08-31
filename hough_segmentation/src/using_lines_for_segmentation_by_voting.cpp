@@ -556,7 +556,7 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
+    ROS_INFO ("Normal Estimation ! Returned: %d 3D normals", (int) normals_cloud->points.size ());
   }
 
 //  if ( false )
@@ -582,6 +582,11 @@ int main (int argc, char** argv)
     working_cloud->points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
     working_cloud->points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
     working_cloud->points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
+  }
+
+  if ( verbose )
+  {
+    ROS_INFO ("Curvature Estimation ! Returned: %d curvatures", (int) normals_cloud->points.size ());
   }
 
   if ( step )
@@ -659,6 +664,11 @@ int main (int argc, char** argv)
   }
   */
 
+  if ( verbose )
+  {
+    ROS_INFO ("Curvature Mapping ! Returned: %d planars vs %d circulars", (int) curvature_planar_cloud->points.size (), (int) curvature_circular_cloud->points.size ());
+  }
+
   if ( step )
   {
     std::stringstream curvature_planar_id;
@@ -709,6 +719,11 @@ int main (int argc, char** argv)
   pcl::concatenateFields (*working_cloud, *rsd_cloud, *rsd_working_cloud);
   // Save these points to disk
 //  pcl::io::savePCDFile (name, *rsd_working_cloud);
+
+  if ( verbose )
+  {
+    ROS_INFO ("RSD Estimation ! Returned: %d rsdes", (int) rsd_working_cloud->points.size ());
+  }
 
   if ( step )
   {
@@ -785,6 +800,11 @@ int main (int argc, char** argv)
   }
   */
 
+  if ( verbose )
+  {
+    ROS_INFO ("RSD Mapping ! Returned: %d plausibles vs %d implausibles", (int) r_min_plausible_cloud->points.size (), (int) r_min_implausible_cloud->points.size ());
+  }
+
   if ( step )
   {
     std::stringstream r_min_plausible_id;
@@ -824,6 +844,11 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
+  if ( verbose )
+  {
+    ROS_INFO ("Normal Flattening ! Returned: %d 2D normals", (int) rsd_working_cloud->points.size ());
+  }
+
 //  if ( false )
   if ( step )
   {
@@ -854,6 +879,11 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_x = nx;
     normals_cloud->points[idx].normal_y = ny;
     normals_cloud->points[idx].normal_z = nz;
+  }
+
+  if ( verbose )
+  {
+    ROS_INFO ("Normal Refinement ! Returned: %d normals", (int) rsd_working_cloud->points.size ());
   }
 
 //  if ( false )
@@ -966,43 +996,48 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
+
+
 exit (0);
+
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ //
 
+
+
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
-  // ------------------------------------ Computation of 2D circles ----------------------------------- //
+  // ------------------------------------- Computation of 2D lines ------------------------------------ //
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
   // Open a 3D viewer
-  pcl_visualization::PCLVisualizer circle_viewer ("CIRCLE VIEWER");
+  pcl_visualization::PCLVisualizer line_viewer ("LINE VIEWER");
   // Set the background of viewer
-  circle_viewer.setBackgroundColor (1.0, 1.0, 1.0);
+  line_viewer.setBackgroundColor (1.0, 1.0, 1.0);
 //  // Add system coordiante to viewer
-//  circle_viewer.addCoordinateSystem (1.0f);
+//  line_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
-  circle_viewer.getCameraParameters (argc, argv);
+  line_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
-  circle_viewer.updateCamera ();
+  line_viewer.updateCamera ();
 
   // Add the point cloud data
-  circle_viewer.addPointCloud (*working_cloud, "WORKING");
+  line_viewer.addPointCloud (*working_cloud, "WORKING");
   // Color the cloud in white
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
   // And wait until Q key is pressed
-  circle_viewer.spin ();
+  line_viewer.spin ();
 
-  // ------------------------ //
-  // Start fitting 2D circles //
-  // ------------------------ //
+  // ---------------------- //
+  // Start fitting 2D lines //
+  // ---------------------- //
 
   // Space of parameters for fitted circle models
-  pcl::PointCloud<PointT>::Ptr circle_parameters_cloud (new pcl::PointCloud<PointT> ());
+  pcl::PointCloud<PointT>::Ptr line_parameters_cloud (new pcl::PointCloud<PointT> ());
 
   for (int ite = 0; ite < iterations; ite++)
   {
@@ -1099,11 +1134,11 @@ exit (0);
             {
               std::stringstream before_clustering_id;
               before_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_clustering_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_clustering_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*circle_inliers_cloud, before_clustering_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_clustering_id.str());
+              line_viewer.spin ();
             }
 
             // Vector of clusters from inliers
@@ -1175,11 +1210,11 @@ exit (0);
             {
               std::stringstream after_clustering_id;
               after_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_clustering_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_clustering_id.str());
+              line_viewer.spin ();
             }
 
             pcl::PointIndices::Ptr first_cluster_inliers (new pcl::PointIndices ());
@@ -1261,11 +1296,11 @@ exit (0);
             {
               std::stringstream before_curvature_id;
               before_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_curvature_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_curvature_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*circle_inliers_cloud, before_curvature_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_curvature_id.str());
+              line_viewer.spin ();
             }
 
             pcl::PointIndices::Ptr curvature_circle_inliers (new pcl::PointIndices ());
@@ -1305,11 +1340,11 @@ exit (0);
             {
               std::stringstream after_curvature_id;
               after_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*curvature_circle_inliers_cloud, after_curvature_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_curvature_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*curvature_circle_inliers_cloud, after_curvature_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_curvature_id.str());
+              line_viewer.spin ();
             }
 
             // Update the inliers of circle
@@ -1336,11 +1371,11 @@ exit (0);
             {
               std::stringstream before_rsd_id;
               before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_rsd_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_rsd_id.str());
+              line_viewer.spin ();
             }
 
             pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
@@ -1388,11 +1423,11 @@ exit (0);
             {
               std::stringstream after_rsd_id;
               after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_rsd_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_rsd_id.str());
+              line_viewer.spin ();
             }
 
             // Update the inliers of circle
@@ -1419,11 +1454,11 @@ exit (0);
             {
               std::stringstream before_normals_id;
               before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_normals_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_normals_id.str());
+              line_viewer.spin ();
             }
 
             pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
@@ -1488,11 +1523,11 @@ exit (0);
             {
               std::stringstream after_normals_id;
               after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_normals_id.str());
-              circle_viewer.spin ();
+              line_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_normals_id.str());
+              line_viewer.spin ();
             }
 
             // Update the inliers of circle
@@ -1640,7 +1675,7 @@ exit (0);
 
 
           // Cast one vot for the current circle
-          circle_parameters_cloud->points.push_back (circle_vot);
+          line_parameters_cloud->points.push_back (circle_vot);
 
           // --------------------------- //
           // Start visualization process //
@@ -1657,16 +1692,16 @@ exit (0);
             circle_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
  
             // Add circle model to point cloud data
-            circle_viewer.addCircle (circle_coefficients, circle_id.str ());
+            line_viewer.addCircle (circle_coefficients, circle_id.str ());
 
             // Add the point cloud data
-            circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
+            line_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
 
             // Set the size of points for cloud data
-            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
+            line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
 
             // And wait until Q key is pressed
-            circle_viewer.spin ();
+            line_viewer.spin ();
 
             // Save circle ids for cleaning the viewer afterwards
             circles_ids.push_back (circle_id.str());
@@ -1707,17 +1742,17 @@ exit (0);
       for (int id = 0; id < (int) circles_ids.size(); id++)
       {
         // Remove circle from the viewer
-        circle_viewer.removeShape (circles_ids[id]);
+        line_viewer.removeShape (circles_ids[id]);
       }
 
       for (int id = 0; id < (int) circles_inliers_ids.size(); id++)
       {
         // Remove circle from the viewer
-        circle_viewer.removePointCloud (circles_inliers_ids[id]);
+        line_viewer.removePointCloud (circles_inliers_ids[id]);
       }
 
       // And wait until Q key is pressed
-      circle_viewer.spin ();
+      line_viewer.spin ();
     }
   }
 
@@ -1757,7 +1792,7 @@ exit (0);
   }
 
   // And wait until Q key is pressed
-  circle_viewer.spin ();
+  line_viewer.spin ();
 
   return (0);
 }
