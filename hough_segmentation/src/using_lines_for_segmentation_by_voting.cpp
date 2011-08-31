@@ -1078,15 +1078,15 @@ exit (0);
         // Set type of method
         segmentation_of_line.setMethodType (pcl::SAC_RANSAC);
         // Set type of model
-        segmentation_of_line.setModelType (pcl::SACMODEL_CIRCLE2D);
+        segmentation_of_line.setModelType (pcl::SACMODEL_LINE);
         // Set threshold of model
         segmentation_of_line.setDistanceThreshold (line_threshold);
         // Set number of maximum iterations
         segmentation_of_line.setMaxIterations (maximum_line_iterations);
         // Give as input the filtered point cloud
         segmentation_of_line.setInputCloud (working_cluster_cloud);
-        // Set minimum and maximum radii
-        segmentation_of_line.setRadiusLimits (minimum_radius, maximum_radius);
+//////        // Set minimum and maximum radii
+//////        segmentation_of_line.setRadiusLimits (minimum_radius, maximum_radius);
 
         // Call the segmenting method
         segmentation_of_line.segment (*line_inliers, line_coefficients);
@@ -1133,7 +1133,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream before_clustering_id;
-              before_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              before_clustering_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*line_inliers_cloud, before_clustering_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
               line_viewer.spin ();
@@ -1209,7 +1209,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream after_clustering_id;
-              after_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              after_clustering_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*clustering_line_inliers_cloud, after_clustering_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
               line_viewer.spin ();
@@ -1295,7 +1295,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream before_curvature_id;
-              before_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              before_curvature_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*line_inliers_cloud, before_curvature_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
               line_viewer.spin ();
@@ -1339,7 +1339,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream after_curvature_id;
-              after_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              after_curvature_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*curvature_line_inliers_cloud, after_curvature_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
               line_viewer.spin ();
@@ -1370,7 +1370,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream before_rsd_id;
-              before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              before_rsd_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*line_inliers_cloud, before_rsd_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
               line_viewer.spin ();
@@ -1422,7 +1422,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream after_rsd_id;
-              after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              after_rsd_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*rsd_line_inliers_cloud, after_rsd_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
               line_viewer.spin ();
@@ -1453,7 +1453,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream before_normals_id;
-              before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              before_normals_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*line_inliers_cloud, before_normals_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
               line_viewer.spin ();
@@ -1522,7 +1522,7 @@ exit (0);
             if ( line_feature_step )
             {
               std::stringstream after_normals_id;
-              after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
+              after_normals_id << "LINE_INLIERS_" << ros::Time::now();
               line_viewer.addPointCloud (*normals_line_inliers_cloud, after_normals_id.str ());
               line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
               line_viewer.spin ();
@@ -1685,11 +1685,11 @@ exit (0);
           {
             // Create ID for line model
             std::stringstream line_id;
-            line_id << "CIRCLE_" << ros::Time::now();
+            line_id << "LINE_" << ros::Time::now();
 
             // Create ID for line inliers
             std::stringstream line_inliers_id;
-            line_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
+            line_inliers_id << "LINE_INLIERS_" << ros::Time::now();
  
             // Add line model to point cloud data
             line_viewer.addCircle (line_coefficients, line_id.str ());
