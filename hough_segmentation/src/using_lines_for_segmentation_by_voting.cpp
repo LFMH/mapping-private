@@ -53,6 +53,7 @@
 // -------------------- Declare defs of types -------------------- //
 // --------------------------------------------------------------- //
 
+typedef pcl::PointXYZRGB Point;
 typedef pcl::PointXYZINormal PointT;
 typedef pcl::PointXYZINormalRSD PointTrsd;
 
@@ -63,10 +64,10 @@ typedef pcl::PointXYZINormalRSD PointTrsd;
 struct shape
 {
   std::string type;
-  pcl::ModelCoefficients::Ptr coefficients;
-  pcl::PointIndices::Ptr indices;
-  pcl::PointCloud<PointT>::Ptr inliers;
-  pcl::PointCloud<PointT>::Ptr cluster;
+  pcl::ModelCoefficients coefficients;
+  pcl::PointIndices inliers;
+  pcl::PointCloud<PointT> points;
+  pcl::PointCloud<PointT> cluster;
 };
 
 // --------------------------------------------------------------------- //
@@ -76,7 +77,9 @@ struct shape
 int iterations = 100; 
 
 int mean_k_filter = 25; /* [points] */
-int std_dev_filter = 1.0; 
+int std_dev_filter = 1.0;
+int line_mean_k_filter = 25; /* [points] */
+int line_std_dev_filter = 1.0; 
 
 // Clustering's Parameters
 int minimum_size_of_objects_clusters = 100; /* [points] */
@@ -120,9 +123,13 @@ double circle_percentage = 50;
 double clustering_tolerance_of_circle_parameters = 0.025;
 double minimum_size_of_circle_parameters_clusters = 50;
 
+double height = 0.010;
+double epsilon = 0.010;
+
 // Visualization's Parameters
 int size = 3;
 bool step = false;
+bool color = false;
 bool verbose = false;
 bool line_step = false;
 bool circle_step = false;
@@ -231,6 +238,8 @@ int main (int argc, char** argv)
 
     ROS_INFO ("    -mean_k_filter X                 = ");
     ROS_INFO ("    -std_dev_filter X                 = ");
+    ROS_INFO ("    -line_mean_k_filter X                 = ");
+    ROS_INFO ("    -line_std_dev_filter X                 = ");
 
     ROS_INFO ("    -minimum_size_of_objects_clusters X                = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X                 = ");
@@ -283,6 +292,8 @@ int main (int argc, char** argv)
 
   terminal_tools::parse_argument (argc, argv, "-mean_k_filter", mean_k_filter);
   terminal_tools::parse_argument (argc, argv, "-std_dev_filter", std_dev_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_mean_k_filter", line_mean_k_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_std_dev_filter", line_std_dev_filter);
 
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
@@ -326,9 +337,13 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_circle_parameters", clustering_tolerance_of_circle_parameters);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
 
+  terminal_tools::parse_argument (argc, argv, "-height", height);
+  terminal_tools::parse_argument (argc, argv, "-epsilon", epsilon);
+
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
   terminal_tools::parse_argument (argc, argv, "-step", step);
+  terminal_tools::parse_argument (argc, argv, "-color", color);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
   terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
@@ -364,8 +379,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
   viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -375,13 +390,11 @@ int main (int argc, char** argv)
   // ------------------ Load point cloud data ------------------ //
   // ----------------------------------------------------------- //
 
-  // Input point cloud data
-  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
-  // Working point cloud data 
-  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+  // The kinect input point cloud data
+  pcl::PointCloud<Point>::Ptr the_kinect_input_cloud (new pcl::PointCloud<Point> ());
 
   // Load point cloud data
-  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *the_kinect_input_cloud) == -1)
   {
     ROS_ERROR ("Couldn't read file %s", argv [pFileIndicesPCD [0]]);
     return (-1);
@@ -389,15 +402,15 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
+    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (the_kinect_input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*the_kinect_input_cloud).c_str ());
   }
 
   // Add the point cloud data
-  viewer.addPointCloud (*input_cloud, "INPUT");
+  viewer.addPointCloud (*the_kinect_input_cloud, "KINECT INPUT DATA");
   // Color the cloud in white
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "KINECT INPUT DATA");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "KINECT INPUT DATA"); 
 
   // Wait or not wait
   if ( step )
@@ -405,9 +418,6 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
-
-  // Update working point cloud
-  *working_cloud = *input_cloud;
 
   // ------------------------------------------------------------------ //
   // ------------------ TEXT FILE W/ SIZES OF MODELS ------------------ //
@@ -417,7 +427,7 @@ int main (int argc, char** argv)
 
 //  textname << "cylinder-sizes-" << ros::Time::now() << ".txt";
 
-  textname << "cylinder-sizes-humanoids.txt";
+  textname << "cylinder-sizes-hough-ransac.txt";
 
   textfile.open (textname.str ().c_str (), ios::app);
 
@@ -432,6 +442,42 @@ int main (int argc, char** argv)
   std::string n = p.substr (s + 1, l);
 
   textfile << "   file " << n << "\n" << std::flush;
+
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------ PATCH ------------------ //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+
+  // Input point cloud data
+  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
+
+  unsigned int size_of_the_kinect_input_cloud = the_kinect_input_cloud->points.size();
+
+  for (unsigned int kin = 0; kin < the_kinect_input_cloud->points.size (); kin++)
+  {
+    input_cloud->points.resize (size_of_the_kinect_input_cloud);
+
+    input_cloud->points.at (kin).x = the_kinect_input_cloud->points.at (kin).x;
+    input_cloud->points.at (kin).y = the_kinect_input_cloud->points.at (kin).y;
+    input_cloud->points.at (kin).z = the_kinect_input_cloud->points.at (kin).z;
+    
+    input_cloud->points.at (kin).intensity = 0.0;
+    input_cloud->points.at (kin).normal_x  = 0.0;
+    input_cloud->points.at (kin).normal_y  = 0.0;
+    input_cloud->points.at (kin).normal_z  = 0.0;
+    input_cloud->points.at (kin).curvature = 0.0;
+  }
+
+  // Working point cloud data 
+  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+
+  // Update working point cloud
+  *working_cloud = *input_cloud;
+
+/*
 
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
@@ -467,10 +513,15 @@ int main (int argc, char** argv)
     viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
     // And wait until Q key is pressed
     viewer.spin ();
+
+    viewer.removePointCloud ("INPUT");
+    viewer.spin ();
   }
 
   // Update working point cloud
   *working_cloud = *filtered_cloud;
+
+*/
 
   // ------------------------------------------------------------------- //
   // ------------------ Estimate 3D normals of points ------------------ //
@@ -508,12 +559,13 @@ int main (int argc, char** argv)
     ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
   }
 
+//  if ( false )
   if ( step )
   {
     // Add the point cloud of normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "3D NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
@@ -772,6 +824,7 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
+//  if ( false )
   if ( step )
   {
     // Add the normals
@@ -803,12 +856,13 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = nz;
   }
 
+//  if ( false )
   if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
@@ -903,12 +957,19 @@ int main (int argc, char** argv)
       // Set the size of points for cloud
       viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
       // And wait until Q key is pressed
-      viewer.spin ();
+//      viewer.spin ();
 
       // Save id of object
       objects_clusters_ids.push_back (object_cluster_id.str());
     }
+
+    viewer.spin ();
   }
+
+exit (0);
+
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ //
 
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
@@ -920,8 +981,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer circle_viewer ("CIRCLE VIEWER");
   // Set the background of viewer
   circle_viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  circle_viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  circle_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   circle_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -935,13 +996,6 @@ int main (int argc, char** argv)
   circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
   // And wait until Q key is pressed
   circle_viewer.spin ();
-
-
-
-
-
-
-
 
   // ------------------------ //
   // Start fitting 2D circles //
@@ -1171,12 +1225,15 @@ int main (int argc, char** argv)
                 pcl::getMinMax3D (*second_cluster_cloud, second_cluster_minimum, second_cluster_maximum);
                 double Z2 = second_cluster_maximum.z;
 
+                ///*
                 if ( fabs (Z1 - Z2) > 0.025 ) /// meters
                 {
                   valid_circle = false;
                   circle_inliers->indices.clear ();
                   clustering_circle_inliers->indices.clear ();
                 }
+                //*/
+
               }
             }
 
@@ -1187,7 +1244,7 @@ int main (int argc, char** argv)
           }
         }
 
-
+ 
 
         // START W/ THE CURVATURE FEATURE //
 
@@ -1625,22 +1682,6 @@ int main (int argc, char** argv)
         // number of fitted circles
         circle_fit++;
 
-
-        ///*
-
-
-        //shape circle;
-        //circle.type = "line";
-        //circle.coefficients = circle_coefficients;
-        //circle.indices = circle_inliers;
-        //circle.inliers = circle_inliers_cloud;
-        //circle.cluster = working_cluster_cloud;
-
-
-        //*/
-
-
-
         // --------------------------------------------------- //
         // Check for continuing with the fitting of 2D circles //
         // --------------------------------------------------- //
@@ -1680,17 +1721,14 @@ int main (int argc, char** argv)
     }
   }
 
+
+
+
+
+
   // -------------------------------------------------------------- //
-  // ------------------ Circles Parameters Space ------------------ //
+  // ------------------- Lines Parameters Space ------------------- //
   // -------------------------------------------------------------- //
-
-
-
-
-
-
-
-
 
 
 
@@ -1699,4 +1737,27 @@ int main (int argc, char** argv)
 
 
   exit (0);
+
+
+
+
+
+
+
+  textfile << "\n" << std::flush;
+
+  textfile.close();
+
+
+
+  if ( verbose )
+  {
+    // Displaying the overall time
+    ROS_WARN ("Finished in %5.3g [s] !", tt.toc ());
+  }
+
+  // And wait until Q key is pressed
+  circle_viewer.spin ();
+
+  return (0);
 }
