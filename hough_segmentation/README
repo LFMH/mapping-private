@@ -194,3 +194,11 @@ x-isr data/kinect/medium-level/clusters/1_m_frame_20110714T193523.973917-objects
 
 ===============================================================================================================================================
 
+
+
+================================================== Commands for running hough segmentation only with lines ==================================================
+
+ bin/hough_segmentation_with_lines    data/kinect/objects-hokuyo/_6_frame_20110707T162426.445233-objects-downsampled.pcd                                                                                                     -cam 0.492432,1.67791/0.516141,0.441698,0.106567/0.506433,-0.40153,0.843147/0.0238195,0.657532,0.75305/1678,977/2,71 -verbose 1 -step 0 -color 1 -size 10 -clustering_tolerance_of_objects 0.0275                                                                                  -normals_search_radius 0.020 -curvature_threshold 0.005 -rsd_search_radius 0.020 -rsd_plane_radius 0.200 -low_r_min 0.020 -high_r_min 0.080 -line_clustering_tolerance 0.0075 -minimum_size_of_line_cluster 10 -radius_threshold 0.025 -angle_threshold 22.5                       -line_step 1 -line_threshold 0.010 -minimum_line_inliers 10 -line_feature_step 1 -clustering_feature 1 -curvature_feature 0 -rsd_feature 0 -normals_feature 0 -percentage_feature 0 -line_percentage 50 ? -height 0.050 ? -epsilon 0.005                                                                                                       -clustering_tolerance_of_line_parameters 0.025 -minimum_size_of_circle_parameters_clusters 25 -iterations 100                                                                                                                                                                      -line_step 0 -line_clustering_tolerance_of_objects 0.010 -line_minimum_size_of_objects_clusters 50 -maximum_line_iterations 1000 -line_threshold 0.010
+
+=============================================================================================================================================================
+

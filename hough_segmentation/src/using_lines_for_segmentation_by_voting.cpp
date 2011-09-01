@@ -146,11 +146,52 @@ ofstream textfile;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Computes line's inliers with regards to xOy plane
+ * \param cloud The point cloud of the working cluster
+ * \param inliers The inliers of the line model
+ * \param coefficients The line's parameters where the first triplete is a point on the line and the second triplete is the direction
+ */
+void adjustLineInliers (pcl::PointCloud<PointT>::Ptr &cloud, pcl::PointIndices::Ptr &inliers, pcl::ModelCoefficients &coefficients, double threshold)
+{
+
+  // First point of line
+  double P1[2];
+  P1[0] = coefficients.values [0];
+  P1[1] = coefficients.values [1];
+
+  // Second point of line
+  double P2[2];
+  P2[0] = coefficients.values [3] + coefficients.values [0];
+  P2[1] = coefficients.values [4] + coefficients.values [1];
+
+  // Set-up of variables
+  double x1 = P1[0];
+  double y1 = P1[1];
+  double x2 = P2[0];
+  double y2 = P2[1];
+
+  for (unsigned int idx = 0; idx < cloud->points.size (); idx++)
+  {
+    double x0 =  cloud->points.at (idx).x;
+    double y0 =  cloud->points.at (idx).y;
+
+    double d = fabs( (x2-x1)*(y1-y0) - (x1-x0)*(y2-y1) ) / sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );    
+    
+    if ( fabs(d) < threshold ) 
+      inliers->indices.push_back (idx);
+  }
+
+  return;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Computes line's coefficients with regards to its inliers
  * \param inliers_cloud The point cloud of the line's inliers
  * \param coefficients The line's parameters where the first triplete is a point on the line and the second triplete is the direction
  */
-void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoefficients &coefficients)
+void adjustLineCoefficients (pcl::PointCloud<PointT>::Ptr &cloud, pcl::ModelCoefficients &coefficients)
 {
   // Vector of line
   double line[2];
@@ -175,11 +216,11 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
   // Get limits of inliers leghtwise
   double minimum_lengthwise =  DBL_MAX;
   double maximum_lengthwise = -DBL_MAX;
-  for (int idx = 0; idx < (int)inliers_cloud->points.size (); idx++)
+  for (int idx = 0; idx < (int)cloud->points.size (); idx++)
   {
     double P[2];
-    P[0] = inliers_cloud->points.at(idx).x - P1[0];
-    P[1] = inliers_cloud->points.at(idx).y - P1[1];
+    P[0] = cloud->points.at(idx).x - P1[0];
+    P[1] = cloud->points.at(idx).y - P1[1];
 
     double distance_lengthwise = (line[0]*P[0]) + (line[1]*P[1]);
     if (minimum_lengthwise > distance_lengthwise) minimum_lengthwise = distance_lengthwise;
@@ -201,6 +242,8 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
   coefficients.values [3] = P2[0] - P1[0];
   coefficients.values [4] = P2[1] - P1[1];
   coefficients.values [5] = 0.0;
+
+  return;
 }
 
 
@@ -998,7 +1041,6 @@ int main (int argc, char** argv)
 
 
 
-exit (0);
 
 
 
@@ -1059,7 +1101,7 @@ exit (0);
       pcl::PointCloud<PointT>::Ptr working_cluster_cloud (new pcl::PointCloud<PointT> ());
       // Update the working cluster cloud 
       *working_cluster_cloud = *objects_clusters_clouds.at (clu);
-      
+
       do
       {
         // Coefficients of line model
@@ -1085,11 +1127,17 @@ exit (0);
         segmentation_of_line.setMaxIterations (maximum_line_iterations);
         // Give as input the filtered point cloud
         segmentation_of_line.setInputCloud (working_cluster_cloud);
-//////        // Set minimum and maximum radii
-//////        segmentation_of_line.setRadiusLimits (minimum_radius, maximum_radius);
 
         // Call the segmenting method
         segmentation_of_line.segment (*line_inliers, line_coefficients);
+
+
+
+
+        // Adjust inliers of line model 
+        adjustLineInliers (working_cluster_cloud, line_inliers, line_coefficients, line_threshold);
+
+
 
         // ------------------------ //
         // Start extraction process //
@@ -1109,6 +1157,14 @@ exit (0);
         extraction_of_line.setNegative (false);
         // Call the extraction function
         extraction_of_line.filter (*line_inliers_cloud);
+
+
+
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+
 
 
 
@@ -1169,22 +1225,13 @@ exit (0);
 
             pcl::PointIndices::Ptr clustering_line_inliers (new pcl::PointIndices ());
 
-            // Leave only the two biggest clusters
+            // Leave only the biggest cluster
             if ( line_clusters.size() > 0 )
             {
               for ( int idx = 0; idx < (int) line_clusters.at (0).indices.size(); idx++ )
               {
                 int inl = line_clusters.at (0).indices.at (idx);
                 clustering_line_inliers->indices.push_back (line_inliers->indices.at (inl));
-              }
-
-              if ( line_clusters.size() > 1 )
-              {
-                for ( int idx = 0; idx < (int) line_clusters.at (1).indices.size(); idx++ )
-                {
-                  int inl = line_clusters.at (1).indices.at (idx);
-                  clustering_line_inliers->indices.push_back (line_inliers->indices.at (inl));
-                }
               }
             }
 
@@ -1217,61 +1264,6 @@ exit (0);
               line_viewer.spin ();
             }
 
-            pcl::PointIndices::Ptr first_cluster_inliers (new pcl::PointIndices ());
-            pcl::PointIndices::Ptr second_cluster_inliers (new pcl::PointIndices ());
-
-            if ( line_clusters.size() > 0 )
-            {
-              for ( int idx = 0; idx < (int) line_clusters.at (0).indices.size(); idx++ )
-              {
-                int inl = line_clusters.at (0).indices.at (idx);
-                first_cluster_inliers->indices.push_back (line_inliers->indices.at (inl));
-              }
-
-              pcl::PointCloud<PointT>::Ptr first_cluster_cloud (new pcl::PointCloud<PointT> ());
-
-              pcl::ExtractIndices<PointT> extraction_of_first_cluster;
-              extraction_of_first_cluster.setIndices (first_cluster_inliers);
-              extraction_of_first_cluster.setInputCloud (working_cluster_cloud);
-              extraction_of_first_cluster.setNegative (false);
-              extraction_of_first_cluster.filter (*first_cluster_cloud);
-
-              PointT first_cluster_minimum, first_cluster_maximum;
-              pcl::getMinMax3D (*first_cluster_cloud, first_cluster_minimum, first_cluster_maximum);
-              double Z1 = first_cluster_maximum.z;
-
-              if ( line_clusters.size() > 1 )
-              {
-                for ( int idx = 0; idx < (int) line_clusters.at (1).indices.size(); idx++ )
-                {
-                  int inl = line_clusters.at (1).indices.at (idx);
-                  second_cluster_inliers->indices.push_back (line_inliers->indices.at (inl));
-                }
-
-                pcl::PointCloud<PointT>::Ptr second_cluster_cloud (new pcl::PointCloud<PointT> ());
-
-                pcl::ExtractIndices<PointT> extraction_of_second_cluster;
-                extraction_of_second_cluster.setIndices (second_cluster_inliers);
-                extraction_of_second_cluster.setInputCloud (working_cluster_cloud);
-                extraction_of_second_cluster.setNegative (false);
-                extraction_of_second_cluster.filter (*second_cluster_cloud);
-
-                PointT second_cluster_minimum, second_cluster_maximum;
-                pcl::getMinMax3D (*second_cluster_cloud, second_cluster_minimum, second_cluster_maximum);
-                double Z2 = second_cluster_maximum.z;
-
-                ///*
-                if ( fabs (Z1 - Z2) > 0.025 ) /// meters
-                {
-                  valid_line = false;
-                  line_inliers->indices.clear ();
-                  clustering_line_inliers->indices.clear ();
-                }
-                //*/
-
-              }
-            }
-
             // Update the line inliers
             *line_inliers = *clustering_line_inliers;
             // Update the line inliers cloud
@@ -1279,7 +1271,43 @@ exit (0);
           }
         }
 
- 
+
+
+
+
+
+
+
+
+
+        // ------------------------- //
+        // Update extraction process //
+        // ------------------------- //
+
+        // Set which indices to extract
+        extraction_of_line.setIndices (line_inliers);
+        // Set point cloud from where to extract
+        extraction_of_line.setInputCloud (working_cluster_cloud);
+
+        // Return the points which represent the inliers
+        extraction_of_line.setNegative (false);
+        // Call the extraction function
+        extraction_of_line.filter (*line_inliers_cloud);
+
+
+
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+
+
+
+
+
+
+
+
 
         // START W/ THE CURVATURE FEATURE //
 
@@ -1592,13 +1620,13 @@ exit (0);
         if ( verbose )
         {
           ROS_INFO ("  The actual number of points from the fitted line is %d !", the_actual_number_of_points_from_the_fitted_line);
-          ROS_INFO ("  Circle has %d inliers left", (int) line_inliers_cloud->points.size());
+          ROS_INFO ("  Line has %d inliers left", (int) line_inliers_cloud->points.size());
           ROS_INFO ("  %d points remain after extraction", (int) working_cluster_cloud->points.size ());
         }
 
         if ( !valid_line )
         {
-          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
+          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Line [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
                 the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], minimum_radius, maximum_radius, maximum_line_iterations);
 
           /*
@@ -1608,7 +1636,7 @@ exit (0);
         }
         else
         {
-          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
+          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Line [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
                 the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], minimum_radius, maximum_radius, maximum_line_iterations);
 
           // ------------------------------------- //
@@ -1691,8 +1719,8 @@ exit (0);
             std::stringstream line_inliers_id;
             line_inliers_id << "LINE_INLIERS_" << ros::Time::now();
  
-            // Add line model to point cloud data
-            line_viewer.addCircle (line_coefficients, line_id.str ());
+             // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id.str ());
 
             // Add the point cloud data
             line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
