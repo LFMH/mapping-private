@@ -1624,10 +1624,24 @@ int main (int argc, char** argv)
           ROS_INFO ("  %d points remain after extraction", (int) working_cluster_cloud->points.size ());
         }
 
+
+
+        // First point of line
+        double P1[2];
+        P1[0] = line_coefficients.values [0];
+        P1[1] = line_coefficients.values [1];
+
+        // Second point of line
+        double P2[2];
+        P2[0] = line_coefficients.values [3] + line_coefficients.values [0];
+        P2[1] = line_coefficients.values [4] + line_coefficients.values [1];
+
+
+
         if ( !valid_line )
         {
-          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Line [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], minimum_radius, maximum_radius, maximum_line_iterations);
+          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Line [%2d] has %3d inliers with P1 = [%6.3f,%6.3f] and P2 = [%6.3f,%6.3f] found in maximum %d iterations",
+              the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), P1[0], P1[1], P2[0], P2[1], maximum_line_iterations);
 
           /*
           // No need for fitting lines anymore
@@ -1636,25 +1650,40 @@ int main (int argc, char** argv)
         }
         else
         {
-          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Line [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), line_coefficients.values [0], line_coefficients.values [1], line_coefficients.values [2], minimum_radius, maximum_radius, maximum_line_iterations);
+          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Line [%2d] has %3d inliers with P1 = [%6.3f,%6.3f] and P2 = [%6.3f,%6.3f] found in maximum %d iterations",
+              the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), P1[0], P1[1], P2[0], P2[1], maximum_line_iterations);
 
           // ------------------------------------- //
           // Build the parameter space for lines //
           // ------------------------------------- //
 
+          // First point of line
+          double x1 = line_coefficients.values [0];
+          double y1 = line_coefficients.values [1];
+
+          // Second point of line
+          double x2 = line_coefficients.values [3] + line_coefficients.values [0];
+          double y2 = line_coefficients.values [4] + line_coefficients.values [1];
+
+          // Distance from the line to the origin
+          double num = fabs ((x2 - x1)*(y1 -  0) - (x1 -  0)*(y2 - y1));
+          double den = sqrt ((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)) ;
+          double ro = num / den;
+
+          // Angle between the line and the distance
+          double th = 0 ;
+
           // A vote consists of the actual line parameters
           PointT line_vot;
-          line_vot.x = line_coefficients.values [0]; // cx
-          line_vot.y = line_coefficients.values [1]; // cy
-          line_vot.z = line_coefficients.values [2]; // r
+          line_vot.x = ro;
+          line_vot.y = th;
 
 
 
 /*
-          double cx = line_coefficients.values.at (0);
-          double cy = line_coefficients.values.at (1);
-          double  r = line_coefficients.values.at (2);
+             double cx = line_coefficients.values.at (0);
+             double cy = line_coefficients.values.at (1);
+             double  r = line_coefficients.values.at (2);
 
           for (int idx = 0; idx < (int) line_inliers_cloud->points.size(); idx++)
           {
