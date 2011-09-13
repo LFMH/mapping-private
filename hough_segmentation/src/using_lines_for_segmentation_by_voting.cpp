@@ -41,7 +41,7 @@
 #include "pcl/filters/extract_indices.h"
 #include "pcl/filters/statistical_outlier_removal.h"
 #include "pcl/sample_consensus/method_types.h"
-#include "pcl/sample_consensus/sac_model_circle.h"
+#include "pcl/sample_consensus/sac_model_line.h"
 #include "pcl/segmentation/sac_segmentation.h"
 #include "pcl/segmentation/extract_clusters.h"
 
@@ -90,18 +90,13 @@ double line_clustering_tolerance_of_objects = 0.010; /* [meters] */
 
 // Fitting's Parameters
 double   line_threshold = 0.010; /// [meters]
-double circle_threshold = 0.010; /// [meters]
 double voting_threshold =  0.25; /// [percentage]
 double minimum_radius = 0.010; /// [meters]
 double maximum_radius = 0.100; /// [meters]
-int minimum_line_inliers   = 10; /// [points]
-int minimum_circle_inliers = 50; /// [points]
-int maximum_line_iterations   = 1000; /// [iterations]
-int maximum_circle_iterations = 1000; /// [iterations]
-double   line_clustering_tolerance = 0.010; /// [meters]
-double circle_clustering_tolerance = 0.010; /// [meters]
+int minimum_line_inliers = 10; /// [points]
+int maximum_line_iterations = 1000; /// [iterations]
+double line_clustering_tolerance = 0.010; /// [meters]
 int minimum_size_of_line_cluster = 10; /// [points]
-int minimum_size_of_circle_cluster = 10; /// [points]
 
 int normals_search_knn = 0; /// [points]
 double normals_search_radius = 0.000; /// [meters]
@@ -132,7 +127,6 @@ bool step = false;
 bool color = false;
 bool verbose = false;
 bool line_step = false;
-bool circle_step = false;
 bool line_feature_step = false;
 
 
@@ -267,16 +261,16 @@ int main (int argc, char** argv)
     ROS_INFO ("    -iterations X                                      = How many times to run the fitting routine.");
     ROS_INFO (" ");
     ROS_INFO ("    -line_threshold X                                  = threshold for line inlier selection");
-    ROS_INFO ("    -circle_threshold X                                = threshold for circle inlier selection");
+    ROS_INFO ("    -line_threshold X                                = threshold for line inlier selection");
     ROS_INFO ("    -voting_threshold X                                = threshold for Hough-based model voting");
     ROS_INFO ("    -minimum_radius X                                  = ");
     ROS_INFO ("    -maximum_radius X                                  = ");
     ROS_INFO ("    -minimum_line_inliers D                            = ");
-    ROS_INFO ("    -minimum_circle_inliers D                          = ");
+    ROS_INFO ("    -minimum_line_inliers D                          = ");
     ROS_INFO ("    -maximum_line_iterations D                         = ");
-    ROS_INFO ("    -maximum_circle_iterations D                       = ");
+    ROS_INFO ("    -maximum_line_iterations D                       = ");
     ROS_INFO ("    -line_clustering_tolerance X                       = ");
-    ROS_INFO ("    -circle_clustering_tolerance X                     = ");
+    ROS_INFO ("    -line_clustering_tolerance X                     = ");
     ROS_INFO (" ");
 
     ROS_INFO ("    -mean_k_filter X                 = ");
@@ -310,14 +304,14 @@ int main (int argc, char** argv)
 
 
     ROS_INFO ("    -line_percentage X                               = ");
-    ROS_INFO ("    -clustering_tolerance_of_circle_parameters X       = ");
-    ROS_INFO ("    -minimum_size_of_circle_parameters_clusters X      = ");
+    ROS_INFO ("    -clustering_tolerance_of_line_parameters X       = ");
+    ROS_INFO ("    -minimum_size_of_line_parameters_clusters X      = ");
 
     ROS_INFO ("    -size B                                            = ");
     ROS_INFO ("    -step B                                            = ");
     ROS_INFO ("    -verbose B                                         = ");
     ROS_INFO ("    -line_step B                                       = wait or not wait");
-    ROS_INFO ("    -circle_step B                                     = wait or not wait");
+    ROS_INFO ("    -line_step B                                     = wait or not wait");
     ROS_INFO ("    -line_feature_step B                             = wait or not wait");
     ROS_INFO (" ");
     return (-1);
@@ -347,18 +341,18 @@ int main (int argc, char** argv)
 
   // Parsing the arguments of the method
   terminal_tools::parse_argument (argc, argv,   "-line_threshold",   line_threshold);
-  terminal_tools::parse_argument (argc, argv, "-circle_threshold", circle_threshold);
+  terminal_tools::parse_argument (argc, argv, "-line_threshold", line_threshold);
   terminal_tools::parse_argument (argc, argv, "-voting_threshold", voting_threshold);
   terminal_tools::parse_argument (argc, argv, "-minimum_radius", minimum_radius);
   terminal_tools::parse_argument (argc, argv, "-maximum_radius", maximum_radius);
   terminal_tools::parse_argument (argc, argv, "-minimum_line_inliers",   minimum_line_inliers);
-  terminal_tools::parse_argument (argc, argv, "-minimum_circle_inliers", minimum_circle_inliers);
+  terminal_tools::parse_argument (argc, argv, "-minimum_line_inliers", minimum_line_inliers);
   terminal_tools::parse_argument (argc, argv, "-maximum_line_iterations",   maximum_line_iterations);
-  terminal_tools::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
+  terminal_tools::parse_argument (argc, argv, "-maximum_line_iterations", maximum_line_iterations);
   terminal_tools::parse_argument (argc, argv,   "-line_clustering_tolerance",   line_clustering_tolerance);
-  terminal_tools::parse_argument (argc, argv, "-circle_clustering_tolerance", circle_clustering_tolerance);
+  terminal_tools::parse_argument (argc, argv, "-line_clustering_tolerance", line_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_cluster", minimum_size_of_circle_cluster);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
 
   terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
@@ -389,7 +383,7 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-color", color);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
-  terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
+  terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
   terminal_tools::parse_argument (argc, argv, "-line_feature_step", line_feature_step);
 
   // --------------------------------------------------------- //
@@ -765,7 +759,7 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("RSD Estimation ! Returned: %d rsdes", (int) rsd_working_cloud->points.size ());
+    ROS_INFO ("RSD Estimation ! Returned: %d rsd values", (int) rsd_working_cloud->points.size ());
   }
 
   if ( step )
@@ -1086,8 +1080,6 @@ int main (int argc, char** argv)
 
   for (int ite = 0; ite < iterations; ite++)
   {
-    // Print current iteration number
-    ROS_INFO ("AT ITERATION = %d", ite);
 
     // Vector of lines ids
     std::vector<std::string> lines_ids;
@@ -1096,6 +1088,7 @@ int main (int argc, char** argv)
 
     for (int clu = 0; clu < (int) objects_clusters_clouds.size(); clu++)
     {
+
       int line_fit = 0;
       bool valid_line = true;
       bool stop_line_fitting = false;
@@ -1107,6 +1100,15 @@ int main (int argc, char** argv)
 
       do
       {
+
+        /// ATTENTION ! BIG SNEAKY BUG FOUND ///
+        /// ALSO POSSIBLE CONTAMINATION IN THE HOUGH SEGMENTATION WITH CIRCLES CODE ///
+        /// OR IT COULD BE THE CASE ONLY FOR LINES ///
+        bool valid_line = true;
+
+        // Print current iteration number
+        ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d", ite, clu, line_fit);
+
         // Coefficients of line model
         pcl::ModelCoefficients line_coefficients;
         // Inliers of line model
@@ -1184,6 +1186,8 @@ int main (int argc, char** argv)
         {
           if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
             // The current line model will be rejected
             valid_line = false;
           }
@@ -1221,9 +1225,9 @@ int main (int argc, char** argv)
 
             if ( verbose )
             {
-              ROS_INFO ("  Model has %d inliers clusters where", (int) line_clusters.size());
+              ROS_INFO ("  [CLUSTERING FEATURE] Model has %d inliers clusters where", (int) line_clusters.size());
               for (int c = 0; c < (int) line_clusters.size(); c++)
-                ROS_INFO ("    Cluster %d has %d points", c, (int) line_clusters.at (c).indices.size());
+                ROS_INFO ("  [CLUSTERING FEATURE]   Cluster %d has %d points", c, (int) line_clusters.at (c).indices.size());
             }
 
             pcl::PointIndices::Ptr clustering_line_inliers (new pcl::PointIndices ());
@@ -1239,7 +1243,8 @@ int main (int argc, char** argv)
             }
             else
             {
-              cerr << " REJECT current line model " << endl ;
+              ROS_ERROR ("  [CLUSTERING FEATURE] Reject line model !");
+
               // The current line model will be rejected
               valid_line = false;
             }
@@ -1324,6 +1329,8 @@ int main (int argc, char** argv)
         {
           if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
             // The current line model will be rejected
             valid_line = false;
           }
@@ -1399,6 +1406,8 @@ int main (int argc, char** argv)
         {
           if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
             // The current line model will be rejected
             valid_line = false;
           }
@@ -1482,6 +1491,8 @@ int main (int argc, char** argv)
         {
           if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
             // The current line model will be rejected
             valid_line = false;
           }
@@ -1498,27 +1509,33 @@ int main (int argc, char** argv)
               line_viewer.spin ();
             }
 
+            ROS_INFO ("  [NORMALS FEATURE] Model has now %d inliers", (int) line_inliers->indices.size());
+
             pcl::PointIndices::Ptr normals_line_inliers (new pcl::PointIndices ());
 
-            float c[2];
-            c[0] = line_coefficients.values.at (0);
-            c[1] = line_coefficients.values.at (1);
+            //float c[2];
+            //c[0] = line_coefficients.values.at (0);
+            //c[1] = line_coefficients.values.at (1);
 
             for (int inl = 0; inl < (int) line_inliers->indices.size(); inl++)
             {
               int idx = line_inliers->indices.at (inl);
 
-              float p[2];
-              p[0] = working_cluster_cloud->points.at (idx).x;
-              p[1] = working_cluster_cloud->points.at (idx).y;
+              //float p[2];
+              //p[0] = working_cluster_cloud->points.at (idx).x;
+              //p[1] = working_cluster_cloud->points.at (idx).y;
+              //
+              //float c2p[2];
+              //c2p[0] = p[0] - c[0];
+              //c2p[1] = p[1] - c[1];
+              //
+              //float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
+              //c2p[0] = c2p[0] / lc2p;
+              //c2p[1] = c2p[1] / lc2p;
 
               float c2p[2];
-              c2p[0] = p[0] - c[0];
-              c2p[1] = p[1] - c[1];
-
-              float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
-              c2p[0] = c2p[0] / lc2p;
-              c2p[1] = c2p[1] / lc2p;
+              c2p[0] = line_coefficients.values.at (3);
+              c2p[1] = line_coefficients.values.at (4);
 
               float np[2];
               np[0] = working_cluster_cloud->points.at (idx).normal_x;
@@ -1531,11 +1548,26 @@ int main (int argc, char** argv)
               float dot = c2p[0]*np[0] + c2p[1]*np[1];
               float ang = acos (dot) * 180.0 / M_PI;
 
-              if ( ((180.0 - angle_threshold) < ang) || (ang < angle_threshold) )
+              //cerr <<  angle_threshold << endl ;
+
+              if ( ((90.0 - angle_threshold) < ang) && (ang < (90.0 + angle_threshold)) )
               {
+                //cerr << ang << " ! " << inl << " -> " << idx << endl;
+                //line_viewer.spin ();
+ 
                 // Save the right indices of points
                 normals_line_inliers->indices.push_back (idx);
               }
+            }
+
+            ROS_INFO ("  [NORMALS FEATURE] Model has %d inliers left", (int) normals_line_inliers->indices.size());
+
+            if ( normals_line_inliers->indices.size() == 0 )
+            {
+              ROS_ERROR ("  [NORMALS FEATURE] Reject line model !");
+
+              // The current line model will be rejected
+              valid_line = false;
             }
 
             // ---------------------------- //
@@ -1585,6 +1617,8 @@ int main (int argc, char** argv)
         {
           if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
             // The current line model will be rejected
             valid_line = false;
           }
@@ -1645,6 +1679,15 @@ int main (int argc, char** argv)
         P2[0] = line_coefficients.values [3] + line_coefficients.values [0];
         P2[1] = line_coefficients.values [4] + line_coefficients.values [1];
 
+        // FINAL CHECK BEFORE ACCEPTING/REJECTING MODEL //
+        // NOT SURE IF REALLY NECESSARY, BUT FOR SURE IT IS BETTER TO BE SAFE THAN SORRY //
+        if ( (int) line_inliers->indices.size() < minimum_line_inliers )
+        {
+          ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+          // The current line model will be rejected
+          valid_line = false;
+        }
 
 
         if ( !valid_line )
@@ -1733,8 +1776,8 @@ int main (int argc, char** argv)
           pcl::PointXYZINormal line_vote;
           line_vote.x = (P1[0] + P2[0]) / 2;
           line_vote.y = (P1[1] + P2[1]) / 2;
-          line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) ) / 2;
-          //line_vote.z = 0.0;
+          //line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) ) / 2;
+          line_vote.z = 0.0;
 
           line_vote.intensity = x1;
           line_vote.normal_x = y1;
@@ -1798,9 +1841,6 @@ int main (int argc, char** argv)
           //          stop_line_fitting = true;
         }
 
-        // Print current iteration number
-        ROS_INFO ("AT ITERATION = %d", ite);
-
         // number of fitted lines
         line_fit++;
 
@@ -1843,6 +1883,11 @@ int main (int argc, char** argv)
     }
   }
 
+
+
+
+
+/// JUST FOR SAVING TIME IF WORKING W/ THE SAME PARAMETERS SPACE OVER AND OVER AGAIN ///
 
 
 
