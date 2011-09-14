@@ -1883,8 +1883,8 @@ int main (int argc, char** argv)
           pcl::PointXYZINormal line_vote;
           line_vote.x = (P1[0] + P2[0]) / 2;
           line_vote.y = (P1[1] + P2[1]) / 2;
-          //line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) ) / 2;
-          line_vote.z = 0.0;
+          line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) );
+          //line_vote.z = 0.0;
 
           line_vote.intensity = x1;
           line_vote.normal_x = y1;
@@ -1996,7 +1996,7 @@ int main (int argc, char** argv)
 
 /// JUST FOR SAVING TIME IF WORKING W/ THE SAME PARAMETERS SPACE OVER AND OVER AGAIN ///
 
-
+/// NOT IMPLEMENTED YET ///
 
 
   // -------------------------------------------------------------- //
