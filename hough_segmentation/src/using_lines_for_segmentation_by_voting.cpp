@@ -1098,6 +1098,22 @@ int main (int argc, char** argv)
       // Update the working cluster cloud 
       *working_cluster_cloud = *objects_clusters_clouds.at (clu);
 
+/*
+
+      /// FIT LINE MODELS ONLY IN THE XY INFO OF THE CLOUD ///
+      /// EXPERIMENTAL, BTW ///
+
+      pcl::PointCloud<PointT>::Ptr flattened_working_cluster_cloud (new pcl::PointCloud<PointT> ());
+      *flattened_working_cluster_cloud = *objects_clusters_clouds.at (clu);
+
+      for (unsigned int idx = 0; idx < flattened_working_cluster_cloud->points.size (); idx++)
+        flattened_working_cluster_cloud->points.at (idx).z = 0.0;
+
+      /// FIT LINE MODELS ONLY IN THE XY INFO OF THE CLOUD ///
+      /// EXPERIMENTAL, BTW ///
+
+*/
+
       do
       {
 
@@ -1108,6 +1124,7 @@ int main (int argc, char** argv)
 
         // Print current iteration number
         ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d", ite, clu, line_fit);
+//        ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d AT %3.0g [s]", ite, clu, line_fit, tt.toc ());
 
         // Coefficients of line model
         pcl::ModelCoefficients line_coefficients;
@@ -1136,13 +1153,47 @@ int main (int argc, char** argv)
         // Call the segmenting method
         segmentation_of_line.segment (*line_inliers, line_coefficients);
 
+/*
 
+            // Create ID for line model
+            std::stringstream line_id_original;
+            line_id_original << "LINE_" << ros::Time::now();
 
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_original.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_original.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
 
         // Adjust inliers of line model 
         adjustLineInliers (working_cluster_cloud, line_inliers, line_coefficients, line_threshold);
 
+/*
+            // Create ID for line model
+            std::stringstream line_id_adjust_inliers;
+            line_id_adjust_inliers << "LINE_" << ros::Time::now();
 
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_adjust_inliers.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_adjust_inliers.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
 
         // ------------------------ //
         // Start extraction process //
@@ -1165,13 +1216,28 @@ int main (int argc, char** argv)
 
 
 
-
         // Adjust the coefficients of the line model
         adjustLineCoefficients (line_inliers_cloud, line_coefficients);
 
+/*
 
+            // Create ID for line model
+            std::stringstream line_id_adjust_coeffs;
+            line_id_adjust_coeffs << "LINE_" << ros::Time::now();
 
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_adjust_coeffs.str ());
 
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_adjust_coeffs.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
 
         // WARNING //
 
@@ -1293,7 +1359,6 @@ int main (int argc, char** argv)
 
 
 
-
         // ------------------------- //
         // Update extraction process //
         // ------------------------- //
@@ -1310,18 +1375,29 @@ int main (int argc, char** argv)
 
 
 
-
         // Adjust the coefficients of the line model
         adjustLineCoefficients (line_inliers_cloud, line_coefficients);
 
 
+/*
 
+           // Create ID for line model
+            std::stringstream line_id_after_clustering;
+            line_id_after_clustering << "LINE_" << ros::Time::now();
 
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_after_clustering.str ());
 
+            // And wait until Q key is pressed
+            line_viewer.spin ();
 
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_after_clustering.str ());
 
+            // And wait until Q key is pressed
+            line_viewer.spin ();
 
-
+*/
 
         // START W/ THE CURVATURE FEATURE //
 
@@ -1605,6 +1681,37 @@ int main (int argc, char** argv)
             *line_inliers_cloud = *normals_line_inliers_cloud;
           }
         }
+
+
+
+
+/*
+
+        // ------------------------- //
+        // Update extraction process //
+        // ------------------------- //
+
+        // Set which indices to extract
+        extraction_of_line.setIndices (line_inliers);
+        // Set point cloud from where to extract
+        extraction_of_line.setInputCloud (working_cluster_cloud);
+
+        // Return the points which represent the inliers
+        extraction_of_line.setNegative (false);
+        // Call the extraction function
+        extraction_of_line.filter (*line_inliers_cloud);
+
+
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+*/
+
+
+
+
+
 
 
 
