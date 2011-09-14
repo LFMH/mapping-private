@@ -1073,7 +1073,7 @@ int main (int argc, char** argv)
   // ---------------------- //
 
   // Space of parameters for fitted line models
-  pcl::PointCloud<pcl::PointXYZINormal>::Ptr line_parameters_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+  pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_cloud (new pcl::PointCloud<pcl::PointNormal> ());
 
   // Space of parameters for fitted line models, more or less, the data on how to reconstruct the model
   pcl::PointCloud<pcl::Histogram<6> >::Ptr line_parameters_cloud_histogram (new pcl::PointCloud<pcl::Histogram<6> > ());
@@ -1120,7 +1120,7 @@ int main (int argc, char** argv)
         /// ATTENTION ! BIG SNEAKY BUG FOUND ///
         /// ALSO POSSIBLE CONTAMINATION IN THE HOUGH SEGMENTATION WITH CIRCLES CODE ///
         /// OR IT COULD BE THE CASE ONLY FOR LINES ///
-        bool valid_line = true;
+        valid_line = true;
 
         // Print current iteration number
         ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d", ite, clu, line_fit);
@@ -1880,24 +1880,23 @@ int main (int argc, char** argv)
 */
 
           // A vote consists of polar coordinates
-          pcl::PointXYZINormal line_vote;
+          pcl::PointNormal line_vote;
           line_vote.x = (P1[0] + P2[0]) / 2;
           line_vote.y = (P1[1] + P2[1]) / 2;
           line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) );
           //line_vote.z = 0.0;
 
-          line_vote.intensity = x1;
-          line_vote.normal_x = y1;
-          line_vote.normal_y = x2;
-          line_vote.normal_z = y2;
+          line_vote.normal_x  = x1;
+          line_vote.normal_y  = y1;
+          line_vote.normal_z  = x2;
+          line_vote.curvature = y2;
 
           // Cast one vot for the current line
           line_parameters_cloud->points.push_back (line_vote);
 
+/*
 
-
-
-          pcl::Histogram<6> data_of_model;
+             pcl::Histogram<6> data_of_model;
 
              data_of_model.histogram[0] = x1;
              data_of_model.histogram[1] = y1;
@@ -1910,6 +1909,7 @@ int main (int argc, char** argv)
           // Cast one vot for the current line, you know what !
           line_parameters_cloud_histogram->points.push_back (data_of_model);
 
+*/
 
           // --------------------------- //
           // Start visualization process //
@@ -2021,9 +2021,9 @@ int main (int argc, char** argv)
   }
 
   std::vector<pcl::PointIndices> line_parameters_clusters;
-  pcl::KdTreeFLANN<pcl::PointXYZINormal>::Ptr line_parameters_clusters_tree (new pcl::KdTreeFLANN<pcl::PointXYZINormal> ());
+  pcl::KdTreeFLANN<pcl::PointNormal>::Ptr line_parameters_clusters_tree (new pcl::KdTreeFLANN<pcl::PointNormal> ());
 
-  pcl::EuclideanClusterExtraction<pcl::PointXYZINormal> line_parameters_extraction_of_clusters;
+  pcl::EuclideanClusterExtraction<pcl::PointNormal> line_parameters_extraction_of_clusters;
   line_parameters_extraction_of_clusters.setInputCloud (line_parameters_cloud);
   line_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_line_parameters);
   line_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_line_parameters_clusters);
@@ -2038,14 +2038,14 @@ int main (int argc, char** argv)
   }
 
   std::vector<pcl::PointIndices::Ptr> line_parameters_clusters_indices;
-  std::vector<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> line_parameters_clusters_clouds;
+  std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> line_parameters_clusters_clouds;
 
   for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
   {
     pcl::PointIndices::Ptr  cluster_indices (new pcl::PointIndices (line_parameters_clusters.at (clu)));
-    pcl::PointCloud<pcl::PointXYZINormal>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointXYZINormal> ());
+    pcl::PointCloud<pcl::PointNormal>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointNormal> ());
 
-    pcl::ExtractIndices<pcl::PointXYZINormal> line_parameters_extraction_of_indices;
+    pcl::ExtractIndices<pcl::PointNormal> line_parameters_extraction_of_indices;
     line_parameters_extraction_of_indices.setInputCloud (line_parameters_cloud);
     line_parameters_extraction_of_indices.setIndices (cluster_indices);
     line_parameters_extraction_of_indices.setNegative (false);
@@ -2097,10 +2097,10 @@ int main (int argc, char** argv)
       sum_of_ym = sum_of_ym + ym;
       sum_of_le = sum_of_le + le;
 
-      float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).intensity;
-      float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
-      float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
-      float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
+      float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
+      float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
+      float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
+      float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).curvature;
 
       sum_of_x1 = sum_of_x1 + x1;
       sum_of_y1 = sum_of_y1 + y1;
