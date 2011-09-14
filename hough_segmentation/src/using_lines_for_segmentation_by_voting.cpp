@@ -1881,8 +1881,10 @@ int main (int argc, char** argv)
 
           // A vote consists of polar coordinates
           pcl::PointNormal line_vote;
-          line_vote.x = (P1[0] + P2[0]) / 2;
-          line_vote.y = (P1[1] + P2[1]) / 2;
+//          line_vote.x = (P1[0] + P2[0]) / 2;
+//          line_vote.y = (P1[1] + P2[1]) / 2;
+          line_vote.x = (x1 + x2) / 2;
+          line_vote.y = (y1 + y2) / 2;
           line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) );
           //line_vote.z = 0.0;
 
@@ -2065,6 +2067,188 @@ int main (int argc, char** argv)
     line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 20, cluster_id.str()); 
     line_viewer.spin ();
 
+
+
+
+
+
+
+
+
+
+
+
+
+    float sxm = 0.0;
+    float sym = 0.0;
+    float  sl = 0.0;
+
+    float sx1 = 0.0;
+    float sy1 = 0.0;
+    float sx2 = 0.0;
+    float sy2 = 0.0;
+
+    int votes = line_parameters_clusters_clouds.at (clu)->points.size();
+
+    for (int vot = 0; vot < votes; vot++)
+    {
+      float xm = line_parameters_clusters_clouds.at (clu)->points.at (vot).x;
+      float ym = line_parameters_clusters_clouds.at (clu)->points.at (vot).y;
+      float  l = line_parameters_clusters_clouds.at (clu)->points.at (vot).z;
+
+      float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
+      float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
+      float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
+      float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).curvature;
+
+      sxm = sxm + xm;
+      sym = sym + ym;
+       sl =  sl +  l;
+
+      sx1 = sx1 + x1;
+      sy1 = sy1 + y1;
+      sx2 = sx2 + x2;
+      sy2 = sy2 + y2;
+    }
+
+    float mxm = sxm / votes;
+    float mym = sym / votes;
+    float  ml =  sl / votes;
+
+    float mx1 = sx1 / votes;
+    float my1 = sy1 / votes;
+    float mx2 = sx2 / votes;
+    float my2 = sy2 / votes;
+
+
+
+
+
+
+
+/*
+
+
+
+    pcl::ModelCoefficients M2P1;
+    M2P1.values.push_back (mxm);
+    M2P1.values.push_back (mym);
+    M2P1.values.push_back (0.0);
+    M2P1.values.push_back (mx1 - mxm);
+    M2P1.values.push_back (my1 - mym);
+    M2P1.values.push_back (0.0);
+
+    std::stringstream M2P1_id;
+    M2P1_id << "M2P1_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P1, M2P1_id.str ());
+
+
+
+
+
+    pcl::ModelCoefficients M2P2;
+    M2P2.values.push_back (mxm);
+    M2P2.values.push_back (mym);
+    M2P2.values.push_back (0.0);
+    M2P2.values.push_back (mx2 - mxm);
+    M2P2.values.push_back (my2 - mym);
+    M2P2.values.push_back (0.0);
+
+    std::stringstream M2P2_id;
+    M2P2_id << "M2P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P2, M2P2_id.str ());
+
+
+
+
+
+*/
+
+/*
+
+    pcl::ModelCoefficients P1P2;
+    P1P2.values.push_back (mx1);
+    P1P2.values.push_back (my1);
+    P1P2.values.push_back (0.0);
+    P1P2.values.push_back (mx2 - mx1);
+    P1P2.values.push_back (my2 - my1);
+    P1P2.values.push_back (0.0);
+
+    std::stringstream P1P2_id;
+    P1P2_id << "P1P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (P1P2, P1P2_id.str ());
+
+*/
+
+
+
+
+    double vec[2];
+    vec[0] = mx2 - mx1;
+    vec[1] = my2 - my1;
+
+    double nor = sqrt ( _sqr (vec[0]) + _sqr (vec[1]) );
+    vec[0] = vec[0] / nor;
+    vec[1] = vec[1] / nor;
+
+    double A[2];
+    A[0] = mxm + vec[0] * ml / 2;
+    A[1] = mym + vec[1] * ml / 2;
+
+    double B[2];
+    B[0] = mxm - vec[0] * ml / 2;
+    B[1] = mym - vec[1] * ml / 2;
+
+    pcl::ModelCoefficients AB;
+    AB.values.push_back (A[0]);
+    AB.values.push_back (A[1]);
+    AB.values.push_back (0.0);
+    AB.values.push_back (B[0] - A[0]);
+    AB.values.push_back (B[1] - A[1]);
+    AB.values.push_back (0.0);
+
+    std::stringstream AB_id;
+    AB_id << "AB_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (AB, AB_id.str ());
+
+
+
+
+    cerr << ml << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (B[0] - A[0]) + _sqr (B[1] - A[1]) ) << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (mx2 - mx1) + _sqr (my2 - my1) ) << " meters ! " << endl;
+
+    cerr << " Model for LPS cluster " << clu << " ! " << endl ;
+
+    line_viewer.spin ();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     line_parameters_clusters_ids.push_back (cluster_id.str());
   }
 
@@ -2076,14 +2260,14 @@ int main (int argc, char** argv)
 
   for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
   {
-    float sum_of_xm = 0.0;
-    float sum_of_ym = 0.0;
-    float sum_of_le = 0.0;
+    float sxm = 0.0;
+    float sym = 0.0;
+    float  sl = 0.0;
 
-    float sum_of_x1 = 0.0;
-    float sum_of_y1 = 0.0;
-    float sum_of_x2 = 0.0;
-    float sum_of_y2 = 0.0;
+    float sx1 = 0.0;
+    float sy1 = 0.0;
+    float sx2 = 0.0;
+    float sy2 = 0.0;
 
     int votes = line_parameters_clusters_clouds.at (clu)->points.size();
 
@@ -2091,58 +2275,100 @@ int main (int argc, char** argv)
     {
       float xm = line_parameters_clusters_clouds.at (clu)->points.at (vot).x;
       float ym = line_parameters_clusters_clouds.at (clu)->points.at (vot).y;
-      float le = line_parameters_clusters_clouds.at (clu)->points.at (vot).z;
-
-      sum_of_xm = sum_of_xm + xm;
-      sum_of_ym = sum_of_ym + ym;
-      sum_of_le = sum_of_le + le;
+      float  l = line_parameters_clusters_clouds.at (clu)->points.at (vot).z;
 
       float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
       float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
       float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
       float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).curvature;
 
-      sum_of_x1 = sum_of_x1 + x1;
-      sum_of_y1 = sum_of_y1 + y1;
-      sum_of_x2 = sum_of_x2 + x2;
-      sum_of_y2 = sum_of_y2 + y2;
+      sxm = sxm + xm;
+      sym = sym + ym;
+       sl =  sl +  l;
+
+      sx1 = sx1 + x1;
+      sy1 = sy1 + y1;
+      sx2 = sx2 + x2;
+      sy2 = sy2 + y2;
     }
 
-    float mean_of_xm = sum_of_xm / votes;
-    float mean_of_ym = sum_of_ym / votes;
-    float mean_of_le = sum_of_le / votes;
+    float mxm = sxm / votes;
+    float mym = sym / votes;
+    float  ml =  sl / votes;
 
-    float mean_of_x1 = sum_of_x1 / votes;
-    float mean_of_y1 = sum_of_y1 / votes;
-    float mean_of_x2 = sum_of_x2 / votes;
-    float mean_of_y2 = sum_of_y2 / votes;
+    float mx1 = sx1 / votes;
+    float my1 = sy1 / votes;
+    float mx2 = sx2 / votes;
+    float my2 = sy2 / votes;
 
-    double v[2];
-    v[0] = mean_of_x2 - mean_of_x1;
-    v[1] = mean_of_y2 - mean_of_y1;
 
-    double fx1 = mean_of_xm + mean_of_le*v[0];
-    double fy1 = mean_of_ym + mean_of_le*v[1];
-    double fx2 = mean_of_xm - mean_of_le*v[0];
-    double fy2 = mean_of_ym - mean_of_le*v[1];
 
-    pcl::ModelCoefficients aprox_line;
-    aprox_line.values.push_back (fx1);
-    aprox_line.values.push_back (fy1);
-    aprox_line.values.push_back (0);
-    aprox_line.values.push_back (fx2 - fx1);
-    aprox_line.values.push_back (fy2 - fy1);
-    aprox_line.values.push_back (0);
 
-    std::stringstream aprox_line_id;
-    aprox_line_id << "aprox_LINE_" << ros::Time::now();
 
-    std::stringstream aprox_line_inliers_id;
-    aprox_line_inliers_id << "aprox_LINE_INLIERS_" << ros::Time::now();
 
-    line_viewer.addLine (aprox_line, aprox_line_id.str ());
 
-    cerr << " Print Line " << clu << " ! " << endl ;
+/*
+
+
+
+    pcl::ModelCoefficients M2P1;
+    M2P1.values.push_back (mxm);
+    M2P1.values.push_back (mym);
+    M2P1.values.push_back (0.0);
+    M2P1.values.push_back (mx1 - mxm);
+    M2P1.values.push_back (my1 - mym);
+    M2P1.values.push_back (0.0);
+
+    std::stringstream M2P1_id;
+    M2P1_id << "M2P1_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P1, M2P1_id.str ());
+
+
+
+
+
+    pcl::ModelCoefficients M2P2;
+    M2P2.values.push_back (mxm);
+    M2P2.values.push_back (mym);
+    M2P2.values.push_back (0.0);
+    M2P2.values.push_back (mx2 - mxm);
+    M2P2.values.push_back (my2 - mym);
+    M2P2.values.push_back (0.0);
+
+    std::stringstream M2P2_id;
+    M2P2_id << "M2P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P2, M2P2_id.str ());
+
+
+
+
+
+*/
+
+
+    pcl::ModelCoefficients P1P2;
+    P1P2.values.push_back (mx1);
+    P1P2.values.push_back (my1);
+    P1P2.values.push_back (0.0);
+    P1P2.values.push_back (mx2 - mx1);
+    P1P2.values.push_back (my2 - my1);
+    P1P2.values.push_back (0.0);
+
+    std::stringstream P1P2_id;
+    P1P2_id << "P1P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (P1P2, P1P2_id.str ());
+
+
+
+
+    cerr << ml << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (mx2 - mx1) + _sqr (my2 - my1) ) << " meters ! " << endl;
+
+    cerr << " Model for LPS cluster " << clu << " ! " << endl ;
 
     line_viewer.spin ();
     line_viewer.spin ();
