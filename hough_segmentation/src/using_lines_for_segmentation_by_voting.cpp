@@ -27,6 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include "flann/flann.h"
+
+
+
 // ------------------------------------------------------------------------- //
 // -------------------- Specify all needed dependencies -------------------- //
 // ------------------------------------------------------------------------- //
@@ -1073,10 +1078,10 @@ int main (int argc, char** argv)
   // ---------------------- //
 
   // Space of parameters for fitted line models
-  pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_cloud (new pcl::PointCloud<pcl::PointNormal> ());
+  pcl::PointCloud<pcl::Histogram<4> >::Ptr line_parameters_cloud (new pcl::PointCloud<pcl::Histogram<4> > ());
 
   // Space of parameters for fitted line models, more or less, the data on how to reconstruct the model
-  pcl::PointCloud<pcl::Histogram<6> >::Ptr line_parameters_cloud_histogram (new pcl::PointCloud<pcl::Histogram<6> > ());
+  pcl::PointCloud<pcl::Histogram<4> >::Ptr line_parameters_cloud_histogram (new pcl::PointCloud<pcl::Histogram<4> > ());
 
   for (int ite = 0; ite < iterations; ite++)
   {
@@ -1879,8 +1884,11 @@ int main (int argc, char** argv)
 
 */
 
+
+/*
+
           // A vote consists of polar coordinates
-          pcl::PointNormal line_vote;
+          pcl::Histogram<4> line_vote;
 //          line_vote.x = (P1[0] + P2[0]) / 2;
 //          line_vote.y = (P1[1] + P2[1]) / 2;
           line_vote.x = (x1 + x2) / 2;
@@ -1896,22 +1904,19 @@ int main (int argc, char** argv)
           // Cast one vot for the current line
           line_parameters_cloud->points.push_back (line_vote);
 
-/*
+*/
 
-             pcl::Histogram<6> data_of_model;
+             pcl::Histogram<4> data_of_model;
 
              data_of_model.histogram[0] = x1;
              data_of_model.histogram[1] = y1;
              data_of_model.histogram[2] = x2;
              data_of_model.histogram[3] = y2;
-             data_of_model.histogram[4] = x2 - x1;
-             data_of_model.histogram[5] = y2 - y1;
-
 
           // Cast one vot for the current line, you know what !
-          line_parameters_cloud_histogram->points.push_back (data_of_model);
+          line_parameters_cloud->points.push_back (data_of_model);
 
-*/
+
 
           // --------------------------- //
           // Start visualization process //
@@ -1996,6 +2001,79 @@ int main (int argc, char** argv)
 
 
 
+  int rows = line_parameters_cloud->points.size ();
+  int cols = 4;
+  int i, j;
+
+
+
+
+  flann::Matrix<float> dataset;
+
+  dataset = flann::Matrix <float> (new float[rows*cols], rows, cols);
+
+  for (i=0;i<rows;++i) 
+  {
+    for (j=0;j<cols;++j) 
+    {
+      *dataset.data = line_parameters_cloud->points.at (i).histogram[j];
+      dataset.data++;
+    }
+  }
+
+  flann::Matrix<float> query;
+
+  i = 64;
+
+  for (j=0;j<cols;++j) 
+  {
+    *query.data = line_parameters_cloud->points.at (i).histogram[j];
+    query.data++;
+  }
+
+
+  int nn = 5;
+
+  flann::Matrix <int> indices (new int[query.rows * nn], query.rows, nn);
+  flann::Matrix <float> dists (new float[query.rows * nn], query.rows, nn);
+
+  flann::Index<flann::L2<float> > index( dataset, flann::KDTreeIndexParams(4));
+
+  index.buildIndex();
+
+  index.knnSearch (query, indices, dists, nn, flann::SearchParams(128));
+
+  cerr << dists.data << endl; 
+
+  cerr << dists.data [0] << endl; 
+  cerr << dists.data [1] << endl; 
+  cerr << dists.data [2] << endl; 
+  cerr << dists.data [3] << endl; 
+  cerr << dists.data [4] << endl; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /// JUST FOR SAVING TIME IF WORKING W/ THE SAME PARAMETERS SPACE OVER AND OVER AGAIN ///
 
 /// NOT IMPLEMENTED YET ///
@@ -2006,26 +2084,31 @@ int main (int argc, char** argv)
   // -------------------------------------------------------------- //
 
 
-
+/*
   std::stringstream line_parameters_id;
   line_parameters_id << "LINE_PARAMETERS_" << ros::Time::now();
   line_viewer.addPointCloud (*line_parameters_cloud, line_parameters_id.str ());
   line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 10, line_parameters_id.str ()); 
   line_viewer.spin ();
+*/
 
+/*
   std::string line_parameters_filename = argv [pFileIndicesPCD [0]];
   line_parameters_filename.insert (fullstop, "-lines");
   pcl::io::savePCDFile (line_parameters_filename, *line_parameters_cloud);
+*/
 
+/*
+ *
   if ( verbose )
   {
     ROS_INFO ("The parameters space of line models has %d votes !", (int) line_parameters_cloud->points.size ());
   }
 
   std::vector<pcl::PointIndices> line_parameters_clusters;
-  pcl::KdTreeFLANN<pcl::PointNormal>::Ptr line_parameters_clusters_tree (new pcl::KdTreeFLANN<pcl::PointNormal> ());
+  pcl::KdTreeFLANN<pcl::Histogram<4> >::Ptr line_parameters_clusters_tree (new pcl::KdTreeFLANN<pcl::Histogram<4> > ());
 
-  pcl::EuclideanClusterExtraction<pcl::PointNormal> line_parameters_extraction_of_clusters;
+  pcl::EuclideanClusterExtraction<pcl::Histogram<4> > line_parameters_extraction_of_clusters;
   line_parameters_extraction_of_clusters.setInputCloud (line_parameters_cloud);
   line_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_line_parameters);
   line_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_line_parameters_clusters);
@@ -2040,14 +2123,14 @@ int main (int argc, char** argv)
   }
 
   std::vector<pcl::PointIndices::Ptr> line_parameters_clusters_indices;
-  std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> line_parameters_clusters_clouds;
+  std::vector<pcl::PointCloud<pcl::Histogram<4> >::Ptr> line_parameters_clusters_clouds;
 
   for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
   {
     pcl::PointIndices::Ptr  cluster_indices (new pcl::PointIndices (line_parameters_clusters.at (clu)));
-    pcl::PointCloud<pcl::PointNormal>::Ptr cluster_cloud (new pcl::PointCloud<pcl::PointNormal> ());
+    pcl::PointCloud<pcl::Histogram<4> >::Ptr cluster_cloud (new pcl::PointCloud<pcl::Histogram<4> > ());
 
-    pcl::ExtractIndices<pcl::PointNormal> line_parameters_extraction_of_indices;
+    pcl::ExtractIndices<pcl::Histogram<4> > line_parameters_extraction_of_indices;
     line_parameters_extraction_of_indices.setInputCloud (line_parameters_cloud);
     line_parameters_extraction_of_indices.setIndices (cluster_indices);
     line_parameters_extraction_of_indices.setNegative (false);
@@ -2056,16 +2139,21 @@ int main (int argc, char** argv)
     line_parameters_clusters_indices.push_back (cluster_indices);
     line_parameters_clusters_clouds.push_back (cluster_cloud);
   }
+*/
 
-  std::vector<std::string> line_parameters_clusters_ids;
+  //std::vector<std::string> line_parameters_clusters_ids;
 
-  for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
-  {
+  //for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
+  //{
+
+
+    /*
     std::stringstream cluster_id;
     cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
     line_viewer.addPointCloud (*line_parameters_clusters_clouds.at (clu), cluster_id.str());
     line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 20, cluster_id.str()); 
     line_viewer.spin ();
+*/
 
 
 
@@ -2075,8 +2163,7 @@ int main (int argc, char** argv)
 
 
 
-
-
+/*
 
 
     float sxm = 0.0;
@@ -2122,7 +2209,7 @@ int main (int argc, char** argv)
 
 
 
-
+*/
 
 
 
@@ -2184,7 +2271,7 @@ int main (int argc, char** argv)
 */
 
 
-
+/*
 
     double vec[2];
     vec[0] = mx2 - mx1;
@@ -2229,6 +2316,7 @@ int main (int argc, char** argv)
     line_viewer.spin ();
 
 
+*/
 
 
 
@@ -2247,16 +2335,21 @@ int main (int argc, char** argv)
 
 
 
-
-
+/*
     line_parameters_clusters_ids.push_back (cluster_id.str());
-  }
+*/
+
+
+  //}
 
   cerr << " Finished w/ printing the clusters of parameters space ! " << endl ;
 
   line_viewer.spin ();
   line_viewer.spin ();
   line_viewer.spin ();
+
+
+/*
 
   for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
   {
@@ -2303,7 +2396,7 @@ int main (int argc, char** argv)
 
 
 
-
+*/
 
 
 
@@ -2348,6 +2441,10 @@ int main (int argc, char** argv)
 */
 
 
+
+
+/*
+ *
     pcl::ModelCoefficients P1P2;
     P1P2.values.push_back (mx1);
     P1P2.values.push_back (my1);
@@ -2376,7 +2473,7 @@ int main (int argc, char** argv)
 
   }
 
-
+*/
 
   exit (0);
 
