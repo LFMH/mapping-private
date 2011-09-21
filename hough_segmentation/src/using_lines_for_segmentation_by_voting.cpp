@@ -27,6 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include "flann/flann.h"
+
+
+
 // ------------------------------------------------------------------------- //
 // -------------------- Specify all needed dependencies -------------------- //
 // ------------------------------------------------------------------------- //
@@ -41,7 +46,7 @@
 #include "pcl/filters/extract_indices.h"
 #include "pcl/filters/statistical_outlier_removal.h"
 #include "pcl/sample_consensus/method_types.h"
-#include "pcl/sample_consensus/sac_model_circle.h"
+#include "pcl/sample_consensus/sac_model_line.h"
 #include "pcl/segmentation/sac_segmentation.h"
 #include "pcl/segmentation/extract_clusters.h"
 
@@ -53,6 +58,7 @@
 // -------------------- Declare defs of types -------------------- //
 // --------------------------------------------------------------- //
 
+typedef pcl::PointXYZRGB Point;
 typedef pcl::PointXYZINormal PointT;
 typedef pcl::PointXYZINormalRSD PointTrsd;
 
@@ -63,10 +69,10 @@ typedef pcl::PointXYZINormalRSD PointTrsd;
 struct shape
 {
   std::string type;
-  pcl::ModelCoefficients::Ptr coefficients;
-  pcl::PointIndices::Ptr indices;
-  pcl::PointCloud<PointT>::Ptr inliers;
-  pcl::PointCloud<PointT>::Ptr cluster;
+  pcl::ModelCoefficients coefficients;
+  pcl::PointIndices inliers;
+  pcl::PointCloud<PointT> points;
+  pcl::PointCloud<PointT> cluster;
 };
 
 // --------------------------------------------------------------------- //
@@ -76,7 +82,9 @@ struct shape
 int iterations = 100; 
 
 int mean_k_filter = 25; /* [points] */
-int std_dev_filter = 1.0; 
+int std_dev_filter = 1.0;
+int line_mean_k_filter = 25; /* [points] */
+int line_std_dev_filter = 1.0; 
 
 // Clustering's Parameters
 int minimum_size_of_objects_clusters = 100; /* [points] */
@@ -87,18 +95,13 @@ double line_clustering_tolerance_of_objects = 0.010; /* [meters] */
 
 // Fitting's Parameters
 double   line_threshold = 0.010; /// [meters]
-double circle_threshold = 0.010; /// [meters]
 double voting_threshold =  0.25; /// [percentage]
 double minimum_radius = 0.010; /// [meters]
 double maximum_radius = 0.100; /// [meters]
-int minimum_line_inliers   = 10; /// [points]
-int minimum_circle_inliers = 50; /// [points]
-int maximum_line_iterations   = 1000; /// [iterations]
-int maximum_circle_iterations = 1000; /// [iterations]
-double   line_clustering_tolerance = 0.010; /// [meters]
-double circle_clustering_tolerance = 0.010; /// [meters]
+int minimum_line_inliers = 10; /// [points]
+int maximum_line_iterations = 1000; /// [iterations]
+double line_clustering_tolerance = 0.010; /// [meters]
 int minimum_size_of_line_cluster = 10; /// [points]
-int minimum_size_of_circle_cluster = 10; /// [points]
 
 int normals_search_knn = 0; /// [points]
 double normals_search_radius = 0.000; /// [meters]
@@ -116,17 +119,20 @@ bool rsd_feature = true;
 bool normals_feature = true;
 bool percentage_feature = true;
 
-double circle_percentage = 50;
-double clustering_tolerance_of_circle_parameters = 0.025;
-double minimum_size_of_circle_parameters_clusters = 50;
+double line_percentage = 50;
+double clustering_tolerance_of_line_parameters = 0.025;
+double minimum_size_of_line_parameters_clusters = 50;
+
+double height = 0.010;
+double epsilon = 0.010;
 
 // Visualization's Parameters
 int size = 3;
 bool step = false;
+bool color = false;
 bool verbose = false;
 bool line_step = false;
-bool circle_step = false;
-bool circle_feature_step = false;
+bool line_feature_step = false;
 
 
 
@@ -139,11 +145,52 @@ ofstream textfile;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Computes line's inliers with regards to xOy plane
+ * \param cloud The point cloud of the working cluster
+ * \param inliers The inliers of the line model
+ * \param coefficients The line's parameters where the first triplete is a point on the line and the second triplete is the direction
+ */
+void adjustLineInliers (pcl::PointCloud<PointT>::Ptr &cloud, pcl::PointIndices::Ptr &inliers, pcl::ModelCoefficients &coefficients, double threshold)
+{
+
+  // First point of line
+  double P1[2];
+  P1[0] = coefficients.values [0];
+  P1[1] = coefficients.values [1];
+
+  // Second point of line
+  double P2[2];
+  P2[0] = coefficients.values [3] + coefficients.values [0];
+  P2[1] = coefficients.values [4] + coefficients.values [1];
+
+  // Set-up of variables
+  double x1 = P1[0];
+  double y1 = P1[1];
+  double x2 = P2[0];
+  double y2 = P2[1];
+
+  for (unsigned int idx = 0; idx < cloud->points.size (); idx++)
+  {
+    double x0 =  cloud->points.at (idx).x;
+    double y0 =  cloud->points.at (idx).y;
+
+    double d = fabs( (x2-x1)*(y1-y0) - (x1-x0)*(y2-y1) ) / sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );    
+    
+    if ( fabs(d) < threshold ) 
+      inliers->indices.push_back (idx);
+  }
+
+  return;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Computes line's coefficients with regards to its inliers
  * \param inliers_cloud The point cloud of the line's inliers
  * \param coefficients The line's parameters where the first triplete is a point on the line and the second triplete is the direction
  */
-void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoefficients &coefficients)
+void adjustLineCoefficients (pcl::PointCloud<PointT>::Ptr &cloud, pcl::ModelCoefficients &coefficients)
 {
   // Vector of line
   double line[2];
@@ -168,11 +215,11 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
   // Get limits of inliers leghtwise
   double minimum_lengthwise =  DBL_MAX;
   double maximum_lengthwise = -DBL_MAX;
-  for (int idx = 0; idx < (int)inliers_cloud->points.size (); idx++)
+  for (int idx = 0; idx < (int)cloud->points.size (); idx++)
   {
     double P[2];
-    P[0] = inliers_cloud->points.at(idx).x - P1[0];
-    P[1] = inliers_cloud->points.at(idx).y - P1[1];
+    P[0] = cloud->points.at(idx).x - P1[0];
+    P[1] = cloud->points.at(idx).y - P1[1];
 
     double distance_lengthwise = (line[0]*P[0]) + (line[1]*P[1]);
     if (minimum_lengthwise > distance_lengthwise) minimum_lengthwise = distance_lengthwise;
@@ -194,6 +241,8 @@ void adjustLine (pcl::PointCloud<PointT>::Ptr &inliers_cloud, pcl::ModelCoeffici
   coefficients.values [3] = P2[0] - P1[0];
   coefficients.values [4] = P2[1] - P1[1];
   coefficients.values [5] = 0.0;
+
+  return;
 }
 
 
@@ -217,20 +266,22 @@ int main (int argc, char** argv)
     ROS_INFO ("    -iterations X                                      = How many times to run the fitting routine.");
     ROS_INFO (" ");
     ROS_INFO ("    -line_threshold X                                  = threshold for line inlier selection");
-    ROS_INFO ("    -circle_threshold X                                = threshold for circle inlier selection");
+    ROS_INFO ("    -line_threshold X                                = threshold for line inlier selection");
     ROS_INFO ("    -voting_threshold X                                = threshold for Hough-based model voting");
     ROS_INFO ("    -minimum_radius X                                  = ");
     ROS_INFO ("    -maximum_radius X                                  = ");
     ROS_INFO ("    -minimum_line_inliers D                            = ");
-    ROS_INFO ("    -minimum_circle_inliers D                          = ");
+    ROS_INFO ("    -minimum_line_inliers D                          = ");
     ROS_INFO ("    -maximum_line_iterations D                         = ");
-    ROS_INFO ("    -maximum_circle_iterations D                       = ");
+    ROS_INFO ("    -maximum_line_iterations D                       = ");
     ROS_INFO ("    -line_clustering_tolerance X                       = ");
-    ROS_INFO ("    -circle_clustering_tolerance X                     = ");
+    ROS_INFO ("    -line_clustering_tolerance X                     = ");
     ROS_INFO (" ");
 
     ROS_INFO ("    -mean_k_filter X                 = ");
     ROS_INFO ("    -std_dev_filter X                 = ");
+    ROS_INFO ("    -line_mean_k_filter X                 = ");
+    ROS_INFO ("    -line_std_dev_filter X                 = ");
 
     ROS_INFO ("    -minimum_size_of_objects_clusters X                = ");
     ROS_INFO ("    -clustering_tolerance_of_objects X                 = ");
@@ -257,16 +308,16 @@ int main (int argc, char** argv)
     ROS_INFO ("    -percentage_feature X                              = ");
 
 
-    ROS_INFO ("    -circle_percentage X                               = ");
-    ROS_INFO ("    -clustering_tolerance_of_circle_parameters X       = ");
-    ROS_INFO ("    -minimum_size_of_circle_parameters_clusters X      = ");
+    ROS_INFO ("    -line_percentage X                               = ");
+    ROS_INFO ("    -clustering_tolerance_of_line_parameters X       = ");
+    ROS_INFO ("    -minimum_size_of_line_parameters_clusters X      = ");
 
     ROS_INFO ("    -size B                                            = ");
     ROS_INFO ("    -step B                                            = ");
     ROS_INFO ("    -verbose B                                         = ");
     ROS_INFO ("    -line_step B                                       = wait or not wait");
-    ROS_INFO ("    -circle_step B                                     = wait or not wait");
-    ROS_INFO ("    -circle_feature_step B                             = wait or not wait");
+    ROS_INFO ("    -line_step B                                     = wait or not wait");
+    ROS_INFO ("    -line_feature_step B                             = wait or not wait");
     ROS_INFO (" ");
     return (-1);
   }
@@ -283,6 +334,8 @@ int main (int argc, char** argv)
 
   terminal_tools::parse_argument (argc, argv, "-mean_k_filter", mean_k_filter);
   terminal_tools::parse_argument (argc, argv, "-std_dev_filter", std_dev_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_mean_k_filter", line_mean_k_filter);
+  terminal_tools::parse_argument (argc, argv, "-line_std_dev_filter", line_std_dev_filter);
 
   // Parsing parameters for clustering
   terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_objects", clustering_tolerance_of_objects);
@@ -293,18 +346,18 @@ int main (int argc, char** argv)
 
   // Parsing the arguments of the method
   terminal_tools::parse_argument (argc, argv,   "-line_threshold",   line_threshold);
-  terminal_tools::parse_argument (argc, argv, "-circle_threshold", circle_threshold);
+  terminal_tools::parse_argument (argc, argv, "-line_threshold", line_threshold);
   terminal_tools::parse_argument (argc, argv, "-voting_threshold", voting_threshold);
   terminal_tools::parse_argument (argc, argv, "-minimum_radius", minimum_radius);
   terminal_tools::parse_argument (argc, argv, "-maximum_radius", maximum_radius);
   terminal_tools::parse_argument (argc, argv, "-minimum_line_inliers",   minimum_line_inliers);
-  terminal_tools::parse_argument (argc, argv, "-minimum_circle_inliers", minimum_circle_inliers);
+  terminal_tools::parse_argument (argc, argv, "-minimum_line_inliers", minimum_line_inliers);
   terminal_tools::parse_argument (argc, argv, "-maximum_line_iterations",   maximum_line_iterations);
-  terminal_tools::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
+  terminal_tools::parse_argument (argc, argv, "-maximum_line_iterations", maximum_line_iterations);
   terminal_tools::parse_argument (argc, argv,   "-line_clustering_tolerance",   line_clustering_tolerance);
-  terminal_tools::parse_argument (argc, argv, "-circle_clustering_tolerance", circle_clustering_tolerance);
+  terminal_tools::parse_argument (argc, argv, "-line_clustering_tolerance", line_clustering_tolerance);
   terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_cluster", minimum_size_of_circle_cluster);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_cluster", minimum_size_of_line_cluster);
 
   terminal_tools::parse_argument (argc, argv, "-normals_search_knn", normals_search_knn);
   terminal_tools::parse_argument (argc, argv, "-normals_search_radius", normals_search_radius);
@@ -322,17 +375,21 @@ int main (int argc, char** argv)
   terminal_tools::parse_argument (argc, argv, "-normals_feature", normals_feature);
   terminal_tools::parse_argument (argc, argv, "-percentage_feature", percentage_feature);
 
-  terminal_tools::parse_argument (argc, argv, "-circle_percentage", circle_percentage);
-  terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_circle_parameters", clustering_tolerance_of_circle_parameters);
-  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
+  terminal_tools::parse_argument (argc, argv, "-line_percentage", line_percentage);
+  terminal_tools::parse_argument (argc, argv, "-clustering_tolerance_of_line_parameters", clustering_tolerance_of_line_parameters);
+  terminal_tools::parse_argument (argc, argv, "-minimum_size_of_line_parameters_clusters", minimum_size_of_line_parameters_clusters);
+
+  terminal_tools::parse_argument (argc, argv, "-height", height);
+  terminal_tools::parse_argument (argc, argv, "-epsilon", epsilon);
 
   // Parsing the arguments for visualization
   terminal_tools::parse_argument (argc, argv, "-size", size);
   terminal_tools::parse_argument (argc, argv, "-step", step);
+  terminal_tools::parse_argument (argc, argv, "-color", color);
   terminal_tools::parse_argument (argc, argv, "-verbose", verbose);
   terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
-  terminal_tools::parse_argument (argc, argv, "-circle_step", circle_step);
-  terminal_tools::parse_argument (argc, argv, "-circle_feature_step", circle_feature_step);
+  terminal_tools::parse_argument (argc, argv, "-line_step", line_step);
+  terminal_tools::parse_argument (argc, argv, "-line_feature_step", line_feature_step);
 
   // --------------------------------------------------------- //
   // -------------------- Initializations -------------------- //
@@ -364,8 +421,8 @@ int main (int argc, char** argv)
   pcl_visualization::PCLVisualizer viewer ("3D VIEWER");
   // Set the background of viewer
   viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  viewer.addCoordinateSystem (1.0f);
+//  // Add system coordiante to viewer
+//  viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
   viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
@@ -375,13 +432,11 @@ int main (int argc, char** argv)
   // ------------------ Load point cloud data ------------------ //
   // ----------------------------------------------------------- //
 
-  // Input point cloud data
-  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
-  // Working point cloud data 
-  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+  // The kinect input point cloud data
+  pcl::PointCloud<Point>::Ptr the_kinect_input_cloud (new pcl::PointCloud<Point> ());
 
   // Load point cloud data
-  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pFileIndicesPCD [0]], *the_kinect_input_cloud) == -1)
   {
     ROS_ERROR ("Couldn't read file %s", argv [pFileIndicesPCD [0]]);
     return (-1);
@@ -389,15 +444,15 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*input_cloud).c_str ());
+    ROS_INFO ("Loaded %d data points from %s with the following fields: %s", (int) (the_kinect_input_cloud->points.size ()), argv[pFileIndicesPCD[0]], pcl::getFieldsList (*the_kinect_input_cloud).c_str ());
   }
 
   // Add the point cloud data
-  viewer.addPointCloud (*input_cloud, "INPUT");
+  viewer.addPointCloud (*the_kinect_input_cloud, "KINECT INPUT DATA");
   // Color the cloud in white
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "INPUT");
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "KINECT INPUT DATA");
   // Set the size of points for cloud
-  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT"); 
+  viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "KINECT INPUT DATA"); 
 
   // Wait or not wait
   if ( step )
@@ -405,9 +460,6 @@ int main (int argc, char** argv)
     // And wait until Q key is pressed
     viewer.spin ();
   }
-
-  // Update working point cloud
-  *working_cloud = *input_cloud;
 
   // ------------------------------------------------------------------ //
   // ------------------ TEXT FILE W/ SIZES OF MODELS ------------------ //
@@ -417,7 +469,7 @@ int main (int argc, char** argv)
 
 //  textname << "cylinder-sizes-" << ros::Time::now() << ".txt";
 
-  textname << "cylinder-sizes-humanoids.txt";
+  textname << "cylinder-sizes-hough-ransac.txt";
 
   textfile.open (textname.str ().c_str (), ios::app);
 
@@ -432,6 +484,42 @@ int main (int argc, char** argv)
   std::string n = p.substr (s + 1, l);
 
   textfile << "   file " << n << "\n" << std::flush;
+
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------ PATCH ------------------ //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+  // ------------------------------------------- //
+
+  // Input point cloud data
+  pcl::PointCloud<PointT>::Ptr input_cloud (new pcl::PointCloud<PointT> ());
+
+  unsigned int size_of_the_kinect_input_cloud = the_kinect_input_cloud->points.size();
+
+  for (unsigned int kin = 0; kin < the_kinect_input_cloud->points.size (); kin++)
+  {
+    input_cloud->points.resize (size_of_the_kinect_input_cloud);
+
+    input_cloud->points.at (kin).x = the_kinect_input_cloud->points.at (kin).x;
+    input_cloud->points.at (kin).y = the_kinect_input_cloud->points.at (kin).y;
+    input_cloud->points.at (kin).z = the_kinect_input_cloud->points.at (kin).z;
+    
+    input_cloud->points.at (kin).intensity = 0.0;
+    input_cloud->points.at (kin).normal_x  = 0.0;
+    input_cloud->points.at (kin).normal_y  = 0.0;
+    input_cloud->points.at (kin).normal_z  = 0.0;
+    input_cloud->points.at (kin).curvature = 0.0;
+  }
+
+  // Working point cloud data 
+  pcl::PointCloud<PointT>::Ptr working_cloud (new pcl::PointCloud<PointT> ());
+
+  // Update working point cloud
+  *working_cloud = *input_cloud;
+
+/*
 
   // ------------------------------------------------------------- //
   // ------------------ Filter point cloud data ------------------ //
@@ -467,10 +555,15 @@ int main (int argc, char** argv)
     viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED");
     // And wait until Q key is pressed
     viewer.spin ();
+
+    viewer.removePointCloud ("INPUT");
+    viewer.spin ();
   }
 
   // Update working point cloud
   *working_cloud = *filtered_cloud;
+
+*/
 
   // ------------------------------------------------------------------- //
   // ------------------ Estimate 3D normals of points ------------------ //
@@ -505,15 +598,16 @@ int main (int argc, char** argv)
 
   if ( verbose )
   {
-    ROS_INFO ("Normal Estimation ! Returned: %d normals", (int) normals_cloud->points.size ());
+    ROS_INFO ("Normal Estimation ! Returned: %d 3D normals", (int) normals_cloud->points.size ());
   }
 
+//  if ( false )
   if ( step )
   {
     // Add the point cloud of normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "3D NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "3D NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "3D NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
@@ -530,6 +624,11 @@ int main (int argc, char** argv)
     working_cloud->points.at (idx).normal_y = normals_cloud->points.at (idx).normal_y;
     working_cloud->points.at (idx).normal_z = normals_cloud->points.at (idx).normal_z;
     working_cloud->points.at (idx).curvature = normals_cloud->points.at (idx).curvature;
+  }
+
+  if ( verbose )
+  {
+    ROS_INFO ("Curvature Estimation ! Returned: %d curvatures", (int) normals_cloud->points.size ());
   }
 
   if ( step )
@@ -607,6 +706,11 @@ int main (int argc, char** argv)
   }
   */
 
+  if ( verbose )
+  {
+    ROS_INFO ("Curvature Mapping ! Returned: %d planars vs %d circulars", (int) curvature_planar_cloud->points.size (), (int) curvature_circular_cloud->points.size ());
+  }
+
   if ( step )
   {
     std::stringstream curvature_planar_id;
@@ -657,6 +761,11 @@ int main (int argc, char** argv)
   pcl::concatenateFields (*working_cloud, *rsd_cloud, *rsd_working_cloud);
   // Save these points to disk
 //  pcl::io::savePCDFile (name, *rsd_working_cloud);
+
+  if ( verbose )
+  {
+    ROS_INFO ("RSD Estimation ! Returned: %d rsd values", (int) rsd_working_cloud->points.size ());
+  }
 
   if ( step )
   {
@@ -733,6 +842,11 @@ int main (int argc, char** argv)
   }
   */
 
+  if ( verbose )
+  {
+    ROS_INFO ("RSD Mapping ! Returned: %d plausibles vs %d implausibles", (int) r_min_plausible_cloud->points.size (), (int) r_min_implausible_cloud->points.size ());
+  }
+
   if ( step )
   {
     std::stringstream r_min_plausible_id;
@@ -772,6 +886,12 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = 0.0;  
   }
 
+  if ( verbose )
+  {
+    ROS_INFO ("Normal Flattening ! Returned: %d 2D normals", (int) rsd_working_cloud->points.size ());
+  }
+
+//  if ( false )
   if ( step )
   {
     // Add the normals
@@ -803,12 +923,18 @@ int main (int argc, char** argv)
     normals_cloud->points[idx].normal_z = nz;
   }
 
+  if ( verbose )
+  {
+    ROS_INFO ("Normal Refinement ! Returned: %d normals", (int) rsd_working_cloud->points.size ());
+  }
+
+//  if ( false )
   if ( step )
   {
     // Add the normals
     viewer.addPointCloudNormals (*working_cloud, *normals_cloud, 1, 0.025, "NORMALS");
     // Color the normals with red
-    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMALS"); 
+    viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMALS"); 
     // And wait until Q key is pressed
     viewer.spin ();
 
@@ -903,130 +1029,225 @@ int main (int argc, char** argv)
       // Set the size of points for cloud
       viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, object_cluster_id.str()); 
       // And wait until Q key is pressed
-      viewer.spin ();
+//      viewer.spin ();
 
       // Save id of object
       objects_clusters_ids.push_back (object_cluster_id.str());
     }
+
+    viewer.spin ();
   }
+
+
+
+
+
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ //
+
+
 
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
-  // ------------------------------------ Computation of 2D circles ----------------------------------- //
+  // ------------------------------------- Computation of 2D lines ------------------------------------ //
   // -------------------------------------------------------------------------------------------------- //
   // -------------------------------------------------------------------------------------------------- //
 
   // Open a 3D viewer
-  pcl_visualization::PCLVisualizer circle_viewer ("CIRCLE VIEWER");
+  pcl_visualization::PCLVisualizer line_viewer ("LINE VIEWER");
   // Set the background of viewer
-  circle_viewer.setBackgroundColor (1.0, 1.0, 1.0);
-  // Add system coordiante to viewer
-  circle_viewer.addCoordinateSystem (1.0f);
+  line_viewer.setBackgroundColor (1.0, 1.0, 1.0);
+//  // Add system coordiante to viewer
+//  line_viewer.addCoordinateSystem (1.0f);
   // Parse the camera settings and update the internal camera
-  circle_viewer.getCameraParameters (argc, argv);
+  line_viewer.getCameraParameters (argc, argv);
   // Update camera parameters and render
-  circle_viewer.updateCamera ();
+  line_viewer.updateCamera ();
 
   // Add the point cloud data
-  circle_viewer.addPointCloud (*working_cloud, "WORKING");
+  line_viewer.addPointCloud (*working_cloud, "WORKING");
   // Color the cloud in white
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 0.0, "WORKING");
   // Set the size of points for cloud
-  circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING"); 
   // And wait until Q key is pressed
-  circle_viewer.spin ();
+  line_viewer.spin ();
 
+  // ---------------------- //
+  // Start fitting 2D lines //
+  // ---------------------- //
 
+  // Space of parameters for fitted line models
+  pcl::PointCloud<pcl::Histogram<4> >::Ptr line_parameters_cloud (new pcl::PointCloud<pcl::Histogram<4> > ());
 
-
-
-
-
-
-  // ------------------------ //
-  // Start fitting 2D circles //
-  // ------------------------ //
-
-  // Space of parameters for fitted circle models
-  pcl::PointCloud<PointT>::Ptr circle_parameters_cloud (new pcl::PointCloud<PointT> ());
+  // Space of parameters for fitted line models, more or less, the data on how to reconstruct the model
+  pcl::PointCloud<pcl::Histogram<4> >::Ptr line_parameters_cloud_histogram (new pcl::PointCloud<pcl::Histogram<4> > ());
 
   for (int ite = 0; ite < iterations; ite++)
   {
-    // Print current iteration number
-    ROS_INFO ("AT ITERATION = %d", ite);
 
-    // Vector of circle ids
-    std::vector<std::string> circles_ids;
-    // Vector of circle inliers ids
-    std::vector<std::string> circles_inliers_ids;
+    // Vector of lines ids
+    std::vector<std::string> lines_ids;
+    // Vector of lines inliers ids
+    std::vector<std::string> lines_inliers_ids;
 
     for (int clu = 0; clu < (int) objects_clusters_clouds.size(); clu++)
     {
-      int circle_fit = 0;
-      bool valid_circle = true;
-      bool stop_circle_fitting = false;
+
+      int line_fit = 0;
+      bool valid_line = true;
+      bool stop_line_fitting = false;
 
       // Working cluster cloud which represents an object
       pcl::PointCloud<PointT>::Ptr working_cluster_cloud (new pcl::PointCloud<PointT> ());
       // Update the working cluster cloud 
       *working_cluster_cloud = *objects_clusters_clouds.at (clu);
-        
+
+/*
+
+      /// FIT LINE MODELS ONLY IN THE XY INFO OF THE CLOUD ///
+      /// EXPERIMENTAL, BTW ///
+
+      pcl::PointCloud<PointT>::Ptr flattened_working_cluster_cloud (new pcl::PointCloud<PointT> ());
+      *flattened_working_cluster_cloud = *objects_clusters_clouds.at (clu);
+
+      for (unsigned int idx = 0; idx < flattened_working_cluster_cloud->points.size (); idx++)
+        flattened_working_cluster_cloud->points.at (idx).z = 0.0;
+
+      /// FIT LINE MODELS ONLY IN THE XY INFO OF THE CLOUD ///
+      /// EXPERIMENTAL, BTW ///
+
+*/
+
       do
       {
-        // Coefficients of cirlce model
-        pcl::ModelCoefficients circle_coefficients;
-        // Inliers of circle model
-        pcl::PointIndices::Ptr circle_inliers (new pcl::PointIndices ());
+
+        /// ATTENTION ! BIG SNEAKY BUG FOUND ///
+        /// ALSO POSSIBLE CONTAMINATION IN THE HOUGH SEGMENTATION WITH CIRCLES CODE ///
+        /// OR IT COULD BE THE CASE ONLY FOR LINES ///
+        valid_line = true;
+
+        // Print current iteration number
+        ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d", ite, clu, line_fit);
+//        ROS_INFO ("AT ITERATION = %d AT GROUP = %d AT MODEL = %d AT %3.0g [s]", ite, clu, line_fit, tt.toc ());
+
+        // Coefficients of line model
+        pcl::ModelCoefficients line_coefficients;
+        // Inliers of line model
+        pcl::PointIndices::Ptr line_inliers (new pcl::PointIndices ());
 
         // --------------------- //
         // Start fitting process //
         // --------------------- //
 
         // Create the segmentation object
-        pcl::SACSegmentation<PointT> segmentation_of_circle;
+        pcl::SACSegmentation<PointT> segmentation_of_line;
         // Optimize coefficients
-        segmentation_of_circle.setOptimizeCoefficients (false);
+        segmentation_of_line.setOptimizeCoefficients (false);
         // Set type of method
-        segmentation_of_circle.setMethodType (pcl::SAC_RANSAC);
+        segmentation_of_line.setMethodType (pcl::SAC_RANSAC);
         // Set type of model
-        segmentation_of_circle.setModelType (pcl::SACMODEL_CIRCLE2D);
+        segmentation_of_line.setModelType (pcl::SACMODEL_LINE);
         // Set threshold of model
-        segmentation_of_circle.setDistanceThreshold (circle_threshold);
+        segmentation_of_line.setDistanceThreshold (line_threshold);
         // Set number of maximum iterations
-        segmentation_of_circle.setMaxIterations (maximum_circle_iterations);
+        segmentation_of_line.setMaxIterations (maximum_line_iterations);
         // Give as input the filtered point cloud
-        segmentation_of_circle.setInputCloud (working_cluster_cloud);
-        // Set minimum and maximum radii
-        segmentation_of_circle.setRadiusLimits (minimum_radius, maximum_radius);
+        segmentation_of_line.setInputCloud (working_cluster_cloud);
 
         // Call the segmenting method
-        segmentation_of_circle.segment (*circle_inliers, circle_coefficients);
+        segmentation_of_line.segment (*line_inliers, line_coefficients);
+
+/*
+
+            // Create ID for line model
+            std::stringstream line_id_original;
+            line_id_original << "LINE_" << ros::Time::now();
+
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_original.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_original.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
+
+        // Adjust inliers of line model 
+        adjustLineInliers (working_cluster_cloud, line_inliers, line_coefficients, line_threshold);
+
+/*
+            // Create ID for line model
+            std::stringstream line_id_adjust_inliers;
+            line_id_adjust_inliers << "LINE_" << ros::Time::now();
+
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_adjust_inliers.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_adjust_inliers.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
 
         // ------------------------ //
         // Start extraction process //
         // ------------------------ //
 
-        // Point cloud of circle inliers
-        pcl::PointCloud<PointT>::Ptr circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+        // Point cloud of line inliers
+        pcl::PointCloud<PointT>::Ptr line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
         // Extract the circular inliers 
-        pcl::ExtractIndices<PointT> extraction_of_circle;
+        pcl::ExtractIndices<PointT> extraction_of_line;
         // Set which indices to extract
-        extraction_of_circle.setIndices (circle_inliers);
+        extraction_of_line.setIndices (line_inliers);
         // Set point cloud from where to extract
-        extraction_of_circle.setInputCloud (working_cluster_cloud);
+        extraction_of_line.setInputCloud (working_cluster_cloud);
 
         // Return the points which represent the inliers
-        extraction_of_circle.setNegative (false);
+        extraction_of_line.setNegative (false);
         // Call the extraction function
-        extraction_of_circle.filter (*circle_inliers_cloud);
+        extraction_of_line.filter (*line_inliers_cloud);
 
 
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+/*
+
+            // Create ID for line model
+            std::stringstream line_id_adjust_coeffs;
+            line_id_adjust_coeffs << "LINE_" << ros::Time::now();
+
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_adjust_coeffs.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_adjust_coeffs.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
 
         // WARNING //
 
         // Needed for the bug in pcl extract indices
-        int the_actual_number_of_points_from_the_fitted_circle = (int) circle_inliers_cloud->points.size ();
+        int the_actual_number_of_points_from_the_fitted_line = (int) line_inliers_cloud->points.size ();
 
 
 
@@ -1034,195 +1255,191 @@ int main (int argc, char** argv)
 
         if ( clustering_feature )
         {
-          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+          if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
-            // The current circle model will be rejected
-            valid_circle = false;
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+            // The current line model will be rejected
+            valid_line = false;
           }
           else
           {
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream before_clustering_id;
-              before_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_clustering_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_clustering_id.str());
-              circle_viewer.spin ();
+              before_clustering_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*line_inliers_cloud, before_clustering_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_clustering_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_clustering_id.str());
+              line_viewer.spin ();
             }
 
             // Vector of clusters from inliers
-            std::vector<pcl::PointIndices> circle_clusters;
+            std::vector<pcl::PointIndices> line_clusters;
             // Build kd-tree structure for clusters
-            pcl::KdTreeFLANN<PointT>::Ptr circle_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
+            pcl::KdTreeFLANN<PointT>::Ptr line_clusters_tree (new pcl::KdTreeFLANN<PointT> ());
 
             // Instantiate cluster extraction object
-            pcl::EuclideanClusterExtraction<PointT> clustering_of_circle;
-            // Set as input the cloud of circle inliers
-            clustering_of_circle.setInputCloud (circle_inliers_cloud);
+            pcl::EuclideanClusterExtraction<PointT> clustering_of_line;
+            // Set as input the cloud of line inliers
+            clustering_of_line.setInputCloud (line_inliers_cloud);
             // Radius of the connnectivity threshold
-            clustering_of_circle.setClusterTolerance (circle_clustering_tolerance);
+            clustering_of_line.setClusterTolerance (line_clustering_tolerance);
             // Minimum number of points of any cluster
-            clustering_of_circle.setMinClusterSize (minimum_size_of_circle_cluster);
+            clustering_of_line.setMinClusterSize (minimum_size_of_line_cluster);
             // Provide pointer to the search method
-            clustering_of_circle.setSearchMethod (circle_clusters_tree);
+            clustering_of_line.setSearchMethod (line_clusters_tree);
 
             // Call the extraction function
-            clustering_of_circle.extract (circle_clusters);
+            clustering_of_line.extract (line_clusters);
 
             if ( verbose )
             {
-              ROS_INFO ("  Model has %d inliers clusters where", (int) circle_clusters.size());
-              for (int c = 0; c < (int) circle_clusters.size(); c++)
-                ROS_INFO ("    Cluster %d has %d points", c, (int) circle_clusters.at (c).indices.size());
+              ROS_INFO ("  [CLUSTERING FEATURE] Model has %d inliers clusters where", (int) line_clusters.size());
+              for (int c = 0; c < (int) line_clusters.size(); c++)
+                ROS_INFO ("  [CLUSTERING FEATURE]   Cluster %d has %d points", c, (int) line_clusters.at (c).indices.size());
             }
 
-            pcl::PointIndices::Ptr clustering_circle_inliers (new pcl::PointIndices ());
+            pcl::PointIndices::Ptr clustering_line_inliers (new pcl::PointIndices ());
 
-            // Leave only the two biggest clusters
-            if ( circle_clusters.size() > 0 )
+            // Leave only the biggest cluster
+            if ( line_clusters.size() > 0 )
             {
-              for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
+              for ( int idx = 0; idx < (int) line_clusters.at (0).indices.size(); idx++ )
               {
-                int inl = circle_clusters.at (0).indices.at (idx);
-                clustering_circle_inliers->indices.push_back (circle_inliers->indices.at (inl));
+                int inl = line_clusters.at (0).indices.at (idx);
+                clustering_line_inliers->indices.push_back (line_inliers->indices.at (inl));
               }
+            }
+            else
+            {
+              ROS_ERROR ("  [CLUSTERING FEATURE] Reject line model !");
 
-              if ( circle_clusters.size() > 1 )
-              {
-                for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
-                {
-                  int inl = circle_clusters.at (1).indices.at (idx);
-                  clustering_circle_inliers->indices.push_back (circle_inliers->indices.at (inl));
-                }
-              }
+              // The current line model will be rejected
+              valid_line = false;
             }
 
             // ------------------------ //
             // Start extraction process //
             // ------------------------ //
 
-            pcl::PointCloud<PointT>::Ptr clustering_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+            pcl::PointCloud<PointT>::Ptr clustering_line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
             // Extract the circular inliers 
-            pcl::ExtractIndices<PointT> clustering_extraction_of_circle;
+            pcl::ExtractIndices<PointT> clustering_extraction_of_line;
             // Set which indices to extract
-            clustering_extraction_of_circle.setIndices (clustering_circle_inliers);
+            clustering_extraction_of_line.setIndices (clustering_line_inliers);
             // Set point cloud from where to extract
-            clustering_extraction_of_circle.setInputCloud (working_cluster_cloud);
+            clustering_extraction_of_line.setInputCloud (working_cluster_cloud);
 
             // Return the points which represent the inliers
-            clustering_extraction_of_circle.setNegative (false);
+            clustering_extraction_of_line.setNegative (false);
             // Call the extraction function
-            clustering_extraction_of_circle.filter (*clustering_circle_inliers_cloud);
+            clustering_extraction_of_line.filter (*clustering_line_inliers_cloud);
 
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream after_clustering_id;
-              after_clustering_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*clustering_circle_inliers_cloud, after_clustering_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_clustering_id.str());
-              circle_viewer.spin ();
+              after_clustering_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*clustering_line_inliers_cloud, after_clustering_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_clustering_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_clustering_id.str());
+              line_viewer.spin ();
             }
 
-            pcl::PointIndices::Ptr first_cluster_inliers (new pcl::PointIndices ());
-            pcl::PointIndices::Ptr second_cluster_inliers (new pcl::PointIndices ());
-
-            if ( circle_clusters.size() > 0 )
-            {
-              for ( int idx = 0; idx < (int) circle_clusters.at (0).indices.size(); idx++ )
-              {
-                int inl = circle_clusters.at (0).indices.at (idx);
-                first_cluster_inliers->indices.push_back (circle_inliers->indices.at (inl));
-              }
-
-              pcl::PointCloud<PointT>::Ptr first_cluster_cloud (new pcl::PointCloud<PointT> ());
-
-              pcl::ExtractIndices<PointT> extraction_of_first_cluster;
-              extraction_of_first_cluster.setIndices (first_cluster_inliers);
-              extraction_of_first_cluster.setInputCloud (working_cluster_cloud);
-              extraction_of_first_cluster.setNegative (false);
-              extraction_of_first_cluster.filter (*first_cluster_cloud);
-
-              PointT first_cluster_minimum, first_cluster_maximum;
-              pcl::getMinMax3D (*first_cluster_cloud, first_cluster_minimum, first_cluster_maximum);
-              double Z1 = first_cluster_maximum.z;
-
-              if ( circle_clusters.size() > 1 )
-              {
-                for ( int idx = 0; idx < (int) circle_clusters.at (1).indices.size(); idx++ )
-                {
-                  int inl = circle_clusters.at (1).indices.at (idx);
-                  second_cluster_inliers->indices.push_back (circle_inliers->indices.at (inl));
-                }
-
-                pcl::PointCloud<PointT>::Ptr second_cluster_cloud (new pcl::PointCloud<PointT> ());
-
-                pcl::ExtractIndices<PointT> extraction_of_second_cluster;
-                extraction_of_second_cluster.setIndices (second_cluster_inliers);
-                extraction_of_second_cluster.setInputCloud (working_cluster_cloud);
-                extraction_of_second_cluster.setNegative (false);
-                extraction_of_second_cluster.filter (*second_cluster_cloud);
-
-                PointT second_cluster_minimum, second_cluster_maximum;
-                pcl::getMinMax3D (*second_cluster_cloud, second_cluster_minimum, second_cluster_maximum);
-                double Z2 = second_cluster_maximum.z;
-
-                if ( fabs (Z1 - Z2) > 0.025 ) /// meters
-                {
-                  valid_circle = false;
-                  circle_inliers->indices.clear ();
-                  clustering_circle_inliers->indices.clear ();
-                }
-              }
-            }
-
-            // Update the circle inliers
-            *circle_inliers = *clustering_circle_inliers;
-            // Update the circle inliers cloud
-            *circle_inliers_cloud = *clustering_circle_inliers_cloud;
+            // Update the line inliers
+            *line_inliers = *clustering_line_inliers;
+            // Update the line inliers cloud
+            *line_inliers_cloud = *clustering_line_inliers_cloud;
           }
         }
 
 
 
+
+
+
+
+
+
+        // ------------------------- //
+        // Update extraction process //
+        // ------------------------- //
+
+        // Set which indices to extract
+        extraction_of_line.setIndices (line_inliers);
+        // Set point cloud from where to extract
+        extraction_of_line.setInputCloud (working_cluster_cloud);
+
+        // Return the points which represent the inliers
+        extraction_of_line.setNegative (false);
+        // Call the extraction function
+        extraction_of_line.filter (*line_inliers_cloud);
+
+
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+
+/*
+
+           // Create ID for line model
+            std::stringstream line_id_after_clustering;
+            line_id_after_clustering << "LINE_" << ros::Time::now();
+
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id_after_clustering.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+            // Remove line afterwards
+            line_viewer.removeShape (line_id_after_clustering.str ());
+
+            // And wait until Q key is pressed
+            line_viewer.spin ();
+
+*/
+
         // START W/ THE CURVATURE FEATURE //
 
         if ( curvature_feature )
         {
-          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+          if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
-            // The current circle model will be rejected
-            valid_circle = false;
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+            // The current line model will be rejected
+            valid_line = false;
           }
           else
           {
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream before_curvature_id;
-              before_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_curvature_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_curvature_id.str());
-              circle_viewer.spin ();
+              before_curvature_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*line_inliers_cloud, before_curvature_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_curvature_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_curvature_id.str());
+              line_viewer.spin ();
             }
 
-            pcl::PointIndices::Ptr curvature_circle_inliers (new pcl::PointIndices ());
+            pcl::PointIndices::Ptr curvature_line_inliers (new pcl::PointIndices ());
 
-            for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
+            for (int inl = 0; inl < (int) line_inliers->indices.size(); inl++)
             {
-              int idx = circle_inliers->indices.at (inl);
+              int idx = line_inliers->indices.at (inl);
 
               double curvature = working_cluster_cloud->points.at (idx).curvature;
 
               if ( curvature_threshold < curvature )
               {
                 // Save the right indices of points
-                curvature_circle_inliers->indices.push_back (idx);
+                curvature_line_inliers->indices.push_back (idx);
               }
             }
 
@@ -1230,35 +1447,35 @@ int main (int argc, char** argv)
             // Start extraction process //
             // ------------------------ //
 
-            pcl::PointCloud<PointT>::Ptr curvature_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+            pcl::PointCloud<PointT>::Ptr curvature_line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
             // Extract the circular inliers 
-            pcl::ExtractIndices<PointT> curvature_extraction_from_circle;
+            pcl::ExtractIndices<PointT> curvature_extraction_from_line;
             // Set which indices to extract
-            curvature_extraction_from_circle.setIndices (curvature_circle_inliers);
+            curvature_extraction_from_line.setIndices (curvature_line_inliers);
             // Set point cloud from where to extract
-            curvature_extraction_from_circle.setInputCloud (working_cluster_cloud);
+            curvature_extraction_from_line.setInputCloud (working_cluster_cloud);
 
             // Return the points which represent the inliers
-            curvature_extraction_from_circle.setNegative (false);
+            curvature_extraction_from_line.setNegative (false);
             // Call the extraction function
-            curvature_extraction_from_circle.filter (*curvature_circle_inliers_cloud);
+            curvature_extraction_from_line.filter (*curvature_line_inliers_cloud);
 
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream after_curvature_id;
-              after_curvature_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*curvature_circle_inliers_cloud, after_curvature_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_curvature_id.str());
-              circle_viewer.spin ();
+              after_curvature_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*curvature_line_inliers_cloud, after_curvature_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_curvature_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_curvature_id.str());
+              line_viewer.spin ();
             }
 
-            // Update the inliers of circle
-            *circle_inliers = *curvature_circle_inliers;
+            // Update the inliers of line
+            *line_inliers = *curvature_line_inliers;
             // Update the points of inliers
-            *circle_inliers_cloud = *curvature_circle_inliers_cloud;
+            *line_inliers_cloud = *curvature_line_inliers_cloud;
           }
         }
 
@@ -1268,31 +1485,33 @@ int main (int argc, char** argv)
 
         if ( rsd_feature )
         {
-          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+          if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
-            // The current circle model will be rejected
-            valid_circle = false;
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+            // The current line model will be rejected
+            valid_line = false;
           }
           else
           {
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream before_rsd_id;
-              before_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_rsd_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_rsd_id.str());
-              circle_viewer.spin ();
+              before_rsd_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*line_inliers_cloud, before_rsd_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_rsd_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_rsd_id.str());
+              line_viewer.spin ();
             }
 
-            pcl::PointIndices::Ptr rsd_circle_inliers (new pcl::PointIndices ());
+            pcl::PointIndices::Ptr rsd_line_inliers (new pcl::PointIndices ());
 
-            double rc = circle_coefficients.values [2];
+            double rc = line_coefficients.values [2];
 
-            for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
+            for (int inl = 0; inl < (int) line_inliers->indices.size(); inl++)
             {
-              int idx = circle_inliers->indices.at (inl);
+              int idx = line_inliers->indices.at (inl);
 
               // ATTENTION // 
 
@@ -1304,7 +1523,7 @@ int main (int argc, char** argv)
               if ( fabs (rc - rp) < radius_threshold )
               {
                 // Save the right indices of points
-                rsd_circle_inliers->indices.push_back (idx);
+                rsd_line_inliers->indices.push_back (idx);
               }
             }
 
@@ -1312,36 +1531,36 @@ int main (int argc, char** argv)
             // Start the extraction process //
             // ---------------------------- //
 
-            pcl::PointCloud<PointT>::Ptr rsd_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+            pcl::PointCloud<PointT>::Ptr rsd_line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
             // Extract the circular inliers 
-            pcl::ExtractIndices<PointT> rsd_extraction_of_circle;
+            pcl::ExtractIndices<PointT> rsd_extraction_of_line;
             // Set which indices to extract
-            rsd_extraction_of_circle.setIndices (rsd_circle_inliers);
+            rsd_extraction_of_line.setIndices (rsd_line_inliers);
             // Set point cloud from where to extract
-            //rsd_extraction_of_circle.setInputCloud (working_cluster_cloud);
-            rsd_extraction_of_circle.setInputCloud (working_cluster_cloud);
+            //rsd_extraction_of_line.setInputCloud (working_cluster_cloud);
+            rsd_extraction_of_line.setInputCloud (working_cluster_cloud);
 
             // Return the points which represent the inliers
-            rsd_extraction_of_circle.setNegative (false);
+            rsd_extraction_of_line.setNegative (false);
             // Call the extraction function
-            rsd_extraction_of_circle.filter (*rsd_circle_inliers_cloud);
+            rsd_extraction_of_line.filter (*rsd_line_inliers_cloud);
 
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream after_rsd_id;
-              after_rsd_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*rsd_circle_inliers_cloud, after_rsd_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_rsd_id.str());
-              circle_viewer.spin ();
+              after_rsd_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*rsd_line_inliers_cloud, after_rsd_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_rsd_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_rsd_id.str());
+              line_viewer.spin ();
             }
 
-            // Update the inliers of circle
-            *circle_inliers = *rsd_circle_inliers;
+            // Update the inliers of line
+            *line_inliers = *rsd_line_inliers;
             // Update the points of inliers
-            *circle_inliers_cloud = *rsd_circle_inliers_cloud;
+            *line_inliers_cloud = *rsd_line_inliers_cloud;
           }
         }
 
@@ -1351,45 +1570,53 @@ int main (int argc, char** argv)
 
         if ( normals_feature )
         {
-          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+          if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
-            // The current circle model will be rejected
-            valid_circle = false;
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+            // The current line model will be rejected
+            valid_line = false;
           }
           else
           {
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream before_normals_id;
-              before_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*circle_inliers_cloud, before_normals_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (before_normals_id.str());
-              circle_viewer.spin ();
+              before_normals_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*line_inliers_cloud, before_normals_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, before_normals_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (before_normals_id.str());
+              line_viewer.spin ();
             }
 
-            pcl::PointIndices::Ptr normals_circle_inliers (new pcl::PointIndices ());
+            ROS_INFO ("  [NORMALS FEATURE] Model has now %d inliers", (int) line_inliers->indices.size());
 
-            float c[2];
-            c[0] = circle_coefficients.values.at (0);
-            c[1] = circle_coefficients.values.at (1);
+            pcl::PointIndices::Ptr normals_line_inliers (new pcl::PointIndices ());
 
-            for (int inl = 0; inl < (int) circle_inliers->indices.size(); inl++)
+            //float c[2];
+            //c[0] = line_coefficients.values.at (0);
+            //c[1] = line_coefficients.values.at (1);
+
+            for (int inl = 0; inl < (int) line_inliers->indices.size(); inl++)
             {
-              int idx = circle_inliers->indices.at (inl);
+              int idx = line_inliers->indices.at (inl);
 
-              float p[2];
-              p[0] = working_cluster_cloud->points.at (idx).x;
-              p[1] = working_cluster_cloud->points.at (idx).y;
+              //float p[2];
+              //p[0] = working_cluster_cloud->points.at (idx).x;
+              //p[1] = working_cluster_cloud->points.at (idx).y;
+              //
+              //float c2p[2];
+              //c2p[0] = p[0] - c[0];
+              //c2p[1] = p[1] - c[1];
+              //
+              //float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
+              //c2p[0] = c2p[0] / lc2p;
+              //c2p[1] = c2p[1] / lc2p;
 
               float c2p[2];
-              c2p[0] = p[0] - c[0];
-              c2p[1] = p[1] - c[1];
-
-              float lc2p = sqrt (c2p[0]*c2p[0] + c2p[1]*c2p[1]);
-              c2p[0] = c2p[0] / lc2p;
-              c2p[1] = c2p[1] / lc2p;
+              c2p[0] = line_coefficients.values.at (3);
+              c2p[1] = line_coefficients.values.at (4);
 
               float np[2];
               np[0] = working_cluster_cloud->points.at (idx).normal_x;
@@ -1402,77 +1629,125 @@ int main (int argc, char** argv)
               float dot = c2p[0]*np[0] + c2p[1]*np[1];
               float ang = acos (dot) * 180.0 / M_PI;
 
-              if ( ((180.0 - angle_threshold) < ang) || (ang < angle_threshold) )
+              //cerr <<  angle_threshold << endl ;
+
+              if ( ((90.0 - angle_threshold) < ang) && (ang < (90.0 + angle_threshold)) )
               {
+                //cerr << ang << " ! " << inl << " -> " << idx << endl;
+                //line_viewer.spin ();
+ 
                 // Save the right indices of points
-                normals_circle_inliers->indices.push_back (idx);
+                normals_line_inliers->indices.push_back (idx);
               }
+            }
+
+            ROS_INFO ("  [NORMALS FEATURE] Model has %d inliers left", (int) normals_line_inliers->indices.size());
+
+            if ( normals_line_inliers->indices.size() == 0 )
+            {
+              ROS_ERROR ("  [NORMALS FEATURE] Reject line model !");
+
+              // The current line model will be rejected
+              valid_line = false;
             }
 
             // ---------------------------- //
             // Start the extraction process //
             // ---------------------------- //
 
-            pcl::PointCloud<PointT>::Ptr normals_circle_inliers_cloud (new pcl::PointCloud<PointT> ());
+            pcl::PointCloud<PointT>::Ptr normals_line_inliers_cloud (new pcl::PointCloud<PointT> ());
 
             // Extract the circular inliers 
-            pcl::ExtractIndices<PointT> normals_extraction_of_circle;
+            pcl::ExtractIndices<PointT> normals_extraction_of_line;
             // Set which indices to extract
-            normals_extraction_of_circle.setIndices (normals_circle_inliers);
+            normals_extraction_of_line.setIndices (normals_line_inliers);
             // Set point cloud from where to extract
-            normals_extraction_of_circle.setInputCloud (working_cluster_cloud);
+            normals_extraction_of_line.setInputCloud (working_cluster_cloud);
 
             // Return the points which represent the inliers
-            normals_extraction_of_circle.setNegative (false);
+            normals_extraction_of_line.setNegative (false);
             // Call the extraction function
-            normals_extraction_of_circle.filter (*normals_circle_inliers_cloud);
+            normals_extraction_of_line.filter (*normals_line_inliers_cloud);
 
-            if ( circle_feature_step )
+            if ( line_feature_step )
             {
               std::stringstream after_normals_id;
-              after_normals_id << "CIRCLE_INLIERS_" << ros::Time::now();
-              circle_viewer.addPointCloud (*normals_circle_inliers_cloud, after_normals_id.str ());
-              circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
-              circle_viewer.spin ();
-              circle_viewer.removePointCloud (after_normals_id.str());
-              circle_viewer.spin ();
+              after_normals_id << "LINE_INLIERS_" << ros::Time::now();
+              line_viewer.addPointCloud (*normals_line_inliers_cloud, after_normals_id.str ());
+              line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, after_normals_id.str ()); 
+              line_viewer.spin ();
+              line_viewer.removePointCloud (after_normals_id.str());
+              line_viewer.spin ();
             }
 
-            // Update the inliers of circle
-            *circle_inliers = *normals_circle_inliers;
+            // Update the inliers of line
+            *line_inliers = *normals_line_inliers;
             // Update the points of inliers
-            *circle_inliers_cloud = *normals_circle_inliers_cloud;
+            *line_inliers_cloud = *normals_line_inliers_cloud;
           }
         }
+
+
+
+
+/*
+
+        // ------------------------- //
+        // Update extraction process //
+        // ------------------------- //
+
+        // Set which indices to extract
+        extraction_of_line.setIndices (line_inliers);
+        // Set point cloud from where to extract
+        extraction_of_line.setInputCloud (working_cluster_cloud);
+
+        // Return the points which represent the inliers
+        extraction_of_line.setNegative (false);
+        // Call the extraction function
+        extraction_of_line.filter (*line_inliers_cloud);
+
+
+
+        // Adjust the coefficients of the line model
+        adjustLineCoefficients (line_inliers_cloud, line_coefficients);
+
+*/
+
+
+
+
+
 
 
 
         // START W/ THE PERCENTAGE FEATURE //
  
         // Percentage of fitted inliers 
-        double the_percentage_of_the_remaining_circle_inliers = 0;
+        double the_percentage_of_the_remaining_line_inliers = 0;
 
         if ( percentage_feature )
         {
-          if ( (int) circle_inliers->indices.size() < minimum_circle_inliers )
+          if ( (int) line_inliers->indices.size() < minimum_line_inliers )
           {
-            // The current circle model will be rejected
-            valid_circle = false;
+            ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+            // The current line model will be rejected
+            valid_line = false;
           }
           else
           {
             // Percentage of fitted inleirs 
-            the_percentage_of_the_remaining_circle_inliers = round ((double) circle_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_circle * 100);
+            the_percentage_of_the_remaining_line_inliers = round ((double) line_inliers_cloud->points.size() / (double) the_actual_number_of_points_from_the_fitted_line * 100);
 
-            if ( the_percentage_of_the_remaining_circle_inliers < circle_percentage )
+            if ( the_percentage_of_the_remaining_line_inliers < line_percentage )
             {
-              // The current circle model will be rejected
-              valid_circle = false;
+              // The current line model will be rejected
+              valid_line = false;
             }
             else
             {
-              // The current circle model will be accepted
-              valid_circle = true;
+              // The current line model will be accepted
+              valid_line = true;
             }
           }
         }
@@ -1482,7 +1757,7 @@ int main (int argc, char** argv)
         // WARNING //
        
         // Bug in pcl extract indices class, or maybe in pcl filter class 
-        if ( (int) working_cluster_cloud->points.size () == the_actual_number_of_points_from_the_fitted_circle )
+        if ( (int) working_cluster_cloud->points.size () == the_actual_number_of_points_from_the_fitted_line )
         {
           // Clear manually the working cluster cloud
           working_cluster_cloud->points.clear ();
@@ -1490,201 +1765,558 @@ int main (int argc, char** argv)
         else
         {
           // Return the remaining points of inliers
-          extraction_of_circle.setNegative (true);
+          extraction_of_line.setNegative (true);
           // Call the extraction function
-          extraction_of_circle.filter (*working_cluster_cloud);
+          extraction_of_line.filter (*working_cluster_cloud);
         }
 
 
 
         if ( verbose )
         {
-          ROS_INFO ("  The actual number of points from the fitted circle is %d !", the_actual_number_of_points_from_the_fitted_circle);
-          ROS_INFO ("  Circle has %d inliers left", (int) circle_inliers_cloud->points.size());
+          ROS_INFO ("  The actual number of points from the fitted line is %d !", the_actual_number_of_points_from_the_fitted_line);
+          ROS_INFO ("  Line has %d inliers left", (int) line_inliers_cloud->points.size());
           ROS_INFO ("  %d points remain after extraction", (int) working_cluster_cloud->points.size ());
         }
 
-        if ( !valid_circle )
+
+
+        // First point of line
+        double P1[2];
+        P1[0] = line_coefficients.values [0];
+        P1[1] = line_coefficients.values [1];
+
+        // Second point of line
+        double P2[2];
+        P2[0] = line_coefficients.values [3] + line_coefficients.values [0];
+        P2[1] = line_coefficients.values [4] + line_coefficients.values [1];
+
+        // FINAL CHECK BEFORE ACCEPTING/REJECTING MODEL //
+        // NOT SURE IF REALLY NECESSARY, BUT FOR SURE IT IS BETTER TO BE SAFE THAN SORRY //
+        if ( (int) line_inliers->indices.size() < minimum_line_inliers )
         {
-          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                the_percentage_of_the_remaining_circle_inliers, circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+          ROS_ERROR ("  [MINIMUM LINE INLIERS] Reject line model !");
+
+          // The current line model will be rejected
+          valid_line = false;
+        }
+
+
+        if ( !valid_line )
+        {
+          ROS_ERROR ("  REJECTED ! %3.0f [%] ! Line [%2d] has %3d inliers with P1 = [%6.3f,%6.3f] and P2 = [%6.3f,%6.3f] found in maximum %d iterations",
+              the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), P1[0], P1[1], P2[0], P2[1], maximum_line_iterations);
 
           /*
-          // No need for fitting circles anymore
-          stop_circle_fitting = true;
+          // No need for fitting lines anymore
+          stop_line_fitting = true;
           */
         }
         else
         {
-          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Circle [%2d] has %3d inliers with C = (%6.3f,%6.3f) and R = %5.3f in [%5.3f, %5.3f] found in maximum %d iterations",
-                the_percentage_of_the_remaining_circle_inliers, circle_fit, (int) circle_inliers->indices.size (), circle_coefficients.values [0], circle_coefficients.values [1], circle_coefficients.values [2], minimum_radius, maximum_radius, maximum_circle_iterations);
+          ROS_INFO ("  ACCEPTED ! %3.0f [%] ! Line [%2d] has %3d inliers with P1 = [%6.3f,%6.3f] and P2 = [%6.3f,%6.3f] found in maximum %d iterations",
+              the_percentage_of_the_remaining_line_inliers, line_fit, (int) line_inliers->indices.size (), P1[0], P1[1], P2[0], P2[1], maximum_line_iterations);
 
-          // ------------------------------------- //
-          // Build the parameter space for circles //
-          // ------------------------------------- //
+          // ----------------------------------- //
+          // Build the parameter space for lines //
+          // ----------------------------------- //
+          
 
-          // A vote consists of the actual circle parameters
-          PointT circle_vot;
-          circle_vot.x = circle_coefficients.values [0]; // cx
-          circle_vot.y = circle_coefficients.values [1]; // cy
-          circle_vot.z = circle_coefficients.values [2]; // r
+          // First point of line
+          double x1 = line_coefficients.values [0];
+          double y1 = line_coefficients.values [1];
 
-
+          // Second point of line
+          double x2 = line_coefficients.values [3] + line_coefficients.values [0];
+          double y2 = line_coefficients.values [4] + line_coefficients.values [1];
 
 /*
-          double cx = circle_coefficients.values.at (0);
-          double cy = circle_coefficients.values.at (1);
-          double  r = circle_coefficients.values.at (2);
 
-          for (int idx = 0; idx < (int) circle_inliers_cloud->points.size(); idx++)
+          // Distances to the origin
+          double d1 = sqrt ( (x1 - 0)*(x1 - 0) + (y1 - 0)*(y1 - 0) );
+          double d2 = sqrt ( (x2 - 0)*(x2 - 0) + (y2 - 0)*(y2 - 0) );
+
+          // Vector from the origin to the point
+          double o2p[2];
+
+          // Which end of the segment is closer to the origin
+          if ( d1 < d2 )
           {
-            double z = circle_inliers_cloud->points.at (idx).z;
-
-            if ( z < h_of_Z )
-            {
-              double x = circle_inliers_cloud->points.at (idx).x;
-              double y = circle_inliers_cloud->points.at (idx).y;
-
-              double d = sqrt ( _sqr (cx-x) + _sqr (cy-y) ) - r;
-
-              if ( d < circle_threshold ) 
-              {
-                // Save only the right indices
-                inliers->indices.push_back (idx);
-              }
-            }
+            o2p[0] = x1 - 0;
+            o2p[1] = y1 - 0;
           }
+          else
+          {
+            o2p[0] = x2 - 0;
+            o2p[1] = y2 - 0;
+          }
+
+          // The radius parameter of the polar coordinates
+          double radius = sqrt ( o2p[0]*o2p[0] + o2p[1]*o2p[1] );
+
+          // Normalize the vector
+          float lo2p = sqrt (o2p[0]*o2p[0] + o2p[1]*o2p[1]);
+          o2p[0] = o2p[0] / lo2p;
+          o2p[1] = o2p[1] / lo2p;
+
+          // Unit vector of the X axis
+          double o2x[2];
+          o2x[0] = 1;
+          o2x[1] = 0;
+
+          // The angle parameter of the polar coordinates
+          float dot = o2p[0]*o2x[0] + o2p[1]*o2x[1];
+          float theta = acos (dot);
+
+*/
+
+/*
+
+          cerr << setprecision (3) << " x1 = " << x1 << " y1 = " << y1 << endl ;
+          cerr << setprecision (3) << " x2 = " << x2 << " y2 = " << y2 << endl ;
+          cerr << setprecision (3) << "  x = " << o2p[0]*radius << "  y = " << o2p[1]*radius << endl ;
+
+          cerr << endl ;
+
+          cerr << "  acos " << theta * 180.0 / M_PI << endl ;
+          cerr << "  atan " << atan (o2p[1] / o2p[0]) * 180.0 / M_PI << endl ;
+          cerr << " atan2 " << atan2 (o2p[1], o2p[0]) * 180.0 / M_PI << endl ;
+
 */
 
 
-
 /*
-          PointT min, max;
-          pcl::getMinMax3D (*circle_inliers_cloud, min, max);
-          circle_vot.intensity = max.z; // h
+
+          // A vote consists of polar coordinates
+          pcl::Histogram<4> line_vote;
+//          line_vote.x = (P1[0] + P2[0]) / 2;
+//          line_vote.y = (P1[1] + P2[1]) / 2;
+          line_vote.x = (x1 + x2) / 2;
+          line_vote.y = (y1 + y2) / 2;
+          line_vote.z = sqrt ( _sqr (P2[0] - P1[0]) + _sqr (P2[1] - P1[1]) );
+          //line_vote.z = 0.0;
+
+          line_vote.normal_x  = x1;
+          line_vote.normal_y  = y1;
+          line_vote.normal_z  = x2;
+          line_vote.curvature = y2;
+
+          // Cast one vot for the current line
+          line_parameters_cloud->points.push_back (line_vote);
+
 */
 
+             pcl::Histogram<4> data_of_model;
+
+             data_of_model.histogram[0] = x1;
+             data_of_model.histogram[1] = y1;
+             data_of_model.histogram[2] = x2;
+             data_of_model.histogram[3] = y2;
+
+          // Cast one vot for the current line, you know what !
+          line_parameters_cloud->points.push_back (data_of_model);
 
 
-          double minimus = +DBL_MAX;
-          double maximus = -DBL_MAX;
-
-          for (int point = 0; point < (int) circle_inliers_cloud->points.size(); point++)
-          {
-            double Z = circle_inliers_cloud->points.at (point).z;
-
-            if ( minimus > Z ) minimus = Z;
-            if ( maximus < Z ) maximus = Z;
-          }
-
-          circle_vot.intensity = minimus; // h
-          circle_vot.curvature = maximus; // h
-
-
-
-          // Cast one vot for the current circle
-          circle_parameters_cloud->points.push_back (circle_vot);
 
           // --------------------------- //
           // Start visualization process //
           // --------------------------- //
 
-          if ( circle_step )
+          if ( line_step )
           {
-            // Create ID for circle model
-            std::stringstream circle_id;
-            circle_id << "CIRCLE_" << ros::Time::now();
+            // Create ID for line model
+            std::stringstream line_id;
+            line_id << "LINE_" << ros::Time::now();
 
-            // Create ID for circle inliers
-            std::stringstream circle_inliers_id;
-            circle_inliers_id << "CIRCLE_INLIERS_" << ros::Time::now();
+            // Create ID for line inliers
+            std::stringstream line_inliers_id;
+            line_inliers_id << "LINE_INLIERS_" << ros::Time::now();
  
-            // Add circle model to point cloud data
-            circle_viewer.addCircle (circle_coefficients, circle_id.str ());
+            // Add line model to point cloud data
+            line_viewer.addLine (line_coefficients, line_id.str ());
 
             // Add the point cloud data
-            circle_viewer.addPointCloud (*circle_inliers_cloud, circle_inliers_id.str ());
+            line_viewer.addPointCloud (*line_inliers_cloud, line_inliers_id.str ());
 
             // Set the size of points for cloud data
-            circle_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, circle_inliers_id.str ()); 
+            line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, size, line_inliers_id.str ()); 
 
             // And wait until Q key is pressed
-            circle_viewer.spin ();
+            line_viewer.spin ();
 
-            // Save circle ids for cleaning the viewer afterwards
-            circles_ids.push_back (circle_id.str());
-            // Save also circle inliers ids
-            circles_inliers_ids.push_back (circle_inliers_id.str());
+            // Save line ids for cleaning the viewer afterwards
+            lines_ids.push_back (line_id.str());
+            // Save also line inliers ids
+            lines_inliers_ids.push_back (line_inliers_id.str());
           }
 
           // Fit only one model for each cluster in every iteration
-          // No need for fitting circles anymore
-          //          stop_circle_fitting = true;
+          // No need for fitting lines anymore
+          //          stop_line_fitting = true;
         }
 
-        // number of fitted circles
-        circle_fit++;
-
-
-        ///*
-
-
-        //shape circle;
-        //circle.type = "line";
-        //circle.coefficients = circle_coefficients;
-        //circle.indices = circle_inliers;
-        //circle.inliers = circle_inliers_cloud;
-        //circle.cluster = working_cluster_cloud;
-
-
-        //*/
-
-
+        // number of fitted lines
+        line_fit++;
 
         // --------------------------------------------------- //
-        // Check for continuing with the fitting of 2D circles //
+        // Check for continuing with the fitting of 2D lines //
         // --------------------------------------------------- //
 
         // Print the number of points left for model fitting
-        if ( (int) working_cluster_cloud->points.size () < minimum_circle_inliers )
-          ROS_WARN ("    %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+        if ( (int) working_cluster_cloud->points.size () < minimum_line_inliers )
+          ROS_WARN ("    %d < %d | Stop !", (int) working_cluster_cloud->points.size (), minimum_line_inliers);
         else
-          if ( (int) working_cluster_cloud->points.size () > minimum_circle_inliers )
-            ROS_WARN ("    %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+          if ( (int) working_cluster_cloud->points.size () > minimum_line_inliers )
+            ROS_WARN ("    %d > %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_line_inliers);
           else
-            ROS_WARN ("    %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_circle_inliers);
+            ROS_WARN ("    %d = %d | Continue... ", (int) working_cluster_cloud->points.size (), minimum_line_inliers);
 
-      } while ((int) working_cluster_cloud->points.size () > minimum_circle_inliers && stop_circle_fitting == false);
+      } while ((int) working_cluster_cloud->points.size () > minimum_line_inliers && stop_line_fitting == false);
     }
 
     // ---------------------- //
     // Start cleaning process //
     // ---------------------- //
 
-    if ( circle_step )
+    if ( line_step )
     {
-      for (int id = 0; id < (int) circles_ids.size(); id++)
+      for (int id = 0; id < (int) lines_ids.size(); id++)
       {
-        // Remove circle from the viewer
-        circle_viewer.removeShape (circles_ids[id]);
+        // Remove line from the viewer
+        line_viewer.removeShape (lines_ids[id]);
       }
 
-      for (int id = 0; id < (int) circles_inliers_ids.size(); id++)
+      for (int id = 0; id < (int) lines_inliers_ids.size(); id++)
       {
-        // Remove circle from the viewer
-        circle_viewer.removePointCloud (circles_inliers_ids[id]);
+        // Remove line from the viewer
+        line_viewer.removePointCloud (lines_inliers_ids[id]);
       }
 
       // And wait until Q key is pressed
-      circle_viewer.spin ();
+      line_viewer.spin ();
     }
   }
 
+
+
+
+
+  int rows = line_parameters_cloud->points.size ();
+  int cols = 4;
+  int i, j;
+
+
+
+
+  flann::Matrix<float> dataset;
+
+  dataset = flann::Matrix <float> (new float[rows*cols], rows, cols);
+
+  for (i=0;i<rows;++i) 
+  {
+    for (j=0;j<cols;++j) 
+    {
+      *dataset.data = line_parameters_cloud->points.at (i).histogram[j];
+      dataset.data++;
+    }
+  }
+
+  flann::Matrix<float> query;
+
+  i = 64;
+
+  for (j=0;j<cols;++j) 
+  {
+    *query.data = line_parameters_cloud->points.at (i).histogram[j];
+    query.data++;
+  }
+
+
+  int nn = 5;
+
+  flann::Matrix <int> indices (new int[query.rows * nn], query.rows, nn);
+  flann::Matrix <float> dists (new float[query.rows * nn], query.rows, nn);
+
+  flann::Index<flann::L2<float> > index( dataset, flann::KDTreeIndexParams(4));
+
+  index.buildIndex();
+
+  index.knnSearch (query, indices, dists, nn, flann::SearchParams(128));
+
+  cerr << dists.data << endl; 
+
+  cerr << dists.data [0] << endl; 
+  cerr << dists.data [1] << endl; 
+  cerr << dists.data [2] << endl; 
+  cerr << dists.data [3] << endl; 
+  cerr << dists.data [4] << endl; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// JUST FOR SAVING TIME IF WORKING W/ THE SAME PARAMETERS SPACE OVER AND OVER AGAIN ///
+
+/// NOT IMPLEMENTED YET ///
+
+
   // -------------------------------------------------------------- //
-  // ------------------ Circles Parameters Space ------------------ //
+  // ------------------- Lines Parameters Space ------------------- //
   // -------------------------------------------------------------- //
 
 
+/*
+  std::stringstream line_parameters_id;
+  line_parameters_id << "LINE_PARAMETERS_" << ros::Time::now();
+  line_viewer.addPointCloud (*line_parameters_cloud, line_parameters_id.str ());
+  line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 10, line_parameters_id.str ()); 
+  line_viewer.spin ();
+*/
+
+/*
+  std::string line_parameters_filename = argv [pFileIndicesPCD [0]];
+  line_parameters_filename.insert (fullstop, "-lines");
+  pcl::io::savePCDFile (line_parameters_filename, *line_parameters_cloud);
+*/
+
+/*
+ *
+  if ( verbose )
+  {
+    ROS_INFO ("The parameters space of line models has %d votes !", (int) line_parameters_cloud->points.size ());
+  }
+
+  std::vector<pcl::PointIndices> line_parameters_clusters;
+  pcl::KdTreeFLANN<pcl::Histogram<4> >::Ptr line_parameters_clusters_tree (new pcl::KdTreeFLANN<pcl::Histogram<4> > ());
+
+  pcl::EuclideanClusterExtraction<pcl::Histogram<4> > line_parameters_extraction_of_clusters;
+  line_parameters_extraction_of_clusters.setInputCloud (line_parameters_cloud);
+  line_parameters_extraction_of_clusters.setClusterTolerance (clustering_tolerance_of_line_parameters);
+  line_parameters_extraction_of_clusters.setMinClusterSize (minimum_size_of_line_parameters_clusters);
+  line_parameters_extraction_of_clusters.setSearchMethod (line_parameters_clusters_tree);
+  line_parameters_extraction_of_clusters.extract (line_parameters_clusters);
+
+  if ( verbose )
+  {
+    ROS_INFO ("The parameters space has also %d clusters", (int) line_parameters_clusters.size ());
+    for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
+      ROS_INFO ("  Cluster %d has %d points", clu, (int) line_parameters_clusters.at (clu).indices.size());
+  }
+
+  std::vector<pcl::PointIndices::Ptr> line_parameters_clusters_indices;
+  std::vector<pcl::PointCloud<pcl::Histogram<4> >::Ptr> line_parameters_clusters_clouds;
+
+  for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
+  {
+    pcl::PointIndices::Ptr  cluster_indices (new pcl::PointIndices (line_parameters_clusters.at (clu)));
+    pcl::PointCloud<pcl::Histogram<4> >::Ptr cluster_cloud (new pcl::PointCloud<pcl::Histogram<4> > ());
+
+    pcl::ExtractIndices<pcl::Histogram<4> > line_parameters_extraction_of_indices;
+    line_parameters_extraction_of_indices.setInputCloud (line_parameters_cloud);
+    line_parameters_extraction_of_indices.setIndices (cluster_indices);
+    line_parameters_extraction_of_indices.setNegative (false);
+    line_parameters_extraction_of_indices.filter (*cluster_cloud);
+
+    line_parameters_clusters_indices.push_back (cluster_indices);
+    line_parameters_clusters_clouds.push_back (cluster_cloud);
+  }
+*/
+
+  //std::vector<std::string> line_parameters_clusters_ids;
+
+  //for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
+  //{
+
+
+    /*
+    std::stringstream cluster_id;
+    cluster_id << "CIRLCE_PARAMETERS_CLUSTER_" << ros::Time::now();
+    line_viewer.addPointCloud (*line_parameters_clusters_clouds.at (clu), cluster_id.str());
+    line_viewer.setPointCloudRenderingProperties (pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 20, cluster_id.str()); 
+    line_viewer.spin ();
+*/
+
+
+
+
+
+
+
+
+
+/*
+
+
+    float sxm = 0.0;
+    float sym = 0.0;
+    float  sl = 0.0;
+
+    float sx1 = 0.0;
+    float sy1 = 0.0;
+    float sx2 = 0.0;
+    float sy2 = 0.0;
+
+    int votes = line_parameters_clusters_clouds.at (clu)->points.size();
+
+    for (int vot = 0; vot < votes; vot++)
+    {
+      float xm = line_parameters_clusters_clouds.at (clu)->points.at (vot).x;
+      float ym = line_parameters_clusters_clouds.at (clu)->points.at (vot).y;
+      float  l = line_parameters_clusters_clouds.at (clu)->points.at (vot).z;
+
+      float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
+      float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
+      float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
+      float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).curvature;
+
+      sxm = sxm + xm;
+      sym = sym + ym;
+       sl =  sl +  l;
+
+      sx1 = sx1 + x1;
+      sy1 = sy1 + y1;
+      sx2 = sx2 + x2;
+      sy2 = sy2 + y2;
+    }
+
+    float mxm = sxm / votes;
+    float mym = sym / votes;
+    float  ml =  sl / votes;
+
+    float mx1 = sx1 / votes;
+    float my1 = sy1 / votes;
+    float mx2 = sx2 / votes;
+    float my2 = sy2 / votes;
+
+
+
+*/
+
+
+
+/*
+
+
+
+    pcl::ModelCoefficients M2P1;
+    M2P1.values.push_back (mxm);
+    M2P1.values.push_back (mym);
+    M2P1.values.push_back (0.0);
+    M2P1.values.push_back (mx1 - mxm);
+    M2P1.values.push_back (my1 - mym);
+    M2P1.values.push_back (0.0);
+
+    std::stringstream M2P1_id;
+    M2P1_id << "M2P1_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P1, M2P1_id.str ());
+
+
+
+
+
+    pcl::ModelCoefficients M2P2;
+    M2P2.values.push_back (mxm);
+    M2P2.values.push_back (mym);
+    M2P2.values.push_back (0.0);
+    M2P2.values.push_back (mx2 - mxm);
+    M2P2.values.push_back (my2 - mym);
+    M2P2.values.push_back (0.0);
+
+    std::stringstream M2P2_id;
+    M2P2_id << "M2P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P2, M2P2_id.str ());
+
+
+
+
+
+*/
+
+/*
+
+    pcl::ModelCoefficients P1P2;
+    P1P2.values.push_back (mx1);
+    P1P2.values.push_back (my1);
+    P1P2.values.push_back (0.0);
+    P1P2.values.push_back (mx2 - mx1);
+    P1P2.values.push_back (my2 - my1);
+    P1P2.values.push_back (0.0);
+
+    std::stringstream P1P2_id;
+    P1P2_id << "P1P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (P1P2, P1P2_id.str ());
+
+*/
+
+
+/*
+
+    double vec[2];
+    vec[0] = mx2 - mx1;
+    vec[1] = my2 - my1;
+
+    double nor = sqrt ( _sqr (vec[0]) + _sqr (vec[1]) );
+    vec[0] = vec[0] / nor;
+    vec[1] = vec[1] / nor;
+
+    double A[2];
+    A[0] = mxm + vec[0] * ml / 2;
+    A[1] = mym + vec[1] * ml / 2;
+
+    double B[2];
+    B[0] = mxm - vec[0] * ml / 2;
+    B[1] = mym - vec[1] * ml / 2;
+
+    pcl::ModelCoefficients AB;
+    AB.values.push_back (A[0]);
+    AB.values.push_back (A[1]);
+    AB.values.push_back (0.0);
+    AB.values.push_back (B[0] - A[0]);
+    AB.values.push_back (B[1] - A[1]);
+    AB.values.push_back (0.0);
+
+    std::stringstream AB_id;
+    AB_id << "AB_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (AB, AB_id.str ());
+
+
+
+
+    cerr << ml << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (B[0] - A[0]) + _sqr (B[1] - A[1]) ) << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (mx2 - mx1) + _sqr (my2 - my1) ) << " meters ! " << endl;
+
+    cerr << " Model for LPS cluster " << clu << " ! " << endl ;
+
+    line_viewer.spin ();
+
+
+*/
 
 
 
@@ -1697,6 +2329,170 @@ int main (int argc, char** argv)
 
 
 
+
+
+
+
+
+
+/*
+    line_parameters_clusters_ids.push_back (cluster_id.str());
+*/
+
+
+  //}
+
+  cerr << " Finished w/ printing the clusters of parameters space ! " << endl ;
+
+  line_viewer.spin ();
+  line_viewer.spin ();
+  line_viewer.spin ();
+
+
+/*
+
+  for (int clu = 0; clu < (int) line_parameters_clusters.size(); clu++)
+  {
+    float sxm = 0.0;
+    float sym = 0.0;
+    float  sl = 0.0;
+
+    float sx1 = 0.0;
+    float sy1 = 0.0;
+    float sx2 = 0.0;
+    float sy2 = 0.0;
+
+    int votes = line_parameters_clusters_clouds.at (clu)->points.size();
+
+    for (int vot = 0; vot < votes; vot++)
+    {
+      float xm = line_parameters_clusters_clouds.at (clu)->points.at (vot).x;
+      float ym = line_parameters_clusters_clouds.at (clu)->points.at (vot).y;
+      float  l = line_parameters_clusters_clouds.at (clu)->points.at (vot).z;
+
+      float x1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_x;
+      float y1 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_y;
+      float x2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).normal_z;
+      float y2 = line_parameters_clusters_clouds.at (clu)->points.at (vot).curvature;
+
+      sxm = sxm + xm;
+      sym = sym + ym;
+       sl =  sl +  l;
+
+      sx1 = sx1 + x1;
+      sy1 = sy1 + y1;
+      sx2 = sx2 + x2;
+      sy2 = sy2 + y2;
+    }
+
+    float mxm = sxm / votes;
+    float mym = sym / votes;
+    float  ml =  sl / votes;
+
+    float mx1 = sx1 / votes;
+    float my1 = sy1 / votes;
+    float mx2 = sx2 / votes;
+    float my2 = sy2 / votes;
+
+
+
+*/
+
+
+
+/*
+
+
+
+    pcl::ModelCoefficients M2P1;
+    M2P1.values.push_back (mxm);
+    M2P1.values.push_back (mym);
+    M2P1.values.push_back (0.0);
+    M2P1.values.push_back (mx1 - mxm);
+    M2P1.values.push_back (my1 - mym);
+    M2P1.values.push_back (0.0);
+
+    std::stringstream M2P1_id;
+    M2P1_id << "M2P1_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P1, M2P1_id.str ());
+
+
+
+
+
+    pcl::ModelCoefficients M2P2;
+    M2P2.values.push_back (mxm);
+    M2P2.values.push_back (mym);
+    M2P2.values.push_back (0.0);
+    M2P2.values.push_back (mx2 - mxm);
+    M2P2.values.push_back (my2 - mym);
+    M2P2.values.push_back (0.0);
+
+    std::stringstream M2P2_id;
+    M2P2_id << "M2P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (M2P2, M2P2_id.str ());
+
+
+
+
+
+*/
+
+
+
+
+/*
+ *
+    pcl::ModelCoefficients P1P2;
+    P1P2.values.push_back (mx1);
+    P1P2.values.push_back (my1);
+    P1P2.values.push_back (0.0);
+    P1P2.values.push_back (mx2 - mx1);
+    P1P2.values.push_back (my2 - my1);
+    P1P2.values.push_back (0.0);
+
+    std::stringstream P1P2_id;
+    P1P2_id << "P1P2_LINE_" << ros::Time::now();
+
+    line_viewer.addLine (P1P2, P1P2_id.str ());
+
+
+
+
+    cerr << ml << " meters ! " << endl;
+
+    cerr <<  sqrt ( _sqr (mx2 - mx1) + _sqr (my2 - my1) ) << " meters ! " << endl;
+
+    cerr << " Model for LPS cluster " << clu << " ! " << endl ;
+
+    line_viewer.spin ();
+    line_viewer.spin ();
+    line_viewer.spin ();
+
+  }
+
+*/
 
   exit (0);
+
+
+
+  textfile << "\n" << std::flush;
+
+  textfile.close();
+
+
+
+  if ( verbose )
+  {
+    // Displaying the overall time
+    ROS_WARN ("Finished in %5.3g [s] !", tt.toc ());
+  }
+
+  // And wait until Q key is pressed
+  line_viewer.spin ();
+
+  return (0);
 }
