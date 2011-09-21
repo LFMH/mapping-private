@@ -5,7 +5,7 @@
 #include <urdf/model.h>
 #include <pcl/pcl_base.h>
 
-namespace dos_pcl_ros
+namespace realtime_perception
 {
 
 template <typename PointT>

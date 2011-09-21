@@ -11,8 +11,8 @@
 
   <depend package="urdf" />
   <depend package="tf" />
-  <depend package="pcl_ros" />
   <depend package="openni_camera" />
+  <depend package="realtime_perception" />
 
 
 </package>

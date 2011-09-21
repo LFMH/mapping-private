@@ -1,0 +1,56 @@
+<launch>
+
+  <node pkg="realtime_segmentation" type="realtime_segmentation" name="urdf_cloud_filter" output="screen">
+    <remap from="~input" to="/cloud_pcd" />
+    <rosparam>
+      tf_prefix: /ias_kitchen
+      model_description: /ias_kitchen/kitchen_description
+      approximate_sync: true
+      threshold: 0.02
+      stop_link: /ias_kitchen/kitchen_link
+      relevant_rois:
+
+        # first, we specify what points we want to delete
+        - {regex: "counter_top_(.*)_link",
+           operation: "delete"}
+
+#        - {regex: "drawer_.*", 
+#           operation: "delete"}
+#
+#        - {regex: "handle_.*", 
+#           operation: "delete"}
+        
+        # attempt to fit drawers so we get the opening displacement
+        - {regex: "fridge.*fixed_link", 
+           operation: "fit_door",
+           min_drawer_inliers: 100,
+           publish: "fridge_front", 
+           search_expand_axis: [1.0, 0.0, 0.0],
+           search_expand_distance: 1.0}
+
+        # attempt to fit drawers so we get the opening displacement
+        - {regex: "drawer_.*_fixed_link", 
+           operation: "fit_drawer",
+           min_drawer_inliers: 100,
+           publish: "drawer_fronts"} 
+        
+        # attempt to segment objects on counters and shelves
+        - {regex: "counter_top_(.*)_link",
+           operation: "segment_objects",
+           publish: "objects_on_$1_counter",
+           search_expand_axis: [0.0, 0.0, 1.0],
+           search_expand_distance: 1.0}
+           
+        - {regex: "shelf_(.*)_link",
+           operation: "segment_objects",
+           publish: "objects_on_$1_shelf",
+           search_expand_axis: [0.0, 0.0, 1.0],
+           search_expand_distance: 0.3}
+
+        - {regex: "(wall|counter_side).*",
+           operation: "delete"}
+        
+    </rosparam>
+  </node>
+
+</launch>

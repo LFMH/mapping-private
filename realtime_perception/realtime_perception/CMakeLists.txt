@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 
@@ -19,15 +19,23 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 find_package(CUDA REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(OpenGL )
-find_package(GLUT )
+FIND_LIBRARY( freeglut_LIBRARY glut /usr/lib)
 
 # disabling this line makes the compiler use the system-wide install of pcl.
 # this will conflict with the ros-wide pcl that gets pulled in through the manifest.xml
 #find_package(PCL REQUIRED) 
 
-include_directories(${PCL_INCLUDE_DIRS})
+#include_directories(${PCL_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${OPENGL_INCLUDE_DIR})
+FIND_PATH( freeglut_INCLUDE_DIR GL/freeglut.h
+  /usr/include/GL
+  /usr/openwin/share/include
+  /usr/openwin/include
+  /opt/graphics/OpenGL/include
+  /opt/graphics/OpenGL/contrib/libglut
+  )
+include_directories(${freeglut_INCLUDE_DIR})
 
 include(CudaComputeTargetFlags.cmake)
 APPEND_TARGET_ARCH_FLAGS()
@@ -42,6 +50,8 @@ APPEND_TARGET_ARCH_FLAGS()
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
+#rosbuild_add_executable(example examples/example.cpp)
+#target_link_libraries(example ${PROJECT_NAME})
 
 ############################################## RIPPED FROM rosbuild/public.cmake
 # A wrapper around add_executable(), using info from the rospack
@@ -99,6 +109,9 @@ macro(rosbuild_cuda_add_executable exe)
 endmacro(rosbuild_cuda_add_executable)
 ############################################## RIPPED FROM rosbuild/public.cmake
 
-#rosbuild_cuda_add_executable(realtime_segmentation src/realtime_segmentation.cpp)
-#target_link_libraries (realtime_segmentation pcl_io pcl_cuda_io pcl_cuda_features pcl_cuda_segmentation pcl_cuda_sample_consensus pcl_visualization pcl_common pcl_kdtree pcl_range_image ${OpenCV_LIBS} ${OPENGL_LIBRARIES})
+rosbuild_add_executable(offscreen_test src/offscreen_test.cpp src/urdf_renderer.cpp src/renderable.cpp src/offscreen_rendering.cpp src/shader_wrapper.cpp)
+target_link_libraries(offscreen_test ${OPENGL_LIBRARIES} ${freeglut_LIBRARY} pcl_io pcl_cuda_io pcl_common pcl_cuda_features pcl_cuda_segmentation pcl_cuda_sample_consensus ${OpenCV_LIBS})
 
+#rosbuild_cuda_add_executable(urdf_filter src/urdf_filter.cpp src/boxlist_ray_intersection.cu)
+#target_link_libraries(urdf_filter pcl_io pcl_cuda_io pcl_visualization pcl_common pcl_kdtree pcl_range_image)
+#

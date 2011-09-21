@@ -56,6 +56,9 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/gpu/gpu.hpp"
 
+// to do the urdf / depth image intersection
+#include "offscreen_rendering.h"
+
 #include <pcl/io/openni_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -66,7 +69,12 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/publisher.h>
 #include <realtime_perception/point_types.h>
+#include <urdf_cloud_filter.h>
 
+// for auto_ptr
+#include <memory>
+
+//#include "boxlist_ray_intersection.h"
 using namespace pcl::cuda;
 
 template <template <typename> class Storage>
@@ -117,6 +125,9 @@ class Segmentation
 
 
       }
+      //urdf_filter.reset (new realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> );
+      //urdf_filter->onInit (nh);
+      //urdf_filter->target_frames_;
     }
 
     void publish_cloud ()
@@ -233,6 +244,8 @@ class Segmentation
         ptr = typename StoragePointer<Storage,char4>::type ((char4*)normal_image.data);
         createNormalsImage<Storage> (ptr, *normals);
       }
+
+      //urdf_filter->filter (data);
 
       //TODO: this breaks for pcl::cuda::Host, meaning we have to run this on the GPU
       std::vector<int> reg_labels;
@@ -424,6 +437,7 @@ class Segmentation
     int radius_cm;
     int normal_viz_step;
     bool gui;
+    //std::auto_ptr <realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> > urdf_filter;
 };
 
 bool command_line_param (int argc, char** argv, std::string flag)
@@ -440,8 +454,8 @@ bool command_line_param (int argc, char** argv, std::string flag)
 int 
 main (int argc, char **argv)
 {
-  ros::init(argc, argv, "realtime_segmentation");
-  ros::NodeHandle nh;
+  ros::init (argc, argv, "realtime_segmentation");
+  ros::NodeHandle nh ("~");
 
   bool gui = false;
   if (command_line_param (argc, argv, "--gui"))

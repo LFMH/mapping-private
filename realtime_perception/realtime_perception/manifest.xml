@@ -1,0 +1,25 @@
+<package>
+  <description brief="realtime_perception">
+
+     realtime_perception
+
+  </description>
+  <author>Nico Blodow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/realtime_perception</url>
+  
+  <depend package="urdf" />
+  <depend package="tf" />
+  <depend package="pcl" />
+  <depend package="pcl_ros" />
+  <depend package="openni" />
+  <depend package="resource_retriever" />
+  <depend package="assimp" />
+  <export>
+    <cpp cflags="-I${prefix}/include" />
+  </export>
+
+</package>
+
+
