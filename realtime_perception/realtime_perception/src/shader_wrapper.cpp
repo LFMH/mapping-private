@@ -1,4 +1,8 @@
 #include <realtime_perception/shader_wrapper.h>
+#include <iostream>
+#include <stdlib.h>
+#include <string.h>
+#include <resource_retriever/retriever.h>
 //#define GL_GLEXT_PROTOTYPES
 //#include <GL/glext.h>
 
@@ -72,12 +76,17 @@ GLuint ShaderWrapper::compile (GLuint type, char const * (&shader_source) [L])
   glGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
   if (!compiled)
   {
+    for (unsigned int i = 0; i < L; ++i)
+      std::cerr << shader_source[i] << std::endl;
     GLint length = 0;
     glGetShaderiv (shader, GL_INFO_LOG_LENGTH, &length);
     std::string log (length, ' ');
     glGetShaderInfoLog (shader, length, &length, &log[0]);
-    throw std::logic_error (log);
-    return false;
+    if (type == GL_VERTEX_SHADER)
+      throw std::logic_error (std::string("compiling vertex shader :").append(log));
+    else if (type == GL_FRAGMENT_SHADER)
+      throw std::logic_error (std::string("compiling fragment shader :").append(log));
+    return -1;
   }
   return shader;
 }
@@ -85,10 +94,28 @@ GLuint ShaderWrapper::compile (GLuint type, char const * (&shader_source) [L])
 // loads a text file as a string
 std::string ShaderWrapper::load_text_file (std::string file_name)
 {
-  std::ifstream ifs (file_name.c_str());
-  std::string str ( (std::istreambuf_iterator<char> (ifs)),
-                    std::istreambuf_iterator<char>());
-  return str;
+  resource_retriever::Retriever retriever;
+  resource_retriever::MemoryResource res;
+  try 
+  {   
+    res = retriever.get(file_name);
+  }
+  catch (resource_retriever::Exception& e)
+  {   
+    throw std::logic_error (std::string("could not open shader file: ").append(file_name));
+    return "";
+  }
+  
+  char* buf = (char*) malloc (sizeof(char) * (res.size + 1));
+  memcpy (buf, res.data.get(), res.size);
+  buf[res.size] = 0;
+
+  return std::string (buf);
+  
+  //std::ifstream ifs (file_name.c_str());
+  //std::string str ( (std::istreambuf_iterator<char> (ifs)),
+  //                  std::istreambuf_iterator<char>());
+  //return str;
 }
 
 } // end namespace

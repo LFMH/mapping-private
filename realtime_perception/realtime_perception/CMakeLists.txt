@@ -17,6 +17,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_package(CUDA REQUIRED)
+cmake_policy(SET CMP0012 NEW)
 find_package(OpenCV REQUIRED)
 find_package(OpenGL )
 FIND_LIBRARY( freeglut_LIBRARY glut /usr/lib)

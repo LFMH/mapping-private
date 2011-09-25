@@ -162,8 +162,8 @@ namespace realtime_perception
   {
     //pcl::ScopeTime time("tf");
     std::vector<Renderable*>::const_iterator it = renderables_.begin ();
-//    std::string camera_frame_ ("/map");
-    std::string camera_frame_ ("/openni_rgb_optical_frame");
+    std::string camera_frame_ ("/base_link");
+//    std::string camera_frame_ ("/openni_rgb_optical_frame");
     tf::StampedTransform t;
     for (; it != renderables_.end (); it++)
     {
@@ -242,7 +242,7 @@ namespace realtime_perception
 
     std::vector<Renderable*>::const_iterator it = renderables_.begin ();
 
-    static ShaderWrapper shader = ShaderWrapper::fromFiles ("include/shaders/test1.vert", "include/shaders/test1.frag");
+    static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", "package://realtime_perception/include/shaders/test1.frag");
     shader ();
 
     static bool first = true;
