@@ -22,13 +22,11 @@ namespace realtime_perception
     tf::Vector3 axis;
     glPushMatrix ();
 
-    axis = q.getAxis ();
-    glTranslatef (t.x(), t.y(), t.z());
-    glRotatef ((180.0/3.14159)*q.getAngle (), axis.x(), axis.y(), axis.z());
-
-    axis = offset_q.getAxis ();
-    glTranslatef (offset_t.x(), offset_t.y(), offset_t.z());
-    glRotatef ((180.0/3.14159)*offset_q.getAngle (), axis.x(), axis.y(), axis.z());
+    tf::Transform transform (q,t);
+    transform *= tf::Transform (offset_q, offset_t);
+    btScalar glTf[16];
+    transform.getOpenGLMatrix(glTf);
+    glMultMatrixd((GLdouble*)glTf);
   }
 
   void Renderable::unapplyTransform ()
@@ -45,6 +43,19 @@ namespace realtime_perception
   {
     applyTransform ();
     glutSolidSphere(radius, 10, 10);
+    unapplyTransform ();
+  }
+
+  // Cylinder methods
+  RenderableCylinder::RenderableCylinder (float radius, float length)
+    : radius(radius), length(length)
+  {}
+
+  void RenderableCylinder::render ()
+  {
+    applyTransform ();
+    glTranslatef (0, 0, -length/2);
+    glutSolidCylinder(radius, length, 10, 10);
     unapplyTransform ();
   }
 

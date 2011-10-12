@@ -4,7 +4,7 @@ namespace realtime_perception
 {
   OffscreenRenderer::OffscreenRenderer () : init_(false)
   {
-    initGLWindow (640, 480);
+    initGL (640, 480);
     init_ = true;
   }
 

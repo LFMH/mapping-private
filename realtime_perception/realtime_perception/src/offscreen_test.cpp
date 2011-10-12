@@ -25,6 +25,7 @@
 #include <ros/node_handle.h>
 #include "realtime_perception/urdf_renderer.h"
 #include "realtime_perception/point_types.h"
+#include <realtime_perception/offscreen_rendering.h>
 #include <GL/freeglut.h>
 
 #include <pcl/io/openni_grabber.h>
@@ -59,6 +60,17 @@ struct ImageType<Host>
   }
 };
 
+float zoom;
+
+void mousefunc (int button, int state, int x, int y)
+{
+  if (button == 3)
+    zoom *= 1.1;
+  else
+    zoom /= 1.1;
+}
+
+
 class KinectURDFSegmentation
 {
   public:
@@ -70,8 +82,101 @@ class KinectURDFSegmentation
       , radius_cm (5)
       , normal_viz_step(200)
     {
-      renderer = new realtime_perception::URDFRenderer (nh);
+      loadModels ();
+      //renderer = new realtime_perception::URDFRenderer (model_description, tf_prefix);
     }
+   
+    void 
+      loadModels ()
+    {
+      XmlRpc::XmlRpcValue v;
+      nh.getParam ("models", v);
+      
+      boost::shared_ptr<realtime_perception::OffscreenRenderer> canvas (new realtime_perception::OffscreenRenderer);
+
+      if (v.getType () == XmlRpc::XmlRpcValue::TypeArray)
+      {
+        for (int i = 0; i < v.size(); ++i)
+        {
+          XmlRpc::XmlRpcValue elem = v[i];
+          ROS_ASSERT (elem.getType()  == XmlRpc::XmlRpcValue::TypeStruct);
+
+          std::string description_param = elem["model"];
+          std::string tf_prefix = elem["tf_prefix"];
+
+          // read URDF model
+          std::string content;
+
+          if (!nh.getParam(description_param, content))
+          {
+            std::string loc;
+            if (nh.searchParam(description_param, loc))
+            {
+              nh.getParam(loc, content);
+            }
+            else
+            {
+              ROS_ERROR ("Parameter [%s] does not exist, and was not found by searchParam()",
+                  description_param.c_str());
+              continue;
+            }
+          }
+
+          if (content.empty())
+          {
+            ROS_ERROR ("URDF is empty");
+            continue;
+          }
+
+          // finally, set the model description so we can later parse it.
+          renderers.push_back (new realtime_perception::URDFRenderer (canvas, content, tf_prefix));
+        }
+      }
+      else
+      {
+        ROS_ERROR ("models parameter must be an array!");
+      }
+    }
+
+//    /// @brief load the model description into a string and parse relevant_roi parameters.
+//    void
+//      KinectURDFSegmentation::loadParams ()
+//    {
+//      // read parameters
+//      nh.getParam ("threshold", threshold_);
+//      nh.getParam ("tf_prefix", tf_prefix_);
+//      nh.getParam ("model_description", description_param_);
+//
+//      // read URDF model
+//      std::string content;
+//
+//      if (!nh.getParam(description_param_, content))
+//      {
+//        std::string loc;
+//        if (nh.searchParam(description_param_, loc))
+//        {
+//          nh.getParam(loc, content);
+//        }
+//        else
+//        {
+//          ROS_ERROR ("Parameter [%s] does not exist, and was not found by searchParam()",
+//              description_param_.c_str());
+//          return;
+//        }
+//      }
+//
+//      if (content.empty())
+//      {
+//        ROS_ERROR ("URDF is empty");
+//        return;
+//      }
+//
+//      if ( content == model_description_ )
+//        return;
+//      
+//      // finally, set the model description so we can later parse it.
+//      model_description_ = content;
+//    }
 
     // callback function from the OpenNIGrabber
     template <template <typename> class Storage> void 
@@ -79,7 +184,6 @@ class KinectURDFSegmentation
               const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, 
               float constant)
     {
-      ROS_ERROR ("-");
       // TIMING
       static unsigned count = 0;
       static double last = getTime ();
@@ -265,13 +369,50 @@ class KinectURDFSegmentation
       }
 
       grabber->start ();
-      
+     
+      glutMouseFunc (mousefunc);
       while (nh.ok())
       {
-        //ROS_INFO (".");
-        renderer->render ();
+    glClearColor(0.8f, 00.8f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable (GL_DEPTH_TEST);
+    glDepthFunc (GL_LESS);
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity();
+    float near_clip = 0.1;
+    float far_clip = 100;
+    float width = 640;
+    float height = 480;
+    float fx = 525; // P[0]
+    float fy = 525; // P[5]
+    float cx = 319.5; // P[2]
+    float cy = 239.5; // P[6]
+    float f_width = near_clip * width / fx;
+    float f_height = near_clip * height / fy;
+
+    //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
+    glFrustum (  f_width  * (1.0f - cx / width),
+               - f_width  *         cx / width,
+                 f_height *         cy / height,
+               - f_height * (1.0f - cy / height),
+               near_clip,
+               far_clip);
+    glMatrixMode(GL_MODELVIEW);
+   
+    glLoadIdentity();
+    gluLookAt (0,0,0, 0,0,1, 0,1,0);
+//
+//    static float rot = 0.0f;
+//
+//    glTranslatef (0,0,10);
+//    glRotatef (rot,0,1,0);
+//    rot += 0.2;
+        BOOST_FOREACH ( realtime_perception::URDFRenderer* r, renderers)
+          r->render ();
         glutMainLoopEvent ();
-        //pcl_sleep (1);
+    glFlush(); // Flush the OpenGL buffers to the window  
+
+    //glutPostRedisplay();
       }
 
       grabber->stop ();
@@ -288,8 +429,8 @@ class KinectURDFSegmentation
     int nr_neighbors;
     int radius_cm;
     int normal_viz_step;
-    //std::auto_ptr <realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> > urdf_filter;
-    realtime_perception::URDFRenderer* renderer;
+    //boost::shared_ptr <realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> > urdf_filter;
+    std::vector<realtime_perception::URDFRenderer*> renderers;
 };
 
 

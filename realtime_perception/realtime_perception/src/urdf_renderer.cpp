@@ -12,23 +12,15 @@
 
 namespace realtime_perception
 {
-  URDFRenderer::URDFRenderer (ros::NodeHandle &nh)
-    : nh(nh), canvas (new OffscreenRenderer())
+  URDFRenderer::URDFRenderer (boost::shared_ptr<OffscreenRenderer> canvas,
+                              std::string model_description, std::string tf_prefix)
+    : canvas(canvas), model_description_(model_description), tf_prefix_(tf_prefix)
   {
-    loadParams ();
-
     initURDFModel ();
-
   }
 
   URDFRenderer::~URDFRenderer ()
   {
-    std::vector<Renderable*>::const_iterator it = renderables_.begin ();
-
-    for (; it != renderables_.end (); it++)
-      delete *it;
-
-    renderables_.clear ();
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -36,66 +28,27 @@ namespace realtime_perception
   void
     URDFRenderer::initURDFModel ()
   {
-    urdf::Model descr;
-    if (!descr.initString(model_description_))
+    urdf::Model model;
+    if (!model.initString(model_description_))
     {
       ROS_ERROR ("URDF failed Model parse");
       return;
     }
 
     ROS_INFO ("URDF parsed OK");
-    loadURDFModel (descr);
+    loadURDFModel (model);
     ROS_INFO ("URDF loaded OK");
   }
 
-  /// @brief load the model description into a string and parse relevant_roi parameters.
-  void
-    URDFRenderer::loadParams ()
-  {
-    // read parameters
-    nh.getParam ("threshold", threshold_);
-    nh.getParam ("tf_prefix", tf_prefix_);
-    nh.getParam ("model_description", description_param_);
-
-    // read URDF model
-    std::string content;
-
-    if (!nh.getParam(description_param_, content))
-    {
-      std::string loc;
-      if (nh.searchParam(description_param_, loc))
-      {
-        nh.getParam(loc, content);
-      }
-      else
-      {
-        ROS_ERROR ("Parameter [%s] does not exist, and was not found by searchParam()",
-            description_param_.c_str());
-        return;
-      }
-    }
-
-    if (content.empty())
-    {
-      ROS_ERROR ("URDF is empty");
-      return;
-    }
-
-    if ( content == model_description_ )
-      return;
-    
-    // finally, set the model description so we can later parse it.
-    model_description_ = content;
-  }
 
   /// /////////////////////////////////////////////////////////////////////////////
   /// @brief load URDF model description from string and create search operations data structures
   void URDFRenderer::loadURDFModel
-    (urdf::Model &descr)
+    (urdf::Model &model)
   {
     typedef std::vector<boost::shared_ptr<urdf::Link> > V_Link;
     V_Link links;
-    descr.getLinks(links);
+    model.getLinks(links);
 
     V_Link::iterator it = links.begin();
     V_Link::iterator end = links.end();
@@ -106,25 +59,21 @@ namespace realtime_perception
 
   void URDFRenderer::process_link (boost::shared_ptr<urdf::Link> link)
   {
-    if (link->collision.get() == NULL || link->collision->geometry.get() == NULL)
+    if (link->visual.get() == NULL || link->visual->geometry.get() == NULL)
       return;
 
-    if (link->collision->geometry->type == urdf::Geometry::BOX)
+    if (link->visual->geometry->type == urdf::Geometry::BOX)
     {
-      boost::shared_ptr<urdf::Box> box = boost::dynamic_pointer_cast<urdf::Box> (link->collision->geometry);
-      Renderable* r = new RenderableBox (box->dim.x, box->dim.y, box->dim.z);
+      boost::shared_ptr<urdf::Box> box = boost::dynamic_pointer_cast<urdf::Box> (link->visual->geometry);
+      boost::shared_ptr<Renderable> r (new RenderableBox (box->dim.x, box->dim.y, box->dim.z));
       r->setLinkName (link->name);
 //      tf::Vector3 origin(link->collision->origin.position.x, link->collision->origin.position.y, link->collision->origin.position.z);
 //      tf::Quaternion rotation(link->collision->origin.rotation.x, link->collision->origin.rotation.y, link->collision->origin.rotation.z, link->collision->origin.rotation.w);
-      urdf::Vector3 origin = link->collision->origin.position;
-      urdf::Rotation rotation = link->collision->origin.rotation;
-      r->offset_q.setX(rotation.x);
-      r->offset_q.setY(rotation.y);
-      r->offset_q.setZ(rotation.z);
-      r->offset_q.setW(rotation.w);
-      r->offset_t.setX(origin.x);
-      r->offset_t.setY(origin.y);
-      r->offset_t.setZ(origin.z);
+      urdf::Vector3 origin = link->visual->origin.position;
+      urdf::Rotation rotation = link->visual->origin.rotation;
+      r->offset_q = tf::Quaternion (rotation.x, rotation.y, rotation.z, rotation.w);
+      r->offset_q.normalize ();
+      r->offset_t = tf::Vector3 (origin.x, origin.y, origin.z);
       if (link->visual && 
           (link->visual->material))
         r->color  = link->visual->material->color;
@@ -138,38 +87,59 @@ namespace realtime_perception
       //    rotation.w());
       renderables_.push_back (r); 
     }
-    if (link->collision->geometry->type == urdf::Geometry::CYLINDER)
+    if (link->visual->geometry->type == urdf::Geometry::CYLINDER)
     {
+      boost::shared_ptr<urdf::Cylinder> cylinder = boost::dynamic_pointer_cast<urdf::Cylinder> (link->visual->geometry);
+      boost::shared_ptr<Renderable> r (new RenderableCylinder (cylinder->radius, cylinder->length));
+      r->setLinkName (link->name);
+      urdf::Vector3 origin = link->visual->origin.position;
+      urdf::Rotation rotation = link->visual->origin.rotation;
+      r->offset_q = tf::Quaternion (rotation.x, rotation.y, rotation.z, rotation.w);
+      r->offset_q.normalize ();
+      r->offset_t = tf::Vector3 (origin.x, origin.y, origin.z);
+      if (link->visual && 
+          (link->visual->material))
+        r->color  = link->visual->material->color;
+      renderables_.push_back (r);
     }
-    if (link->collision->geometry->type == urdf::Geometry::SPHERE)
+    if (link->visual->geometry->type == urdf::Geometry::SPHERE)
     {
-      boost::shared_ptr<urdf::Sphere> sphere = boost::dynamic_pointer_cast<urdf::Sphere> (link->collision->geometry);
-      RenderableSphere* r = new RenderableSphere (sphere->radius);
+      boost::shared_ptr<urdf::Sphere> sphere = boost::dynamic_pointer_cast<urdf::Sphere> (link->visual->geometry);
+      boost::shared_ptr<Renderable> r (new RenderableSphere (sphere->radius));
       r->setLinkName (link->name);
       renderables_.push_back (r);
     }
-    if (link->collision->geometry->type == urdf::Geometry::MESH)
+    if (link->visual->geometry->type == urdf::Geometry::MESH)
     {
-      boost::shared_ptr<urdf::Mesh> mesh = boost::dynamic_pointer_cast<urdf::Mesh> (link->collision->geometry);
+      boost::shared_ptr<urdf::Mesh> mesh = boost::dynamic_pointer_cast<urdf::Mesh> (link->visual->geometry);
       std::string meshname (mesh->filename);
-      RenderableMesh* m = new RenderableMesh (meshname);
-      m->setLinkName (link->name);
-      renderables_.push_back (m);
+      boost::shared_ptr<Renderable> r (new RenderableMesh (meshname));
+      r->setLinkName (link->name);
+      urdf::Vector3 origin = link->visual->origin.position;
+      urdf::Rotation rotation = link->visual->origin.rotation;
+      r->offset_q = tf::Quaternion (rotation.x, rotation.y, rotation.z, rotation.w);
+      r->offset_q.normalize ();
+      r->offset_t = tf::Vector3 (origin.x, origin.y, origin.z);
+      if (link->visual && 
+          (link->visual->material))
+        r->color  = link->visual->material->color;
+      renderables_.push_back (r);
     }
   }
 
   void URDFRenderer::transforms_changed ()
   {
     //pcl::ScopeTime time("tf");
-    std::vector<Renderable*>::const_iterator it = renderables_.begin ();
-    std::string camera_frame_ ("/base_link");
-//    std::string camera_frame_ ("/openni_rgb_optical_frame");
+    std::vector<boost::shared_ptr<Renderable> >::const_iterator it = renderables_.begin ();
+//    std::string camera_frame_ ("/map");
+    std::string camera_frame_ ("/openni_rgb_optical_frame");
     tf::StampedTransform t;
     for (; it != renderables_.end (); it++)
     {
       try
       {
-        tf_.lookupTransform (camera_frame_, (*it)->name, ros::Time (0), t);
+        //ROS_WARN ("TF frame: %s", (*it)->name.c_str ());
+        tf_.lookupTransform (camera_frame_, tf_prefix_ + "/" + (*it)->name, ros::Time (0), t);
       }
       catch (tf::TransformException ex)
       {
@@ -196,40 +166,40 @@ namespace realtime_perception
     //std::stringstream ss;
     //ss << "render " << renderables_.size();
     //pcl::ScopeTime time1 (ss.str().c_str());
-    glClearColor(0.8f, 00.8f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable (GL_DEPTH_TEST);
-    glDepthFunc (GL_LESS);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity();
-    float near_clip = 0.1;
-    float far_clip = 100;
-    float width = 640;
-    float height = 480;
-    float fx = 525; // P[0]
-    float fy = 525; // P[5]
-    float cx = 319.5; // P[2]
-    float cy = 239.5; // P[6]
-    float f_width = near_clip * width / fx;
-    float f_height = near_clip * height / fy;
-
-    //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
-    glFrustum (  f_width  * (1.0f - cx / width),
-               - f_width  *         cx / width,
-                 f_height *         cy / height,
-               - f_height * (1.0f - cy / height),
-               near_clip,
-               far_clip);
-    glMatrixMode(GL_MODELVIEW);
-   
-    glLoadIdentity();
-    gluLookAt (0,0,0, 0,0,1, 0,1,0);
-
-    static float rot = 0.0f;
-
-    glTranslatef (0,0,10);
-    glRotatef (rot,0,1,0);
-    rot += 0.2;
+//    glClearColor(0.8f, 00.8f, 1.0f, 1.0f);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    glEnable (GL_DEPTH_TEST);
+//    glDepthFunc (GL_LESS);
+//    glMatrixMode (GL_PROJECTION);
+//    glLoadIdentity();
+//    float near_clip = 0.1;
+//    float far_clip = 100;
+//    float width = 640;
+//    float height = 480;
+//    float fx = 525; // P[0]
+//    float fy = 525; // P[5]
+//    float cx = 319.5; // P[2]
+//    float cy = 239.5; // P[6]
+//    float f_width = near_clip * width / fx;
+//    float f_height = near_clip * height / fy;
+//
+//    //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
+//    glFrustum (  f_width  * (1.0f - cx / width),
+//               - f_width  *         cx / width,
+//                 f_height *         cy / height,
+//               - f_height * (1.0f - cy / height),
+//               near_clip,
+//               far_clip);
+//    glMatrixMode(GL_MODELVIEW);
+//   
+//    glLoadIdentity();
+//    gluLookAt (0,0,0, 0,0,1, 0,1,0);
+//
+//    static float rot = 0.0f;
+//
+//    glTranslatef (0,0,10);
+//    glRotatef (rot,0,1,0);
+//    rot += 0.2;
 //height: 480
 //width: 640
 //distortion_model: plumb_bob
@@ -240,7 +210,7 @@ namespace realtime_perception
       
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-    std::vector<Renderable*>::const_iterator it = renderables_.begin ();
+    std::vector<boost::shared_ptr<Renderable> >::const_iterator it = renderables_.begin ();
 
     static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", "package://realtime_perception/include/shaders/test1.frag");
     shader ();
@@ -254,8 +224,8 @@ namespace realtime_perception
     }
 
     first = false;
-    glFlush(); // Flush the OpenGL buffers to the window  
-    glutPostRedisplay();
+//    glFlush(); // Flush the OpenGL buffers to the window  
+//    glutPostRedisplay();
   }
 
 }

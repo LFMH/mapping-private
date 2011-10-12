@@ -44,6 +44,16 @@ struct RenderableSphere : public Renderable
   float radius;
 };
 
+struct RenderableCylinder : public Renderable
+{
+  RenderableCylinder (float radius, float length);
+
+  virtual void render ();
+
+  float radius;
+  float length;
+};
+
 // meshes are a tad more complicated than boxes and spheres
 struct RenderableMesh : public Renderable
 {

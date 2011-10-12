@@ -16,23 +16,21 @@ class OffscreenRenderer;
 class URDFRenderer
 { 
   public:
-    URDFRenderer (ros::NodeHandle &nh);
+    URDFRenderer (boost::shared_ptr<OffscreenRenderer> canvas,
+                  std::string model_description, std::string tf_prefix);
     ~URDFRenderer ();
     void initURDFModel ();
-    void loadParams ();
     void loadURDFModel (urdf::Model &descr);
     void process_link (boost::shared_ptr<urdf::Link> link);
     void transforms_changed ();
     void render ();
 
   private:
-    ros::NodeHandle &nh;
+    boost::shared_ptr<OffscreenRenderer> canvas;
     std::string model_description_;
-    std::string description_param_;
     std::string tf_prefix_;
     double threshold_;
-    std::vector<Renderable*> renderables_;
-    std::auto_ptr<OffscreenRenderer> canvas;
+    std::vector<boost::shared_ptr<Renderable> > renderables_;
     tf::TransformListener tf_;
 };
 

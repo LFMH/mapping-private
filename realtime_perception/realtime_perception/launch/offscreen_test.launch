@@ -7,10 +7,15 @@
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" >
     <remap from="~input" to="/cloud_pcd" />
     <rosparam>
-      #tf_prefix: /ias_kitchen
-      tf_prefix: ""
-      #model_description: /ias_kitchen/kitchen_description
-      model_description: /robot_description
+      models: 
+        - model: "/ias_kitchen/kitchen_description"
+          tf_prefix: /ias_kitchen
+        - model: /robot_description
+          tf_prefix: ""
+      tf_prefix: /ias_kitchen
+      #tf_prefix: ""
+      model_description: /ias_kitchen/kitchen_description
+      #model_description: /robot_description
       approximate_sync: true
     </rosparam>
   </node>
