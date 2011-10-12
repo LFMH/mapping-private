@@ -110,8 +110,10 @@ macro(rosbuild_cuda_add_executable exe)
 endmacro(rosbuild_cuda_add_executable)
 ############################################## RIPPED FROM rosbuild/public.cmake
 
+rosbuild_add_library (FBO src/FrameBufferObject.cpp)
+
 rosbuild_add_executable(offscreen_test src/offscreen_test.cpp src/urdf_renderer.cpp src/renderable.cpp src/offscreen_rendering.cpp src/shader_wrapper.cpp)
-target_link_libraries(offscreen_test ${OPENGL_LIBRARIES} ${freeglut_LIBRARY} pcl_io pcl_cuda_io pcl_common pcl_cuda_features pcl_cuda_segmentation pcl_cuda_sample_consensus ${OpenCV_LIBS})
+target_link_libraries(offscreen_test ${OPENGL_LIBRARIES} ${freeglut_LIBRARY} pcl_io pcl_cuda_io pcl_common pcl_cuda_features pcl_cuda_segmentation pcl_cuda_sample_consensus ${OpenCV_LIBS} FBO)
 
 #rosbuild_cuda_add_executable(urdf_filter src/urdf_filter.cpp src/boxlist_ray_intersection.cu)
 #target_link_libraries(urdf_filter pcl_io pcl_cuda_io pcl_visualization pcl_common pcl_kdtree pcl_range_image)
