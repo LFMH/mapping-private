@@ -11,14 +11,11 @@ namespace ros {class NodeHandle;}
 
 namespace realtime_perception
 {
-class OffscreenRenderer;
 
 class URDFRenderer
 { 
   public:
-    URDFRenderer (boost::shared_ptr<OffscreenRenderer> canvas,
-                  std::string model_description, std::string tf_prefix);
-    ~URDFRenderer ();
+    URDFRenderer (std::string model_description, std::string tf_prefix);
     void initURDFModel ();
     void loadURDFModel (urdf::Model &descr);
     void process_link (boost::shared_ptr<urdf::Link> link);
@@ -26,7 +23,6 @@ class URDFRenderer
     void render ();
 
   private:
-    boost::shared_ptr<OffscreenRenderer> canvas;
     std::string model_description_;
     std::string tf_prefix_;
     double threshold_;

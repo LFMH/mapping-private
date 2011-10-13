@@ -83,7 +83,6 @@ class KinectURDFSegmentation
       , normal_viz_step(200)
     {
       loadModels ();
-      //renderer = new realtime_perception::URDFRenderer (model_description, tf_prefix);
     }
    
     void 
@@ -92,8 +91,6 @@ class KinectURDFSegmentation
       XmlRpc::XmlRpcValue v;
       nh.getParam ("models", v);
       
-      boost::shared_ptr<realtime_perception::OffscreenRenderer> canvas (new realtime_perception::OffscreenRenderer);
-
       if (v.getType () == XmlRpc::XmlRpcValue::TypeArray)
       {
         for (int i = 0; i < v.size(); ++i)
@@ -129,7 +126,7 @@ class KinectURDFSegmentation
           }
 
           // finally, set the model description so we can later parse it.
-          renderers.push_back (new realtime_perception::URDFRenderer (canvas, content, tf_prefix));
+          renderers.push_back (new realtime_perception::URDFRenderer (content, tf_prefix));
         }
       }
       else
@@ -137,46 +134,6 @@ class KinectURDFSegmentation
         ROS_ERROR ("models parameter must be an array!");
       }
     }
-
-//    /// @brief load the model description into a string and parse relevant_roi parameters.
-//    void
-//      KinectURDFSegmentation::loadParams ()
-//    {
-//      // read parameters
-//      nh.getParam ("threshold", threshold_);
-//      nh.getParam ("tf_prefix", tf_prefix_);
-//      nh.getParam ("model_description", description_param_);
-//
-//      // read URDF model
-//      std::string content;
-//
-//      if (!nh.getParam(description_param_, content))
-//      {
-//        std::string loc;
-//        if (nh.searchParam(description_param_, loc))
-//        {
-//          nh.getParam(loc, content);
-//        }
-//        else
-//        {
-//          ROS_ERROR ("Parameter [%s] does not exist, and was not found by searchParam()",
-//              description_param_.c_str());
-//          return;
-//        }
-//      }
-//
-//      if (content.empty())
-//      {
-//        ROS_ERROR ("URDF is empty");
-//        return;
-//      }
-//
-//      if ( content == model_description_ )
-//        return;
-//      
-//      // finally, set the model description so we can later parse it.
-//      model_description_ = content;
-//    }
 
     // callback function from the OpenNIGrabber
     template <template <typename> class Storage> void 
