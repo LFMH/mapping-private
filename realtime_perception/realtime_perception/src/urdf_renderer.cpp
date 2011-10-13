@@ -1,19 +1,21 @@
-#define GL_GLEXT_PROTOTYPES
-#include <realtime_perception/urdf_renderer.h>
-#include <ros/node_handle.h>
+//#define GL_GLEXT_PROTOTYPES
+
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
-#include <GL/glext.h>
+#undef Success  // <---- Screw Xlib for this
 
-#include <realtime_perception/offscreen_rendering.h>
-#include <realtime_perception/shader_wrapper.h>
 #include <pcl/common/time.h>
+#include <ros/node_handle.h>
+
+#include <realtime_perception/urdf_renderer.h>
+#include <realtime_perception/shader_wrapper.h>
 
 namespace realtime_perception
 {
-  URDFRenderer::URDFRenderer (std::string model_description, std::string tf_prefix)
-    : model_description_(model_description), tf_prefix_(tf_prefix)
+  URDFRenderer::URDFRenderer (std::string model_description, std::string tf_prefix, std::string cam_frame)
+    : model_description_(model_description), tf_prefix_(tf_prefix), camera_frame_ (cam_frame)
   {
     initURDFModel ();
   }
@@ -94,10 +96,16 @@ namespace realtime_perception
   }
 
   ////////////////////////////////////////////////////////////////////////////////
+  /** \brief sets the camera frame link name */
+  void URDFRenderer::setCameraFrame (std::string &cam_f) 
+  {
+    camera_frame_ = cam_f;
+  }
+  
+  ////////////////////////////////////////////////////////////////////////////////
   /** \brief loops over all renderables and updates its transforms from TF */
   void URDFRenderer::transforms_changed ()
   {
-    std::string camera_frame_ ("/openni_rgb_optical_frame");
     tf::StampedTransform t;
 
     std::vector<boost::shared_ptr<Renderable> >::const_iterator it = renderables_.begin ();
@@ -120,11 +128,12 @@ namespace realtime_perception
   /** \brief loops over all renderables and renders them to canvas */
   void URDFRenderer::render ()
   {
+    ROS_INFO ("rendering frame");
     transforms_changed ();
       
-    static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", 
-                                                            "package://realtime_perception/include/shaders/test1.frag");
-    shader ();
+    //static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", 
+    //                                                        "package://realtime_perception/include/shaders/test1.frag");
+    //TODO shader ();
 
     std::vector<boost::shared_ptr<Renderable> >::const_iterator it = renderables_.begin ();
     for (; it != renderables_.end (); it++)

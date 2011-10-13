@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <resource_retriever/retriever.h>
-//#define GL_GLEXT_PROTOTYPES
-//#include <GL/glext.h>
 
 namespace realtime_perception
 {

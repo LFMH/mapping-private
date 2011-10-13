@@ -111,6 +111,7 @@ endmacro(rosbuild_cuda_add_executable)
 ############################################## RIPPED FROM rosbuild/public.cmake
 
 rosbuild_add_library (FBO src/FrameBufferObject.cpp)
+target_link_libraries (FBO GLEW)
 rosbuild_add_library (shaderwrapper src/shader_wrapper.cpp)
 
 rosbuild_add_executable (offscreen_test 

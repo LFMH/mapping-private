@@ -3,7 +3,7 @@
 
 #include <GL/gl.h>
 #include <tf/tf.h>
-#include <urdf/color.h>
+#include <urdf_interface/color.h>
 
 // forward declare
 struct aiScene;

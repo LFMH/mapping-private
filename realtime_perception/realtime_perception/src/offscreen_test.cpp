@@ -1,4 +1,6 @@
 // to do the urdf / depth image intersection
+#include "realtime_perception/FrameBufferObject.h"
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/win32_macros.h>
@@ -25,7 +27,7 @@
 #include <ros/node_handle.h>
 #include "realtime_perception/urdf_renderer.h"
 #include "realtime_perception/point_types.h"
-#include <realtime_perception/offscreen_rendering.h>
+
 #include <GL/freeglut.h>
 
 #include <pcl/io/openni_grabber.h>
@@ -81,7 +83,43 @@ class KinectURDFSegmentation
       , nr_neighbors (36)
       , radius_cm (5)
       , normal_viz_step(200)
+      , fbo_initialized_(false)
     {
+      fbo_ = FramebufferObject ("rgba=4x8t depth=24t stencil=t");
+      initFrameBufferObject ();
+      XmlRpc::XmlRpcValue v;
+      nh.getParam ("camera_frame", v);
+      ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "need a camera_frame paramter!");
+      cam_frame_ = (std::string)v;
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+
+      nh.getParam ("camera_offset", v);
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeStruct && "need a camera_offset paramter!");
+      ROS_ASSERT (v.hasMember ("translation") && v.hasMember ("rotation") && "camera offset needs a translation and rotation parameter!");
+
+      XmlRpc::XmlRpcValue vec = v["translation"];
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      ROS_ASSERT (vec.getType() == XmlRpc::XmlRpcValue::TypeArray && vec.size() == 3 && "camera_offset.translation parameter must be a 3-value array!");
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      ROS_INFO ("using camera translational offset: %f %f %f",
+          (double)(vec[0]),
+          (double)(vec[1]),
+          (double)(vec[2])
+          );
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      camera_offset_t_ = tf::Vector3((double)vec[0], (double)vec[1], (double)vec[2]);
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+
+      vec = v["rotation"];
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      ROS_ASSERT (vec.getType() == XmlRpc::XmlRpcValue::TypeArray && vec.size() == 4 && "camera_offset.rotation parameter must be a 4-value array [x y z w]!");
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      ROS_INFO ("using camera rotational offset: %f %f %f %f", (double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+      camera_offset_q_ = tf::Quaternion((double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
+      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
+
       loadModels ();
     }
    
@@ -126,7 +164,7 @@ class KinectURDFSegmentation
           }
 
           // finally, set the model description so we can later parse it.
-          renderers.push_back (new realtime_perception::URDFRenderer (content, tf_prefix));
+          renderers.push_back (new realtime_perception::URDFRenderer (content, tf_prefix, cam_frame_));
         }
       }
       else
@@ -290,6 +328,7 @@ class KinectURDFSegmentation
         }
       }
 
+
       //else
       //{
       //  {
@@ -305,11 +344,275 @@ class KinectURDFSegmentation
       //        region_cloud->points[cp].region = reg_labels[cp];
       //      }
       //    }
-      //    new_cloud = true;
+          new_cloud = true;
       //  }
       //  ScopeTimeCPU c_p ("Publishing");
       //  publish_cloud ();
       //}
+    }
+  
+    void initFrameBufferObject ()
+    {
+      fbo_.initialize (640, 480);
+      fbo_initialized_ = true;
+
+      GLenum err = glGetError();
+      if(err != GL_NO_ERROR)
+        printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
+    }
+
+    void render ()
+    {
+      if (!new_cloud)
+        return;
+
+      if (!fbo_initialized_)
+        return;
+
+      new_cloud = false;
+
+      static const GLenum buffers[] = {
+        GL_COLOR_ATTACHMENT0_EXT,
+        GL_COLOR_ATTACHMENT1_EXT,
+        GL_COLOR_ATTACHMENT2_EXT,
+        GL_COLOR_ATTACHMENT3_EXT
+      };
+
+      // -----------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      //	1. render teapot into color, depth and stencil buffer
+
+      GLenum err = glGetError();
+      if(err != GL_NO_ERROR)
+        printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
+      else
+        printf ("everything ok so far");
+
+      glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+      fbo_.beginCapture();
+
+      // enable shader 
+      //TODO glUseProgram(my_program);
+
+      glDrawBuffers(sizeof(buffers) / sizeof(GLenum), buffers);
+
+      // clear the buffers
+      glClearColor(0.0, 0.0, 0.0, 1.0);
+      glClearStencil(0x0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+      glEnable(GL_STENCIL_TEST);
+      glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+      glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+      glEnable(GL_DEPTH_TEST);
+      glDisable(GL_TEXTURE_2D);
+      fbo_.disableTextureTarget();
+
+      glMatrixMode (GL_PROJECTION);
+      glLoadIdentity();
+      float near_clip = 0.1;
+      float far_clip = 100;
+      float width = 640;
+      float height = 480;
+      float fx = 525; // P[0]
+      float fy = 525; // P[5]
+      float cx = 319.5; // P[2]
+      float cy = 239.5; // P[6]
+      float f_width = near_clip * width / fx;
+      float f_height = near_clip * height / fy;
+
+      //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
+      glFrustum (  f_width  * (1.0f - cx / width),
+                 - f_width  *         cx / width,
+                   f_height *         cy / height,
+                 - f_height * (1.0f - cy / height),
+                 near_clip,
+                 far_clip);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+      gluLookAt (0,0,0, 0,0,1, 0,1,0);
+
+      glEnable(GL_LIGHTING);
+      glEnable(GL_LIGHT0);
+
+      GLfloat	lightpos[4] = { 5.0, 15.0, 10.0, 1.0 }; 
+      glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
+      
+      
+      //TODO:    glTranslatef (0,0,10);
+      //    glRotatef (rot,0,1,0);
+
+      BOOST_FOREACH ( realtime_perception::URDFRenderer* r, renderers)
+        r->render ();
+
+      glUseProgram(NULL);
+      
+      fbo_.endCapture();
+
+      glPopAttrib();
+
+      // -----------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      //	2. render red plane only where stencil is 1
+
+      glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+      fbo_.beginCapture();
+
+      glDrawBuffer(GL_COLOR_ATTACHMENT3_EXT);
+
+      glEnable(GL_STENCIL_TEST);
+      glStencilFunc(GL_EQUAL, 0x1, 0x1);
+      glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_TEXTURE_2D);
+      glDisable(GL_LIGHTING);
+      fbo_.disableTextureTarget();
+
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+
+      glMatrixMode(GL_MODELVIEW);	
+      glPushMatrix();
+      glLoadIdentity();
+
+      glColor3f(1.0, 0.0, 0.0);
+
+      glBegin(GL_QUADS);
+        glVertex2f(0.0, 0.0);
+        glVertex2f(1.0, 0.0);
+        glVertex2f(1.0, 1.0);
+        glVertex2f(0.0, 1.0);
+      glEnd();
+
+      glPopMatrix();
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+
+      glStencilFunc(GL_EQUAL, 0x0, 0x1);
+      glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_TEXTURE_2D);
+      glDisable(GL_LIGHTING);
+      fbo_.disableTextureTarget();
+
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+
+      glMatrixMode(GL_MODELVIEW);	
+      glPushMatrix();
+      glLoadIdentity();
+
+      glColor3f(0.0, 0.0, 1.0);
+
+      glBegin(GL_QUADS);
+        glVertex2f(0.0, 0.0);
+        glVertex2f(1.0, 0.0);
+        glVertex2f(1.0, 1.0);
+        glVertex2f(0.0, 1.0);
+      glEnd();
+
+      glPopMatrix();
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
+      
+      fbo_.endCapture();
+
+      glPopAttrib();
+
+      // TODO: code to render the offscreen buffer
+	// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+
+	glMatrixMode(GL_MODELVIEW);	
+	glPushMatrix();
+	glLoadIdentity();
+
+	// draw color buffer 0
+	fbo_.bind(0);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0.0, 0.5);
+		glTexCoord2f(fbo_.getWidth(), 0.0);
+		glVertex2f(0.333, 0.5);
+		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+		glVertex2f(0.333, 1.0);
+		glTexCoord2f(0.0, fbo_.getHeight());
+		glVertex2f(0.0, 1.0);
+	glEnd();
+
+	// draw color buffer 1
+	fbo_.bind(1);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0.0, 0.0);
+		glTexCoord2f(fbo_.getWidth(), 0.0);
+		glVertex2f(0.333, 0.0);
+		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+		glVertex2f(0.333, 0.5);
+		glTexCoord2f(0.0, fbo_.getHeight());
+		glVertex2f(0.0, 0.5);
+	glEnd();
+
+	// draw color buffer 2
+	fbo_.bind(2);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0.333, 0.5);
+		glTexCoord2f(fbo_.getWidth(), 0.0);
+		glVertex2f(0.666, 0.5);
+		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+		glVertex2f(0.666, 1.0);
+		glTexCoord2f(0.0, fbo_.getHeight());
+		glVertex2f(0.333, 1.0);
+	glEnd();
+
+	// draw color buffer 3
+	fbo_.bind(3);
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0.333, 0.0);
+		glTexCoord2f(fbo_.getWidth(), 0.0);
+		glVertex2f(0.666, 0.0);
+		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+		glVertex2f(0.666, 0.5);
+		glTexCoord2f(0.0, fbo_.getHeight());
+		glVertex2f(0.333, 0.5);
+	glEnd();
+
+	// draw depth buffer 
+	fbo_.bindDepth();
+	glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0);
+		glVertex2f(0.666, 0.5);
+		glTexCoord2f(fbo_.getWidth(), 0.0);
+		glVertex2f(1.0, 0.5);
+		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+		glVertex2f(1.0, 1.0);
+		glTexCoord2f(0.0, fbo_.getHeight());
+		glVertex2f(0.666, 1.0);
+	glEnd();
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+      
+      glFlush(); // Flush the OpenGL buffers to the window  
     }
     
     void 
@@ -330,46 +633,8 @@ class KinectURDFSegmentation
       glutMouseFunc (mousefunc);
       while (nh.ok())
       {
-    glClearColor(0.8f, 00.8f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable (GL_DEPTH_TEST);
-    glDepthFunc (GL_LESS);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity();
-    float near_clip = 0.1;
-    float far_clip = 100;
-    float width = 640;
-    float height = 480;
-    float fx = 525; // P[0]
-    float fy = 525; // P[5]
-    float cx = 319.5; // P[2]
-    float cy = 239.5; // P[6]
-    float f_width = near_clip * width / fx;
-    float f_height = near_clip * height / fy;
-
-    //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
-    glFrustum (  f_width  * (1.0f - cx / width),
-               - f_width  *         cx / width,
-                 f_height *         cy / height,
-               - f_height * (1.0f - cy / height),
-               near_clip,
-               far_clip);
-    glMatrixMode(GL_MODELVIEW);
-   
-    glLoadIdentity();
-    gluLookAt (0,0,0, 0,0,1, 0,1,0);
-//
-//    static float rot = 0.0f;
-//
-//    glTranslatef (0,0,10);
-//    glRotatef (rot,0,1,0);
-//    rot += 0.2;
-        BOOST_FOREACH ( realtime_perception::URDFRenderer* r, renderers)
-          r->render ();
-        glutMainLoopEvent ();
-    glFlush(); // Flush the OpenGL buffers to the window  
-
-    //glutPostRedisplay();
+        render();
+        //glutPostRedisplay();
       }
 
       grabber->stop ();
@@ -388,6 +653,12 @@ class KinectURDFSegmentation
     int normal_viz_step;
     //boost::shared_ptr <realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> > urdf_filter;
     std::vector<realtime_perception::URDFRenderer*> renderers;
+
+    tf::Vector3 camera_offset_t_;
+    tf::Quaternion camera_offset_q_;
+    std::string cam_frame_;
+    FramebufferObject fbo_;
+    bool fbo_initialized_;
 };
 
 
@@ -395,7 +666,17 @@ class KinectURDFSegmentation
 int 
 main (int argc, char **argv)
 {
-  glutInit (&argc, argv);
+	glutInit (&argc, argv);
+	glutInitWindowSize (640, 480);
+	glutInitWindowPosition(200, 100);
+	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
+	glutCreateWindow ("TestFramebufferObject");
+
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		std::cout << "ERROR: could not initialize GLEW!" << std::endl;
+	}
   ros::init (argc, argv, "urdf_filter_cuda");
   
   ros::NodeHandle nh ("~");
