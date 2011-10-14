@@ -62,16 +62,6 @@ struct ImageType<Host>
   }
 };
 
-float zoom;
-
-void mousefunc (int button, int state, int x, int y)
-{
-  if (button == 3)
-    zoom *= 1.1;
-  else
-    zoom /= 1.1;
-}
-
 
 class KinectURDFSegmentation
 {
@@ -240,93 +230,93 @@ class KinectURDFSegmentation
       //urdf_filter->filter (data);
 
       //TODO: this breaks for pcl::cuda::Host, meaning we have to run this on the GPU
-      std::vector<int> reg_labels;
-      pcl::cuda::detail::DjSets comps(0);
-      cv::Mat seg;
-      {
-        ScopeTimeCPU time ("Mean Shift");
-        if (enable_mean_shift == 1)
-        {
-          // USE GPU MEAN SHIFT SEGMENTATION FROM OPENCV
-          pcl::cuda::meanShiftSegmentation (normal_image, seg, reg_labels, meanshift_sp, meanshift_sr, meanshift_minsize, comps);
-          typename Storage<char4>::type new_colors ((char4*)seg.datastart, (char4*)seg.dataend);
-          colorCloud<Storage> (data, new_colors);
-        }
-      }
+      //std::vector<int> reg_labels;
+      //pcl::cuda::detail::DjSets comps(0);
+      //cv::Mat seg;
+      //{
+      //  ScopeTimeCPU time ("Mean Shift");
+      //  if (enable_mean_shift == 1)
+      //  {
+      //    // USE GPU MEAN SHIFT SEGMENTATION FROM OPENCV
+      //    pcl::cuda::meanShiftSegmentation (normal_image, seg, reg_labels, meanshift_sp, meanshift_sr, meanshift_minsize, comps);
+      //    typename Storage<char4>::type new_colors ((char4*)seg.datastart, (char4*)seg.dataend);
+      //    colorCloud<Storage> (data, new_colors);
+      //  }
+      //}
 
-      typename SampleConsensusModel1PointPlane<Storage>::Ptr sac_model;
-      if (enable_plane_fitting == 1)
-      {
-        // Create sac_model
-        {
-          ScopeTimeCPU t ("creating sac_model");
-          sac_model.reset (new SampleConsensusModel1PointPlane<Storage> (data));
-        }
-        sac_model->setNormals (normals);
+      //typename SampleConsensusModel1PointPlane<Storage>::Ptr sac_model;
+      //if (enable_plane_fitting == 1)
+      //{
+      //  // Create sac_model
+      //  {
+      //    ScopeTimeCPU t ("creating sac_model");
+      //    sac_model.reset (new SampleConsensusModel1PointPlane<Storage> (data));
+      //  }
+      //  sac_model->setNormals (normals);
 
-        MultiRandomSampleConsensus<Storage> sac (sac_model);
-        sac.setMinimumCoverage (0.90); // at least 95% points should be explained by planes
-        sac.setMaximumBatches (1);
-        sac.setIerationsPerBatch (1024);
-        sac.setDistanceThreshold (0.05);
+      //  MultiRandomSampleConsensus<Storage> sac (sac_model);
+      //  sac.setMinimumCoverage (0.90); // at least 95% points should be explained by planes
+      //  sac.setMaximumBatches (1);
+      //  sac.setIerationsPerBatch (1024);
+      //  sac.setDistanceThreshold (0.05);
 
-        {
-          ScopeTimeCPU timer ("computeModel: ");
-          if (!sac.computeModel (0))
-          {
-            std::cerr << "Failed to compute model" << std::endl;
-          }
-          else
-          {
-            if (enable_visualization)
-            {
-//              std::cerr << "getting inliers.. ";
-              
-              std::vector<typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr> planes;
-              typename Storage<int>::type region_mask;
-              markInliers<Storage> (data, region_mask, planes);
-              thrust::host_vector<int> regions_host;
-              std::copy (regions_host.begin (), regions_host.end(), std::ostream_iterator<int>(std::cerr, " "));
-              {
-                ScopeTimeCPU t ("retrieving inliers");
-                planes = sac.getAllInliers ();
-              }
-              std::vector<int> planes_inlier_counts = sac.getAllInlierCounts ();
-              std::vector<float4> coeffs = sac.getAllModelCoefficients ();
-              std::vector<float3> centroids = sac.getAllModelCentroids ();
-              std::cerr << "Found " << planes_inlier_counts.size () << " planes" << std::endl;
-              int best_plane = 0;
-              int best_plane_inliers_count = -1;
+      //  {
+      //    ScopeTimeCPU timer ("computeModel: ");
+      //    if (!sac.computeModel (0))
+      //    {
+      //      std::cerr << "Failed to compute model" << std::endl;
+      //    }
+      //    else
+      //    {
+      //      if (enable_visualization)
+      //      {
+//    //          std::cerr << "getting inliers.. ";
+      //        
+      //        std::vector<typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr> planes;
+      //        typename Storage<int>::type region_mask;
+      //        markInliers<Storage> (data, region_mask, planes);
+      //        thrust::host_vector<int> regions_host;
+      //        std::copy (regions_host.begin (), regions_host.end(), std::ostream_iterator<int>(std::cerr, " "));
+      //        {
+      //          ScopeTimeCPU t ("retrieving inliers");
+      //          planes = sac.getAllInliers ();
+      //        }
+      //        std::vector<int> planes_inlier_counts = sac.getAllInlierCounts ();
+      //        std::vector<float4> coeffs = sac.getAllModelCoefficients ();
+      //        std::vector<float3> centroids = sac.getAllModelCentroids ();
+      //        std::cerr << "Found " << planes_inlier_counts.size () << " planes" << std::endl;
+      //        int best_plane = 0;
+      //        int best_plane_inliers_count = -1;
 
-              for (unsigned int i = 0; i < planes.size (); i++)
-              {
-                if (planes_inlier_counts[i] > best_plane_inliers_count)
-                {
-                  best_plane = i;
-                  best_plane_inliers_count = planes_inlier_counts[i];
-                }
+      //        for (unsigned int i = 0; i < planes.size (); i++)
+      //        {
+      //          if (planes_inlier_counts[i] > best_plane_inliers_count)
+      //          {
+      //            best_plane = i;
+      //            best_plane_inliers_count = planes_inlier_counts[i];
+      //          }
 
-                typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr inliers_stencil;
-                inliers_stencil = planes[i];//sac.getInliersStencil ();
+      //          typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr inliers_stencil;
+      //          inliers_stencil = planes[i];//sac.getInliersStencil ();
 
-                OpenNIRGB color;
-                //double trand = 255 / (RAND_MAX + 1.0);
+      //          OpenNIRGB color;
+      //          //double trand = 255 / (RAND_MAX + 1.0);
 
-                //color.r = (int)(rand () * trand);
-                //color.g = (int)(rand () * trand);
-                //color.b = (int)(rand () * trand);
-                color.r = (1.0f + coeffs[i].x) * 128;
-                color.g = (1.0f + coeffs[i].y) * 128;
-                color.b = (1.0f + coeffs[i].z) * 128;
-                {
-                  ScopeTimeCPU t ("coloring planes");
-                  colorIndices<Storage> (data, inliers_stencil, color);
-                }
-              }
-            }
-          }
-        }
-      }
+      //          //color.r = (int)(rand () * trand);
+      //          //color.g = (int)(rand () * trand);
+      //          //color.b = (int)(rand () * trand);
+      //          color.r = (1.0f + coeffs[i].x) * 128;
+      //          color.g = (1.0f + coeffs[i].y) * 128;
+      //          color.b = (1.0f + coeffs[i].z) * 128;
+      //          {
+      //            ScopeTimeCPU t ("coloring planes");
+      //            colorIndices<Storage> (data, inliers_stencil, color);
+      //          }
+      //        }
+      //      }
+      //    }
+      //  }
+      //}
 
 
       //else
@@ -440,11 +430,13 @@ class KinectURDFSegmentation
       GLfloat	lightpos[4] = { 5.0, 15.0, 10.0, 1.0 }; 
       glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
       
-      
-      //TODO:    glTranslatef (0,0,10);
-      //    glRotatef (rot,0,1,0);
+      glTranslatef (0,0,10);
+      tf::Transform transform (camera_offset_q_, camera_offset_t_);
+      btScalar glTf[16];
+      transform.getOpenGLMatrix(glTf);
+      glMultMatrixd((GLdouble*)glTf);
 
-      BOOST_FOREACH ( realtime_perception::URDFRenderer* r, renderers)
+      BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
         r->render ();
 
       glUseProgram(NULL);
@@ -612,7 +604,8 @@ class KinectURDFSegmentation
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
       
-      glFlush(); // Flush the OpenGL buffers to the window  
+      glutSwapBuffers ();// Flush(); // Flush the OpenGL buffers to the window  
+
     }
     
     void 
@@ -630,11 +623,11 @@ class KinectURDFSegmentation
 
       grabber->start ();
      
-      glutMouseFunc (mousefunc);
       while (nh.ok())
       {
         render();
-        //glutPostRedisplay();
+        glutPostRedisplay();
+        glutMainLoopEvent ();
       }
 
       grabber->stop ();

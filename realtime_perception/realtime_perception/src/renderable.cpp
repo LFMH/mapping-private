@@ -19,7 +19,6 @@ namespace realtime_perception
 
   void Renderable::applyTransform ()
   {
-    tf::Vector3 axis;
     glPushMatrix ();
 
     tf::Transform transform (q,t);

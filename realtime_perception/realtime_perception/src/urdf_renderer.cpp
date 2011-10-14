@@ -128,7 +128,7 @@ namespace realtime_perception
   /** \brief loops over all renderables and renders them to canvas */
   void URDFRenderer::render ()
   {
-    ROS_INFO ("rendering frame");
+    printf ("rendering frame");
     transforms_changed ();
       
     //static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", 
