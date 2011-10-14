@@ -424,20 +424,16 @@ class KinectURDFSegmentation
       glLoadIdentity();
       gluLookAt (0,0,0, 0,0,1, 0,1,0);
 
-      glEnable(GL_LIGHTING);
-      glEnable(GL_LIGHT0);
-
-      GLfloat	lightpos[4] = { 5.0, 15.0, 10.0, 1.0 }; 
-      glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
-      
-      glTranslatef (0,0,10);
       tf::Transform transform (camera_offset_q_, camera_offset_t_);
       btScalar glTf[16];
       transform.getOpenGLMatrix(glTf);
       glMultMatrixd((GLdouble*)glTf);
 
+      {
+        ScopeTimeCPU berst("TF lookup and renering");
       BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
         r->render ();
+      }
 
       glUseProgram(NULL);
       
@@ -461,7 +457,6 @@ class KinectURDFSegmentation
 
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_TEXTURE_2D);
-      glDisable(GL_LIGHTING);
       fbo_.disableTextureTarget();
 
       glMatrixMode(GL_PROJECTION);
@@ -491,7 +486,6 @@ class KinectURDFSegmentation
 
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_TEXTURE_2D);
-      glDisable(GL_LIGHTING);
       fbo_.disableTextureTarget();
 
       glMatrixMode(GL_PROJECTION);

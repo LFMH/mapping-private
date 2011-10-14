@@ -18,6 +18,7 @@ namespace realtime_perception
     : model_description_(model_description), tf_prefix_(tf_prefix), camera_frame_ (cam_frame)
   {
     initURDFModel ();
+    tf_.setExtrapolationLimit (ros::Duration (1.1));
   }
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +114,7 @@ namespace realtime_perception
     {
       try
       {
-        tf_.lookupTransform (camera_frame_, (*it)->name, ros::Time (0), t);
+        tf_.lookupTransform (camera_frame_, (*it)->name, ros::Time::now () - ros::Duration(1.03), t);
       }
       catch (tf::TransformException ex)
       {
