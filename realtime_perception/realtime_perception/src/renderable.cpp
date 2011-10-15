@@ -21,8 +21,10 @@ namespace realtime_perception
   {
     glPushMatrix ();
 
-    tf::Transform transform (q,t);
-    transform *= tf::Transform (offset_q, offset_t);
+    tf::Transform transform (fixed_to_target);
+    transform *= link_to_fixed;
+    transform *= link_offset;
+    //transform *= tf::Transform (offset_q, offset_t);
     btScalar glTf[16];
     transform.getOpenGLMatrix(glTf);
     glMultMatrixd((GLdouble*)glTf);

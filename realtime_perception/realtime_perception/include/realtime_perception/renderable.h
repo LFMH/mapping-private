@@ -17,10 +17,15 @@ struct Renderable
   void setLinkName (std::string n);
   virtual void render () = 0;
   std::string name;
-  tf::Vector3 offset_t;
-  tf::Quaternion offset_q;
-  tf::Vector3 t;
-  tf::Quaternion q;
+//  tf::Vector3 offset_t;
+//  tf::Quaternion offset_q;
+//  tf::Vector3 t;
+//  tf::Quaternion q;
+
+  tf::Transform link_offset;
+  tf::Transform link_to_fixed;
+  tf::Transform fixed_to_target;
+
   urdf::Color color;
   void applyTransform ();
   void unapplyTransform ();

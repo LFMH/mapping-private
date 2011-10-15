@@ -14,7 +14,7 @@ namespace realtime_perception
 class URDFRenderer
 { 
   public:
-    URDFRenderer (std::string model_description, std::string tf_prefix, std::string cam_frame);
+    URDFRenderer (std::string model_description, std::string tf_prefix, std::string cam_frame, std::string fixed_frame, tf::TransformListener &tf);
     void initURDFModel ();
     void loadURDFModel (urdf::Model &descr);
     void process_link (boost::shared_ptr<urdf::Link> link);
@@ -27,12 +27,13 @@ class URDFRenderer
     std::string model_description_;
     std::string tf_prefix_;
     
-    // rendering stuff 
-    std::vector<boost::shared_ptr<Renderable> > renderables_;
-    tf::TransformListener tf_;
-
     // camera stuff
     std::string camera_frame_;
+    std::string fixed_frame_;
+   
+    // rendering stuff 
+    std::vector<boost::shared_ptr<Renderable> > renderables_;
+    tf::TransformListener &tf_;
 };
 
 } // end namespace

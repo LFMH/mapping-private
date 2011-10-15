@@ -78,37 +78,33 @@ class KinectURDFSegmentation
       fbo_ = FramebufferObject ("rgba=4x8t depth=24t stencil=t");
       initFrameBufferObject ();
       XmlRpc::XmlRpcValue v;
+      nh.getParam ("fixed_frame", v);
+      ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "fixed_frame paramter!");
+      fixed_frame_ = (std::string)v;
+      ROS_INFO ("using fixed frame %s", cam_frame_.c_str ());
+
       nh.getParam ("camera_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "need a camera_frame paramter!");
       cam_frame_ = (std::string)v;
       ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
 
       nh.getParam ("camera_offset", v);
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeStruct && "need a camera_offset paramter!");
       ROS_ASSERT (v.hasMember ("translation") && v.hasMember ("rotation") && "camera offset needs a translation and rotation parameter!");
 
       XmlRpc::XmlRpcValue vec = v["translation"];
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       ROS_ASSERT (vec.getType() == XmlRpc::XmlRpcValue::TypeArray && vec.size() == 3 && "camera_offset.translation parameter must be a 3-value array!");
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       ROS_INFO ("using camera translational offset: %f %f %f",
           (double)(vec[0]),
           (double)(vec[1]),
           (double)(vec[2])
           );
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       camera_offset_t_ = tf::Vector3((double)vec[0], (double)vec[1], (double)vec[2]);
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
 
       vec = v["rotation"];
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       ROS_ASSERT (vec.getType() == XmlRpc::XmlRpcValue::TypeArray && vec.size() == 4 && "camera_offset.rotation parameter must be a 4-value array [x y z w]!");
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       ROS_INFO ("using camera rotational offset: %f %f %f %f", (double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
       camera_offset_q_ = tf::Quaternion((double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
-      ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
 
       loadModels ();
     }
@@ -154,7 +150,7 @@ class KinectURDFSegmentation
           }
 
           // finally, set the model description so we can later parse it.
-          renderers.push_back (new realtime_perception::URDFRenderer (content, tf_prefix, cam_frame_));
+          renderers.push_back (new realtime_perception::URDFRenderer (content, tf_prefix, cam_frame_, fixed_frame_, tf_));
         }
       }
       else
@@ -368,6 +364,16 @@ class KinectURDFSegmentation
         GL_COLOR_ATTACHMENT3_EXT
       };
 
+      tf::StampedTransform t;
+      try
+      {
+        tf_.lookupTransform (cam_frame_, fixed_frame_, ros::Time (), t);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("%s",ex.what());
+      }
+
       // -----------------------------------------------------------------------
       // -----------------------------------------------------------------------
       //	1. render teapot into color, depth and stencil buffer
@@ -425,14 +431,16 @@ class KinectURDFSegmentation
       gluLookAt (0,0,0, 0,0,1, 0,1,0);
 
       tf::Transform transform (camera_offset_q_, camera_offset_t_);
+      transform *= t;
       btScalar glTf[16];
       transform.getOpenGLMatrix(glTf);
-      glMultMatrixd((GLdouble*)glTf);
+//      glMultMatrixd((GLdouble*)glTf);
+
 
       {
         ScopeTimeCPU berst("TF lookup and renering");
-      BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
-        r->render ();
+        BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
+          r->render ();
       }
 
       glUseProgram(NULL);
@@ -644,8 +652,10 @@ class KinectURDFSegmentation
     tf::Vector3 camera_offset_t_;
     tf::Quaternion camera_offset_q_;
     std::string cam_frame_;
+    std::string fixed_frame_;
     FramebufferObject fbo_;
     bool fbo_initialized_;
+    tf::TransformListener tf_;
 };
 
 

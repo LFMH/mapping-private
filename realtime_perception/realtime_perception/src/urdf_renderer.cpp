@@ -14,8 +14,16 @@
 
 namespace realtime_perception
 {
-  URDFRenderer::URDFRenderer (std::string model_description, std::string tf_prefix, std::string cam_frame)
-    : model_description_(model_description), tf_prefix_(tf_prefix), camera_frame_ (cam_frame)
+  URDFRenderer::URDFRenderer (std::string model_description, 
+                              std::string tf_prefix,
+                              std::string cam_frame,
+                              std::string fixed_frame,
+                              tf::TransformListener &tf)
+    : model_description_(model_description)
+    , tf_prefix_(tf_prefix)
+    , camera_frame_ (cam_frame)
+    , fixed_frame_(fixed_frame)
+    , tf_(tf)
   {
     initURDFModel ();
     tf_.setExtrapolationLimit (ros::Duration (1.1));
@@ -87,9 +95,9 @@ namespace realtime_perception
     r->setLinkName (tf_prefix_+ "/" + link->name);
     urdf::Vector3 origin = link->visual->origin.position;
     urdf::Rotation rotation = link->visual->origin.rotation;
-    r->offset_q = tf::Quaternion (rotation.x, rotation.y, rotation.z, rotation.w);
-    r->offset_q.normalize ();
-    r->offset_t = tf::Vector3 (origin.x, origin.y, origin.z);
+    r->link_offset = tf::Transform (
+        tf::Quaternion (rotation.x, rotation.y, rotation.z, rotation.w).normalize (),
+        tf::Vector3 (origin.x, origin.y, origin.z));
     if (link->visual && 
         (link->visual->material))
       r->color  = link->visual->material->color;
@@ -114,14 +122,13 @@ namespace realtime_perception
     {
       try
       {
-        tf_.lookupTransform (camera_frame_, (*it)->name, ros::Time::now () - ros::Duration(1.03), t);
+        tf_.lookupTransform (fixed_frame_, (*it)->name, ros::Time (), t);
       }
       catch (tf::TransformException ex)
       {
         ROS_ERROR("%s",ex.what());
       }
-      (*it)->q = t.getRotation ();
-      (*it)->t = t.getOrigin ();
+      (*it)->link_to_fixed = tf::Transform (t.getRotation (), t.getOrigin ());
     }
   }
 
