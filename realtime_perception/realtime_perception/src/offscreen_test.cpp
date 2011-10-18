@@ -81,7 +81,7 @@ class KinectURDFSegmentation
       nh.getParam ("fixed_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "fixed_frame paramter!");
       fixed_frame_ = (std::string)v;
-      ROS_INFO ("using fixed frame %s", cam_frame_.c_str ());
+      ROS_INFO ("using fixed frame %s", fixed_frame_.c_str ());
 
       nh.getParam ("camera_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "need a camera_frame paramter!");

@@ -21,8 +21,7 @@ namespace realtime_perception
   {
     glPushMatrix ();
 
-    tf::Transform transform (fixed_to_target);
-    transform *= link_to_fixed;
+    tf::Transform transform (link_to_fixed);
     transform *= link_offset;
     //transform *= tf::Transform (offset_q, offset_t);
     btScalar glTf[16];
