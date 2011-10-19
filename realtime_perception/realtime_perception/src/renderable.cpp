@@ -23,7 +23,6 @@ namespace realtime_perception
 
     tf::Transform transform (link_to_fixed);
     transform *= link_offset;
-    //transform *= tf::Transform (offset_q, offset_t);
     btScalar glTf[16];
     transform.getOpenGLMatrix(glTf);
     glMultMatrixd((GLdouble*)glTf);
@@ -293,15 +292,13 @@ namespace realtime_perception
   {
     applyTransform ();
     glEnableVertexAttribArray (0);
-    glEnableVertexAttribArray (1);
     glEnableVertexAttribArray (2);
 
     for (unsigned int i = 0 ; i < meshes.size() ; i++)
     {
       glBindBuffer (GL_ARRAY_BUFFER, meshes[i].vbo);
       glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), 0);
-      glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, sizeof (Vertex), (const GLvoid*) 12);
-      glVertexAttribPointer (2, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), (const GLvoid*) 20);
+      glVertexAttribPointer (2, 3, GL_FLOAT, GL_FALSE, sizeof (Vertex), (const GLvoid*) (sizeof(float)*3));
 
       glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, meshes[i].ibo);
 
@@ -316,57 +313,9 @@ namespace realtime_perception
     }
 
     glDisableVertexAttribArray (0);
-    glDisableVertexAttribArray (1);
     glDisableVertexAttribArray (2);
     unapplyTransform ();
   }
 }
 
 
-//  void URDFRenderer::createBoxVBO (const urdf::Vector3 &dim, GLuint &vbo, GLuint &ibo)
-//  {
-//    int num_vert = 20; 
-//    static const GLfloat boxvertices[] = {-1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                           1.0f * dim.x,  1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x,  1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                          -1.0f * dim.x,  1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x,  1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x,  1.0f * dim.y, -1.0f * dim.z,
-//                                           1.0f * dim.x,  1.0f * dim.y,  1.0f * dim.z,
-//                                           1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x, -1.0f * dim.y, -1.0f * dim.z,
-//                                          -1.0f * dim.x, -1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x,  1.0f * dim.y,  1.0f * dim.z,
-//                                          -1.0f * dim.x,  1.0f * dim.y, -1.0f * dim.z };
-//
-//    glGenBuffers (1, &vbo);
-//    glBindBuffer (GL_ARRAY_BUFFER, vbo);
-//    glBufferData(GL_ARRAY_BUFFER, 20 * 3 * sizeof(GLfloat), boxvertices, GL_STATIC_DRAW);
-//
-//    ushort pindices[num_vert];
-//    for (int i = 0; i < num_vert; i++)
-//      pindices[i] = i;
-//
-//    glGenBuffers(1, &ibo);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort)*num_vert, pindices, GL_STATIC_DRAW);
-//  }
-//    {
-//      GLuint vbo = it->second.first;
-//      GLuint ibo = it->second.second;
-//      glBindBuffer (GL_ARRAY_BUFFER, vbo);
-//      glEnableVertexAttribArray (0);
-//      glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), BUFFER_OFFSET(0));
-//
-//      glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, ibo);
-//      glDrawElements (GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, BUFFER_OFFSET(0));
-//      glDisableVertexAttribArray (0);
-//    }

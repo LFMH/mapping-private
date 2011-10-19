@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <resource_retriever/retriever.h>
+#include <GL/glu.h>
 
 namespace realtime_perception
 {
@@ -60,6 +61,10 @@ ShaderWrapper::ShaderWrapper (GLchar const * (&v_source) [L1], GLchar const * (&
   glAttachShader (prog, vertex_shader);
   glAttachShader (prog, fragment_shader);
   glLinkProgram (prog);
+   
+  GLenum error = glGetError();
+  if(error != GL_NO_ERROR)
+    throw std::logic_error (std::string("GL ERROR while creating shaders:").append((const char*)gluErrorString(error)));
 }
 
 // compile function is templated on the number of lines in the shader

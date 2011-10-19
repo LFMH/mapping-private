@@ -27,6 +27,7 @@
 #include <ros/node_handle.h>
 #include "realtime_perception/urdf_renderer.h"
 #include "realtime_perception/point_types.h"
+#include <realtime_perception/shader_wrapper.h>
 
 #include <GL/freeglut.h>
 
@@ -382,14 +383,27 @@ class KinectURDFSegmentation
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
       else
-        printf ("everything ok so far");
+        printf ("everything ok so far\n");
 
       glPushAttrib(GL_ALL_ATTRIB_BITS);
 
       fbo_.beginCapture();
 
-      // enable shader 
-      //TODO glUseProgram(my_program);
+      static realtime_perception::ShaderWrapper shader = realtime_perception::ShaderWrapper::fromFiles
+        ("package://realtime_perception/include/shaders/test1.vert", 
+         "package://realtime_perception/include/shaders/test1.frag");
+      err = glGetError();
+      if(err != GL_NO_ERROR)
+        printf("before shader use: OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
+      else
+        printf("before shader use: everything ok so far\n");
+      printf("shader ID %i\n", (unsigned int) GLuint (shader));
+      shader ();
+      err = glGetError();
+      if(err != GL_NO_ERROR)
+        printf("after shader use: OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
+      else
+        printf("after shader use: everything ok so far\n");
 
       glDrawBuffers(sizeof(buffers) / sizeof(GLenum), buffers);
 
@@ -434,11 +448,11 @@ class KinectURDFSegmentation
       transform *= t;
       btScalar glTf[16];
       transform.getOpenGLMatrix(glTf);
-//      glMultMatrixd((GLdouble*)glTf);
+      glMultMatrixd((GLdouble*)glTf);
 
 
       {
-        ScopeTimeCPU berst("TF lookup and renering");
+        ScopeTimeCPU berst("TF lookup and rendering");
         BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
           r->render ();
       }

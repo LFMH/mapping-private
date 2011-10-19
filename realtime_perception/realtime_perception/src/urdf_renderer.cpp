@@ -10,7 +10,6 @@
 #include <ros/node_handle.h>
 
 #include <realtime_perception/urdf_renderer.h>
-#include <realtime_perception/shader_wrapper.h>
 
 namespace realtime_perception
 {
@@ -136,7 +135,7 @@ namespace realtime_perception
   /** \brief loops over all renderables and renders them to canvas */
   void URDFRenderer::render ()
   {
-    printf ("rendering frame");
+    printf ("rendering frame\n");
     transforms_changed ();
       
     //static ShaderWrapper shader = ShaderWrapper::fromFiles ("package://realtime_perception/include/shaders/test1.vert", 

@@ -1,20 +1,16 @@
-#version 150
-// in_Position was bound to attribute index 0 and in_Color was bound to attribute index 1
-in  vec2 in_Position;
-in  vec3 in_Color;
- 
-// We output the ex_Color variable to the next shader in the chain
-out vec3 ex_Color;
-void main(void) {
-    // Since we are using flat lines, our input only had two points: x and y.
-    // Set the Z coordinate to 0 and W coordinate to 1
- 
-    gl_Position = vec4(in_Position.x, in_Position.y, 0.0, 1.0);
- 
-    // GLSL allows shorthand use of vectors too, the following is also valid:
-    // gl_Position = vec4(in_Position, 0.0, 1.0);
-    // We're simply passing the color through unmodified
- 
-    ex_Color = in_Color;
+in vec3 vertex;
+varying vec4 normal;
+
+void main() {
+  gl_Position = gl_ModelViewProjectionMatrix * vec4(vertex, 1.0);
+  
+  float Angle = radians(-90);
+  mat4 RotationMatrix = mat4(
+    cos( Angle ), sin( Angle ), 0.0, 0.0,
+    -sin( Angle ),  cos( Angle ), 0.0, 0.0,
+    0.0,           0.0,          1.0, 0.0,
+    0.0,           0.0,          0.0, 1.0 );
+
+  normal = RotationMatrix * vec4(gl_NormalMatrix * gl_Normal, 1.0);
 }
 
