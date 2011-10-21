@@ -1,28 +1,23 @@
 <launch>
-  <include file="$(find ias_kitchen_defs)/launch/ias_kitchen_model.launch"/>
 
   <!--
+  <include file="$(find ias_kitchen_defs)/launch/ias_kitchen_model.launch"/>
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="valgrind - -leak-check=full" >
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="gdb -ex run - -args">
   -->
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" >
     <remap from="~input" to="/cloud_pcd" />
     <rosparam>
-      camera_frame: /ias_kitchen/kitchen_link
+      fixed_frame: /map
+      camera_frame: /openni_rgb_optical_frame
       camera_offset:
-        translation: [3.0, 3.0, 1.8]
-        rotation:    [0.271 , 0.653 , -0.271 , 0.653]
-
+        translation: [0.0, 0.0, 0.0]
+        rotation:    [0.0, 0.0, 0.0, 1.0]
       models: 
         - model: "/ias_kitchen/kitchen_description"
           tf_prefix: /ias_kitchen
-#        - model: /robot_description
-#          tf_prefix: ""
-      tf_prefix: /ias_kitchen
-      #tf_prefix: ""
-      model_description: /ias_kitchen/kitchen_description
-      #model_description: /robot_description
-      approximate_sync: true
+        - model: /robot_description
+          tf_prefix: ""
     </rosparam>
   </node>
 
