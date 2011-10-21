@@ -61,16 +61,75 @@ namespace realtime_perception
   // Box methods
   RenderableBox::RenderableBox (float dimx, float dimy, float dimz)
     : dimx(dimx), dimy(dimy), dimz(dimz)
-  {}
+  {
+    createBoxVBO ();
+  }
 
   void RenderableBox::render ()
   {
     applyTransform ();
 
     glColor3f (color.r, color.g, color.b);
-    glScalef (dimx, dimy, dimz);
-    glutSolidCube (1.0);
+
+    // Enable Pointers
+    glEnableClientState (GL_VERTEX_ARRAY);
+    glEnableClientState (GL_NORMAL_ARRAY);
+
+    glBindBuffer (GL_ARRAY_BUFFER, vbo);
+    glVertexPointer (3, GL_FLOAT, 6*sizeof(GLfloat), (char *) NULL);
+    glNormalPointer (GL_FLOAT, 6*sizeof(GLfloat), ((char *) NULL) + (3 * sizeof(GLfloat)) );
+
+    // Render
+    glDrawArrays (GL_QUADS, 0, 24);
+
+    // Disable Pointers
+    glDisableClientState( GL_VERTEX_ARRAY );          // Disable Vertex Arrays
+    glDisableClientState( GL_NORMAL_ARRAY );       // Disable Texture Coord Arrays
+
+    //glScalef (dimx, dimy, dimz);
+    //glutSolidCube (dimx);
     unapplyTransform ();
+  }
+
+  void RenderableBox::createBoxVBO ()
+  {
+    int num_vert = 20; 
+
+    const GLfloat boxvertices[] = 
+      {0.5f * dimx, 0.5f * dimy,-0.5f * dimz, 0.0f, 1.0f, 0.0f,          // Top Right Of The Quad (Top)
+      -0.5f * dimx, 0.5f * dimy,-0.5f * dimz, 0.0f, 1.0f, 0.0f,          // Top Left Of The Quad (Top)
+      -0.5f * dimx, 0.5f * dimy, 0.5f * dimz, 0.0f, 1.0f, 0.0f,          // Bottom Left Of The Quad (Top)
+       0.5f * dimx, 0.5f * dimy, 0.5f * dimz, 0.0f, 1.0f, 0.0f,          // Bottom Right Of The Quad (Top)
+      
+       0.5f * dimx,-0.5f * dimy, 0.5f * dimz, 0.0f,-1.0f, 0.0f,          // Top Right Of The Quad (Bottom)
+      -0.5f * dimx,-0.5f * dimy, 0.5f * dimz, 0.0f,-1.0f, 0.0f,          // Top Left Of The Quad (Bottom)
+      -0.5f * dimx,-0.5f * dimy,-0.5f * dimz, 0.0f,-1.0f, 0.0f,          // Bottom Left Of The Quad (Bottom)
+       0.5f * dimx,-0.5f * dimy,-0.5f * dimz, 0.0f,-1.0f, 0.0f,          // Bottom Right Of The Quad (Bottom)
+      
+       0.5f * dimx, 0.5f * dimy, 0.5f * dimz, 0.0f, 0.0f, 1.0f,          // Top Right Of The Quad (Front)
+      -0.5f * dimx, 0.5f * dimy, 0.5f * dimz, 0.0f, 0.0f, 1.0f,          // Top Left Of The Quad (Front)
+      -0.5f * dimx,-0.5f * dimy, 0.5f * dimz, 0.0f, 0.0f, 1.0f,          // Bottom Left Of The Quad (Front)
+       0.5f * dimx,-0.5f * dimy, 0.5f * dimz, 0.0f, 0.0f, 1.0f,          // Bottom Right Of The Quad (Front)
+      
+       0.5f * dimx,-0.5f * dimy,-0.5f * dimz, 0.0f, 0.0f,-1.0f,          // Top Right Of The Quad (Back)
+      -0.5f * dimx,-0.5f * dimy,-0.5f * dimz, 0.0f, 0.0f,-1.0f,          // Top Left Of The Quad (Back)
+      -0.5f * dimx, 0.5f * dimy,-0.5f * dimz, 0.0f, 0.0f,-1.0f,          // Bottom Left Of The Quad (Back)
+       0.5f * dimx, 0.5f * dimy,-0.5f * dimz, 0.0f, 0.0f,-1.0f,          // Bottom Right Of The Quad (Back)
+      
+      -0.5f * dimx, 0.5f * dimy, 0.5f * dimz,-1.0f, 0.0f, 0.0f,          // Top Right Of The Quad (Left)
+      -0.5f * dimx, 0.5f * dimy,-0.5f * dimz,-1.0f, 0.0f, 0.0f,          // Top Left Of The Quad (Left)
+      -0.5f * dimx,-0.5f * dimy,-0.5f * dimz,-1.0f, 0.0f, 0.0f,          // Bottom Left Of The Quad (Left)
+      -0.5f * dimx,-0.5f * dimy, 0.5f * dimz,-1.0f, 0.0f, 0.0f,          // Bottom Right Of The Quad (Left)
+      
+       0.5f * dimx, 0.5f * dimy,-0.5f * dimz, 1.0f, 0.0f, 0.0f,          // Top Right Of The Quad (Right)
+       0.5f * dimx, 0.5f * dimy, 0.5f * dimz, 1.0f, 0.0f, 0.0f,          // Top Left Of The Quad (Right)
+       0.5f * dimx,-0.5f * dimy, 0.5f * dimz, 1.0f, 0.0f, 0.0f,          // Bottom Left Of The Quad (Right)
+       0.5f * dimx,-0.5f * dimy,-0.5f * dimz, 1.0f, 0.0f, 0.0f};         // Bottom Right Of The Quad (Right)
+
+
+    glGenBuffers (1, &vbo);
+    glBindBuffer (GL_ARRAY_BUFFER, vbo);
+    glBufferData (GL_ARRAY_BUFFER, 24 * 6 * sizeof(GLfloat), boxvertices, GL_STATIC_DRAW);
   }
 
   // these classes are copied from RVIZ. TODO: header/license/author tags
@@ -316,6 +375,8 @@ namespace realtime_perception
     glDisableVertexAttribArray (2);
     unapplyTransform ();
   }
+
+
 }
 
 

@@ -36,8 +36,11 @@ struct RenderableBox : public Renderable
   RenderableBox (float dimx, float dimy, float dimz);
 
   virtual void render ();
-    
+
   float dimx, dimy, dimz;
+protected: 
+  void createBoxVBO ();
+  GLuint vbo;
 };
 
 struct RenderableSphere : public Renderable
