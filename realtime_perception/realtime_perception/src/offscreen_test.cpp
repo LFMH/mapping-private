@@ -18,6 +18,7 @@
 #include "pcl/cuda/sample_consensus/multi_ransac.h"
 #include <pcl/cuda/segmentation/connected_components.h>
 #include <pcl/cuda/segmentation/mssegmentation.h>
+#include <cuda_gl_interop.h>
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/gpu/gpu.hpp"
@@ -67,7 +68,7 @@ struct ImageType<Host>
 class KinectURDFSegmentation
 {
   public:
-    KinectURDFSegmentation (ros::NodeHandle &nh)
+    KinectURDFSegmentation (ros::NodeHandle &nh, GLuint &interop_gl_buffer)
       : nh(nh)
       , new_cloud(false)
       , normal_method(1)
@@ -75,6 +76,7 @@ class KinectURDFSegmentation
       , radius_cm (5)
       , normal_viz_step(200)
       , fbo_initialized_(false)
+      , interop_gl_buffer_(interop_gl_buffer)
     {
       fbo_ = FramebufferObject ("rgba=4x8t depth=24t stencil=t");
       initFrameBufferObject ();
@@ -166,6 +168,7 @@ class KinectURDFSegmentation
               const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, 
               float constant)
     {
+      boost::mutex::scoped_lock l(m_mutex);
       // TIMING
       static unsigned count = 0;
       static double last = getTime ();
@@ -199,6 +202,7 @@ class KinectURDFSegmentation
         // Compute the PointCloud on the device
         d2c.compute<Storage> (depth_image, image, constant, data, false, 1, smoothing_nr_iterations, smoothing_filter_size);
       }
+      thrust::copy (data->points.begin(), data->points.end(), interop_cuda_pointer_);
 
       // GPU NORMAL CLOUD
       boost::shared_ptr<typename Storage<float4>::type> normals;
@@ -346,6 +350,29 @@ class KinectURDFSegmentation
       GLenum err = glGetError();
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
+    
+      // register buffer with cuda
+      cudaError_t cuda_error = cudaGLRegisterBufferObject(interop_gl_buffer_);
+
+      // get device pointer to buffer
+      pcl::cuda::PointXYZRGB *raw_ptr = 0;
+      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffer_);
+      interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
+
+
+     // glGenTextures (1, &interop_gl_texture_);
+     // glBindTexture (GL_TEXTURE_BUFFER, interop_gl_texture_);
+     // glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, interop_gl_buffer_);
+     //   GLint chtex_loc = glGetUniformLocation(programId, "charTexture"); 
+     //   //chtex_loc != -1  
+     //   glUniform1i(glGetUniformLocation(programId, "charTexture"), 0);
+     //   GLint anim_loc = glGetUniformLocation(programId, "AnimationData");
+     //   //anim_loc != -1
+     //   glUniform1i(glGetUniformLocation(programId, "AnimationData"), 5);
+     //   GLint inst_loc = glGetUniformLocation(programId, "InstanceData");
+     //   //inst_loc  != -1
+     //   glUniform1i(glGetUniformLocation(programId, "InstanceData"), 3);
+
     }
 
     void render ()
@@ -355,6 +382,10 @@ class KinectURDFSegmentation
 
       if (!fbo_initialized_)
         return;
+
+      cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffer_);
+
+      boost::mutex::scoped_lock l(m_mutex);
 
       new_cloud = false;
 
@@ -386,7 +417,8 @@ class KinectURDFSegmentation
         printf ("everything ok so far\n");
 
       glPushAttrib(GL_ALL_ATTRIB_BITS);
-
+      glEnable(GL_NORMALIZE);
+ 
       fbo_.beginCapture();
 
       static realtime_perception::ShaderWrapper shader = realtime_perception::ShaderWrapper::fromFiles
@@ -445,11 +477,24 @@ class KinectURDFSegmentation
       gluLookAt (0,0,0, 0,0,1, 0,1,0);
 
       tf::Transform transform (camera_offset_q_, camera_offset_t_);
-      transform *= t;
       btScalar glTf[16];
       transform.getOpenGLMatrix(glTf);
       glMultMatrixd((GLdouble*)glTf);
 
+      // Enable Pointers
+      glEnableClientState (GL_VERTEX_ARRAY);
+
+      glBindBuffer (GL_ARRAY_BUFFER, interop_gl_buffer_);
+      glVertexPointer (3, GL_FLOAT, 4*sizeof(GLfloat), (char *) NULL);
+
+      // Render
+      glDrawArrays (GL_POINTS, 0, 640*480);
+
+      // Disable Pointers
+      glDisableClientState( GL_VERTEX_ARRAY );          // Disable Vertex Arrays
+
+      t.getOpenGLMatrix(glTf);
+      glMultMatrixd((GLdouble*)glTf);
 
       {
         ScopeTimeCPU berst("TF lookup and rendering");
@@ -622,6 +667,10 @@ class KinectURDFSegmentation
       
       glutSwapBuffers ();// Flush(); // Flush the OpenGL buffers to the window  
 
+      // get device pointer to buffer
+      pcl::cuda::PointXYZRGB *raw_ptr = 0;
+      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffer_);
+      interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
     }
     
     void 
@@ -670,9 +719,9 @@ class KinectURDFSegmentation
     FramebufferObject fbo_;
     bool fbo_initialized_;
     tf::TransformListener tf_;
+    GLuint interop_gl_buffer_;
+    thrust::device_ptr<pcl::cuda::PointXYZRGB> interop_cuda_pointer_;
 };
-
-
 
 int 
 main (int argc, char **argv)
@@ -683,16 +732,34 @@ main (int argc, char **argv)
 	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
 	glutCreateWindow ("TestFramebufferObject");
 
+
+
+
+
+
+
+
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
 	{
 		std::cout << "ERROR: could not initialize GLEW!" << std::endl;
 	}
   ros::init (argc, argv, "urdf_filter_cuda");
-  
+
+  // create GL buffer
+  GLuint interop_buf = 0;
+  glGenBuffers (1, &interop_buf);
+
+  // bind it
+  glBindBuffer (GL_ARRAY_BUFFER, interop_buf);
+  // load it with crap data
+  glBufferData(GL_ARRAY_BUFFER, 640*480 * sizeof(pcl::cuda::PointXYZRGB), 0, GL_DYNAMIC_DRAW);
+  // unbind it
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
   ros::NodeHandle nh ("~");
 
-  KinectURDFSegmentation s(nh);
+  KinectURDFSegmentation s(nh, interop_buf);
   s.run ();
 
   return 0;
