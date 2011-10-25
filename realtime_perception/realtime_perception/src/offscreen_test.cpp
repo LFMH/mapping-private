@@ -170,7 +170,6 @@ class KinectURDFSegmentation
               const boost::shared_ptr<openni_wrapper::DepthImage>& depth_image, 
               float constant)
     {
-      boost::mutex::scoped_lock l(m_mutex);
       // TIMING
       static unsigned count = 0;
       static double last = getTime ();
@@ -183,6 +182,8 @@ class KinectURDFSegmentation
         std::cout << "Average framerate: " << double(count)/double(now - last) << " Hz --- ";
         last = now;
       }
+
+      // request a new gl image
       {
         boost::lock_guard<boost::mutex> lock(mutex_gl_image_needed);
         gl_image_needed=true;
@@ -401,7 +402,6 @@ class KinectURDFSegmentation
 
       cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffer_);
 
-      boost::mutex::scoped_lock l(m_mutex);
 
       new_cloud = false;
 
