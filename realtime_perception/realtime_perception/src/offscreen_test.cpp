@@ -77,6 +77,8 @@ class KinectURDFSegmentation
       , normal_viz_step(200)
       , fbo_initialized_(false)
       , interop_gl_buffer_(interop_gl_buffer)
+      , gl_image_needed (false)
+      , gl_image_available (false)
     {
       fbo_ = FramebufferObject ("rgba=4x8t depth=24t stencil=t");
       initFrameBufferObject ();
@@ -181,7 +183,18 @@ class KinectURDFSegmentation
         std::cout << "Average framerate: " << double(count)/double(now - last) << " Hz --- ";
         last = now;
       }
+      {
+        boost::lock_guard<boost::mutex> lock(mutex_gl_image_needed);
+        gl_image_needed=true;
+      }
+      cond_gl_image_needed.notify_all ();
 
+      boost::unique_lock<boost::mutex> lock(mutex_gl_image_available);
+      while (!gl_image_available)
+        cond_gl_image_available.wait(lock);
+      gl_image_available = false;
+
+      boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
       // PARAMETERS
       static int smoothing_nr_iterations = 10;
       static int smoothing_filter_size = 2;
@@ -377,6 +390,9 @@ class KinectURDFSegmentation
 
     void render ()
     {
+      // lock gl_image_mutex and "produce" one image
+      boost::mutex::scoped_lock gl_image_lock(gl_image_mutex);
+  
       if (!new_cloud)
         return;
 
@@ -582,95 +598,106 @@ class KinectURDFSegmentation
       glPopAttrib();
 
       // TODO: code to render the offscreen buffer
-	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+      glMatrixMode(GL_PROJECTION);
+      glPushMatrix();
+      glLoadIdentity();
+      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
 
-	glMatrixMode(GL_MODELVIEW);	
-	glPushMatrix();
-	glLoadIdentity();
+      glMatrixMode(GL_MODELVIEW);	
+      glPushMatrix();
+      glLoadIdentity();
 
-	// draw color buffer 0
-	fbo_.bind(0);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(0.0, 0.5);
-		glTexCoord2f(fbo_.getWidth(), 0.0);
-		glVertex2f(0.333, 0.5);
-		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
-		glVertex2f(0.333, 1.0);
-		glTexCoord2f(0.0, fbo_.getHeight());
-		glVertex2f(0.0, 1.0);
-	glEnd();
+      // draw color buffer 0
+      fbo_.bind(0);
+      glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0);
+        glVertex2f(0.0, 0.5);
+        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glVertex2f(0.333, 0.5);
+        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glVertex2f(0.333, 1.0);
+        glTexCoord2f(0.0, fbo_.getHeight());
+        glVertex2f(0.0, 1.0);
+      glEnd();
 
-	// draw color buffer 1
-	fbo_.bind(1);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(0.0, 0.0);
-		glTexCoord2f(fbo_.getWidth(), 0.0);
-		glVertex2f(0.333, 0.0);
-		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
-		glVertex2f(0.333, 0.5);
-		glTexCoord2f(0.0, fbo_.getHeight());
-		glVertex2f(0.0, 0.5);
-	glEnd();
+      // draw color buffer 1
+      fbo_.bind(1);
+      glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0);
+        glVertex2f(0.0, 0.0);
+        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glVertex2f(0.333, 0.0);
+        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glVertex2f(0.333, 0.5);
+        glTexCoord2f(0.0, fbo_.getHeight());
+        glVertex2f(0.0, 0.5);
+      glEnd();
 
-	// draw color buffer 2
-	fbo_.bind(2);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(0.333, 0.5);
-		glTexCoord2f(fbo_.getWidth(), 0.0);
-		glVertex2f(0.666, 0.5);
-		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
-		glVertex2f(0.666, 1.0);
-		glTexCoord2f(0.0, fbo_.getHeight());
-		glVertex2f(0.333, 1.0);
-	glEnd();
+      // draw color buffer 2
+      fbo_.bind(2);
+      glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0);
+        glVertex2f(0.333, 0.5);
+        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glVertex2f(0.666, 0.5);
+        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glVertex2f(0.666, 1.0);
+        glTexCoord2f(0.0, fbo_.getHeight());
+        glVertex2f(0.333, 1.0);
+      glEnd();
 
-	// draw color buffer 3
-	fbo_.bind(3);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(0.333, 0.0);
-		glTexCoord2f(fbo_.getWidth(), 0.0);
-		glVertex2f(0.666, 0.0);
-		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
-		glVertex2f(0.666, 0.5);
-		glTexCoord2f(0.0, fbo_.getHeight());
-		glVertex2f(0.333, 0.5);
-	glEnd();
+      // draw color buffer 3
+      fbo_.bind(3);
+      glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0);
+        glVertex2f(0.333, 0.0);
+        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glVertex2f(0.666, 0.0);
+        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glVertex2f(0.666, 0.5);
+        glTexCoord2f(0.0, fbo_.getHeight());
+        glVertex2f(0.333, 0.5);
+      glEnd();
 
-	// draw depth buffer 
-	fbo_.bindDepth();
-	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(0.666, 0.5);
-		glTexCoord2f(fbo_.getWidth(), 0.0);
-		glVertex2f(1.0, 0.5);
-		glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
-		glVertex2f(1.0, 1.0);
-		glTexCoord2f(0.0, fbo_.getHeight());
-		glVertex2f(0.666, 1.0);
-	glEnd();
+      // draw depth buffer 
+      fbo_.bindDepth();
+      glBegin(GL_QUADS);
+        glTexCoord2f(0.0, 0.0);
+        glVertex2f(0.666, 0.5);
+        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glVertex2f(1.0, 0.5);
+        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glVertex2f(1.0, 1.0);
+        glTexCoord2f(0.0, fbo_.getHeight());
+        glVertex2f(0.666, 1.0);
+      glEnd();
 
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
+      glPopMatrix();
+      glMatrixMode(GL_PROJECTION);
+      glPopMatrix();
       
       glutSwapBuffers ();// Flush(); // Flush the OpenGL buffers to the window  
 
       // get device pointer to buffer
       pcl::cuda::PointXYZRGB *raw_ptr = 0;
       cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffer_);
-      interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
+      
+      {
+        boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
+        interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
+      }
+
+      {
+        boost::lock_guard<boost::mutex> lock(mutex_gl_image_available);
+        gl_image_available=true;
+      }
+
+      cond_gl_image_available.notify_all ();
     }
     
     void 
@@ -690,7 +717,14 @@ class KinectURDFSegmentation
      
       while (nh.ok())
       {
+        // wait for "data needed!"
+        boost::unique_lock<boost::mutex> lock (mutex_gl_image_needed);
+        while (!gl_image_needed && nh.ok ())
+          cond_gl_image_needed.wait(lock);
+        
         render();
+        gl_image_needed = false;
+
         glutPostRedisplay();
         glutMainLoopEvent ();
       }
@@ -703,7 +737,7 @@ class KinectURDFSegmentation
     pcl::PointCloud<PointXYZRGBNormalRegion>::Ptr region_cloud;
     DisparityToCloud d2c;
     pcl::visualization::CloudViewer *viewer;
-    boost::mutex m_mutex;
+
     bool new_cloud;
     int normal_method;
     int nr_neighbors;
@@ -719,8 +753,19 @@ class KinectURDFSegmentation
     FramebufferObject fbo_;
     bool fbo_initialized_;
     tf::TransformListener tf_;
+
+    // variables holding the CUDA/OpenGL interop buffer info
     GLuint interop_gl_buffer_;
     thrust::device_ptr<pcl::cuda::PointXYZRGB> interop_cuda_pointer_;
+
+    // these are needed for the synchronous across-thread-boundaries call of render() from cloud_cb()
+    bool gl_image_needed;
+    bool gl_image_available;
+    boost::mutex mutex_gl_image_needed;
+    boost::mutex mutex_gl_image_available;
+    boost::condition_variable cond_gl_image_needed;
+    boost::condition_variable cond_gl_image_available;
+    boost::mutex gl_image_mutex;
 };
 
 int 
