@@ -36,11 +36,16 @@
 #include <realtime_perception/shader_wrapper.h>
 #include <realtime_perception/urdf_filtering.h>
 
+#include <X11/X.h>
+#include <X11/Xlib.h>
 #include <GL/freeglut.h>
+#include <GL/glx.h>
 
 #include <pcl/io/openni_grabber.h>
 #include <pcl/io/pcd_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
+
+#include <tclap/CmdLine.h>
 
 using namespace pcl::cuda;
 
@@ -74,7 +79,7 @@ struct ImageType<Host>
 class KinectURDFSegmentation
 {
   public:
-    KinectURDFSegmentation (ros::NodeHandle &nh, int argc, char **argv)
+    KinectURDFSegmentation (ros::NodeHandle &nh, int argc, char **argv, bool no_gui)
       : nh(nh)
       , normal_method(1)
       , nr_neighbors (36)
@@ -84,6 +89,7 @@ class KinectURDFSegmentation
       , gl_image_needed (false)
       , gl_image_available (false)
       , argc (argc), argv(argv)
+      , no_gui(no_gui)
     {
       XmlRpc::XmlRpcValue v;
       nh.getParam ("fixed_frame", v);
@@ -170,18 +176,17 @@ class KinectURDFSegmentation
       }
     }
 
-void print_backtrace ()
-{
-  void *array[100];
-  size_t size;
+    void print_backtrace ()
+    {
+      void *array[100];
+      size_t size;
 
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 100);
+      // get void*'s for all entries on the stack
+      size = backtrace(array, 100);
 
-  // print out all the frames to stderr
-  backtrace_symbols_fd(array, size, 2);
-}
-
+      // print out all the frames to stderr
+      backtrace_symbols_fd(array, size, 2);
+    }
 
     // callback function from the OpenNIGrabber
     template <template <typename> class Storage> void 
@@ -194,7 +199,7 @@ void print_backtrace ()
       static double last = getTime ();
       double now = getTime ();
 
-      //if (++count == 30 || (now - last) > 5)
+      if (++count == 30 || (now - last) > 5)
       {
         std::cout << std::endl;
         count = 1;
@@ -207,15 +212,15 @@ void print_backtrace ()
         boost::lock_guard<boost::mutex> lock(mutex_gl_image_needed);
         gl_image_needed=true;
       }
-      std::cerr << "callback: notifying render () to run." << std::endl;
+      //std::cerr << "callback: notifying render () to run." << std::endl;
       cond_gl_image_needed.notify_all ();
 
       boost::unique_lock<boost::mutex> lock(mutex_gl_image_available);
-      std::cerr << "callback: waiting for render () to finish." << std::endl;
+      //std::cerr << "callback: waiting for render () to finish." << std::endl;
       while (!gl_image_available)
         cond_gl_image_available.wait(lock);
       gl_image_available = false;
-      std::cerr << "callback: render () finished." << std::endl;
+      //std::cerr << "callback: render () finished." << std::endl;
 
       boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
 
@@ -233,9 +238,13 @@ void print_backtrace ()
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr output (new pcl::PointCloud<pcl::PointXYZRGB>);
       typename PointCloudAOS<Storage>::Ptr data;
 
+#ifdef SHOW_TIMERS
       ScopeTimeCPU time ("everything");
+#endif
       {
+#ifdef SHOW_TIMERS
         ScopeTimeCPU time ("disparity smoothing");
+#endif
         // Compute the PointCloud on the device
         d2c.compute<Storage> (depth_image, image, constant, data, false, 1, smoothing_nr_iterations, smoothing_filter_size);
       }
@@ -244,7 +253,9 @@ void print_backtrace ()
       boost::shared_ptr<typename Storage<float4>::type> normals;
       float focallength = 580/2.0;
       {
+#ifdef SHOW_TIMERS
         ScopeTimeCPU time ("Normal Estimation");
+#endif
         if (normal_method == 1)
           // NORMAL ESTIMATION USING DIRECT PIXEL NEIGHBORS
           normals = computeFastPointNormals<Storage> (data);
@@ -253,47 +264,51 @@ void print_backtrace ()
           normals = computePointNormals<Storage> (data->points.begin (), data->points.end (), focallength, data, radius_cm / 100.0f, nr_neighbors);
         cudaThreadSynchronize ();
       }
-
-      // RETRIEVE NORMALS AS AN IMAGE
-      typename ImageType<Storage>::type normal_image;
-      typename StoragePointer<Storage,char4>::type ptr;
+      if (!no_gui)
       {
-        ScopeTimeCPU time ("Matrix Creation");
-        ImageType<Storage>::createContinuous ((int)data->height, (int)data->width, CV_8UC4, normal_image);
-        ptr = typename StoragePointer<Storage,char4>::type ((char4*)normal_image.data);
-        createNormalsImage<Storage> (ptr, *normals);
+        // RETRIEVE NORMALS AS AN IMAGE
+        typename ImageType<Storage>::type normal_image;
+        typename StoragePointer<Storage,char4>::type ptr;
+        {
+#ifdef SHOW_TIMERS
+          ScopeTimeCPU time ("Matrix Creation");
+#endif
+          ImageType<Storage>::createContinuous ((int)data->height, (int)data->width, CV_8UC4, normal_image);
+          ptr = typename StoragePointer<Storage,char4>::type ((char4*)normal_image.data);
+          createNormalsImage<Storage> (ptr, *normals);
+        }
+
+        typename Storage<float>::type urdf_inliers;
+        realtime_perception::BackgroundSubtraction bs;
+        int num_urdf_inliers = bs.fromGLDepthImage<Storage> (depth_image, interop_cuda_pointer_depth_, constant, 0.5f, urdf_inliers, false, 1);
+        std::cerr<< "NUM INLIERS: " << num_urdf_inliers << std::endl;
+
+        typename ImageType<Storage>::type bla_image;
+        ImageType<Storage>::createContinuous (480, 640, CV_8UC4, bla_image);
+        typename StoragePointer<Storage,char4>::type bla_ptr = typename StoragePointer<Storage,char4>::type ((char4*)bla_image.data);
+        thrust::copy (interop_cuda_pointer_normals_, interop_cuda_pointer_normals_ + 640 * 480, bla_ptr);
+
+        thrust::device_vector <float> vec (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480);
+
+        //float min, max;
+        //realtime_perception::find_extrema<Storage> (vec, min, max);
+        //std::cerr << "extrema " << min << ", " << max << std::endl;
+
+        //realtime_perception::find_extrema<Storage> (urdf_inliers, min, max);
+        //std::cerr << "extrema " << min << ", " << max << std::endl;
+
+        cv::Mat gl_normal_image;
+        cv::cvtColor(cv::Mat (bla_image), gl_normal_image, CV_BGRA2RGBA);
+        cv::imshow ("URDF Models Normal Space", gl_normal_image);
+        cv::waitKey (2);
+
+        ImageType<Storage>::createContinuous (480, 640, CV_32FC1, bla_image);
+        //thrust::copy (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480, typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
+        thrust::copy (urdf_inliers.begin(), urdf_inliers.end(), typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
+
+        cv::imshow ("URDF Models Depth Component", cv::Mat (bla_image));
+        cv::waitKey (2);
       }
-
-      typename Storage<float>::type urdf_inliers;
-      realtime_perception::BackgroundSubtraction bs;
-      int num_urdf_inliers = bs.fromGLDepthImage<Storage> (depth_image, interop_cuda_pointer_depth_, constant, 0.5f, urdf_inliers, false, 1);
-      std::cerr<< "NUM INLIERS: " << num_urdf_inliers << std::endl;
-
-      typename ImageType<Storage>::type bla_image;
-      ImageType<Storage>::createContinuous (480, 640, CV_8UC4, bla_image);
-      typename StoragePointer<Storage,char4>::type bla_ptr = typename StoragePointer<Storage,char4>::type ((char4*)bla_image.data);
-      thrust::copy (interop_cuda_pointer_normals_, interop_cuda_pointer_normals_ + 640 * 480, bla_ptr);
-
-      float min, max;
-      thrust::device_vector <float> vec (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480);
-
-      realtime_perception::find_extrema<Storage> (vec, min, max);
-      std::cerr << "extrema " << min << ", " << max << std::endl;
-
-      realtime_perception::find_extrema<Storage> (urdf_inliers, min, max);
-      std::cerr << "extrema " << min << ", " << max << std::endl;
-
-      cv::Mat gl_normal_image;
-      cv::cvtColor(cv::Mat (bla_image), gl_normal_image, CV_BGRA2RGBA);
-      cv::imshow ("URDF Models Normal Space", gl_normal_image);
-      cv::waitKey (2);
-
-      ImageType<Storage>::createContinuous (480, 640, CV_32FC1, bla_image);
-      //thrust::copy (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480, typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
-      thrust::copy (urdf_inliers.begin(), urdf_inliers.end(), typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
-
-      cv::imshow ("URDF Models Depth Component", cv::Mat (bla_image));
-      cv::waitKey (2);
 
       //if (pub_.getNumSubscribers () > 0)
       {
@@ -316,7 +331,9 @@ void print_backtrace ()
         // get transform and apply it
         t.getOpenGLMatrix(glTf);
         {
+#ifdef SHOW_TIMERS
           ScopeTimeCPU time ("Point cloud transformation");
+#endif
           realtime_perception::transformPoints<Storage> (points_transformed, data, (double*)&glTf[0]);
           realtime_perception::transformNormals<Storage> (normals_transformed, normals, (double*)&glTf[0]);
         }
@@ -324,14 +341,18 @@ void print_backtrace ()
         // get it in publishable form and publish
         normal_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
         {
+          cudaThreadSynchronize ();
+#ifdef SHOW_TIMERS
           ScopeTimeCPU time ("Device to Host transfer");
+#endif
           toPCL (*points_transformed, *normals_transformed, *normal_cloud);
         }
         normal_cloud->header.frame_id = publish_tf_frame_;
         normal_cloud->header.stamp = ros::Time::now ();
-        ROS_INFO ("Publishing data to %d subscribers.", pub_.getNumSubscribers ());
         {
+#ifdef SHOW_TIMERS
           ScopeTimeCPU time ("Publishing");
+#endif
           pub_.publish (normal_cloud);
         }
       }
@@ -353,19 +374,88 @@ void print_backtrace ()
       // register buffer with cuda
       cudaGLRegisterBufferObject(pbo);
       T *raw_ptr = 0;
-      cudaError_t cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, pbo);
+      /*cudaError_t cuda_error = */ cudaGLMapBufferObject((void**)&raw_ptr, pbo);
       cuda_pointer = thrust::device_pointer_cast(raw_ptr);
     }
   
     void initGL ()
     {
       //TODO: change this to use an offscreen pbuffer, so no window is necessary
-      glutInit (&argc, argv);
+      if (no_gui)
+      {
+        typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, bool, const int*);
+        typedef bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+        glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+        glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
+        static int visual_attribs[] = {
+                None
+        };
 
-      glutInitWindowSize (640, 480);
-      glutInitWindowPosition(200, 100);
-      glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
-      glutCreateWindow ("TestFramebufferObject");
+        int context_attribs[] = {
+                GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+                GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                None
+        };
+
+        Display* dpy = XOpenDisplay(0);
+        int fbcount = 0;
+        GLXFBConfig* fbc = NULL;
+        GLXContext ctx;
+
+        /* open display */
+        if ( ! (dpy = XOpenDisplay(0)) ){
+                fprintf(stderr, "Failed to open display\n");
+                exit(1);
+        }
+
+        /* Get framebuffer configs, any is usable (might want to add proper attribs) */
+        if ( !(fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), visual_attribs, &fbcount) ) ){
+                fprintf(stderr, "Failed to get FBConfig\n");
+                exit(1);
+        }
+
+        /* get the required extensions */
+        glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB");
+        glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
+        if ( !(glXCreateContextAttribsARB && glXMakeContextCurrentARB) ){
+                fprintf(stderr, "missing support for GLX_ARB_create_context\n");
+                XFree(fbc);
+                exit(1);
+        }
+
+        /* create a context using glXCreateContextAttribsARB */
+        if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) ){
+                fprintf(stderr, "Failed to create opengl context\n");
+                XFree(fbc);
+                exit(1);
+        }
+
+        /* try to make it the current context */
+      //  if ( !glXMakeContextCurrent(dpy, 0, 0, ctx) )
+      //  TODO: this fails with BadMatch
+        {
+                /* some drivers does not support context without default framebuffer, so fallback on
+                 * using the default window.
+                 */
+                if ( !glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx) ){
+                        fprintf(stderr, "failed to make current\n");
+                        exit(1);
+                }
+        }
+
+        XFree(fbc);
+        XSync(dpy, False);
+
+      }
+      else
+      {
+        glutInit (&argc, argv);
+
+        glutInitWindowSize (640, 480);
+        glutInitWindowPosition(200, 100);
+        glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
+        glutCreateWindow ("TestFramebufferObject");
+      }
 
       GLenum err = glewInit();
       if (GLEW_OK != err)
@@ -399,8 +489,8 @@ void print_backtrace ()
       // lock gl_image_mutex and "produce" one image
       boost::mutex::scoped_lock gl_image_lock(gl_image_mutex);
 
-      cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[0]);
-      cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[1]);
+      /*cudaError_t cuda_error =*/ cudaGLUnmapBufferObject(interop_gl_buffers_[0]);
+      /*cuda_error =*/ cudaGLUnmapBufferObject(interop_gl_buffers_[1]);
 
       if (!fbo_initialized_)
         return;
@@ -429,8 +519,6 @@ void print_backtrace ()
       GLenum err = glGetError();
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
-      else
-        printf ("everything ok so far\n");
 
       glPushAttrib(GL_ALL_ATTRIB_BITS);
       glEnable(GL_NORMALIZE);
@@ -498,7 +586,9 @@ void print_backtrace ()
       glMultMatrixd((GLdouble*)glTf);
 
       {
+#ifdef SHOW_TIMERS
         ScopeTimeCPU berst("TF lookup and rendering");
+#endif
         BOOST_FOREACH (realtime_perception::URDFRenderer* r, renderers)
           r->render ();
       }
@@ -586,85 +676,88 @@ void print_backtrace ()
       // -----------------------------------------------------------------------
       // -----------------------------------------------------------------------
 
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      if (!no_gui)
+      {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      glMatrixMode(GL_PROJECTION);
-      glPushMatrix();
-      glLoadIdentity();
-      gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        gluOrtho2D(0.0, 1.0, 0.0, 1.0);
 
-      glMatrixMode(GL_MODELVIEW);	
-      glPushMatrix();
-      glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);	
+        glPushMatrix();
+        glLoadIdentity();
 
-      // draw color buffer 0
-      fbo_->bind(0);
-      glBegin(GL_QUADS);
-        glTexCoord2f(0.0, fbo_->getHeight());
-        glVertex2f(0.0, 0.5);
-        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
-        glVertex2f(0.333, 0.5);
-        glTexCoord2f(fbo_->getWidth(), 0.0);
-        glVertex2f(0.333, 1.0);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2f(0.0, 1.0);
-      glEnd();
+        // draw color buffer 0
+        fbo_->bind(0);
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0, fbo_->getHeight());
+          glVertex2f(0.0, 0.5);
+          glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
+          glVertex2f(0.333, 0.5);
+          glTexCoord2f(fbo_->getWidth(), 0.0);
+          glVertex2f(0.333, 1.0);
+          glTexCoord2f(0.0, 0.0);
+          glVertex2f(0.0, 1.0);
+        glEnd();
 
-      // draw color buffer 1
-      fbo_->bind(1);
-      glBegin(GL_QUADS);
-        glTexCoord2f(0.0, fbo_->getHeight());
-        glVertex2f(0.0, 0.0);
-        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
-        glVertex2f(0.333, 0.0);
-        glTexCoord2f(fbo_->getWidth(), 0.0);
-        glVertex2f(0.333, 0.5);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2f(0.0, 0.5);
-      glEnd();
+        // draw color buffer 1
+        fbo_->bind(1);
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0, fbo_->getHeight());
+          glVertex2f(0.0, 0.0);
+          glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
+          glVertex2f(0.333, 0.0);
+          glTexCoord2f(fbo_->getWidth(), 0.0);
+          glVertex2f(0.333, 0.5);
+          glTexCoord2f(0.0, 0.0);
+          glVertex2f(0.0, 0.5);
+        glEnd();
 
-      // draw color buffer 2
-      fbo_->bind(2);
-      glBegin(GL_QUADS);
-        glTexCoord2f(0.0, fbo_->getHeight());
-        glVertex2f(0.333, 0.5);
-        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
-        glVertex2f(0.666, 0.5);
-        glTexCoord2f(fbo_->getWidth(), 0.0);
-        glVertex2f(0.666, 1.0);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2f(0.333, 1.0);
-      glEnd();
+        // draw color buffer 2
+        fbo_->bind(2);
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0, fbo_->getHeight());
+          glVertex2f(0.333, 0.5);
+          glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
+          glVertex2f(0.666, 0.5);
+          glTexCoord2f(fbo_->getWidth(), 0.0);
+          glVertex2f(0.666, 1.0);
+          glTexCoord2f(0.0, 0.0);
+          glVertex2f(0.333, 1.0);
+        glEnd();
 
-      // draw color buffer 3
-      fbo_->bind(3);
-      glBegin(GL_QUADS);
-        glTexCoord2f(0.0, fbo_->getHeight());
-        glVertex2f(0.333, 0.0);
-        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
-        glVertex2f(0.666, 0.0);
-        glTexCoord2f(fbo_->getWidth(), 0.0);
-        glVertex2f(0.666, 0.5);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2f(0.333, 0.5);
-      glEnd();
+        // draw color buffer 3
+        fbo_->bind(3);
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0, fbo_->getHeight());
+          glVertex2f(0.333, 0.0);
+          glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
+          glVertex2f(0.666, 0.0);
+          glTexCoord2f(fbo_->getWidth(), 0.0);
+          glVertex2f(0.666, 0.5);
+          glTexCoord2f(0.0, 0.0);
+          glVertex2f(0.333, 0.5);
+        glEnd();
 
-      // draw depth buffer 
-      fbo_->bindDepth();
-      glBegin(GL_QUADS);
-        glTexCoord2f(0.0, fbo_->getHeight());
-        glVertex2f(0.666, 0.5);
-        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
-        glVertex2f(1.0, 0.5);
-        glTexCoord2f(fbo_->getWidth(), 0.0);
-        glVertex2f(1.0, 1.0);
-        glTexCoord2f(0.0, 0.0);
-        glVertex2f(0.666, 1.0);
-      glEnd();
+        // draw depth buffer 
+        fbo_->bindDepth();
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0, fbo_->getHeight());
+          glVertex2f(0.666, 0.5);
+          glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
+          glVertex2f(1.0, 0.5);
+          glTexCoord2f(fbo_->getWidth(), 0.0);
+          glVertex2f(1.0, 1.0);
+          glTexCoord2f(0.0, 0.0);
+          glVertex2f(0.666, 1.0);
+        glEnd();
 
-      glPopMatrix();
-      glMatrixMode(GL_PROJECTION);
-      glPopMatrix();
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+      }
       
       // copy frame buffer attachments to pbo's
       fbo_->bind (2);
@@ -680,12 +773,12 @@ void print_backtrace ()
 
       // get device pointer to buffer
       char4 *raw_ptr = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffers_[0]);
+      /*cuda_error =*/ cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffers_[0]);
       interop_cuda_pointer_normals_ = thrust::device_pointer_cast(raw_ptr);
 
       // get device pointer to buffer
       float *raw_ptr_d = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr_d, interop_gl_buffers_[1]);
+      /*cuda_error =*/ cudaGLMapBufferObject((void**)&raw_ptr_d, interop_gl_buffers_[1]);
       interop_cuda_pointer_depth_ = thrust::device_pointer_cast(raw_ptr_d);
      
       {
@@ -693,15 +786,13 @@ void print_backtrace ()
         gl_image_available=true;
       }
 
-      glutSwapBuffers ();
-      glutPostRedisplay();
-      glutMainLoopEvent ();
+      if (!no_gui)
+      {
+        glutSwapBuffers ();
+        glutPostRedisplay();
+        glutMainLoopEvent ();
+      }
 
-      // make sure that depth_range is [0;1]
-      GLfloat depth_range[2];
-      glGetFloatv (GL_DEPTH_RANGE, &depth_range[0]);
-
-      std::cerr << "render: notify callback. " << depth_range[0] << " -- " << depth_range[1] << std::endl;
       cond_gl_image_available.notify_all ();
     }
     
@@ -727,13 +818,18 @@ void print_backtrace ()
         // wait for "data needed!"
         boost::unique_lock<boost::mutex> lock (mutex_gl_image_needed);
         while (!gl_image_needed && nh.ok ())
+        {
           cond_gl_image_needed.wait(lock);
+        }
         
         render();
         gl_image_needed = false;
 
-        glutPostRedisplay();
-        glutMainLoopEvent ();
+        if (!no_gui)
+        {
+          glutPostRedisplay();
+          glutMainLoopEvent ();
+        }
       }
 
       grabber->stop ();
@@ -778,16 +874,33 @@ void print_backtrace ()
 
     pcl_ros::Publisher<pcl::PointXYZRGBNormal> pub_;
     std::string publish_tf_frame_;
+    
+    // to stop littering the screen with windows
+    bool no_gui;
 };
 
 int 
 main (int argc, char **argv)
 {
+  bool run_quiet;
+  try
+  {
+    TCLAP::CmdLine cmd ("This program takes OpenNI depth and RGB images, smoothes the depth, calculates normals and publishes the result in ROS.", ' ', "0.1");
+    TCLAP::SwitchArg quietSwitch("q", "quiet", "Run without popping up windows.", cmd, false);
+
+    // Parse the argv array.
+    cmd.parse( argc, argv );
+
+    // Get the value parsed by each arg. 
+    run_quiet = quietSwitch.getValue();
+  } catch (TCLAP::ArgException &e)  // catch any exceptions
+    { std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl; }
+
   ros::init (argc, argv, "urdf_filter_cuda");
 
   ros::NodeHandle nh ("~");
 
-  KinectURDFSegmentation s(nh, argc, argv);
+  KinectURDFSegmentation s(nh, argc, argv, run_quiet);
   s.run ();
 
   return 0;

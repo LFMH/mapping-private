@@ -128,7 +128,6 @@ namespace realtime_perception
   /** \brief loops over all renderables and renders them to canvas */
   void URDFRenderer::render ()
   {
-    printf ("rendering frame\n");
     update_link_transforms ();
       
     std::vector<boost::shared_ptr<Renderable> >::const_iterator it = renderables_.begin ();

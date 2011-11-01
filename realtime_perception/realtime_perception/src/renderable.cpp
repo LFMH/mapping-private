@@ -54,7 +54,7 @@ namespace realtime_perception
   {
     applyTransform ();
     glTranslatef (0, 0, -length/2);
-    glutSolidCylinder(radius, length, 10, 10);
+    //glutSolidCylinder(radius, length, 10, 10);
     unapplyTransform ();
   }
 

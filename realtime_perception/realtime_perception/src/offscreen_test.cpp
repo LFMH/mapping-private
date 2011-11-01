@@ -310,7 +310,7 @@ void print_backtrace ()
       // register buffer with cuda
       cudaGLRegisterBufferObject(pbo);
       T *raw_ptr = 0;
-      cudaError_t cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, pbo);
+      cudaGLMapBufferObject((void**)&raw_ptr, pbo);
       cuda_pointer = thrust::device_pointer_cast(raw_ptr);
     }
   
@@ -356,8 +356,8 @@ void print_backtrace ()
       // lock gl_image_mutex and "produce" one image
       boost::mutex::scoped_lock gl_image_lock(gl_image_mutex);
 
-      cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[0]);
-      cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[1]);
+      cudaGLUnmapBufferObject(interop_gl_buffers_[0]);
+      cudaGLUnmapBufferObject(interop_gl_buffers_[1]);
 
       if (!fbo_initialized_)
         return;
@@ -386,8 +386,6 @@ void print_backtrace ()
       GLenum err = glGetError();
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
-      else
-        printf ("everything ok so far\n");
 
       glPushAttrib(GL_ALL_ATTRIB_BITS);
       glEnable(GL_NORMALIZE);
@@ -637,12 +635,12 @@ void print_backtrace ()
 
       // get device pointer to buffer
       char4 *raw_ptr = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffers_[0]);
+      cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffers_[0]);
       interop_cuda_pointer_normals_ = thrust::device_pointer_cast(raw_ptr);
 
       // get device pointer to buffer
       float *raw_ptr_d = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr_d, interop_gl_buffers_[1]);
+      cudaGLMapBufferObject((void**)&raw_ptr_d, interop_gl_buffers_[1]);
       interop_cuda_pointer_depth_ = thrust::device_pointer_cast(raw_ptr_d);
      
       {

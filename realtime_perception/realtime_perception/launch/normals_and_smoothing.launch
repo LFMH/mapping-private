@@ -5,7 +5,7 @@
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="valgrind - -leak-check=full" >
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="gdb -ex run - -args">
   -->
-  <node pkg="realtime_perception" type="normals_and_smoothing" name="normals_and_smoothing" output="screen" >
+  <node pkg="realtime_perception" type="normals_and_smoothing" name="normals_and_smoothing" args="-q --" output="screen" >
     <remap from="~input" to="/cloud_pcd" />
     <rosparam>
       fixed_frame: /map
