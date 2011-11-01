@@ -985,6 +985,7 @@ FramebufferObject::parseModeString(const char *modeString) {
 			_bDepthAttachment		= true;
 			_depthFormat			= GL_DEPTH_COMPONENT;
 			_depthType				= GL_UNSIGNED_BYTE;
+			/*TODO*/_depthType				= GL_FLOAT;
 			_internalDepthFormat	= GL_DEPTH_COMPONENT24;
 
 			if( kv.second.find("t") != kv.second.npos ) {
