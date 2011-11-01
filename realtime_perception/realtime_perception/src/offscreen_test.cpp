@@ -1,4 +1,7 @@
 // to do the urdf / depth image intersection
+#include <pthread.h>
+#include <execinfo.h>
+
 #include "realtime_perception/FrameBufferObject.h"
 
 #include <pcl/point_cloud.h>
@@ -18,6 +21,7 @@
 #include "pcl/cuda/sample_consensus/multi_ransac.h"
 #include <pcl/cuda/segmentation/connected_components.h>
 #include <pcl/cuda/segmentation/mssegmentation.h>
+#include <cuda.h>
 #include <cuda_gl_interop.h>
 
 #include "opencv2/opencv.hpp"
@@ -29,6 +33,7 @@
 #include "realtime_perception/urdf_renderer.h"
 #include "realtime_perception/point_types.h"
 #include <realtime_perception/shader_wrapper.h>
+#include <realtime_perception/urdf_filtering.h>
 
 #include <GL/freeglut.h>
 
@@ -68,20 +73,17 @@ struct ImageType<Host>
 class KinectURDFSegmentation
 {
   public:
-    KinectURDFSegmentation (ros::NodeHandle &nh, GLuint &interop_gl_buffer)
+    KinectURDFSegmentation (ros::NodeHandle &nh, int argc, char **argv)
       : nh(nh)
-      , new_cloud(false)
       , normal_method(1)
       , nr_neighbors (36)
       , radius_cm (5)
       , normal_viz_step(200)
       , fbo_initialized_(false)
-      , interop_gl_buffer_(interop_gl_buffer)
       , gl_image_needed (false)
       , gl_image_available (false)
+      , argc (argc), argv(argv)
     {
-      fbo_ = FramebufferObject ("rgba=4x8t depth=24t stencil=t");
-      initFrameBufferObject ();
       XmlRpc::XmlRpcValue v;
       nh.getParam ("fixed_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "fixed_frame paramter!");
@@ -111,9 +113,8 @@ class KinectURDFSegmentation
       ROS_INFO ("using camera rotational offset: %f %f %f %f", (double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
       camera_offset_q_ = tf::Quaternion((double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
 
-      loadModels ();
     }
-   
+  
     void 
       loadModels ()
     {
@@ -164,6 +165,19 @@ class KinectURDFSegmentation
       }
     }
 
+void print_backtrace ()
+{
+  void *array[100];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 100);
+
+  // print out all the frames to stderr
+  backtrace_symbols_fd(array, size, 2);
+}
+
+
     // callback function from the OpenNIGrabber
     template <template <typename> class Storage> void 
     cloud_cb (const boost::shared_ptr<openni_wrapper::Image>& image,
@@ -188,23 +202,27 @@ class KinectURDFSegmentation
         boost::lock_guard<boost::mutex> lock(mutex_gl_image_needed);
         gl_image_needed=true;
       }
+      std::cerr << "callback: notifying render () to run." << std::endl;
       cond_gl_image_needed.notify_all ();
 
       boost::unique_lock<boost::mutex> lock(mutex_gl_image_available);
+      std::cerr << "callback: waiting for render () to finish." << std::endl;
       while (!gl_image_available)
         cond_gl_image_available.wait(lock);
       gl_image_available = false;
+      std::cerr << "callback: render () finished." << std::endl;
 
       boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
+
       // PARAMETERS
       static int smoothing_nr_iterations = 10;
       static int smoothing_filter_size = 2;
-      static int enable_visualization = 0;
-      static int enable_mean_shift = 1;
-      static int enable_plane_fitting = 0;
-      static int meanshift_sp=8;
-      static int meanshift_sr=20;
-      static int meanshift_minsize=100;
+      //static int enable_visualization = 0;
+      //static int enable_mean_shift = 1;
+      //static int enable_plane_fitting = 0;
+      //static int meanshift_sp=8;
+      //static int meanshift_sr=20;
+      //static int meanshift_minsize=100;
 
       // CPU AND GPU POINTCLOUD OBJECTS
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr output (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -216,7 +234,6 @@ class KinectURDFSegmentation
         // Compute the PointCloud on the device
         d2c.compute<Storage> (depth_image, image, constant, data, false, 1, smoothing_nr_iterations, smoothing_filter_size);
       }
-      thrust::copy (data->points.begin(), data->points.end(), interop_cuda_pointer_);
 
       // GPU NORMAL CLOUD
       boost::shared_ptr<typename Storage<float4>::type> normals;
@@ -242,168 +259,108 @@ class KinectURDFSegmentation
         createNormalsImage<Storage> (ptr, *normals);
       }
 
-      //urdf_filter->filter (data);
 
-      //TODO: this breaks for pcl::cuda::Host, meaning we have to run this on the GPU
-      //std::vector<int> reg_labels;
-      //pcl::cuda::detail::DjSets comps(0);
-      //cv::Mat seg;
-      //{
-      //  ScopeTimeCPU time ("Mean Shift");
-      //  if (enable_mean_shift == 1)
-      //  {
-      //    // USE GPU MEAN SHIFT SEGMENTATION FROM OPENCV
-      //    pcl::cuda::meanShiftSegmentation (normal_image, seg, reg_labels, meanshift_sp, meanshift_sr, meanshift_minsize, comps);
-      //    typename Storage<char4>::type new_colors ((char4*)seg.datastart, (char4*)seg.dataend);
-      //    colorCloud<Storage> (data, new_colors);
-      //  }
-      //}
+      typename Storage<float>::type urdf_inliers;
+      realtime_perception::BackgroundSubtraction bs;
+      int num_urdf_inliers = bs.fromGLDepthImage<Storage> (depth_image, interop_cuda_pointer_depth_, constant, 0.5f, urdf_inliers, false, 1);
+      std::cerr<< "NUM INLIERS: " << num_urdf_inliers << std::endl;
 
-      //typename SampleConsensusModel1PointPlane<Storage>::Ptr sac_model;
-      //if (enable_plane_fitting == 1)
-      //{
-      //  // Create sac_model
-      //  {
-      //    ScopeTimeCPU t ("creating sac_model");
-      //    sac_model.reset (new SampleConsensusModel1PointPlane<Storage> (data));
-      //  }
-      //  sac_model->setNormals (normals);
+      typename ImageType<Storage>::type bla_image;
+      ImageType<Storage>::createContinuous (480, 640, CV_8UC4, bla_image);
+      typename StoragePointer<Storage,char4>::type bla_ptr = typename StoragePointer<Storage,char4>::type ((char4*)bla_image.data);
+      thrust::copy (interop_cuda_pointer_normals_, interop_cuda_pointer_normals_ + 640 * 480, bla_ptr);
 
-      //  MultiRandomSampleConsensus<Storage> sac (sac_model);
-      //  sac.setMinimumCoverage (0.90); // at least 95% points should be explained by planes
-      //  sac.setMaximumBatches (1);
-      //  sac.setIerationsPerBatch (1024);
-      //  sac.setDistanceThreshold (0.05);
+      float min, max;
+      thrust::device_vector <float> vec (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480);
 
-      //  {
-      //    ScopeTimeCPU timer ("computeModel: ");
-      //    if (!sac.computeModel (0))
-      //    {
-      //      std::cerr << "Failed to compute model" << std::endl;
-      //    }
-      //    else
-      //    {
-      //      if (enable_visualization)
-      //      {
-//    //          std::cerr << "getting inliers.. ";
-      //        
-      //        std::vector<typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr> planes;
-      //        typename Storage<int>::type region_mask;
-      //        markInliers<Storage> (data, region_mask, planes);
-      //        thrust::host_vector<int> regions_host;
-      //        std::copy (regions_host.begin (), regions_host.end(), std::ostream_iterator<int>(std::cerr, " "));
-      //        {
-      //          ScopeTimeCPU t ("retrieving inliers");
-      //          planes = sac.getAllInliers ();
-      //        }
-      //        std::vector<int> planes_inlier_counts = sac.getAllInlierCounts ();
-      //        std::vector<float4> coeffs = sac.getAllModelCoefficients ();
-      //        std::vector<float3> centroids = sac.getAllModelCentroids ();
-      //        std::cerr << "Found " << planes_inlier_counts.size () << " planes" << std::endl;
-      //        int best_plane = 0;
-      //        int best_plane_inliers_count = -1;
+      realtime_perception::find_extrema<Storage> (vec, min, max);
+      std::cerr << "extrema " << min << ", " << max << std::endl;
 
-      //        for (unsigned int i = 0; i < planes.size (); i++)
-      //        {
-      //          if (planes_inlier_counts[i] > best_plane_inliers_count)
-      //          {
-      //            best_plane = i;
-      //            best_plane_inliers_count = planes_inlier_counts[i];
-      //          }
-
-      //          typename SampleConsensusModel1PointPlane<Storage>::IndicesPtr inliers_stencil;
-      //          inliers_stencil = planes[i];//sac.getInliersStencil ();
-
-      //          OpenNIRGB color;
-      //          //double trand = 255 / (RAND_MAX + 1.0);
-
-      //          //color.r = (int)(rand () * trand);
-      //          //color.g = (int)(rand () * trand);
-      //          //color.b = (int)(rand () * trand);
-      //          color.r = (1.0f + coeffs[i].x) * 128;
-      //          color.g = (1.0f + coeffs[i].y) * 128;
-      //          color.b = (1.0f + coeffs[i].z) * 128;
-      //          {
-      //            ScopeTimeCPU t ("coloring planes");
-      //            colorIndices<Storage> (data, inliers_stencil, color);
-      //          }
-      //        }
-      //      }
-      //    }
-      //  }
-      //}
+      realtime_perception::find_extrema<Storage> (urdf_inliers, min, max);
+      std::cerr << "extrema " << min << ", " << max << std::endl;
 
 
-      //else
-      //{
-      //  {
-      //    ScopeTimeCPU c_p ("Copying");
-      //    boost::mutex::scoped_lock l(m_mutex);
-      //    region_cloud.reset (new pcl::PointCloud<PointXYZRGBNormalRegion>);
-      //    region_cloud->header.frame_id = "/openni_rgb_optical_frame";
-      //    toPCL (*data, *normals, *region_cloud);
-      //    if (enable_mean_shift)
-      //    {
-      //      for (int cp = 0; cp < region_cloud->points.size (); cp++)
-      //      {
-      //        region_cloud->points[cp].region = reg_labels[cp];
-      //      }
-      //    }
-          new_cloud = true;
-      //  }
-      //  ScopeTimeCPU c_p ("Publishing");
-      //  publish_cloud ();
-      //}
+      cv::Mat gl_normal_image;
+      cv::cvtColor(cv::Mat (bla_image), gl_normal_image, CV_BGRA2RGBA);
+      cv::imshow ("URDF Models Normal Space", gl_normal_image);
+      cv::waitKey (2);
+
+      ImageType<Storage>::createContinuous (480, 640, CV_32FC1, bla_image);
+      //thrust::copy (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480, typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
+      thrust::copy (urdf_inliers.begin(), urdf_inliers.end(), typename StoragePointer<Storage,float>::type ((float*)bla_image.data));
+
+      cv::imshow ("URDF Models Depth Component", cv::Mat (bla_image));
+      cv::waitKey (2);
+
+      //TODO: compute transformation between urdf model and kinect cloud.
+    }
+
+    template <typename T>
+    void
+      createPBO (GLuint &pbo, unsigned int size_tex_data, thrust::device_ptr<T> &cuda_pointer)
+    {
+      // create buffer object
+      glGenBuffers (1, &pbo);
+      glBindBuffer (GL_ARRAY_BUFFER, pbo);
+
+      // buffer data
+      glBufferData (GL_ARRAY_BUFFER, size_tex_data, NULL, GL_DYNAMIC_DRAW);
+      glBindBuffer (GL_ARRAY_BUFFER, 0);
+
+      // register buffer with cuda
+      cudaGLRegisterBufferObject(pbo);
+      T *raw_ptr = 0;
+      cudaError_t cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, pbo);
+      cuda_pointer = thrust::device_pointer_cast(raw_ptr);
     }
   
+    void initGL ()
+    {
+      //TODO: change this to use an offscreen pbuffer, so no window is necessary
+      glutInit (&argc, argv);
+
+      glutInitWindowSize (640, 480);
+      glutInitWindowPosition(200, 100);
+      glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
+      glutCreateWindow ("TestFramebufferObject");
+
+      GLenum err = glewInit();
+      if (GLEW_OK != err)
+      {
+        std::cout << "ERROR: could not initialize GLEW!" << std::endl;
+      }
+
+      interop_gl_buffers_.resize (2, GL_INVALID_VALUE);
+
+      createPBO (interop_gl_buffers_[0], 640 * 480 * 4 * sizeof(GLubyte), interop_cuda_pointer_normals_);
+      createPBO (interop_gl_buffers_[1], 640 * 480 * sizeof(GLfloat), interop_cuda_pointer_depth_);
+
+      initFrameBufferObject ();
+      loadModels ();
+    }
+
     void initFrameBufferObject ()
     {
-      fbo_.initialize (640, 480);
+      fbo_ = new FramebufferObject ("rgba=4x8t depth=32t stencil=t");
+
+      fbo_->initialize (640, 480);
       fbo_initialized_ = true;
 
       GLenum err = glGetError();
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
-    
-      // register buffer with cuda
-      cudaError_t cuda_error = cudaGLRegisterBufferObject(interop_gl_buffer_);
-
-      // get device pointer to buffer
-      pcl::cuda::PointXYZRGB *raw_ptr = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffer_);
-      interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
-
-
-     // glGenTextures (1, &interop_gl_texture_);
-     // glBindTexture (GL_TEXTURE_BUFFER, interop_gl_texture_);
-     // glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, interop_gl_buffer_);
-     //   GLint chtex_loc = glGetUniformLocation(programId, "charTexture"); 
-     //   //chtex_loc != -1  
-     //   glUniform1i(glGetUniformLocation(programId, "charTexture"), 0);
-     //   GLint anim_loc = glGetUniformLocation(programId, "AnimationData");
-     //   //anim_loc != -1
-     //   glUniform1i(glGetUniformLocation(programId, "AnimationData"), 5);
-     //   GLint inst_loc = glGetUniformLocation(programId, "InstanceData");
-     //   //inst_loc  != -1
-     //   glUniform1i(glGetUniformLocation(programId, "InstanceData"), 3);
-
     }
 
     void render ()
     {
       // lock gl_image_mutex and "produce" one image
       boost::mutex::scoped_lock gl_image_lock(gl_image_mutex);
-  
-      if (!new_cloud)
-        return;
+
+      cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[0]);
+      cuda_error = cudaGLUnmapBufferObject(interop_gl_buffers_[1]);
 
       if (!fbo_initialized_)
         return;
-
-      cudaError_t cuda_error = cudaGLUnmapBufferObject(interop_gl_buffer_);
-
-
-      new_cloud = false;
 
       static const GLenum buffers[] = {
         GL_COLOR_ATTACHMENT0_EXT,
@@ -435,23 +392,19 @@ class KinectURDFSegmentation
       glPushAttrib(GL_ALL_ATTRIB_BITS);
       glEnable(GL_NORMALIZE);
  
-      fbo_.beginCapture();
+      fbo_->beginCapture();
 
       static realtime_perception::ShaderWrapper shader = realtime_perception::ShaderWrapper::fromFiles
         ("package://realtime_perception/include/shaders/test1.vert", 
          "package://realtime_perception/include/shaders/test1.frag");
       err = glGetError();
       if(err != GL_NO_ERROR)
-        printf("before shader use: OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
-      else
-        printf("before shader use: everything ok so far\n");
-      printf("shader ID %i\n", (unsigned int) GLuint (shader));
+        printf("before calling glUseProgram: OpenGL ERROR: %s\n", gluErrorString(err));
+
       shader ();
       err = glGetError();
       if(err != GL_NO_ERROR)
-        printf("after shader use: OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
-      else
-        printf("after shader use: everything ok so far\n");
+        printf("after calling glUseProgram: OpenGL ERROR: %s\n", gluErrorString(err));
 
       glDrawBuffers(sizeof(buffers) / sizeof(GLenum), buffers);
 
@@ -466,8 +419,9 @@ class KinectURDFSegmentation
 
       glEnable(GL_DEPTH_TEST);
       glDisable(GL_TEXTURE_2D);
-      fbo_.disableTextureTarget();
+      fbo_->disableTextureTarget();
 
+      // setup camera
       glMatrixMode (GL_PROJECTION);
       glLoadIdentity();
       float near_clip = 0.1;
@@ -484,8 +438,8 @@ class KinectURDFSegmentation
       //note: we swap left and right frustrum to swap handedness of ROS vs. OpenGL
       glFrustum (  f_width  * (1.0f - cx / width),
                  - f_width  *         cx / width,
-                   f_height *         cy / height,
                  - f_height * (1.0f - cy / height),
+                   f_height *         cy / height,
                  near_clip,
                  far_clip);
       glMatrixMode(GL_MODELVIEW);
@@ -496,18 +450,6 @@ class KinectURDFSegmentation
       btScalar glTf[16];
       transform.getOpenGLMatrix(glTf);
       glMultMatrixd((GLdouble*)glTf);
-
-      // Enable Pointers
-      glEnableClientState (GL_VERTEX_ARRAY);
-
-      glBindBuffer (GL_ARRAY_BUFFER, interop_gl_buffer_);
-      glVertexPointer (3, GL_FLOAT, 4*sizeof(GLfloat), (char *) NULL);
-
-      // Render
-      glDrawArrays (GL_POINTS, 0, 640*480);
-
-      // Disable Pointers
-      glDisableClientState( GL_VERTEX_ARRAY );          // Disable Vertex Arrays
 
       t.getOpenGLMatrix(glTf);
       glMultMatrixd((GLdouble*)glTf);
@@ -520,7 +462,7 @@ class KinectURDFSegmentation
 
       glUseProgram(NULL);
       
-      fbo_.endCapture();
+      fbo_->endCapture();
 
       glPopAttrib();
 
@@ -530,7 +472,7 @@ class KinectURDFSegmentation
 
       glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-      fbo_.beginCapture();
+      fbo_->beginCapture();
 
       glDrawBuffer(GL_COLOR_ATTACHMENT3_EXT);
 
@@ -540,7 +482,7 @@ class KinectURDFSegmentation
 
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_TEXTURE_2D);
-      fbo_.disableTextureTarget();
+      fbo_->disableTextureTarget();
 
       glMatrixMode(GL_PROJECTION);
       glPushMatrix();
@@ -569,7 +511,7 @@ class KinectURDFSegmentation
 
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_TEXTURE_2D);
-      fbo_.disableTextureTarget();
+      fbo_->disableTextureTarget();
 
       glMatrixMode(GL_PROJECTION);
       glPushMatrix();
@@ -593,7 +535,7 @@ class KinectURDFSegmentation
       glMatrixMode(GL_PROJECTION);
       glPopMatrix();
       
-      fbo_.endCapture();
+      fbo_->endCapture();
 
       glPopAttrib();
 
@@ -613,67 +555,67 @@ class KinectURDFSegmentation
       glLoadIdentity();
 
       // draw color buffer 0
-      fbo_.bind(0);
+      fbo_->bind(0);
       glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0);
+        glTexCoord2f(0.0, fbo_->getHeight());
         glVertex2f(0.0, 0.5);
-        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
         glVertex2f(0.333, 0.5);
-        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glTexCoord2f(fbo_->getWidth(), 0.0);
         glVertex2f(0.333, 1.0);
-        glTexCoord2f(0.0, fbo_.getHeight());
+        glTexCoord2f(0.0, 0.0);
         glVertex2f(0.0, 1.0);
       glEnd();
 
       // draw color buffer 1
-      fbo_.bind(1);
+      fbo_->bind(1);
       glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0);
+        glTexCoord2f(0.0, fbo_->getHeight());
         glVertex2f(0.0, 0.0);
-        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
         glVertex2f(0.333, 0.0);
-        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glTexCoord2f(fbo_->getWidth(), 0.0);
         glVertex2f(0.333, 0.5);
-        glTexCoord2f(0.0, fbo_.getHeight());
+        glTexCoord2f(0.0, 0.0);
         glVertex2f(0.0, 0.5);
       glEnd();
 
       // draw color buffer 2
-      fbo_.bind(2);
+      fbo_->bind(2);
       glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0);
+        glTexCoord2f(0.0, fbo_->getHeight());
         glVertex2f(0.333, 0.5);
-        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
         glVertex2f(0.666, 0.5);
-        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glTexCoord2f(fbo_->getWidth(), 0.0);
         glVertex2f(0.666, 1.0);
-        glTexCoord2f(0.0, fbo_.getHeight());
+        glTexCoord2f(0.0, 0.0);
         glVertex2f(0.333, 1.0);
       glEnd();
 
       // draw color buffer 3
-      fbo_.bind(3);
+      fbo_->bind(3);
       glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0);
+        glTexCoord2f(0.0, fbo_->getHeight());
         glVertex2f(0.333, 0.0);
-        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
         glVertex2f(0.666, 0.0);
-        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glTexCoord2f(fbo_->getWidth(), 0.0);
         glVertex2f(0.666, 0.5);
-        glTexCoord2f(0.0, fbo_.getHeight());
+        glTexCoord2f(0.0, 0.0);
         glVertex2f(0.333, 0.5);
       glEnd();
 
       // draw depth buffer 
-      fbo_.bindDepth();
+      fbo_->bindDepth();
       glBegin(GL_QUADS);
-        glTexCoord2f(0.0, 0.0);
+        glTexCoord2f(0.0, fbo_->getHeight());
         glVertex2f(0.666, 0.5);
-        glTexCoord2f(fbo_.getWidth(), 0.0);
+        glTexCoord2f(fbo_->getWidth(), fbo_->getHeight());
         glVertex2f(1.0, 0.5);
-        glTexCoord2f(fbo_.getWidth(), fbo_.getHeight());
+        glTexCoord2f(fbo_->getWidth(), 0.0);
         glVertex2f(1.0, 1.0);
-        glTexCoord2f(0.0, fbo_.getHeight());
+        glTexCoord2f(0.0, 0.0);
         glVertex2f(0.666, 1.0);
       glEnd();
 
@@ -681,28 +623,50 @@ class KinectURDFSegmentation
       glMatrixMode(GL_PROJECTION);
       glPopMatrix();
       
-      glutSwapBuffers ();// Flush(); // Flush the OpenGL buffers to the window  
+      // copy frame buffer attachments to pbo's
+      fbo_->bind (2);
+      glBindBuffer (GL_PIXEL_PACK_BUFFER, interop_gl_buffers_[0]);
+      glGetTexImage (fbo_->getTextureTarget(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+      glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+      // copy frame buffer attachments to pbo's
+      fbo_->bindDepth ();
+      glBindBuffer (GL_PIXEL_PACK_BUFFER, interop_gl_buffers_[1]);
+      glGetTexImage (fbo_->getTextureTarget(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+      glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
       // get device pointer to buffer
-      pcl::cuda::PointXYZRGB *raw_ptr = 0;
-      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffer_);
-      
-      {
-        boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
-        interop_cuda_pointer_ = thrust::device_pointer_cast(raw_ptr);
-      }
+      char4 *raw_ptr = 0;
+      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr, interop_gl_buffers_[0]);
+      interop_cuda_pointer_normals_ = thrust::device_pointer_cast(raw_ptr);
 
+      // get device pointer to buffer
+      float *raw_ptr_d = 0;
+      cuda_error = cudaGLMapBufferObject((void**)&raw_ptr_d, interop_gl_buffers_[1]);
+      interop_cuda_pointer_depth_ = thrust::device_pointer_cast(raw_ptr_d);
+     
       {
         boost::lock_guard<boost::mutex> lock(mutex_gl_image_available);
         gl_image_available=true;
       }
 
+      glutSwapBuffers ();
+      glutPostRedisplay();
+      glutMainLoopEvent ();
+
+      // make sure that depth_range is [0;1]
+      GLfloat depth_range[2];
+      glGetFloatv (GL_DEPTH_RANGE, &depth_range[0]);
+
+      std::cerr << "render: notify callback. " << depth_range[0] << " -- " << depth_range[1] << std::endl;
       cond_gl_image_available.notify_all ();
     }
     
     void 
     run ()
     {
+      initGL ();
+
       pcl::Grabber* grabber = new pcl::OpenNIGrabber();
 
       boost::signals2::connection c;
@@ -738,25 +702,24 @@ class KinectURDFSegmentation
     DisparityToCloud d2c;
     pcl::visualization::CloudViewer *viewer;
 
-    bool new_cloud;
     int normal_method;
     int nr_neighbors;
     int radius_cm;
     int normal_viz_step;
-    //boost::shared_ptr <realtime_perception::URDFCloudFilter<pcl::PointXYZRGB> > urdf_filter;
     std::vector<realtime_perception::URDFRenderer*> renderers;
 
     tf::Vector3 camera_offset_t_;
     tf::Quaternion camera_offset_q_;
     std::string cam_frame_;
     std::string fixed_frame_;
-    FramebufferObject fbo_;
+    FramebufferObject *fbo_;
     bool fbo_initialized_;
     tf::TransformListener tf_;
 
     // variables holding the CUDA/OpenGL interop buffer info
-    GLuint interop_gl_buffer_;
-    thrust::device_ptr<pcl::cuda::PointXYZRGB> interop_cuda_pointer_;
+    std::vector<GLuint> interop_gl_buffers_;
+    thrust::device_ptr<float> interop_cuda_pointer_depth_;
+    thrust::device_ptr<char4> interop_cuda_pointer_normals_;
 
     // these are needed for the synchronous across-thread-boundaries call of render() from cloud_cb()
     bool gl_image_needed;
@@ -766,48 +729,21 @@ class KinectURDFSegmentation
     boost::condition_variable cond_gl_image_needed;
     boost::condition_variable cond_gl_image_available;
     boost::mutex gl_image_mutex;
+
+    int argc;
+    char **argv;
 };
 
 int 
 main (int argc, char **argv)
 {
-	glutInit (&argc, argv);
-	glutInitWindowSize (640, 480);
-	glutInitWindowPosition(200, 100);
-	glutInitDisplayMode ( GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_STENCIL);
-	glutCreateWindow ("TestFramebufferObject");
-
-
-
-
-
-
-
-
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
-	{
-		std::cout << "ERROR: could not initialize GLEW!" << std::endl;
-	}
   ros::init (argc, argv, "urdf_filter_cuda");
-
-  // create GL buffer
-  GLuint interop_buf = 0;
-  glGenBuffers (1, &interop_buf);
-
-  // bind it
-  glBindBuffer (GL_ARRAY_BUFFER, interop_buf);
-  // load it with crap data
-  glBufferData(GL_ARRAY_BUFFER, 640*480 * sizeof(pcl::cuda::PointXYZRGB), 0, GL_DYNAMIC_DRAW);
-  // unbind it
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   ros::NodeHandle nh ("~");
 
-  KinectURDFSegmentation s(nh, interop_buf);
+  KinectURDFSegmentation s(nh, argc, argv);
   s.run ();
 
   return 0;
 }
-
 
