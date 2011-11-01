@@ -114,10 +114,23 @@ rosbuild_add_library (FBO src/FrameBufferObject.cpp)
 target_link_libraries (FBO GLEW)
 rosbuild_add_library (shaderwrapper src/shader_wrapper.cpp)
 
-rosbuild_add_executable (offscreen_test 
+rosbuild_cuda_add_executable (normals_and_smoothing
+  src/normals_and_smoothing.cpp 
+  src/urdf_renderer.cpp 
+  src/renderable.cpp 
+  src/urdf_filtering.cu
+  #src/offscreen_rendering.cpp
+  )
+target_link_libraries (normals_and_smoothing
+  ${OPENGL_LIBRARIES} ${freeglut_LIBRARY} 
+  pcl_io pcl_cuda_io pcl_common pcl_cuda_features pcl_cuda_segmentation pcl_cuda_sample_consensus 
+  ${OpenCV_LIBS} 
+  FBO shaderwrapper)
+rosbuild_cuda_add_executable (offscreen_test 
   src/offscreen_test.cpp 
   src/urdf_renderer.cpp 
   src/renderable.cpp 
+  src/urdf_filtering.cu
   #src/offscreen_rendering.cpp
   )
 target_link_libraries (offscreen_test 
