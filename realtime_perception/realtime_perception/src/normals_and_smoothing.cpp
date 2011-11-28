@@ -30,7 +30,7 @@
 #include <iostream>
 
 #include <ros/node_handle.h>
-#include <pcl_ros/publisher.h>
+#include <pcl_ros/point_cloud.h>
 #include "realtime_perception/urdf_renderer.h"
 #include "realtime_perception/point_types.h"
 #include <realtime_perception/shader_wrapper.h>
@@ -46,6 +46,9 @@
 #include <pcl/visualization/cloud_viewer.h>
 
 #include <tclap/CmdLine.h>
+
+#undef ENABLE_VIRTUAL_RENDERING
+#define SHOW_TIMERS
 
 using namespace pcl::cuda;
 
@@ -85,23 +88,35 @@ class KinectURDFSegmentation
       , nr_neighbors (36)
       , radius_cm (5)
       , normal_viz_step(200)
+#ifdef ENABLE_VIRTUAL_RENDERING
       , fbo_initialized_(false)
       , gl_image_needed (false)
       , gl_image_available (false)
       , argc (argc), argv(argv)
       , no_gui(no_gui)
+#endif
     {
+      double throttle_freq;
+      nh.param ("throttle", throttle_freq, 0.0);
+      if (throttle_freq == 0.0)
+        throttle_time = 0.0;
+      else
+        throttle_time = 1.0 / throttle_freq;
+
       XmlRpc::XmlRpcValue v;
+#ifdef ENABLE_VIRTUAL_RENDERING
       nh.getParam ("fixed_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "fixed_frame paramter!");
       fixed_frame_ = (std::string)v;
       ROS_INFO ("using fixed frame %s", fixed_frame_.c_str ());
+#endif
 
       nh.getParam ("camera_frame", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeString && "need a camera_frame paramter!");
       cam_frame_ = (std::string)v;
       ROS_INFO ("using camera frame %s", cam_frame_.c_str ());
 
+#ifdef ENABLE_VIRTUAL_RENDERING
       nh.getParam ("camera_offset", v);
       ROS_ASSERT (v.getType() == XmlRpc::XmlRpcValue::TypeStruct && "need a camera_offset paramter!");
       ROS_ASSERT (v.hasMember ("translation") && v.hasMember ("rotation") && "camera offset needs a translation and rotation parameter!");
@@ -119,13 +134,19 @@ class KinectURDFSegmentation
       ROS_ASSERT (vec.getType() == XmlRpc::XmlRpcValue::TypeArray && vec.size() == 4 && "camera_offset.rotation parameter must be a 4-value array [x y z w]!");
       ROS_INFO ("using camera rotational offset: %f %f %f %f", (double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
       camera_offset_q_ = tf::Quaternion((double)vec[0], (double)vec[1], (double)vec[2], (double)vec[3]);
+#endif
 
-      std::string cloud_topic_ = "smooth_normals_pcd";
-      pub_.advertise (nh, cloud_topic_.c_str (), 1);
+      std::string cloud_topic_pointnormals_ = "smooth_normals_pcd";
+      std::string cloud_topic_points_ = "smooth_pcd";
+      //pub_pointnormals_.advertise (nh, cloud_topic_.c_str (), 1);
+      pub_pointnormals_ = nh.advertise<pcl::PointCloud<pcl::PointXYZRGBNormal> > (cloud_topic_pointnormals_.c_str (), 1);
+      pub_points_ = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> > (cloud_topic_points_.c_str (), 1);
       nh.param("publish_frame_id", publish_tf_frame_, std::string("/map"));
-      ROS_INFO ("Publishing data on topic %s with frame_id %s.", nh.resolveName (cloud_topic_).c_str (), publish_tf_frame_.c_str());
+      ROS_INFO ("Publishing points and normals on topic %s, frame_id %s.", nh.resolveName (cloud_topic_pointnormals_).c_str (), publish_tf_frame_.c_str());
+      ROS_INFO ("Publishing points on topic %s, frame_id %s.", nh.resolveName (cloud_topic_points_).c_str (), publish_tf_frame_.c_str());
     }
   
+#ifdef ENABLE_VIRTUAL_RENDERING
     void 
       loadModels ()
     {
@@ -175,7 +196,9 @@ class KinectURDFSegmentation
         ROS_ERROR ("models parameter must be an array!");
       }
     }
+#endif
 
+    // never a good sign to find this function...
     void print_backtrace ()
     {
       void *array[100];
@@ -196,17 +219,27 @@ class KinectURDFSegmentation
     {
       // TIMING
       static unsigned count = 0;
+      static double last_process_time = getTime () - 2 * throttle_time;
       static double last = getTime ();
       double now = getTime ();
+
+      // find out if we're supposed to be processing this frame, based on specified throttle frequency
+      if (now - last_process_time < throttle_time)
+      {
+        return;
+      }
+      last_process_time = now;
 
       if (++count == 30 || (now - last) > 5)
       {
         std::cout << std::endl;
-        count = 1;
+        count += 1;
         std::cout << "Average framerate: " << double(count)/double(now - last) << " Hz --- ";
+        count = 0;
         last = now;
       }
 
+#ifdef ENABLE_VIRTUAL_RENDERING
       // request a new gl image
       {
         boost::lock_guard<boost::mutex> lock(mutex_gl_image_needed);
@@ -223,9 +256,10 @@ class KinectURDFSegmentation
       //std::cerr << "callback: render () finished." << std::endl;
 
       boost::mutex::scoped_lock gl_image_lock (gl_image_mutex);
+#endif
 
       // PARAMETERS
-      static int smoothing_nr_iterations = 10;
+      static int smoothing_nr_iterations = 7;
       static int smoothing_filter_size = 2;
       //static int enable_visualization = 0;
       //static int enable_mean_shift = 1;
@@ -264,6 +298,7 @@ class KinectURDFSegmentation
           normals = computePointNormals<Storage> (data->points.begin (), data->points.end (), focallength, data, radius_cm / 100.0f, nr_neighbors);
         cudaThreadSynchronize ();
       }
+#ifdef ENABLE_VIRTUAL_RENDERING
       if (!no_gui)
       {
         // RETRIEVE NORMALS AS AN IMAGE
@@ -281,7 +316,7 @@ class KinectURDFSegmentation
         typename Storage<float>::type urdf_inliers;
         realtime_perception::BackgroundSubtraction bs;
         int num_urdf_inliers = bs.fromGLDepthImage<Storage> (depth_image, interop_cuda_pointer_depth_, constant, 0.5f, urdf_inliers, false, 1);
-        std::cerr<< "NUM INLIERS: " << num_urdf_inliers << std::endl;
+        //std::cerr<< "NUM INLIERS: " << num_urdf_inliers << std::endl;
 
         typename ImageType<Storage>::type bla_image;
         ImageType<Storage>::createContinuous (480, 640, CV_8UC4, bla_image);
@@ -289,13 +324,6 @@ class KinectURDFSegmentation
         thrust::copy (interop_cuda_pointer_normals_, interop_cuda_pointer_normals_ + 640 * 480, bla_ptr);
 
         thrust::device_vector <float> vec (interop_cuda_pointer_depth_, interop_cuda_pointer_depth_ + 640 * 480);
-
-        //float min, max;
-        //realtime_perception::find_extrema<Storage> (vec, min, max);
-        //std::cerr << "extrema " << min << ", " << max << std::endl;
-
-        //realtime_perception::find_extrema<Storage> (urdf_inliers, min, max);
-        //std::cerr << "extrema " << min << ", " << max << std::endl;
 
         cv::Mat gl_normal_image;
         cv::cvtColor(cv::Mat (bla_image), gl_normal_image, CV_BGRA2RGBA);
@@ -309,56 +337,105 @@ class KinectURDFSegmentation
         cv::imshow ("URDF Models Depth Component", cv::Mat (bla_image));
         cv::waitKey (2);
       }
+#endif
 
-      //if (pub_.getNumSubscribers () > 0)
+      if (pub_pointnormals_.getNumSubscribers () > 0 || pub_points_.getNumSubscribers () > 0)
       {
-
-        tf::StampedTransform t;
-        btScalar glTf[16];
-        try
-        {
-          tf_.lookupTransform (publish_tf_frame_, cam_frame_,  ros::Time (), t);
-        }
-        catch (tf::TransformException ex)
-        {
-          t.setIdentity ();
-          ROS_ERROR("%s",ex.what());
-        }
         // transformed point cloud
         typename PointCloudAOS<Storage>::Ptr points_transformed;
         boost::shared_ptr<typename Storage<float4>::type> normals_transformed;
-
-        // get transform and apply it
-        t.getOpenGLMatrix(glTf);
+        if (publish_tf_frame_ != cam_frame_)
         {
+          tf::StampedTransform t;
+          btScalar glTf[16];
+
+          try
+          {
+            tf_.lookupTransform (publish_tf_frame_, cam_frame_,  ros::Time (), t);
+          }
+          catch (tf::TransformException ex)
+          {
+            t.setIdentity ();
+            ROS_ERROR("%s",ex.what());
+          }
+
+          // get transform and apply it
+          t.getOpenGLMatrix(glTf);
+          {
 #ifdef SHOW_TIMERS
-          ScopeTimeCPU time ("Point cloud transformation");
+            ScopeTimeCPU time ("Point cloud transformation");
 #endif
-          realtime_perception::transformPoints<Storage> (points_transformed, data, (double*)&glTf[0]);
-          realtime_perception::transformNormals<Storage> (normals_transformed, normals, (double*)&glTf[0]);
+            realtime_perception::transformPoints<Storage> (points_transformed, data, (double*)&glTf[0]);
+            if (pub_pointnormals_.getNumSubscribers() > 0)
+              realtime_perception::transformNormals<Storage> (normals_transformed, normals, (double*)&glTf[0]);
+          }
+        }
+        else
+        {
+          points_transformed = data;
+          if (pub_pointnormals_.getNumSubscribers() > 0)
+            normals_transformed = normals;
         }
 
-        // get it in publishable form and publish
-        normal_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+        if (pub_pointnormals_.getNumSubscribers() > 0)
         {
-          cudaThreadSynchronize ();
+          // get it in publishable form and publish
+          normal_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+          if (pub_points_.getNumSubscribers() > 0)
+            out_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+          {
+            cudaThreadSynchronize ();
 #ifdef SHOW_TIMERS
-          ScopeTimeCPU time ("Device to Host transfer");
+            ScopeTimeCPU time ("Device to Host transfer");
 #endif
-          toPCL (*points_transformed, *normals_transformed, *normal_cloud);
+            toPCL (*points_transformed, *normals_transformed, *normal_cloud);
+            if (pub_points_.getNumSubscribers() > 0)
+              toPCL (*points_transformed, *out_cloud);
+          }
+          normal_cloud->header.frame_id = publish_tf_frame_;
+          normal_cloud->header.stamp = ros::Time(depth_image->getTimeStamp() / 1000000.0);
+
+          if (pub_points_.getNumSubscribers() > 0)
+          {
+            out_cloud->header.frame_id = publish_tf_frame_;
+            out_cloud->header.stamp = ros::Time(depth_image->getTimeStamp() / 1000000.0);
+          }
+          {
+#ifdef SHOW_TIMERS
+            ScopeTimeCPU time ("Publishing");
+#endif
+            pub_pointnormals_.publish (normal_cloud);
+            if (pub_points_.getNumSubscribers() > 0)
+              pub_points_.publish(out_cloud);
+          }
         }
-        normal_cloud->header.frame_id = publish_tf_frame_;
-        normal_cloud->header.stamp = ros::Time::now ();
+        else
         {
+          // get it in publishable form and publish
+          out_cloud.reset (new pcl::PointCloud<pcl::PointXYZRGB>);
+          {
+            cudaThreadSynchronize ();
 #ifdef SHOW_TIMERS
-          ScopeTimeCPU time ("Publishing");
+            ScopeTimeCPU time ("Device to Host transfer");
 #endif
-          pub_.publish (normal_cloud);
+            toPCL (*points_transformed, *out_cloud);
+          }
+          out_cloud->header.frame_id = publish_tf_frame_;
+
+          out_cloud->header.stamp = ros::Time(depth_image->getTimeStamp() / 1000000.0);
+          {
+#ifdef SHOW_TIMERS
+            ScopeTimeCPU time ("Publishing");
+#endif
+            pub_points_.publish (out_cloud);
+          }
         }
       }
       //TODO: compute transformation between urdf model and kinect cloud.
     }
 
+#ifdef ENABLE_VIRTUAL_RENDERING
     template <typename T>
     void
       createPBO (GLuint &pbo, unsigned int size_tex_data, thrust::device_ptr<T> &cuda_pointer)
@@ -377,7 +454,9 @@ class KinectURDFSegmentation
       /*cudaError_t cuda_error = */ cudaGLMapBufferObject((void**)&raw_ptr, pbo);
       cuda_pointer = thrust::device_pointer_cast(raw_ptr);
     }
-  
+#endif
+
+#ifdef ENABLE_VIRTUAL_RENDERING
     void initGL ()
     {
       //TODO: change this to use an offscreen pbuffer, so no window is necessary
@@ -471,7 +550,9 @@ class KinectURDFSegmentation
       initFrameBufferObject ();
       loadModels ();
     }
+#endif
 
+#ifdef ENABLE_VIRTUAL_RENDERING
     void initFrameBufferObject ()
     {
       fbo_ = new FramebufferObject ("rgba=4x8t depth=32t stencil=t");
@@ -483,7 +564,9 @@ class KinectURDFSegmentation
       if(err != GL_NO_ERROR)
         printf("OpenGL ERROR after FBO initialization: %s\n", gluErrorString(err));
     }
+#endif
 
+#ifdef ENABLE_VIRTUAL_RENDERING
     void render ()
     {
       // lock gl_image_mutex and "produce" one image
@@ -503,14 +586,20 @@ class KinectURDFSegmentation
       };
 
       tf::StampedTransform t;
-      try
+      if (cam_frame_ != fixed_frame_)
       {
-        tf_.lookupTransform (cam_frame_, fixed_frame_, ros::Time (), t);
+        try
+        {
+          tf_.lookupTransform (cam_frame_, fixed_frame_, ros::Time(), t);
+        }
+        catch (tf::TransformException ex)
+        {
+          t.setIdentity ();
+          ROS_ERROR("%s",ex.what());
+        }
       }
-      catch (tf::TransformException ex)
-      {
-        ROS_ERROR("%s",ex.what());
-      }
+      else
+        t.setIdentity ();
 
       // -----------------------------------------------------------------------
       // -----------------------------------------------------------------------
@@ -795,11 +884,14 @@ class KinectURDFSegmentation
 
       cond_gl_image_available.notify_all ();
     }
+#endif
     
     void 
     run ()
     {
+#ifdef ENABLE_VIRTUAL_RENDERING
       initGL ();
+#endif
 
       pcl::Grabber* grabber = new pcl::OpenNIGrabber();
 
@@ -815,6 +907,7 @@ class KinectURDFSegmentation
      
       while (nh.ok())
       {
+#ifdef ENABLE_VIRTUAL_RENDERING
         // wait for "data needed!"
         boost::unique_lock<boost::mutex> lock (mutex_gl_image_needed);
         while (!gl_image_needed && nh.ok ())
@@ -830,6 +923,9 @@ class KinectURDFSegmentation
           glutPostRedisplay();
           glutMainLoopEvent ();
         }
+        else
+#endif
+          usleep(100);
       }
 
       grabber->stop ();
@@ -837,9 +933,12 @@ class KinectURDFSegmentation
 
     ros::NodeHandle &nh;
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr normal_cloud;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out_cloud;
     pcl::PointCloud<PointXYZRGBNormalRegion>::Ptr region_cloud;
     DisparityToCloud d2c;
+#ifdef ENABLE_VIRTUAL_RENDERING
     pcl::visualization::CloudViewer *viewer;
+#endif
 
     int normal_method;
     int nr_neighbors;
@@ -847,14 +946,18 @@ class KinectURDFSegmentation
     int normal_viz_step;
     std::vector<realtime_perception::URDFRenderer*> renderers;
 
+    std::string cam_frame_;
+#ifdef ENABLE_VIRTUAL_RENDERING
     tf::Vector3 camera_offset_t_;
     tf::Quaternion camera_offset_q_;
-    std::string cam_frame_;
     std::string fixed_frame_;
     FramebufferObject *fbo_;
     bool fbo_initialized_;
+#endif
     tf::TransformListener tf_;
 
+
+#ifdef ENABLE_VIRTUAL_RENDERING
     // variables holding the CUDA/OpenGL interop buffer info
     std::vector<GLuint> interop_gl_buffers_;
     thrust::device_ptr<float> interop_cuda_pointer_depth_;
@@ -871,12 +974,18 @@ class KinectURDFSegmentation
 
     int argc;
     char **argv;
+#endif
 
-    pcl_ros::Publisher<pcl::PointXYZRGBNormal> pub_;
+    //pcl_ros::Publisher<pcl::PointXYZRGBNormal> pub_;
+    ros::Publisher pub_pointnormals_;
+    ros::Publisher pub_points_;
     std::string publish_tf_frame_;
     
     // to stop littering the screen with windows
     bool no_gui;
+    bool go_on;
+
+    double throttle_time;
 };
 
 int 
