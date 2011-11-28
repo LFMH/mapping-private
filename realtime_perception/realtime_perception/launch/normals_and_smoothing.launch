@@ -3,12 +3,15 @@
   <!--
   <include file="$(find ias_kitchen_defs)/launch/ias_kitchen_model.launch"/>
   <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="valgrind - -leak-check=full" >
-  <node pkg="realtime_perception" type="offscreen_test" name="offscreen_test" output="screen" launch-prefix="gdb -ex run - -args">
+  <node pkg="realtime_perception" type="normals_and_smoothing" name="normals_and_smoothing" args="-q - -" output="screen" launch-prefix="gdb -ex run - -args">
   -->
-  <node pkg="realtime_perception" type="normals_and_smoothing" name="normals_and_smoothing" args="-q --" output="screen" >
+
+  <node pkg="realtime_perception" type="normals_and_smoothing" name="normals_and_smoothing" args="--" output="screen" >
     <remap from="~input" to="/cloud_pcd" />
     <rosparam>
       fixed_frame: /map
+      # throttle is in Hz..
+      throttle: 3
       camera_frame: /openni_rgb_optical_frame
       camera_offset:
         translation: [0.0, 0.0, 0.0]
@@ -19,6 +22,9 @@
         - model: /robot_description
           tf_prefix: ""
       publish_frame_id: /map
+
+      #fixed_frame: /openni_rgb_optical_frame
+      #publish_frame_id: /openni_rgb_optical_frame
     </rosparam>
   </node>
 
