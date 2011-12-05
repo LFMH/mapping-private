@@ -96,6 +96,11 @@ class KinectURDFSegmentation
       , no_gui(no_gui)
 #endif
     {
+      std::string displayname;
+      nh.getParam ("display", displayname);
+      if (!displayname.empty ())
+        putenv ((std::string("DISPLAY=") + (std::string)v).c_str ());
+
       double throttle_freq;
       nh.param ("throttle", throttle_freq, 0.0);
       if (throttle_freq == 0.0)
