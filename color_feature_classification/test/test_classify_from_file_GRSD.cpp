@@ -22,7 +22,7 @@ using namespace pcl;
 using namespace std;
 using namespace terminal_tools;
 
-int file_num[ 9 ];
+int file_num[ 6 ];
 
 //const float lower = 0;//-1;
 const float upper = 1;
@@ -181,15 +181,12 @@ int main( int argc, char** argv ){
   std::vector<float> feature_max;
   bool is_normalize = false;
 
-  file_num[ 0 ] = 3;
-  file_num[ 1 ] = 5;
-  file_num[ 2 ] = 4;
-  file_num[ 3 ] = 2;
-  file_num[ 4 ] = 2;
-  file_num[ 5 ] = 1;
-  file_num[ 6 ] = 3;
-  file_num[ 7 ] = 2;
-  file_num[ 8 ] = 1;
+  file_num[ 0 ] = 1;
+  file_num[ 1 ] = 1;
+  file_num[ 2 ] = 1;
+  file_num[ 3 ] = 3;
+  file_num[ 4 ] = 1;
+  file_num[ 5 ] = 2;
 
   // voxel size
   float voxel_size;

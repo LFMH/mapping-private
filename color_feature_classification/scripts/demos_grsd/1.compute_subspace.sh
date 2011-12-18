@@ -1,8 +1,7 @@
 #!/bin/bash
-# Example directory containing _vfh.pcd files
+# Example directory containing .pcd files
 DIR=`rospack find color_feature_classification`/demos_grsd
-DATA=`rospack find color_feature_classification`/demos_grsd/data/semantic-3d-geometric
-#n=0
+DATA=`rospack find color_feature_classification`/demos_grsd/data/rgbd-sel-smooth-reduced-arranged-noball6
 
 # NOTE: comment-out the followings if you don't use normalization
 norm_flag_g="-norm $DIR/bin_normalization/max_g.txt"
@@ -21,7 +20,6 @@ do
     ln -s $DATA/training_features_g/$in_dir_name $DIR/training_features_g/$dir_name
     echo $dir_name
     files=`find $DIR/training_features_g/$dir_name/ -type f -iname "*.pcd" | sort -d`
-    #rosrun color_feature_classification computeSubspace_from_file $files -dim 100 -comp $DIR/pca_result_g/compress_axis $norm_flag_g $DIR/pca_result_g/$num
     rosrun color_feature_classification computeSubspace_from_file $files $norm_flag_g $DIR/pca_result_g/$num
     i=`expr $i + 1`
 done
