@@ -48,7 +48,7 @@
 #include "pcl/segmentation/impl/sac_segmentation.hpp"
 #include "pcl/visualization/impl/pcl_visualizer.hpp"
 
-#include "../include/ransac.hpp"
+//#include "../include/ransac.hpp"
 
 // ---------- Variables ---------- //
 
@@ -348,17 +348,17 @@ void adjustLineModel (pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr &cloud, pc
   inliers->indices.clear ();
   coefficients->values.clear ();
 
-  int iterations = fitLine (cloud, inliers, coefficients, threshold, maximum_iterations);
+  //int iterations = fitLine (cloud, inliers, coefficients, threshold, maximum_iterations);
 
-  //pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
-  //sacs.setInputCloud (cloud);
-  //sacs.setMethodType (pcl::SAC_RANSAC);
-  //sacs.setOptimizeCoefficients (false);
-  //
-  //sacs.setModelType (pcl::SACMODEL_LINE);
-  //sacs.setMaxIterations (maximum_iterations);
-  //sacs.setDistanceThreshold (threshold);
-  //sacs.segment (*inliers, *coefficients);
+  pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
+  sacs.setInputCloud (cloud);
+  sacs.setMethodType (pcl::SAC_RANSAC);
+  sacs.setOptimizeCoefficients (false);
+
+  sacs.setModelType (pcl::SACMODEL_LINE);
+  sacs.setMaxIterations (maximum_iterations);
+  sacs.setDistanceThreshold (threshold);
+  sacs.segment (*inliers, *coefficients);
 
   return;
 }
@@ -369,7 +369,18 @@ void adjustCircleModel (pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr &cloud, 
   inliers->indices.clear ();
   coefficients->values.clear ();
 
-  int iterations = fitCircle (cloud, inliers, coefficients, threshold, minimum_radius, maximum_radius, maximum_iterations);
+  //int iterations = fitCircle (cloud, inliers, coefficients, threshold, minimum_radius, maximum_radius, maximum_iterations);
+
+  pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
+  sacs.setInputCloud (cloud);
+  sacs.setMethodType (pcl::SAC_RANSAC);
+  sacs.setOptimizeCoefficients (false);
+
+  sacs.setModelType (pcl::SACMODEL_CIRCLE2D);
+  sacs.setMaxIterations (maximum_iterations);
+  sacs.setDistanceThreshold (threshold);
+  sacs.setRadiusLimits (minimum_radius, maximum_radius);
+  sacs.segment (*inliers, *coefficients);
 
   return;
 }
@@ -1739,37 +1750,37 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       pcl::ModelCoefficients::Ptr circle_coefficients (new pcl::ModelCoefficients ());
       pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr circle_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
 
-      //pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
-      //sacs.setInputCloud (working_cloud);
-      //sacs.setMethodType (pcl::SAC_RANSAC);
-      //sacs.setOptimizeCoefficients (false);
+      pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
+      sacs.setInputCloud (working_cloud);
+      sacs.setMethodType (pcl::SAC_RANSAC);
+      sacs.setOptimizeCoefficients (false);
 
-      int line_iterations = fitLine (working_cloud, line_inliers, line_coefficients, line_threshold, maximum_line_iterations);
-
-      adjustLineInliers (working_cloud, line_inliers, line_coefficients, line_threshold);
+      //int line_iterations = fitLine (working_cloud, line_inliers, line_coefficients, line_threshold, maximum_line_iterations);
+      //
+      //adjustLineInliers (working_cloud, line_inliers, line_coefficients, line_threshold);
 
       /*
       // THIS SHOULD BE ONLY TEMPORARY HERE //
       valid_line = false;
       */
 
-      //sacs.setModelType (pcl::SACMODEL_LINE);
-      //sacs.setMaxIterations (maximum_line_iterations);
-      //sacs.setDistanceThreshold (line_threshold);
-      //sacs.segment (*line_inliers, *line_coefficients);
+      sacs.setModelType (pcl::SACMODEL_LINE);
+      sacs.setMaxIterations (maximum_line_iterations);
+      sacs.setDistanceThreshold (line_threshold);
+      sacs.segment (*line_inliers, *line_coefficients);
 
-      int circle_iterations = fitCircle (working_cloud, circle_inliers, circle_coefficients, circle_threshold, minimum_circle_radius, maximum_circle_radius, maximum_circle_iterations);
+      //int circle_iterations = fitCircle (working_cloud, circle_inliers, circle_coefficients, circle_threshold, minimum_circle_radius, maximum_circle_radius, maximum_circle_iterations);
 
       /*
       // THIS SHOULD BE ONLY TEMPORARY HERE //
       valid_circle = false;
       */
 
-      //sacs.setModelType (pcl::SACMODEL_CIRCLE2D);
-      //sacs.setMaxIterations (maximum_circle_iterations);
-      //sacs.setDistanceThreshold (circle_threshold);
-      //sacs.setRadiusLimits (minimum_circle_radius, maximum_circle_radius);
-      //sacs.segment (*circle_inliers, *circle_coefficients);
+      sacs.setModelType (pcl::SACMODEL_CIRCLE2D);
+      sacs.setMaxIterations (maximum_circle_iterations);
+      sacs.setDistanceThreshold (circle_threshold);
+      sacs.setRadiusLimits (minimum_circle_radius, maximum_circle_radius);
+      sacs.segment (*circle_inliers, *circle_coefficients);
 
 
 
