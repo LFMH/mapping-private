@@ -2373,6 +2373,30 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
 
 
 
+
+
+
+
+
+     pcl::ModelCoefficients::Ptr test_coeffs (new pcl::ModelCoefficients ());
+      test_coeffs->values.push_back (P1[0]);
+      test_coeffs->values.push_back (P1[1]);
+      test_coeffs->values.push_back (0.0);
+      test_coeffs->values.push_back (P2[0] - P1[0]);
+      test_coeffs->values.push_back (P2[1] - P1[1]);
+      test_coeffs->values.push_back (0.0);
+
+      if ( growing_visualization )
+      {
+        viewer.addLine (*test_coeffs, 1.0, 0.0, 0.5, "test_COEFFS");
+        viewer.spin ();
+        viewer.removeShape ("test_COEFFS");
+      }
+
+
+
+
+
     // NOVEL WAY OF GROWING BOXES //
 
     pcl::PointXYZRGBNormalRSD MiN, MaX;
