@@ -55,6 +55,7 @@
 // Method //
 int vransac_iterations = 100;
 double normal_search_radius = 0.020;
+double smoothing_search_radius = 0.020;
 double curvature_threshold = 0.010;
 double rsd_search_radius = 0.020;
 double rsd_plane_radius = 0.200;
@@ -167,6 +168,7 @@ void printUsage (const char* command)
   pcl::console::print_info ("\n[method]\n");
   pcl::console::print_info ("  -vransac_iterations D                                        = How many times to run the VRANSAC routine.\n");
   pcl::console::print_info ("  -normal_search_radius X                                      = Sphere radius for search of neighbor points.\n");
+  pcl::console::print_info ("  -smoothing_search_radius X                                   = Sphere radius for smoothing the point cloud.\n");
   pcl::console::print_info ("  -curvature_threshold X                                       = Threshold between planar and circular patches of surfaces.\n");
   pcl::console::print_info ("  -rsd_search_radius X                                         = The search radius for RSD estimations.\n");
   pcl::console::print_info ("  -rsd_plane_radius X                                          = The maximum radius for RSD estimations.\n");
@@ -1312,6 +1314,7 @@ int main (int argc, char** argv)
   // Method //
   pcl::console::parse_argument (argc, argv, "-vransac_iterations", vransac_iterations);
   pcl::console::parse_argument (argc, argv, "-normal_search_radius", normal_search_radius);
+  pcl::console::parse_argument (argc, argv, "-smoothing_search_radius", smoothing_search_radius);
   pcl::console::parse_argument (argc, argv, "-curvature_threshold", curvature_threshold);
   pcl::console::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);
   pcl::console::parse_argument (argc, argv, "-rsd_plane_radius", rsd_plane_radius);
@@ -1435,7 +1438,7 @@ int main (int argc, char** argv)
   mls.setInputCloud (working_cloud);
   mls.setPolynomialFit (true);
   mls.setSearchMethod (mls_tree);
-  mls.setSearchRadius (normal_search_radius);
+  mls.setSearchRadius (smoothing_search_radius);
   mls.reconstruct (*working_cloud);
 
   if ( verbose ) pcl::console::print_info ("Point cloud surface smoothed !\n");
