@@ -588,7 +588,7 @@ void ClusteringFeatureForLines (bool &valid_line,
   //}
 
   std::vector<pcl::PointIndices> clusters;
-  pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD> ());
+  pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
 
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> ece;
   ece.setInputCloud (line_cloud);
@@ -792,7 +792,7 @@ void ClusteringFeatureForCircles (bool &valid_circle,
   //}
 
   std::vector<pcl::PointIndices> clusters;
-  pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD> ());
+  pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
 
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> ece;
   ece.setInputCloud (circle_cloud);
@@ -1427,7 +1427,7 @@ int main (int argc, char** argv)
 
   // ---------- Smoothing ---------- //
 
-  pcl::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr mls_tree (new pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD>);
+  pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
 
   mls_tree->setInputCloud (working_cloud);
 
@@ -1459,7 +1459,7 @@ int main (int argc, char** argv)
   // ---------- Estimate 3D Normals ---------- //
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
-  pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
 
   pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
   ne.setInputCloud (xyz_rgb_cloud);
@@ -1550,7 +1550,7 @@ pcl::io::savePCDFile ("3D-normals.pcd", *working_cloud);
   // ---------- Estimate RSD Values ---------- //
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
 
   pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (xyz_rgb_cloud);
@@ -2107,7 +2107,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
     if ( line_parameters_space->points.size () > 0 )
     {
       std::vector<pcl::PointIndices> line_parameters_clusters;
-      pcl::KdTreeFLANN<pcl::PointNormal>::Ptr line_parameters_tree (new pcl::KdTreeFLANN<pcl::PointNormal> ());
+      pcl::search::KdTree<pcl::PointNormal>::Ptr line_parameters_tree (new pcl::search::KdTree<pcl::PointNormal> ());
 
       pcl::EuclideanClusterExtraction<pcl::PointNormal> lps_ece;
       lps_ece.setInputCloud (line_parameters_space);
@@ -2159,7 +2159,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
     if ( circle_parameters_space->points.size () > 0 )
     {
       std::vector<pcl::PointIndices> circle_parameters_clusters;
-      pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr circle_parameters_tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
+      pcl::search::KdTree<pcl::PointXYZ>::Ptr circle_parameters_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZ> cps_ece;
       cps_ece.setInputCloud (circle_parameters_space);
@@ -3513,7 +3513,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
     if ( !more_votes_for_lines && !more_votes_for_circles )
     {
       std::vector<pcl::PointIndices> r_clusterS;
-      pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD>::Ptr r_tree (new pcl::KdTreeFLANN<pcl::PointXYZRGBNormalRSD> ());
+      pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr r_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> r_ece;
       r_ece.setInputCloud (working_cloud);

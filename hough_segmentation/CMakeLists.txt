@@ -1,8 +1,8 @@
+cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 2.4.6)
 project(HOUGH_SEGMENTATION)
 
-find_package(PCL 1.2 REQUIRED)
+find_package(PCL 1.5 REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -17,7 +17,7 @@ add_executable(hough_classification src/hough_classification.cpp)
 target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
 #
-## Old Version Which Uses PCL 0.9.9 #
+## Old Version Which Uses Perception PCL 0.9.9 #
 #
 #cmake_minimum_required(VERSION 2.4.6)
 #include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
