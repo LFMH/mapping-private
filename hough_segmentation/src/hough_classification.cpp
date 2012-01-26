@@ -1402,7 +1402,7 @@ int main (int argc, char** argv)
 
   // ---------- Load Input Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
   if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *xyz_rgb_cloud) == -1)
   {
@@ -1459,9 +1459,9 @@ int main (int argc, char** argv)
   // ---------- Estimate 3D Normals ---------- //
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
 
-  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
   ne.setInputCloud (xyz_rgb_cloud);
   ne.setSearchMethod (normal_tree);
   ne.setRadiusSearch (normal_search_radius);
@@ -1550,9 +1550,9 @@ pcl::io::savePCDFile ("3D-normals.pcd", *working_cloud);
   // ---------- Estimate RSD Values ---------- //
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
 
-  pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (xyz_rgb_cloud);
   rsd.setInputNormals (normal_cloud);
   rsd.setRadiusSearch (rsd_search_radius);
