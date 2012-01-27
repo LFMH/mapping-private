@@ -114,6 +114,25 @@ bool verbose = true;
 bool step = false;
 int size = 1;
 
+bool till_the_end = true;
+bool classification = true;
+
+int number_of_box = 1;
+int number_of_flat = 1;
+
+int number_of_tall = 1;
+int number_of_medium = 1;
+int number_of_short = 1;
+
+double flat_value = 0.250;
+
+bool consider_height_from_table_plane = true;
+bool shapes_from_table_plane = true;
+
+double tall_value = 0.750;
+double medium_value = 0.500;
+double short_value = 0.250;
+
 // ---------- Macros ---------- //
 
 #define _sqr(c) ((c)*(c))
@@ -872,7 +891,7 @@ void ClusteringFeatureForCircles (bool &valid_circle,
 
     pcl::PointIndices::Ptr curvature_feature_inliers (new pcl::PointIndices ());
 
-    if ( curvature_clusters.at (z).indices.size() < 50 ) /// HEADS UP, THIS MIGHT EXCLUDE THE TALL CYLINDER ON THE LEFT, SET TO 25 MAYBE ?!
+    if ( curvature_clusters.at (z).indices.size() < 100 ) /// HEADS UP, THIS MIGHT EXCLUDE THE TALL CYLINDER ON THE LEFT, SET TO 25 MAYBE ?!
     {
       for ( int idx = 0; idx < (int) curvature_clusters.at (z).indices.size(); idx++ )
       {
@@ -1371,6 +1390,19 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-step", step);
   pcl::console::parse_argument (argc, argv, "-size", size);
 
+
+  pcl::console::parse_argument (argc, argv, "-till_the_end", till_the_end);
+  pcl::console::parse_argument (argc, argv, "-classification", classification);
+
+  pcl::console::parse_argument (argc, argv, "-flat_value", flat_value);
+
+  pcl::console::parse_argument (argc, argv, "-consider_height_from_table_plane", consider_height_from_table_plane);
+  pcl::console::parse_argument (argc, argv, "-shapes_from_table_plane", shapes_from_table_plane);
+
+  pcl::console::parse_argument (argc, argv, "-tall_value", tall_value);
+  pcl::console::parse_argument (argc, argv, "-medium_value", medium_value);
+  pcl::console::parse_argument (argc, argv, "-short_value", short_value);
+
   // ---------- Initializations ---------- //
 
   srand (time(0));
@@ -1425,6 +1457,31 @@ int main (int argc, char** argv)
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "XYZ_RGB_CLOUD");
     viewer.spin ();
   }
+
+  // ---------- Classification ---------- //
+
+  std::string directory;
+
+  size_t f;
+
+  if ( classification )
+  {
+    // Get position of "f" and "/" in path of file
+    std::string file = argv [pcd_file_indices [0]];
+    f = file.find_last_of ("f");
+    directory = file.substr (0, f);
+
+    cerr << directory <<endl;
+    cerr << directory <<endl;
+    cerr << directory <<endl;
+
+  }
+
+  // The minimum and maximum height of point cloud
+  pcl::PointXYZRGBNormalRSD abs_min, abs_max;
+  pcl::getMinMax3D (*working_cloud, abs_min, abs_max);
+
+  // ------------------------------------ //
 
   ///*
 
@@ -2148,6 +2205,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
 
     // ---------- Parameter Space of Circles ---------- //
 
+    if ( !till_the_end )
     if ( true )
     {
       pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> circle_parameters_space_color (circle_parameters_space, 0, 255, 255);
@@ -2229,7 +2287,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       }
     }
 
-    viewer.spin ();
+    if ( !till_the_end ) viewer.spin ();
 
     // THIS SHOULD BE ONLY TEMPORARY HERE //
 //    more_votes_for_lines = false;
@@ -2776,6 +2834,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
     computeTransformationMatrix (tX, tY, tZ, rX, rY, rZ, T);
     transform (T, O, VP);
 
+    if ( !till_the_end )
     if ( true )
     {
       pcl::PointXYZ CVP;
@@ -2851,6 +2910,7 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       N[1] = N1[1];
     }
 
+    if ( !till_the_end )
     if ( true )
     {
       pcl::ModelCoefficients::Ptr normal_coefficients (new pcl::ModelCoefficients ());
@@ -3264,6 +3324,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
 
 //////    minimus = working_cloud_minimum.z;
 
+    if ( shapes_from_table_plane )
+      minimus = abs_min.z;
+
     pcl::ModelCoefficients e0, e1, e2, e3;
 
     e0.values.push_back (edges[0][0]);
@@ -3394,7 +3457,79 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
     std::stringstream cub_id;
     cub_id << "CUB_" << getTimestamp ();
     viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
-    viewer.spin ();
+
+    if ( !till_the_end ) viewer.spin ();
+
+     //                //
+    // Classification //
+   //                //
+
+    if ( classification )
+    {
+
+      //double x_surface = sqrt (_sqr (e0.values[0]-e1.values[0]) + _sqr (e0.values[1]-e1.values[1]) + _sqr (e0.values[2]-e1.values[2])) * sqrt (_sqr (e1.values[0]-e5.values[0]) + _sqr (e1.values[1]-e5.values[1]) + _sqr (e1.values[2]-e5.values[2])) ;
+      //double y_surface = sqrt (_sqr (e1.values[0]-e2.values[0]) + _sqr (e1.values[1]-e2.values[1]) + _sqr (e1.values[2]-e2.values[2])) * sqrt (_sqr (e2.values[0]-e6.values[0]) + _sqr (e2.values[1]-e6.values[1]) + _sqr (e2.values[2]-e6.values[2])) ;
+      //double z_surface = sqrt (_sqr (e0.values[0]-e1.values[0]) + _sqr (e0.values[1]-e1.values[1]) + _sqr (e0.values[2]-e1.values[2])) * sqrt (_sqr (e1.values[0]-e2.values[0]) + _sqr (e1.values[1]-e2.values[1]) + _sqr (e1.values[2]-e2.values[2])) ;
+
+      double x_dist = sqrt (_sqr (e0.values[0]-e1.values[0]) + _sqr (e0.values[1]-e1.values[1]) + _sqr (e0.values[2]-e1.values[2])) ;
+      double y_dist = sqrt (_sqr (e1.values[0]-e2.values[0]) + _sqr (e1.values[1]-e2.values[1]) + _sqr (e1.values[2]-e2.values[2])) ;
+      double z_dist = sqrt (_sqr (e2.values[0]-e6.values[0]) + _sqr (e2.values[1]-e6.values[1]) + _sqr (e2.values[2]-e6.values[2])) ;
+
+      // Create file name for saving
+      std::stringstream object_filename;
+
+      //double min_surface = std::min (x_surface, std::min (y_surface, z_surface));
+
+      //cerr << " x_surface " << x_surface << endl ;
+      //cerr << " y_surface " << y_surface << endl ;
+      //cerr << " z_surface " << z_surface << endl ;
+
+      double smallest_dimension = std::min (x_dist, std::min (y_dist, z_dist));
+
+      cerr << " x_dist " << x_dist << endl ;
+      cerr << " y_dist " << y_dist << endl ;
+      cerr << " z_dist " << z_dist << endl ;
+
+      double min_dist = std::min (x_dist, y_dist);
+      double max_dist = std::max (x_dist, y_dist);
+
+      cerr << " max / min " << max_dist / min_dist << endl ;
+      cerr << " max / z " << max_dist / z_dist << endl ;
+
+      //if ( ((max_dist / min_dist) > flat_value) || ((max_dist / z_dist) > flat_value ))
+
+      if ( smallest_dimension < flat_value )
+      {
+        if ( number_of_flat < 10 )
+          object_filename << directory << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
+        else
+          object_filename << directory << "flat" << "_" << number_of_flat << ".pcd" ;
+
+        cerr << "      FLAT      " << endl ;
+
+        number_of_flat++;
+      }
+      else
+      {
+        if ( number_of_box < 10 )
+          object_filename << directory << "box" << "_" << "0" << number_of_box << ".pcd" ;
+        else
+          object_filename << directory << "box" << "_" << number_of_box << ".pcd" ;
+
+        cerr << "      BOX      " << endl ;
+
+        number_of_box++;
+      }
+
+      cerr << object_filename.str () << endl;
+      cerr << object_filename.str () << endl;
+      cerr << object_filename.str () << endl;
+
+      pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+
+      if ( !till_the_end ) viewer.spin ();
+
+    }
 
     }
 
@@ -3491,6 +3626,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
 
 //////      cyl_min.z = working_cloud_minimum.z;
 
+      if ( shapes_from_table_plane )
+        cyl_min.z = abs_min.z;
+
       pcl::ModelCoefficients cyl;
 
       cyl.values.push_back (mcx);
@@ -3504,7 +3642,85 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
-      viewer.spin ();
+
+      if ( !till_the_end ) viewer.spin ();
+
+       //                //
+      // Classification //
+     //                //
+
+      if ( classification )
+      {
+
+        // Create file name for saving
+        std::stringstream object_filename;
+
+        double height_of_cylinder;
+        if ( consider_height_from_table_plane )
+          height_of_cylinder = cyl_max.z;
+        else
+          height_of_cylinder = cyl_max.z - cyl_min.z;
+
+        cerr << height_of_cylinder << endl ;
+
+        // Select Tall Cylinders //
+
+        if ( height_of_cylinder > tall_value )
+        {
+          if ( number_of_tall < 10 )
+            object_filename << directory << "tall" << "_" << "0" << number_of_tall << ".pcd" ;
+          else
+            object_filename << directory << "tall" << "_" << number_of_tall << ".pcd" ;
+
+          cerr << "      TALL      " << endl ;
+
+          number_of_tall++;
+        }
+        else
+        {
+
+          // Select Short Cylinders //
+
+          if ( height_of_cylinder < short_value )
+          {
+            if ( number_of_short < 10 )
+              object_filename << directory << "short" << "_" << "0" << number_of_short << ".pcd" ;
+            else
+              object_filename << directory << "short" << "_" << number_of_short << ".pcd" ;
+
+            cerr << "      SHORT      " << endl ;
+
+            number_of_short++;
+          }
+          else
+          {
+
+            // Select Medium Cylinders //
+
+            //if ( height_of_cylinder > medium_value )
+            //{
+            if ( number_of_medium < 10 )
+              object_filename << directory << "medium" << "_" << "0" << number_of_medium << ".pcd" ;
+            else
+              object_filename << directory << "medium" << "_" << number_of_medium << ".pcd" ;
+
+            cerr << "      MEDIUM      " << endl ;
+
+            number_of_medium++;
+            //}
+          }
+        }
+
+        cerr << object_filename.str () << endl;
+        cerr << object_filename.str () << endl;
+        cerr << object_filename.str () << endl;
+
+        pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+
+        if ( !till_the_end ) viewer.spin ();
+
+      }
+
     }
 
 
@@ -3893,6 +4109,11 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
         pcl::console::print_warn ("    %d = %d | Continue... \n", (int) working_cloud->points.size (), minimum_line_inliers);
 
   } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
+
+
+  viewer.spin ();
+  viewer.spin ();
+  viewer.spin ();
 
   return (0);
 }
