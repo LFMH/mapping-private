@@ -1468,12 +1468,13 @@ int main (int argc, char** argv)
   {
     // Get position of "f" and "/" in path of file
     std::string file = argv [pcd_file_indices [0]];
-    f = file.find_last_of ("f");
+    f = file.find_first_of ("-");
+    cerr << f << endl ;
     directory = file.substr (0, f);
 
-    cerr << directory <<endl;
-    cerr << directory <<endl;
-    cerr << directory <<endl;
+    cerr << directory << endl;
+    cerr << directory << endl;
+    cerr << directory << endl;
 
   }
 
@@ -3501,9 +3502,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       if ( smallest_dimension < flat_value )
       {
         if ( number_of_flat < 10 )
-          object_filename << directory << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
+          object_filename << directory << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
         else
-          object_filename << directory << "flat" << "_" << number_of_flat << ".pcd" ;
+          object_filename << directory << "-" << "flat" << "_" << number_of_flat << ".pcd" ;
 
         cerr << "      FLAT      " << endl ;
 
@@ -3512,9 +3513,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
       else
       {
         if ( number_of_box < 10 )
-          object_filename << directory << "box" << "_" << "0" << number_of_box << ".pcd" ;
+          object_filename << directory << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
         else
-          object_filename << directory << "box" << "_" << number_of_box << ".pcd" ;
+          object_filename << directory << "-" << "box" << "_" << number_of_box << ".pcd" ;
 
         cerr << "      BOX      " << endl ;
 
@@ -3668,9 +3669,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
         if ( height_of_cylinder > tall_value )
         {
           if ( number_of_tall < 10 )
-            object_filename << directory << "tall" << "_" << "0" << number_of_tall << ".pcd" ;
+            object_filename << directory << "-" << "tall" << "_" << "0" << number_of_tall << ".pcd" ;
           else
-            object_filename << directory << "tall" << "_" << number_of_tall << ".pcd" ;
+            object_filename << directory << "-" << "tall" << "_" << number_of_tall << ".pcd" ;
 
           cerr << "      TALL      " << endl ;
 
@@ -3684,9 +3685,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
           if ( height_of_cylinder < short_value )
           {
             if ( number_of_short < 10 )
-              object_filename << directory << "short" << "_" << "0" << number_of_short << ".pcd" ;
+              object_filename << directory << "-" << "short" << "_" << "0" << number_of_short << ".pcd" ;
             else
-              object_filename << directory << "short" << "_" << number_of_short << ".pcd" ;
+              object_filename << directory << "-" << "short" << "_" << number_of_short << ".pcd" ;
 
             cerr << "      SHORT      " << endl ;
 
@@ -3700,9 +3701,9 @@ pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
             //if ( height_of_cylinder > medium_value )
             //{
             if ( number_of_medium < 10 )
-              object_filename << directory << "medium" << "_" << "0" << number_of_medium << ".pcd" ;
+              object_filename << directory << "-" << "medium" << "_" << "0" << number_of_medium << ".pcd" ;
             else
-              object_filename << directory << "medium" << "_" << number_of_medium << ".pcd" ;
+              object_filename << directory << "-" << "medium" << "_" << number_of_medium << ".pcd" ;
 
             cerr << "      MEDIUM      " << endl ;
 
