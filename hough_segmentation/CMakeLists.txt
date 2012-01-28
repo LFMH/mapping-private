@@ -16,6 +16,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 add_executable(hough_classification src/hough_classification.cpp)
 target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
+add_executable(rot_trans_scale src/rot_trans_scale.cpp)
+target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
+
 #
 ## Old Version Which Uses Perception PCL 0.9.9 #
 #
