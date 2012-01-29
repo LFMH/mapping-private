@@ -11,6 +11,8 @@
 
 ../bin/rot_trans_scale /media/g/work/data/tables12/table2-dbsvn-table-objects-ASCII-downsampled-0.005.pcd /media/g/work/data/tables12/table2-dbsvn-table-objects-ASCII-downsampled-0.005-transformed---.pcd       -cam 0.00249333,2.49333/-0.529277,-1.1842,0.728209/-0.472854,-1.17548,1.53755/-0.972813,-0.220699,0.0701981/0.523599/1260,787/420,80                                                                                                                                                  -verbose 1 -step 1 -size 3 -transform 1 [ -x -0.0 -y -0.0 -z -0.05 -roll -0.065 -pitch -0.035 -yaw 0.05 ] 
 
+../bin/rot_trans_scale /media/g/work/data/tables12/table1-dbsvn-table-objects-ASCII-downsampled-0.005.pcd /media/g/work/data/tables12/table2-dbsvn-table-objects-ASCII-downsampled-0.005.pcd                   /media/g/work/data/tables12/table3-dbsvn-table-objects-ASCII-downsampled-0.005-merged.pcd -cam 1.98503,4.85337/-0.363468,-0.570243,0.657618/-0.532621,-0.425423,3.73065/-0.113475,-0.992714,0.0405368/0.523599/1260,787/420,80                                                       -verbose 1 -step 1 -size 5 -transform 0 -merge 1 [ -x -0.7575 -y 0.2625 -z 0.0025 -roll 0.0 -pitch 0.0 -yaw 0.775 ]
+
 =====================================================================================================================
 
 
