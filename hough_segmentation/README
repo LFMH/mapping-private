@@ -7,7 +7,9 @@
 
 ================================================== Other New Stuff ==================================================
 
-../bin/rot_trans_scale /media/g/work/data/tables12/table1-dbsvn-table-objects-ASCII-downsampled-0.005.pcd /media/g/work/data/tables12/table1-dbsvn-table-objects-ASCII-downsampled-0.005-transformed.pcd       -cam 1.59965,3.09557/-0.762471,-1.02341,0.497701/-0.478623,0.04959,2.49537/-0.751947,-0.530261,0.391661/0.523599/1260,787/420,80                                                                                                                                                      -verbose 1 -step 1 -size 3 -transform 1 [ -x -1.0 -y -1.0 -z -1.0 -roll 0.123 -pitch 0.456 -yaw 0.789 ] 
+../bin/rot_trans_scale /media/g/work/data/tables12/table1-dbsvn-table-objects-ASCII-downsampled-0.005.pcd /media/g/work/data/tables12/table1-dbsvn-table-objects-ASCII-downsampled-0.005-transformed.pcd       -cam 0.0023429,2.3429/-0.822154,-1.2218,0.755296/-0.792684,-1.24016,1.30837/-0.73771,0.672299,0.0616266/0.523599/1260,787/420,80                                                                                                                                                      -verbose 1 -step 1 -size 3 -transform 1 [ -x -0.0 -y -0.05 -z -0.100 -roll -0.05 -pitch 0.05 -yaw 0.0 ] 
+
+../bin/rot_trans_scale /media/g/work/data/tables12/table2-dbsvn-table-objects-ASCII-downsampled-0.005.pcd /media/g/work/data/tables12/table2-dbsvn-table-objects-ASCII-downsampled-0.005-transformed---.pcd       -cam 0.00249333,2.49333/-0.529277,-1.1842,0.728209/-0.472854,-1.17548,1.53755/-0.972813,-0.220699,0.0701981/0.523599/1260,787/420,80                                                                                                                                                  -verbose 1 -step 1 -size 3 -transform 1 [ -x -0.0 -y -0.0 -z -0.05 -roll -0.065 -pitch -0.035 -yaw 0.05 ] 
 
 =====================================================================================================================
 
