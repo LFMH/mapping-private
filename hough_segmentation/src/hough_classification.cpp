@@ -97,6 +97,7 @@ int minimum_size_of_line_parameters_clusters = 10;
 int minimum_size_of_circle_parameters_clusters = 10;
 double tX, tY, tZ;
 double rX, rY, rZ;
+double vX, vY, vZ;
 
 // Growing //
 double growing_step = 0.010;
@@ -226,6 +227,7 @@ void printUsage (const char* command)
   pcl::console::print_info ("  -minimum_size_of_circle_parameters_clusters D                = .\n");
   pcl::console::print_info ("  -viewpoint_translation X,X,X                                 = Set the viewpoint's translation in millimiters.\n");
   pcl::console::print_info ("  -viewpoint_rotation X,X,X                                    = Set the viewpoint's rotation in degrees.\n");
+  pcl::console::print_info ("  -viewpoint X,X,X                                             = Set the viewpoint.\n");
   pcl::console::print_info ("\n[visualization]\n");
   pcl::console::print_info ("  -verbose B                                                   = Show all print messages.\n");
   pcl::console::print_info ("  -step B                                                      = Wait or not wait.\n");
@@ -1331,7 +1333,7 @@ int main (int argc, char** argv)
   }
 
   // Method //
-  pcl::console::parse_argument (argc, argv, "-vransac_iterations", vransac_iterations);
+  pcl::console::parse_argument (argc, argv, "-VRANSAC_ITERATIONS", vransac_iterations);
   pcl::console::parse_argument (argc, argv, "-normal_search_radius", normal_search_radius);
   pcl::console::parse_argument (argc, argv, "-smoothing_search_radius", smoothing_search_radius);
   pcl::console::parse_argument (argc, argv, "-curvature_threshold", curvature_threshold);
@@ -1373,6 +1375,7 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-minimum_size_of_circle_parameters_clusters", minimum_size_of_circle_parameters_clusters);
   pcl::console::parse_3x_arguments (argc, argv, "-viewpoint_translation", tX, tY, tZ);
   pcl::console::parse_3x_arguments (argc, argv, "-viewpoint_rotation", rX, rY, rZ);
+  pcl::console::parse_3x_arguments (argc, argv, "-viewpoint", vX, vY, vZ);
 
   // Growing //
   pcl::console::parse_argument (argc, argv, "-growing_step", growing_step);
@@ -2451,27 +2454,20 @@ int main (int argc, char** argv)
 
 
 
+    pcl::ModelCoefficients::Ptr test_coeffs (new pcl::ModelCoefficients ());
+    test_coeffs->values.push_back (P1[0]);
+    test_coeffs->values.push_back (P1[1]);
+    test_coeffs->values.push_back (0.0);
+    test_coeffs->values.push_back (P2[0] - P1[0]);
+    test_coeffs->values.push_back (P2[1] - P1[1]);
+    test_coeffs->values.push_back (0.0);
 
-
-
-
-
-     pcl::ModelCoefficients::Ptr test_coeffs (new pcl::ModelCoefficients ());
-      test_coeffs->values.push_back (P1[0]);
-      test_coeffs->values.push_back (P1[1]);
-      test_coeffs->values.push_back (0.0);
-      test_coeffs->values.push_back (P2[0] - P1[0]);
-      test_coeffs->values.push_back (P2[1] - P1[1]);
-      test_coeffs->values.push_back (0.0);
-
-      if ( growing_visualization )
-      {
-        viewer.addLine (*test_coeffs, 1.0, 0.0, 0.5, "test_COEFFS");
-        viewer.spin ();
-        viewer.removeShape ("test_COEFFS");
-      }
-
-
+    if ( growing_visualization )
+    {
+      viewer.addLine (*test_coeffs, 1.0, 0.0, 0.5, "test_COEFFS");
+      viewer.spin ();
+      viewer.removeShape ("test_COEFFS");
+    }
 
 
 
@@ -2487,7 +2483,9 @@ int main (int argc, char** argv)
     M[0] = (P1[0] + P2[0]) / 2;
     M[1] = (P1[1] + P2[1]) / 2;
 
+    //////////////////
     // From M To P1 //
+    //////////////////
 
     bool em1_bool = true;
 
@@ -2619,7 +2617,9 @@ int main (int argc, char** argv)
       viewer.removePointCloud ("NOVEL_BOX_CLOUD");
     }
 
+    //////////////////
     // From M To P2 //
+    //////////////////
 
     bool em2_bool = true;
 
@@ -2750,8 +2750,6 @@ int main (int argc, char** argv)
       viewer.spin ();
       viewer.removePointCloud ("NOVEL_BOX_CLOUD");
     }
-
-
 
 /*
     pcl::PointIndices::Ptr g_vransac_line_inliers (new pcl::PointIndices ());
@@ -2947,17 +2945,20 @@ int main (int argc, char** argv)
     N[0] = N[0] / NN;
     N[1] = N[1] / NN;
 
-
-
     // NOVEL WAY OF GROWING BOXES //
 
-    bool en_bool = true;
-
     double NP1[2];
+    double NP2[2];
+
+    /////////////////
+    // To The Back //
+    /////////////////
+
+    bool en1_bool = true;
+
     NP1[0] = M1[0];
     NP1[1] = M1[1];
 
-    double NP2[2];
     NP2[0] = M2[0];
     NP2[1] = M2[1];
 
@@ -2971,24 +2972,24 @@ int main (int argc, char** argv)
       EN2[0] = NP2[0] + N[0] * growing_step;
       EN2[1] = NP2[1] + N[1] * growing_step;
 
-      pcl::ModelCoefficients::Ptr en_coeffs (new pcl::ModelCoefficients ());
-      en_coeffs->values.push_back (EN1[0]);
-      en_coeffs->values.push_back (EN1[1]);
-      en_coeffs->values.push_back (0.0);
-      en_coeffs->values.push_back (EN2[0] - EN1[0]);
-      en_coeffs->values.push_back (EN2[1] - EN1[1]);
-      en_coeffs->values.push_back (0.0);
+      pcl::ModelCoefficients::Ptr en1_coeffs (new pcl::ModelCoefficients ());
+      en1_coeffs->values.push_back (EN1[0]);
+      en1_coeffs->values.push_back (EN1[1]);
+      en1_coeffs->values.push_back (0.0);
+      en1_coeffs->values.push_back (EN2[0] - EN1[0]);
+      en1_coeffs->values.push_back (EN2[1] - EN1[1]);
+      en1_coeffs->values.push_back (0.0);
 
       if ( growing_visualization )
       {
-        viewer.addLine (*en_coeffs, 1.0, 0.0, 0.5, "EN_COEFFS");
+        viewer.addLine (*en1_coeffs, 1.0, 0.0, 0.5, "EN_COEFFS");
         viewer.spin ();
         viewer.removeShape ("EN_COEFFS");
       }
 
       //
 
-      pcl::PointIndices::Ptr en_inliers (new pcl::PointIndices ());
+      pcl::PointIndices::Ptr en1_inliers (new pcl::PointIndices ());
 
       for (int idx = 0; idx < working_cloud->points.size (); idx++)
       {
@@ -3013,24 +3014,24 @@ int main (int argc, char** argv)
           double EN1EN2D = sqrt ( _sqr (EN2[0] - EN1[0])  +  _sqr (EN2[1] - EN1[1]) );
 
           if ( (IEN1D + IEN2D) < (EN1EN2D + 0.001) )
-            en_inliers->indices.push_back (idx);
+            en1_inliers->indices.push_back (idx);
         }
       }
 
       //
 
-      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr en_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr en1_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
 
-      pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> en_ei;
-      en_ei.setInputCloud (working_cloud);
-      en_ei.setIndices (en_inliers);
-      en_ei.setNegative (false);
-      en_ei.filter (*en_cloud);
+      pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> en1_ei;
+      en1_ei.setInputCloud (working_cloud);
+      en1_ei.setIndices (en1_inliers);
+      en1_ei.setNegative (false);
+      en1_ei.filter (*en1_cloud);
 
       if ( growing_visualization )
       {
-        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> en_cloud_color (en_cloud, 255, 0, 127);
-        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (en_cloud, en_cloud_color, "EN_CLOUD");
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> en1_cloud_color (en1_cloud, 255, 0, 127);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (en1_cloud, en1_cloud_color, "EN_CLOUD");
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "EN_CLOUD");
         viewer.spin ();
         viewer.removePointCloud ("EN_CLOUD");
@@ -3038,18 +3039,18 @@ int main (int argc, char** argv)
 
       //
 
-      pcl::PointXYZRGBNormalRSD en_MiN, en_MaX;
-      pcl::getMinMax3D (*en_cloud, en_MiN, en_MaX);
+      pcl::PointXYZRGBNormalRSD en1_MiN, en1_MaX;
+      pcl::getMinMax3D (*en1_cloud, en1_MiN, en1_MaX);
 
       cerr << endl;
       cerr << "          MaX = " << MaX.z << endl;
-      cerr << "      en_MaX = " << en_MaX.z << endl;
-      cerr << "      en_dif = " << fabs (MaX.z - en_MaX.z) << endl;
+      cerr << "      en1_MaX = " << en1_MaX.z << endl;
+      cerr << "      en1_dif = " << fabs (MaX.z - en1_MaX.z) << endl;
       cerr << endl;
 
-      double en_dif = fabs (MaX.z - en_MaX.z);
+      double en1_dif = fabs (MaX.z - en1_MaX.z);
 
-      if ( en_dif < growing_height )
+      if ( en1_dif < growing_height )
       {
         cerr << "      OK !" << endl ;
 
@@ -3059,18 +3060,152 @@ int main (int argc, char** argv)
         NP2[0] = EN2[0];
         NP2[1] = EN2[1];
 
-        //pcl::copyPointCloud (*en_cloud, *novel_box_cloud);
-           novel_box_cloud->points.insert (   novel_box_cloud->points.end(),        en_cloud->points.begin(),        en_cloud->points.end());
-        novel_box_inliers->indices.insert (novel_box_inliers->indices.end(),     en_inliers->indices.begin(),     en_inliers->indices.end());
+        //pcl::copyPointCloud (*en1_cloud, *novel_box_cloud);
+           novel_box_cloud->points.insert (   novel_box_cloud->points.end(),        en1_cloud->points.begin(),        en1_cloud->points.end());
+        novel_box_inliers->indices.insert (novel_box_inliers->indices.end(),     en1_inliers->indices.begin(),     en1_inliers->indices.end());
       }
       else
       {
         cerr << "      NOT OK !" << endl ;
 
-        en_bool = false;
+        en1_bool = false;
       }
 
-    } while ( en_bool );
+    } while ( en1_bool );
+
+    cerr << endl << "   EXIT !" << endl << endl ;
+
+    if ( growing_visualization )
+    {
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> novel_box_cloud_color (novel_box_cloud, 255, 0, 127);
+      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (novel_box_cloud, novel_box_cloud_color, "NOVEL_BOX_CLOUD");
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "NOVEL_BOX_CLOUD");
+      viewer.spin ();
+      viewer.removePointCloud ("NOVEL_BOX_CLOUD");
+    }
+
+    //////////////////
+    // To The Front //
+    //////////////////
+
+    bool en2_bool = true;
+
+    NP1[0] = M1[0];
+    NP1[1] = M1[1];
+
+    NP2[0] = M2[0];
+    NP2[1] = M2[1];
+
+    do
+    {
+      double EN1[2];
+      EN1[0] = NP1[0] - N[0] * growing_step;
+      EN1[1] = NP1[1] - N[1] * growing_step;
+
+      double EN2[2];
+      EN2[0] = NP2[0] - N[0] * growing_step;
+      EN2[1] = NP2[1] - N[1] * growing_step;
+
+      pcl::ModelCoefficients::Ptr en2_coeffs (new pcl::ModelCoefficients ());
+      en2_coeffs->values.push_back (EN1[0]);
+      en2_coeffs->values.push_back (EN1[1]);
+      en2_coeffs->values.push_back (0.0);
+      en2_coeffs->values.push_back (EN2[0] - EN1[0]);
+      en2_coeffs->values.push_back (EN2[1] - EN1[1]);
+      en2_coeffs->values.push_back (0.0);
+
+      if ( growing_visualization )
+      {
+        viewer.addLine (*en2_coeffs, 1.0, 0.0, 0.5, "EN_COEFFS");
+        viewer.spin ();
+        viewer.removeShape ("EN_COEFFS");
+      }
+
+      //
+
+      pcl::PointIndices::Ptr en2_inliers (new pcl::PointIndices ());
+
+      for (int idx = 0; idx < working_cloud->points.size (); idx++)
+      {
+        double P0[2];
+        P0[0] = working_cloud->points.at (idx).x;
+        P0[1] = working_cloud->points.at (idx).y;
+
+        double num = (P0[0] - EN1[0])*(EN2[0] - EN1[0]) + (P0[1] - EN1[1])*(EN2[1] - EN1[1]);
+        double den = _sqr (EN2[0] - EN1[0])  +  _sqr (EN2[1] - EN1[1]);
+        double u = num / den;
+
+        double I[2];
+        I[0] = EN1[0] + u * (EN2[0] - EN1[0]);
+        I[1] = EN1[1] + u * (EN2[1] - EN1[1]);
+
+        double d = sqrt ( _sqr (I[0] - P0[0])  +  _sqr (I[1] - P0[1]) );
+
+        if ( d < growing_step )
+        {
+          double IEN1D  = sqrt ( _sqr  (I[0] - EN1[0])  +  _sqr  (I[1] - EN1[1]) );
+          double IEN2D  = sqrt ( _sqr  (I[0] - EN2[0])  +  _sqr  (I[1] - EN2[1]) );
+          double EN1EN2D = sqrt ( _sqr (EN2[0] - EN1[0])  +  _sqr (EN2[1] - EN1[1]) );
+
+          if ( (IEN1D + IEN2D) < (EN1EN2D + 0.001) )
+            en2_inliers->indices.push_back (idx);
+        }
+      }
+
+      //
+
+      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr en2_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+      pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> en2_ei;
+      en2_ei.setInputCloud (working_cloud);
+      en2_ei.setIndices (en2_inliers);
+      en2_ei.setNegative (false);
+      en2_ei.filter (*en2_cloud);
+
+      if ( growing_visualization )
+      {
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> en2_cloud_color (en2_cloud, 255, 0, 127);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (en2_cloud, en2_cloud_color, "EN_CLOUD");
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "EN_CLOUD");
+        viewer.spin ();
+        viewer.removePointCloud ("EN_CLOUD");
+      }
+
+      //
+
+      pcl::PointXYZRGBNormalRSD en2_MiN, en2_MaX;
+      pcl::getMinMax3D (*en2_cloud, en2_MiN, en2_MaX);
+
+      cerr << endl;
+      cerr << "          MaX = " << MaX.z << endl;
+      cerr << "      en2_MaX = " << en2_MaX.z << endl;
+      cerr << "      en2_dif = " << fabs (MaX.z - en2_MaX.z) << endl;
+      cerr << endl;
+
+      double en2_dif = fabs (MaX.z - en2_MaX.z);
+
+      if ( en2_dif < growing_height )
+      {
+        cerr << "      OK !" << endl ;
+
+        NP1[0] = EN1[0];
+        NP1[1] = EN1[1];
+
+        NP2[0] = EN2[0];
+        NP2[1] = EN2[1];
+
+        //pcl::copyPointCloud (*en2_cloud, *novel_box_cloud);
+           novel_box_cloud->points.insert (   novel_box_cloud->points.end(),        en2_cloud->points.begin(),        en2_cloud->points.end());
+        novel_box_inliers->indices.insert (novel_box_inliers->indices.end(),     en2_inliers->indices.begin(),     en2_inliers->indices.end());
+      }
+      else
+      {
+        cerr << "      NOT OK !" << endl ;
+
+        en2_bool = false;
+      }
+
+    } while ( en2_bool );
 
     cerr << endl << "   EXIT !" << endl << endl ;
 
