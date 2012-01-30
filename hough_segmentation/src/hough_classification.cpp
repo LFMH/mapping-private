@@ -1648,7 +1648,7 @@ int main (int argc, char** argv)
 
   _rsd_cloud_->height = 1;
   _rsd_cloud_->width  = rsd_cloud->points.size ();
-  pcl::io::savePCDFile ("rsd.pcd", *_rsd_cloud_);
+  // pcl::io::savePCDFile ("rsd.pcd", *_rsd_cloud_);
 
   //////
 
@@ -3181,7 +3181,7 @@ int main (int argc, char** argv)
       pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBNormalRSD> sor;
       sor.setInputCloud (working_cloud);
       sor.setMeanK (mean_k_filter);
-      sor.setStddevMulThresh (std_dev_filter);
+      sor.setStddevMulThresh (std_dev_filter *5);
       sor.filter (*working_cloud);
     }
 
@@ -3471,6 +3471,15 @@ int main (int argc, char** argv)
     cub.push_back (e6);
     cub.push_back (e7);
 
+    cerr << e0.values.at(0) << " " << e0.values.at(1) << " " << e0.values.at(2) << " " << e0.values.at(3) << " " << e0.values.at(4) << " " << e0.values.at(5) << endl ;
+    cerr << e1.values.at(0) << " " << e1.values.at(1) << " " << e1.values.at(2) << " " << e1.values.at(3) << " " << e1.values.at(4) << " " << e1.values.at(5) << endl ;
+    cerr << e2.values.at(0) << " " << e2.values.at(1) << " " << e2.values.at(2) << " " << e2.values.at(3) << " " << e2.values.at(4) << " " << e2.values.at(5) << endl ;
+    cerr << e3.values.at(0) << " " << e3.values.at(1) << " " << e3.values.at(2) << " " << e3.values.at(3) << " " << e3.values.at(4) << " " << e3.values.at(5) << endl ;
+    cerr << e4.values.at(0) << " " << e4.values.at(1) << " " << e4.values.at(2) << " " << e4.values.at(3) << " " << e4.values.at(4) << " " << e4.values.at(5) << endl ;
+    cerr << e5.values.at(0) << " " << e5.values.at(1) << " " << e5.values.at(2) << " " << e5.values.at(3) << " " << e5.values.at(4) << " " << e5.values.at(5) << endl ;
+    cerr << e6.values.at(0) << " " << e6.values.at(1) << " " << e6.values.at(2) << " " << e6.values.at(3) << " " << e6.values.at(4) << " " << e6.values.at(5) << endl ;
+    cerr << e7.values.at(0) << " " << e7.values.at(1) << " " << e7.values.at(2) << " " << e7.values.at(3) << " " << e7.values.at(4) << " " << e7.values.at(5) << endl ;
+
     std::stringstream cub_id;
     cub_id << "CUB_" << getTimestamp ();
     viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
@@ -3614,7 +3623,7 @@ int main (int argc, char** argv)
         pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBNormalRSD> sor;
         sor.setInputCloud (working_cloud);
         sor.setMeanK (mean_k_filter);
-        sor.setStddevMulThresh (std_dev_filter);
+        sor.setStddevMulThresh (std_dev_filter *5);
         sor.filter (*working_cloud);
       }
 
@@ -3655,6 +3664,10 @@ int main (int argc, char** argv)
       cyl.values.push_back (0.0);
       cyl.values.push_back (cyl_max.z - cyl_min.z);
       cyl.values.push_back (mr);
+
+      cerr << mcx << " " << mcy << " " << cyl_min.z << endl ;
+      cerr << cyl_max.z - cyl_min.z << endl ;
+      cerr << mr << endl ;
 
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
