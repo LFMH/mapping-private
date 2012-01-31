@@ -1649,7 +1649,7 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
-  //////
+  /*
 
   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr _rsd_cloud_ (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
   for (int idx = 0; idx < (int) rsd_cloud->points.size (); idx++)
@@ -1672,9 +1672,9 @@ int main (int argc, char** argv)
 
   _rsd_cloud_->height = 1;
   _rsd_cloud_->width  = rsd_cloud->points.size ();
-  // pcl::io::savePCDFile ("rsd.pcd", *_rsd_cloud_);
+  pcl::io::savePCDFile ("rsd.pcd", *_rsd_cloud_);
 
-  //////
+  */
 
   // Split Pausible From Implausible Radius Values //
   pcl::PointIndices::Ptr plausible_r_min_indices (new pcl::PointIndices ());
@@ -1779,6 +1779,9 @@ int main (int argc, char** argv)
 
   pcl::PointXYZRGBNormalRSD working_cloud_minimum, working_cloud_maximum;
   pcl::getMinMax3D (*working_cloud, working_cloud_minimum, working_cloud_maximum);
+  // TODO Lines with identical functionality //
+  pcl::PointXYZRGBNormalRSD abs_min, abs_max;
+  pcl::getMinMax3D (*working_cloud, abs_min, abs_max);
 
   //////
 
@@ -1791,7 +1794,7 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::string file = argv [pcd_file_indices [0]];
-    f = file.find_first_of ("-");
+    f = file.find_first_of (".");
     cerr << f << endl ;
     directory = file.substr (0, f);
 
@@ -1799,9 +1802,6 @@ int main (int argc, char** argv)
     cerr << directory << endl;
     cerr << directory << endl;
   }
-
-  pcl::PointXYZRGBNormalRSD abs_min, abs_max;
-  pcl::getMinMax3D (*working_cloud, abs_min, abs_max);
 
   //////
 
@@ -3778,11 +3778,11 @@ int main (int argc, char** argv)
         number_of_box++;
       }
 
-      cerr << object_filename.str () << endl;
-      cerr << object_filename.str () << endl;
-      cerr << object_filename.str () << endl;
-
-      pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+      //cerr << object_filename.str () << endl;
+      //cerr << object_filename.str () << endl;
+      //cerr << object_filename.str () << endl;
+      //
+      //pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
 
       if ( !till_the_end ) viewer.spin ();
 
@@ -3975,11 +3975,11 @@ int main (int argc, char** argv)
           }
         }
 
-        cerr << object_filename.str () << endl;
-        cerr << object_filename.str () << endl;
-        cerr << object_filename.str () << endl;
-
-        pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+        //cerr << object_filename.str () << endl;
+        //cerr << object_filename.str () << endl;
+        //cerr << object_filename.str () << endl;
+        //
+        //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
 
         if ( !till_the_end ) viewer.spin ();
 
