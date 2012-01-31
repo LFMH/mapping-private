@@ -62,10 +62,12 @@ double rsd_plane_radius = 0.200;
 double low_r_min = 0.020;
 double high_r_min = 0.080;
 
-// ? //
+// Planar //
 double significant_plane_threshold = 0.005; /// [meters]
 int minimum_inliers_of_significant_plane = 100; /// [points]
 int maximum_iterations_of_significant_plane = 1000; /// [iterations]
+int minimum_size_of_significant_plane_cluster = 1000; /// [points]
+double clustering_tolerance_of_significant_plane_inliers = 0.010; /// [meters]
 
 // Fitting //
 bool fitting_step = false;
@@ -1349,10 +1351,12 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);
   pcl::console::parse_argument (argc, argv, "-rsd_plane_radius", rsd_plane_radius);
 
-  // ? //
+  // Planar //
   pcl::console::parse_argument (argc, argv, "-significant_plane_threshold", significant_plane_threshold);
   pcl::console::parse_argument (argc, argv, "-minimum_inliers_of_significant_plane", minimum_inliers_of_significant_plane);
   pcl::console::parse_argument (argc, argv, "-maximum_iterations_of_significant_plane", maximum_iterations_of_significant_plane);
+  pcl::console::parse_argument (argc, argv, "-minimum_size_of_significant_plane_cluster", minimum_size_of_significant_plane_cluster);
+  pcl::console::parse_argument (argc, argv, "-clustering_tolerance_of_significant_plane_inliers", clustering_tolerance_of_significant_plane_inliers);
 
   // Fitting //
   pcl::console::parse_argument (argc, argv, "-fitting_step", fitting_step);
@@ -1821,7 +1825,6 @@ int main (int argc, char** argv)
 
   if ( sign )
   {
-
     pcl::PointIndices::Ptr significant_plane_inliers (new pcl::PointIndices ());
     pcl::ModelCoefficients::Ptr significant_plane_coefficients (new pcl::ModelCoefficients ());
 
@@ -1852,8 +1855,8 @@ int main (int argc, char** argv)
       sign_ee.setIndices (significant_plane_inliers);
       sign_ee.setNegative (false);
       sign_ee.filter (*significant_plane_inliers_cloud);
-      sign_ee.setNegative (true);
-      sign_ee.filter (*working_cloud);
+//      sign_ee.setNegative (true);
+//      sign_ee.filter (*working_cloud);
 
       if ( step )
       {
@@ -1870,7 +1873,6 @@ int main (int argc, char** argv)
         viewer.spin ();
       }
     }
-
   }
 
   // ---------- Fitting Of Models ---------- //
