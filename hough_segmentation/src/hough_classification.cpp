@@ -62,6 +62,11 @@ double rsd_plane_radius = 0.200;
 double low_r_min = 0.020;
 double high_r_min = 0.080;
 
+// ? //
+double significant_plane_threshold = 0.005; /// [meters]
+int minimum_inliers_of_significant_plane = 100; /// [points]
+int maximum_iterations_of_significant_plane = 1000; /// [iterations]
+
 // Fitting //
 bool fitting_step = false;
 double line_threshold = 0.010;
@@ -114,6 +119,8 @@ int minimum_size_of_r_clusters = 50;
 bool verbose = true;
 bool step = false;
 int size = 1;
+
+bool sign = false;
 
 bool till_the_end = true;
 bool classification = true;
@@ -346,7 +353,7 @@ void adjustLineCoefficients (pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr &cl
     if (maximum_lengthwise < distance_lengthwise) maximum_lengthwise = distance_lengthwise;
   }
 
-  // New model's coefficients
+  // New Model's Coefficients
   P2[0] = P1[0] + line[0]*maximum_lengthwise;
   P2[1] = P1[1] + line[1]*maximum_lengthwise;
 
@@ -612,6 +619,7 @@ void ClusteringFeatureForLines (bool &valid_line,
 
   std::vector<pcl::PointIndices> clusters;
   pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
+  tree->setInputCloud (line_cloud);
 
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> ece;
   ece.setInputCloud (line_cloud);
@@ -816,6 +824,7 @@ void ClusteringFeatureForCircles (bool &valid_circle,
 
   std::vector<pcl::PointIndices> clusters;
   pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
+  tree->setInputCloud (circle_cloud);
 
   pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> ece;
   ece.setInputCloud (circle_cloud);
@@ -1340,6 +1349,11 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-rsd_search_radius", rsd_search_radius);
   pcl::console::parse_argument (argc, argv, "-rsd_plane_radius", rsd_plane_radius);
 
+  // ? //
+  pcl::console::parse_argument (argc, argv, "-significant_plane_threshold", significant_plane_threshold);
+  pcl::console::parse_argument (argc, argv, "-minimum_inliers_of_significant_plane", minimum_inliers_of_significant_plane);
+  pcl::console::parse_argument (argc, argv, "-maximum_iterations_of_significant_plane", maximum_iterations_of_significant_plane);
+
   // Fitting //
   pcl::console::parse_argument (argc, argv, "-fitting_step", fitting_step);
   pcl::console::parse_argument (argc, argv, "-line_threshold", line_threshold);
@@ -1393,6 +1407,7 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-step", step);
   pcl::console::parse_argument (argc, argv, "-size", size);
 
+  pcl::console::parse_argument (argc, argv, "-sign", sign);
 
   pcl::console::parse_argument (argc, argv, "-till_the_end", till_the_end);
   pcl::console::parse_argument (argc, argv, "-classification", classification);
@@ -1489,7 +1504,7 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
   pcl::search::KdTree<pcl::PointXYZ>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
-  //mls_tree->setInputCloud (working_cloud);
+  mls_tree->setInputCloud (filtered_cloud);
 
   pcl::MovingLeastSquares<pcl::PointXYZ, pcl::Normal> mls;
   mls.setInputCloud (filtered_cloud);
@@ -1516,6 +1531,7 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
   pcl::search::KdTree<pcl::PointXYZ>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  normal_tree->setInputCloud (smooth_cloud);
 
   pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
   ne.setInputCloud (smooth_cloud);
@@ -1603,6 +1619,7 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
   pcl::search::KdTree<pcl::PointXYZ>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  rsd_tree->setInputCloud (smooth_cloud);
 
   pcl::RSDEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (smooth_cloud);
@@ -1798,9 +1815,69 @@ int main (int argc, char** argv)
   // Backup Working Cloud //
   *backup_working_cloud = *working_cloud;
 
+  // -------------------------------------------------- //
+  // ---------- Take Care of Planars Objects ---------- //
+  // -------------------------------------------------- //
+
+  if ( sign )
+  {
+
+    pcl::PointIndices::Ptr significant_plane_inliers (new pcl::PointIndices ());
+    pcl::ModelCoefficients::Ptr significant_plane_coefficients (new pcl::ModelCoefficients ());
+
+    pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sign_sacs;
+    sign_sacs.setOptimizeCoefficients (true);
+    sign_sacs.setModelType (pcl::SACMODEL_PLANE);
+    sign_sacs.setMethodType (pcl::SAC_RANSAC);
+    sign_sacs.setDistanceThreshold (significant_plane_threshold);
+    sign_sacs.setMaxIterations (maximum_iterations_of_significant_plane);
+    sign_sacs.setInputCloud (working_cloud);
+    sign_sacs.segment (*significant_plane_inliers, *significant_plane_coefficients);
+
+    if ( verbose ) pcl::console::print_info ("Significant plane has %5d inliers, found in maximum %d iterations\n", (int) significant_plane_inliers->indices.size (), maximum_iterations_of_significant_plane);
+
+    // Check if the fitted circle has enough inliers in order to be accepted
+    if ((int) significant_plane_inliers->indices.size () < minimum_inliers_of_significant_plane)
+    {
+      pcl::console::print_error ("NOT ACCEPTED !\n");
+    }
+    else
+    {
+      pcl::console::print_info ("ACCEPTED !\n");
+
+      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr significant_plane_inliers_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+      pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> sign_ee;
+      sign_ee.setInputCloud (working_cloud);
+      sign_ee.setIndices (significant_plane_inliers);
+      sign_ee.setNegative (false);
+      sign_ee.filter (*significant_plane_inliers_cloud);
+      sign_ee.setNegative (true);
+      sign_ee.filter (*working_cloud);
+
+      if ( step )
+      {
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> significant_plane_inliers_color (significant_plane_inliers_cloud, 0, 255, 255);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (significant_plane_inliers_cloud, significant_plane_inliers_color, "plane");
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size *3, "plane");
+        viewer.spin ();
+
+        viewer.removePointCloud ("plane");
+        viewer.removePointCloud ("generic");
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
+        viewer.spin ();
+      }
+    }
+
+  }
+
   // ---------- Fitting Of Models ---------- //
 
   int fit = 0;
+
+  int model = 0;
 
   do
   {
@@ -2188,6 +2265,13 @@ int main (int argc, char** argv)
     {
       std::vector<pcl::PointIndices> line_parameters_clusters;
       pcl::search::KdTree<pcl::PointNormal>::Ptr line_parameters_tree (new pcl::search::KdTree<pcl::PointNormal> ());
+      line_parameters_tree->setInputCloud (line_parameters_space);
+
+      cerr << endl << "line_parameters_space->points.size () " << line_parameters_space->points.size () << endl ;
+      cerr << "clustering_tolerance_of_line_parameters_space " << clustering_tolerance_of_line_parameters_space << endl ;
+      cerr << "minimum_size_of_line_parameters_clusters " << minimum_size_of_line_parameters_clusters << endl << endl ;
+
+//      if ( line_parameters_space->points.size () == vransac_iterations ) return (-1);
 
       pcl::EuclideanClusterExtraction<pcl::PointNormal> lps_ece;
       lps_ece.setInputCloud (line_parameters_space);
@@ -2241,6 +2325,13 @@ int main (int argc, char** argv)
     {
       std::vector<pcl::PointIndices> circle_parameters_clusters;
       pcl::search::KdTree<pcl::PointXYZ>::Ptr circle_parameters_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+      circle_parameters_tree->setInputCloud (circle_parameters_space);
+
+      cerr << endl << "circle_parameters_space->points.size () " << circle_parameters_space->points.size () << endl ;
+      cerr << "clustering_tolerance_of_circle_parameters_space " << clustering_tolerance_of_circle_parameters_space << endl ;
+      cerr << "minimum_size_of_circle_parameters_clusters " << minimum_size_of_circle_parameters_clusters << endl << endl ;
+
+//      if ( circle_parameters_space->points.size () == vransac_iterations ) return (-1);
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZ> cps_ece;
       cps_ece.setInputCloud (circle_parameters_space);
@@ -3619,7 +3710,10 @@ int main (int argc, char** argv)
     cub_id << "CUB_" << getTimestamp ();
     viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
-    if ( !till_the_end ) viewer.spin ();
+    model++;
+    cerr << endl << " MODEL " << model << endl << endl ;
+
+    if ( space_step ) viewer.spin ();
 
      //                //
     // Classification //
@@ -3808,7 +3902,10 @@ int main (int argc, char** argv)
       cyl_id << "CYL" << getTimestamp ();
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
 
-      if ( !till_the_end ) viewer.spin ();
+      model++;
+      cerr << endl << " MODEL " << model << endl << endl ;
+
+      if ( space_step ) viewer.spin ();
 
        //                //
       // Classification //
@@ -3898,6 +3995,7 @@ int main (int argc, char** argv)
     {
       std::vector<pcl::PointIndices> r_clusterS;
       pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr r_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
+      r_tree->setInputCloud (working_cloud);
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> r_ece;
       r_ece.setInputCloud (working_cloud);
