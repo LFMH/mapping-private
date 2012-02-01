@@ -122,6 +122,9 @@ bool verbose = true;
 bool step = false;
 int size = 1;
 
+bool denoising = false;
+bool smoothing = false;
+
 bool sign = false;
 
 bool till_the_end = true;
@@ -1411,6 +1414,9 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-step", step);
   pcl::console::parse_argument (argc, argv, "-size", size);
 
+  pcl::console::parse_argument (argc, argv, "-denoising", denoising);
+  pcl::console::parse_argument (argc, argv, "-smoothing", smoothing);
+
   pcl::console::parse_argument (argc, argv, "-sign", sign);
 
   pcl::console::parse_argument (argc, argv, "-till_the_end", till_the_end);
@@ -1480,6 +1486,24 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
+  // ---------- For Classification ---------- //
+
+  std::string directory;
+
+  size_t f;
+
+  if ( classification )
+  {
+    std::string file = argv [pcd_file_indices [0]];
+    f = file.find_last_of (".");
+    cerr << f << endl ;
+    directory = file.substr (0, f);
+
+    cerr << directory << endl;
+    cerr << directory << endl;
+    cerr << directory << endl;
+  }
+
   // ---------- Filter Point Cloud Data ---------- //
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
@@ -1502,6 +1526,24 @@ int main (int argc, char** argv)
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "FILTERED_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED_CLOUD");
     viewer.spin ();
+  }
+
+  // ---------- For Classification ---------- //
+
+  if ( classification )
+  {
+    std::stringstream filtered_output_filename;
+    filtered_output_filename << directory << "-" << "denoise.pcd" ;
+    pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
+
+    std::string file = filtered_output_filename.str ();
+    f = file.find_last_of (".");
+    cerr << f << endl ;
+    directory = file.substr (0, f);
+
+    cerr << directory << endl;
+    cerr << directory << endl;
+    cerr << directory << endl;
   }
 
   // ---------- Smoothing ---------- //
@@ -1529,6 +1571,24 @@ int main (int argc, char** argv)
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "SMOOTH_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "SMOOTH_CLOUD");
     viewer.spin ();
+  }
+
+  // ---------- For Classification ---------- //
+
+  if ( classification )
+  {
+    std::stringstream smooth_output_filename;
+    smooth_output_filename << directory << "-" << "smooth.pcd" ;
+    pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
+
+    std::string file = smooth_output_filename.str ();
+    f = file.find_last_of (".");
+    cerr << f << endl ;
+    directory = file.substr (0, f);
+
+    cerr << directory << endl;
+    cerr << directory << endl;
+    cerr << directory << endl;
   }
 
   // ---------- Estimate 3D Normals ---------- //
@@ -1786,22 +1846,6 @@ int main (int argc, char** argv)
   //////
 
   // ---------- For Classification ---------- //
-
-  std::string directory;
-
-  size_t f;
-
-  if ( classification )
-  {
-    std::string file = argv [pcd_file_indices [0]];
-    f = file.find_last_of (".");
-    cerr << f << endl ;
-    directory = file.substr (0, f);
-
-    cerr << directory << endl;
-    cerr << directory << endl;
-    cerr << directory << endl;
-  }
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr marked_working_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
 
@@ -4160,10 +4204,9 @@ int main (int argc, char** argv)
 
     }
 
-
-    std::stringstream object_filename;
-    object_filename << directory << "-" << "marked.pcd" ;
-    pcl::io::savePCDFileASCII (object_filename.str (), *marked_working_cloud);
+    std::stringstream marked_output_filename;
+    marked_output_filename << directory << "-" << "marked.pcd" ;
+    pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
