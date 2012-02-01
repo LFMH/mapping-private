@@ -1805,7 +1805,7 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr marked_working_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
 
-  pcl::copyFields (*working_cloud, *marked_working_cloud);
+  //pcl::copyFields (*working_cloud, *marked_working_cloud);
 
   /*
   marked_working_cloud->points.resize (working_cloud->points.size ());
@@ -3772,6 +3772,9 @@ int main (int argc, char** argv)
       //cerr << " z_surface " << z_surface << endl ;
 
       double smallest_dimension = std::min (x_dist, std::min (y_dist, z_dist));
+      double  biggest_dimension = std::max (x_dist, std::max (y_dist, z_dist));
+      double   medium_dimension = (smallest_dimension==x_dist) ? (biggest_dimension==z_dist ? y_dist:z_dist) : (biggest_dimension==z_dist ? y_dist:x_dist);
+      cerr << smallest_dimension << " < " << medium_dimension << " < " << biggest_dimension << endl;
 
       cerr << " x_dist " << x_dist << endl ;
       cerr << " y_dist " << y_dist << endl ;
@@ -3783,8 +3786,11 @@ int main (int argc, char** argv)
       cerr << " max / min " << max_dist / min_dist << endl ;
       cerr << " max / z " << max_dist / z_dist << endl ;
 
-      // TODO This is NOT the optim way, just a way // Begin //
+      cerr << "flat_value = " << flat_value << endl ;
+      cerr << "a/(b+c) = " << smallest_dimension / (medium_dimension + biggest_dimension) << endl ;
 
+      // TODO This is NOT the optim way, just a way // Begin //
+      /*
       pcl::PointIndices::Ptr backup_novel_box_inliers (new pcl::PointIndices ());
 
       for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
@@ -3810,12 +3816,13 @@ int main (int argc, char** argv)
           backup_novel_box_inliers->indices.push_back (idx);
         }
       }
-
+      */
       // TODO This is NOT the optim way, just a way // End //
 
       //if ( ((max_dist / min_dist) > flat_value) || ((max_dist / z_dist) > flat_value ))
-
-      if ( smallest_dimension < flat_value )
+      //if ( smallest_dimension < flat_value )
+      //if ( (smallest_dimension / (medium_dimension + biggest_dimension)) < flat_value )
+      if ((max_dist / min_dist) > flat_value)
       {
         if ( number_of_flat < 10 )
           object_filename << directory << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
@@ -3826,8 +3833,16 @@ int main (int argc, char** argv)
 
         number_of_flat++;
 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::copyFields (*box_cloud, *marked_box_cloud);
+        for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
+          marked_box_cloud->points.at (idx).intensity = 3;
+        *marked_working_cloud += *marked_box_cloud;
+
+        /*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 3;
+        */
       }
       else
       {
@@ -3840,8 +3855,16 @@ int main (int argc, char** argv)
 
         number_of_box++;
 
+        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::copyFields (*box_cloud, *marked_box_cloud);
+        for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
+          marked_box_cloud->points.at (idx).intensity = 2;
+        *marked_working_cloud += *marked_box_cloud;
+
+        /*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 2;
+        */
       }
 
       //cerr << object_filename.str () << endl;
@@ -4042,7 +4065,7 @@ int main (int argc, char** argv)
         }
 
         // TODO This is NOT the optim way, just a way // Begin //
-
+        /*
         pcl::PointIndices::Ptr backup_cylinder_inliers (new pcl::PointIndices ());
 
         for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
@@ -4063,12 +4086,18 @@ int main (int argc, char** argv)
 
         for (int idx=0; idx < (int) backup_cylinder_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_cylinder_inliers->indices.at (idx)).intensity = 4;
-
+        */
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
         //
         //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+
+        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::copyFields (*cylinder_cloud, *marked_cylinder_cloud);
+        for (int idx=0; idx < (int) marked_cylinder_cloud->points.size (); idx++)
+          marked_cylinder_cloud->points.at (idx).intensity = 4;
+        *marked_working_cloud += *marked_cylinder_cloud;
 
         if ( !till_the_end ) viewer.spin ();
 

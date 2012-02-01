@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
 project(HOUGH_SEGMENTATION)
 
-find_package(PCL 1.5 REQUIRED)
+find_package(PCL 1.4 REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
