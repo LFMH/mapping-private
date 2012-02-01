@@ -3783,6 +3783,36 @@ int main (int argc, char** argv)
       cerr << " max / min " << max_dist / min_dist << endl ;
       cerr << " max / z " << max_dist / z_dist << endl ;
 
+      // TODO This is NOT the optim way, just a way // Begin //
+
+      pcl::PointIndices::Ptr backup_novel_box_inliers (new pcl::PointIndices ());
+
+      for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
+      {
+        double x = backup_working_cloud->points.at (idx).x;
+        double y = backup_working_cloud->points.at (idx).y;
+
+        double sqr_dist_to_e0 = _sqr (x - edges[0][0]) + _sqr (y - edges[0][1]);
+        double sqr_dist_to_e1 = _sqr (x - edges[1][0]) + _sqr (y - edges[1][1]);
+        double sqr_dist_to_e2 = _sqr (x - edges[2][0]) + _sqr (y - edges[2][1]);
+        double sqr_dist_to_e3 = _sqr (x - edges[3][0]) + _sqr (y - edges[3][1]);
+        double sum_of_sqr_dist = sqr_dist_to_e0 + sqr_dist_to_e1 + sqr_dist_to_e2 + sqr_dist_to_e3;
+
+        double sqr_dist_from_e0_to_e1 = _sqr (edges[0][0] - edges[1][0]) + _sqr (edges[0][1] - edges[1][1]);
+        double sqr_dist_from_e1_to_e2 = _sqr (edges[1][0] - edges[2][0]) + _sqr (edges[1][1] - edges[2][1]);
+        double sqr_dist_from_e2_to_e3 = _sqr (edges[2][0] - edges[3][0]) + _sqr (edges[2][1] - edges[3][1]);
+        double sqr_dist_from_e3_to_e0 = _sqr (edges[3][0] - edges[0][0]) + _sqr (edges[3][1] - edges[0][1]);
+        double sum_of_sqr_rect = sqr_dist_from_e0_to_e1 + sqr_dist_from_e1_to_e2 + sqr_dist_from_e2_to_e3 + sqr_dist_from_e3_to_e0;
+
+        if ( sum_of_sqr_dist < sum_of_sqr_rect )
+        {
+          // Save only the right indices
+          backup_novel_box_inliers->indices.push_back (idx);
+        }
+      }
+
+      // TODO This is NOT the optim way, just a way // End //
+
       //if ( ((max_dist / min_dist) > flat_value) || ((max_dist / z_dist) > flat_value ))
 
       if ( smallest_dimension < flat_value )
@@ -3796,8 +3826,8 @@ int main (int argc, char** argv)
 
         number_of_flat++;
 
-        for (int idx=0; idx < (int) novel_box_inliers->indices.size (); idx++)
-          marked_working_cloud->points.at (novel_box_inliers->indices.at (idx)).intensity = 3;
+        for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 3;
       }
       else
       {
@@ -3810,8 +3840,8 @@ int main (int argc, char** argv)
 
         number_of_box++;
 
-        for (int idx=0; idx < (int) novel_box_inliers->indices.size (); idx++)
-          marked_working_cloud->points.at (novel_box_inliers->indices.at (idx)).intensity = 2;
+        for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 2;
       }
 
       //cerr << object_filename.str () << endl;
@@ -4011,8 +4041,28 @@ int main (int argc, char** argv)
           }
         }
 
-        for (int idx=0; idx < (int) cylinder_inliers->indices.size (); idx++)
-          marked_working_cloud->points.at (cylinder_inliers->indices.at (idx)).intensity = 4;
+        // TODO This is NOT the optim way, just a way // Begin //
+
+        pcl::PointIndices::Ptr backup_cylinder_inliers (new pcl::PointIndices ());
+
+        for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
+        {
+          double x = backup_working_cloud->points.at (idx).x;
+          double y = backup_working_cloud->points.at (idx).y;
+
+          double d = sqrt ( _sqr (mcx - x) + _sqr (mcy - y) );
+
+          if ( d < (mr + circle_threshold) )
+          {
+            // Save only the right indices
+            backup_cylinder_inliers->indices.push_back (idx);
+          }
+        }
+
+        // TODO This is NOT the optim way, just a way // End //
+
+        for (int idx=0; idx < (int) backup_cylinder_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (backup_cylinder_inliers->indices.at (idx)).intensity = 4;
 
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
