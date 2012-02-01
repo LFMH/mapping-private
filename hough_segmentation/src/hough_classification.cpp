@@ -1794,13 +1794,43 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::string file = argv [pcd_file_indices [0]];
-    f = file.find_first_of (".");
+    f = file.find_last_of (".");
     cerr << f << endl ;
     directory = file.substr (0, f);
 
     cerr << directory << endl;
     cerr << directory << endl;
     cerr << directory << endl;
+  }
+
+  pcl::PointCloud<pcl::PointXYZI>::Ptr marked_working_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+
+  pcl::copyFields (*working_cloud, *marked_working_cloud);
+
+  /*
+  marked_working_cloud->points.resize (working_cloud->points.size ());
+  marked_working_cloud->width        = working_cloud->width;
+  marked_working_cloud->height       = working_cloud->height;
+  if (!working_cloud->is_dense) marked_working_cloud->is_dense = false; else marked_working_cloud->is_dense = true;
+
+  for (size_t i=0; i < working_cloud->points.size (); ++i)
+  {
+    marked_working_cloud->points.at (i).x         = working_cloud->points.at (i).x;
+    marked_working_cloud->points.at (i).y         = working_cloud->points.at (i).y;
+    marked_working_cloud->points.at (i).z         = working_cloud->points.at (i).z;
+    marked_working_cloud->points.at (i).intensity = -1;
+  }
+  */
+
+  if ( step )
+  {
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> marked_color (marked_working_cloud, 0, 255, 127);
+    viewer.addPointCloud<pcl::PointXYZI> (marked_working_cloud, marked_color, "MARKED_CLOUD");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "MARKED_CLOUD");
+    viewer.spin ();
+
+    viewer.removePointCloud ("MARKED_CLOUD");
+    viewer.spin ();
   }
 
   //////
@@ -2269,9 +2299,9 @@ int main (int argc, char** argv)
       pcl::search::KdTree<pcl::PointNormal>::Ptr line_parameters_tree (new pcl::search::KdTree<pcl::PointNormal> ());
       line_parameters_tree->setInputCloud (line_parameters_space);
 
-      cerr << endl << "line_parameters_space->points.size () " << line_parameters_space->points.size () << endl ;
-      cerr << "clustering_tolerance_of_line_parameters_space " << clustering_tolerance_of_line_parameters_space << endl ;
-      cerr << "minimum_size_of_line_parameters_clusters " << minimum_size_of_line_parameters_clusters << endl << endl ;
+      cerr << endl << "line_parameters_space->points.size () = " << line_parameters_space->points.size () << endl ;
+      cerr << "clustering_tolerance_of_line_parameters_space = " << clustering_tolerance_of_line_parameters_space << endl ;
+      cerr << "minimum_size_of_line_parameters_clusters = " << minimum_size_of_line_parameters_clusters << endl << endl ;
 
 //      if ( line_parameters_space->points.size () == vransac_iterations ) return (-1);
 
@@ -2329,9 +2359,9 @@ int main (int argc, char** argv)
       pcl::search::KdTree<pcl::PointXYZ>::Ptr circle_parameters_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
       circle_parameters_tree->setInputCloud (circle_parameters_space);
 
-      cerr << endl << "circle_parameters_space->points.size () " << circle_parameters_space->points.size () << endl ;
-      cerr << "clustering_tolerance_of_circle_parameters_space " << clustering_tolerance_of_circle_parameters_space << endl ;
-      cerr << "minimum_size_of_circle_parameters_clusters " << minimum_size_of_circle_parameters_clusters << endl << endl ;
+      cerr << endl << "circle_parameters_space->points.size () = " << circle_parameters_space->points.size () << endl ;
+      cerr << "clustering_tolerance_of_circle_parameters_space = " << clustering_tolerance_of_circle_parameters_space << endl ;
+      cerr << "minimum_size_of_circle_parameters_clusters = " << minimum_size_of_circle_parameters_clusters << endl << endl ;
 
 //      if ( circle_parameters_space->points.size () == vransac_iterations ) return (-1);
 
@@ -3058,12 +3088,12 @@ int main (int argc, char** argv)
     do
     {
       double EN1[2];
-      EN1[0] = NP1[0] + N[0] * growing_step;
-      EN1[1] = NP1[1] + N[1] * growing_step;
+      EN1[0] = NP1[0] + N[0] * growing_step /2;
+      EN1[1] = NP1[1] + N[1] * growing_step /2;
 
       double EN2[2];
-      EN2[0] = NP2[0] + N[0] * growing_step;
-      EN2[1] = NP2[1] + N[1] * growing_step;
+      EN2[0] = NP2[0] + N[0] * growing_step /2;
+      EN2[1] = NP2[1] + N[1] * growing_step /2;
 
       pcl::ModelCoefficients::Ptr en1_coeffs (new pcl::ModelCoefficients ());
       en1_coeffs->values.push_back (EN1[0]);
@@ -3192,12 +3222,12 @@ int main (int argc, char** argv)
     do
     {
       double EN1[2];
-      EN1[0] = NP1[0] - N[0] * growing_step;
-      EN1[1] = NP1[1] - N[1] * growing_step;
+      EN1[0] = NP1[0] - N[0] * growing_step /2;
+      EN1[1] = NP1[1] - N[1] * growing_step /2;
 
       double EN2[2];
-      EN2[0] = NP2[0] - N[0] * growing_step;
-      EN2[1] = NP2[1] - N[1] * growing_step;
+      EN2[0] = NP2[0] - N[0] * growing_step /2;
+      EN2[1] = NP2[1] - N[1] * growing_step /2;
 
       pcl::ModelCoefficients::Ptr en2_coeffs (new pcl::ModelCoefficients ());
       en2_coeffs->values.push_back (EN1[0]);
@@ -3765,6 +3795,9 @@ int main (int argc, char** argv)
         cerr << "      FLAT      " << endl ;
 
         number_of_flat++;
+
+        for (int idx=0; idx < (int) novel_box_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (novel_box_inliers->indices.at (idx)).intensity = 3;
       }
       else
       {
@@ -3776,6 +3809,9 @@ int main (int argc, char** argv)
         cerr << "      BOX      " << endl ;
 
         number_of_box++;
+
+        for (int idx=0; idx < (int) novel_box_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (novel_box_inliers->indices.at (idx)).intensity = 2;
       }
 
       //cerr << object_filename.str () << endl;
@@ -3975,6 +4011,9 @@ int main (int argc, char** argv)
           }
         }
 
+        for (int idx=0; idx < (int) cylinder_inliers->indices.size (); idx++)
+          marked_working_cloud->points.at (cylinder_inliers->indices.at (idx)).intensity = 4;
+
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
@@ -3988,6 +4027,9 @@ int main (int argc, char** argv)
     }
 
 
+    std::stringstream object_filename;
+    object_filename << directory << "-" << "marked.pcd" ;
+    pcl::io::savePCDFileASCII (object_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
