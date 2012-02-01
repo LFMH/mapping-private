@@ -1807,7 +1807,7 @@ int main (int argc, char** argv)
 
   //pcl::copyFields (*working_cloud, *marked_working_cloud);
 
-  /*
+  ///*
   marked_working_cloud->points.resize (working_cloud->points.size ());
   marked_working_cloud->width        = working_cloud->width;
   marked_working_cloud->height       = working_cloud->height;
@@ -1820,7 +1820,7 @@ int main (int argc, char** argv)
     marked_working_cloud->points.at (i).z         = working_cloud->points.at (i).z;
     marked_working_cloud->points.at (i).intensity = -1;
   }
-  */
+  //*/
 
   if ( step )
   {
@@ -2305,6 +2305,12 @@ int main (int argc, char** argv)
 
 //      if ( line_parameters_space->points.size () == vransac_iterations ) return (-1);
 
+      // XXX SEGFAULT XXX //
+      for (int sf=0; sf < (int) line_parameters_space->points.size(); sf++)
+        cerr << sf << " - " << line_parameters_space->points.at (sf) << endl ;
+
+      //viewer.spin ();
+
       pcl::EuclideanClusterExtraction<pcl::PointNormal> lps_ece;
       lps_ece.setInputCloud (line_parameters_space);
       lps_ece.setClusterTolerance (clustering_tolerance_of_line_parameters_space);
@@ -2364,6 +2370,15 @@ int main (int argc, char** argv)
       cerr << "minimum_size_of_circle_parameters_clusters = " << minimum_size_of_circle_parameters_clusters << endl << endl ;
 
 //      if ( circle_parameters_space->points.size () == vransac_iterations ) return (-1);
+
+
+
+
+      // XXX SEGFAULT XXX //
+      for (int sf=0; sf < (int) circle_parameters_space->points.size(); sf++)
+        cerr << sf << " - " << circle_parameters_space->points.at (sf) << endl ;
+
+      //viewer.spin ();
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZ> cps_ece;
       cps_ece.setInputCloud (circle_parameters_space);
@@ -3445,21 +3460,21 @@ int main (int argc, char** argv)
 
     //
 
-    if ( space_step )
-    {
-      std::stringstream box_cloud_id;
-      box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
-      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255);
-      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
-      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
-      viewer.spin ();
-
-      viewer.removePointCloud ("WORKING_CLOUD");
-      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
-      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
-      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
-      viewer.spin ();
-    }
+    //////if ( space_step )
+    //////{
+    //////std::stringstream box_cloud_id;
+    //////box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
+    //////pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255);
+    //////viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
+    //////viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
+    //////viewer.spin ();
+    //////
+    //////viewer.removePointCloud ("WORKING_CLOUD");
+    //////pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
+    //////viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
+    //////viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
+    //////viewer.spin ();
+    //////}
 
     // ADD BOX SHAPE //
 
@@ -3738,9 +3753,9 @@ int main (int argc, char** argv)
     cerr << e6.values.at(0) << " " << e6.values.at(1) << " " << e6.values.at(2) << " " << e6.values.at(3) << " " << e6.values.at(4) << " " << e6.values.at(5) << endl ;
     cerr << e7.values.at(0) << " " << e7.values.at(1) << " " << e7.values.at(2) << " " << e7.values.at(3) << " " << e7.values.at(4) << " " << e7.values.at(5) << endl ;
 
-    std::stringstream cub_id;
-    cub_id << "CUB_" << getTimestamp ();
-    viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+    //////std::stringstream cub_id;
+    //////cub_id << "CUB_" << getTimestamp ();
+    //////viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
     model++;
     cerr << endl << " MODEL " << model << endl << endl ;
@@ -3831,14 +3846,34 @@ int main (int argc, char** argv)
 
         cerr << "      FLAT      " << endl ;
 
-        number_of_flat++;
+        if ( space_step )
+        {
+          std::stringstream box_cloud_id;
+          box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 0, 127, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
+          viewer.spin ();
 
+          viewer.removePointCloud ("WORKING_CLOUD");
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
+          viewer.spin ();
+        }
+
+        std::stringstream cub_id;
+        cub_id << "CUB_" << getTimestamp ();
+        viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+
+        number_of_flat++;
+        /*
         pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
         pcl::copyFields (*box_cloud, *marked_box_cloud);
         for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
           marked_box_cloud->points.at (idx).intensity = 3;
         *marked_working_cloud += *marked_box_cloud;
-
+        */
         /*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 3;
@@ -3853,14 +3888,34 @@ int main (int argc, char** argv)
 
         cerr << "      BOX      " << endl ;
 
-        number_of_box++;
+        if ( space_step )
+        {
+          std::stringstream box_cloud_id;
+          box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
+          viewer.spin ();
 
+          viewer.removePointCloud ("WORKING_CLOUD");
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
+          viewer.spin ();
+        }
+
+        std::stringstream cub_id;
+        cub_id << "CUB_" << getTimestamp ();
+        viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+        number_of_box++;
+        /*
         pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
         pcl::copyFields (*box_cloud, *marked_box_cloud);
         for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
           marked_box_cloud->points.at (idx).intensity = 2;
         *marked_working_cloud += *marked_box_cloud;
-
+        */
         /*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 2;
@@ -4065,7 +4120,7 @@ int main (int argc, char** argv)
         }
 
         // TODO This is NOT the optim way, just a way // Begin //
-        /*
+        ///*
         pcl::PointIndices::Ptr backup_cylinder_inliers (new pcl::PointIndices ());
 
         for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
@@ -4086,19 +4141,19 @@ int main (int argc, char** argv)
 
         for (int idx=0; idx < (int) backup_cylinder_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_cylinder_inliers->indices.at (idx)).intensity = 4;
-        */
+        //*/
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
         //cerr << object_filename.str () << endl;
         //
         //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
-
+        /*
         pcl::PointCloud<pcl::PointXYZI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
         pcl::copyFields (*cylinder_cloud, *marked_cylinder_cloud);
         for (int idx=0; idx < (int) marked_cylinder_cloud->points.size (); idx++)
           marked_cylinder_cloud->points.at (idx).intensity = 4;
         *marked_working_cloud += *marked_cylinder_cloud;
-
+        */
         if ( !till_the_end ) viewer.spin ();
 
       }
