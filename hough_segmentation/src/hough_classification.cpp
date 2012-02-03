@@ -3972,21 +3972,18 @@ int main (int argc, char** argv)
 
         cerr << "      FLAT      " << endl ;
 
-        if ( space_step )
-        {
           std::stringstream box_cloud_id;
           box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
           pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 0, 127, 255);
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
-          viewer.spin ();
+          if ( space_step ) viewer.spin ();
 
           viewer.removePointCloud ("WORKING_CLOUD");
           pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
-          viewer.spin ();
-        }
+          if ( space_step ) viewer.spin ();
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
@@ -4014,21 +4011,18 @@ int main (int argc, char** argv)
 
         cerr << "      BOX      " << endl ;
 
-        if ( space_step )
-        {
           std::stringstream box_cloud_id;
           box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
           pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255);
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
-          viewer.spin ();
+          if ( space_step ) viewer.spin ();
 
           viewer.removePointCloud ("WORKING_CLOUD");
           pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
-          viewer.spin ();
-        }
+          if ( space_step ) viewer.spin ();
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
@@ -4130,21 +4124,18 @@ int main (int argc, char** argv)
 
       //
 
-      if ( space_step )
-      {
         std::stringstream cyl_cloud_id;
         cyl_cloud_id << "CYL_CLOUD_" << getTimestamp ();
         pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cylinder_cloud_color (cylinder_cloud, 127, 255, 0);
         viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (cylinder_cloud, cylinder_cloud_color, cyl_cloud_id.str ());
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_cloud_id.str ());
-        viewer.spin ();
+        if ( space_step ) viewer.spin ();
 
         viewer.removePointCloud ("WORKING_CLOUD");
         pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_cloud_color (working_cloud, 0, 0, 0);
         viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_cloud_color, "WORKING_CLOUD");
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
-        viewer.spin ();
-      }
+        if ( space_step ) viewer.spin ();
 
       // ADD CYLINDER SHAPE //
 
@@ -4292,10 +4283,10 @@ int main (int argc, char** argv)
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
-
-
     if ( !more_votes_for_lines && !more_votes_for_circles )
     {
+      viewer.spin ();
+
       std::vector<pcl::PointIndices> r_clusterS;
       pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr r_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
       r_tree->setInputCloud (working_cloud);
