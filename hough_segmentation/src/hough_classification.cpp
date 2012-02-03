@@ -2343,17 +2343,13 @@ int main (int argc, char** argv)
       pcl::search::KdTree<pcl::PointNormal>::Ptr line_parameters_tree (new pcl::search::KdTree<pcl::PointNormal> ());
       line_parameters_tree->setInputCloud (line_parameters_space);
 
+      // XXX SEGFAULT //
       cerr << endl << "line_parameters_space->points.size () = " << line_parameters_space->points.size () << endl ;
       cerr << "clustering_tolerance_of_line_parameters_space = " << clustering_tolerance_of_line_parameters_space << endl ;
       cerr << "minimum_size_of_line_parameters_clusters = " << minimum_size_of_line_parameters_clusters << endl << endl ;
-
-//      if ( line_parameters_space->points.size () == vransac_iterations ) return (-1);
-
-      // XXX SEGFAULT XXX //
       for (int sf=0; sf < (int) line_parameters_space->points.size(); sf++)
         cerr << sf << " - " << line_parameters_space->points.at (sf) << endl ;
-
-      //viewer.spin ();
+      // XXX SEGFAULT //
 
       pcl::EuclideanClusterExtraction<pcl::PointNormal> lps_ece;
       lps_ece.setInputCloud (line_parameters_space);
@@ -2409,20 +2405,13 @@ int main (int argc, char** argv)
       pcl::search::KdTree<pcl::PointXYZ>::Ptr circle_parameters_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
       circle_parameters_tree->setInputCloud (circle_parameters_space);
 
+      // XXX SEGFAULT //
       cerr << endl << "circle_parameters_space->points.size () = " << circle_parameters_space->points.size () << endl ;
       cerr << "clustering_tolerance_of_circle_parameters_space = " << clustering_tolerance_of_circle_parameters_space << endl ;
       cerr << "minimum_size_of_circle_parameters_clusters = " << minimum_size_of_circle_parameters_clusters << endl << endl ;
-
-//      if ( circle_parameters_space->points.size () == vransac_iterations ) return (-1);
-
-
-
-
-      // XXX SEGFAULT XXX //
       for (int sf=0; sf < (int) circle_parameters_space->points.size(); sf++)
         cerr << sf << " - " << circle_parameters_space->points.at (sf) << endl ;
-
-      //viewer.spin ();
+      // XXX SEGFAULT //
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZ> cps_ece;
       cps_ece.setInputCloud (circle_parameters_space);
