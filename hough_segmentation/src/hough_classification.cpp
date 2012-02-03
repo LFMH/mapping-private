@@ -146,6 +146,9 @@ double tall_value = 0.750;
 double medium_value = 0.500;
 double short_value = 0.250;
 
+// Different //
+double sat = 1.0;
+
 // ---------- Macros ---------- //
 
 #define _sqr(c) ((c)*(c))
@@ -1313,6 +1316,64 @@ void NormalFeatureForCircles (bool &valid_circle,
   return;
 }
 
+
+double whatAngle (pcl::PointXYZ a, pcl::PointXYZ b, pcl::PointXYZ c)
+{
+  pcl::PointXYZ ab;
+  ab.x = b.x - a.x;
+  ab.y = b.y - a.y;
+
+  pcl::PointXYZ cb;
+  cb.x = b.x - c.x;
+  cb.y = b.y - c.y;
+
+  // dot product
+  float dot = (ab.x * cb.x + ab.y * cb.y);
+
+  // length square of both vectors
+  float abSqr = ab.x * ab.x + ab.y * ab.y;
+  float cbSqr = cb.x * cb.x + cb.y * cb.y;
+
+  // square of cosine of the needed angle
+  float cosSqr = dot * dot / abSqr / cbSqr;
+
+  // this is a known trigonometric equality:
+  // cos(alpha * 2) = [ cos(alpha) ]^2 * 2 - 1
+  float cos2 = 2 * cosSqr - 1;
+
+  // Here's the only invocation of the heavy function.
+  // It's a good idea to check explicitly if cos2 is within [-1 .. 1] range
+
+  const float pi = 3.141592f;
+
+  float alpha2 =
+    (cos2 <= -1) ? pi :
+    (cos2 >= 1) ? 0 :
+    acosf(cos2);
+
+  float rslt = alpha2 / 2;
+
+  float rs = rslt * 180. / pi;
+
+  // Now revolve the ambiguities.
+  // 1. If dot product of two vectors is negative - the angle is definitely
+  // above 90 degrees. Still we have no information regarding the sign of the angle.
+
+  // NOTE: This ambiguity is the consequence of our method: calculating the cosine
+  // of the double angle. This allows us to get rid of calling sqrt.
+
+  if (dot < 0)
+    rs = 180 - rs;
+
+  // 2. Determine the sign. For this we'll use the Determinant of two vectors.
+
+  float det = (ab.x * cb.y - ab.y * cb.y);
+  if (det < 0)
+    rs = -rs;
+
+  return (int) floor(rs + 0.5);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1430,6 +1491,9 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-tall_value", tall_value);
   pcl::console::parse_argument (argc, argv, "-medium_value", medium_value);
   pcl::console::parse_argument (argc, argv, "-short_value", short_value);
+
+  // Different //
+  pcl::console::parse_argument (argc, argv, "-sat", sat);
 
   // ---------- Initializations ---------- //
 
@@ -2344,11 +2408,11 @@ int main (int argc, char** argv)
       line_parameters_tree->setInputCloud (line_parameters_space);
 
       // XXX SEGFAULT //
-      cerr << endl << "line_parameters_space->points.size () = " << line_parameters_space->points.size () << endl ;
-      cerr << "clustering_tolerance_of_line_parameters_space = " << clustering_tolerance_of_line_parameters_space << endl ;
-      cerr << "minimum_size_of_line_parameters_clusters = " << minimum_size_of_line_parameters_clusters << endl << endl ;
-      for (int sf=0; sf < (int) line_parameters_space->points.size(); sf++)
-        cerr << sf << " - " << line_parameters_space->points.at (sf) << endl ;
+      //cerr << endl << "line_parameters_space->points.size () = " << line_parameters_space->points.size () << endl ;
+      //cerr << "clustering_tolerance_of_line_parameters_space = " << clustering_tolerance_of_line_parameters_space << endl ;
+      //cerr << "minimum_size_of_line_parameters_clusters = " << minimum_size_of_line_parameters_clusters << endl << endl ;
+      //for (int sf=0; sf < (int) line_parameters_space->points.size(); sf++)
+      //cerr << sf << " - " << line_parameters_space->points.at (sf) << endl ;
       // XXX SEGFAULT //
 
       pcl::EuclideanClusterExtraction<pcl::PointNormal> lps_ece;
@@ -2406,11 +2470,11 @@ int main (int argc, char** argv)
       circle_parameters_tree->setInputCloud (circle_parameters_space);
 
       // XXX SEGFAULT //
-      cerr << endl << "circle_parameters_space->points.size () = " << circle_parameters_space->points.size () << endl ;
-      cerr << "clustering_tolerance_of_circle_parameters_space = " << clustering_tolerance_of_circle_parameters_space << endl ;
-      cerr << "minimum_size_of_circle_parameters_clusters = " << minimum_size_of_circle_parameters_clusters << endl << endl ;
-      for (int sf=0; sf < (int) circle_parameters_space->points.size(); sf++)
-        cerr << sf << " - " << circle_parameters_space->points.at (sf) << endl ;
+      //cerr << endl << "circle_parameters_space->points.size () = " << circle_parameters_space->points.size () << endl ;
+      //cerr << "clustering_tolerance_of_circle_parameters_space = " << clustering_tolerance_of_circle_parameters_space << endl ;
+      //cerr << "minimum_size_of_circle_parameters_clusters = " << minimum_size_of_circle_parameters_clusters << endl << endl ;
+      //for (int sf=0; sf < (int) circle_parameters_space->points.size(); sf++)
+      //cerr << sf << " - " << circle_parameters_space->points.at (sf) << endl ;
       // XXX SEGFAULT //
 
       pcl::EuclideanClusterExtraction<pcl::PointXYZ> cps_ece;
@@ -3838,33 +3902,62 @@ int main (int argc, char** argv)
       cerr << "a/(b+c) = " << smallest_dimension / (medium_dimension + biggest_dimension) << endl ;
 
       // TODO This is NOT the optim way, just a way // Begin //
-      /*
+      ///*
       pcl::PointIndices::Ptr backup_novel_box_inliers (new pcl::PointIndices ());
 
       for (int idx = 0; idx < (int) backup_working_cloud->points.size(); idx++)
       {
-        double x = backup_working_cloud->points.at (idx).x;
-        double y = backup_working_cloud->points.at (idx).y;
+        //double x = backup_working_cloud->points.at (idx).x;
+        //double y = backup_working_cloud->points.at (idx).y;
+        //
+        //double sqr_dist_to_e0 = _sqr (x - edges[0][0]) + _sqr (y - edges[0][1]);
+        //double sqr_dist_to_e1 = _sqr (x - edges[1][0]) + _sqr (y - edges[1][1]);
+        //double sqr_dist_to_e2 = _sqr (x - edges[2][0]) + _sqr (y - edges[2][1]);
+        //double sqr_dist_to_e3 = _sqr (x - edges[3][0]) + _sqr (y - edges[3][1]);
+        //double sum_of_sqr_dist = sqr_dist_to_e0 + sqr_dist_to_e1 + sqr_dist_to_e2 + sqr_dist_to_e3;
+        //
+        //double sqr_dist_from_e0_to_e1 = _sqr (edges[0][0] - edges[1][0]) + _sqr (edges[0][1] - edges[1][1]);
+        //double sqr_dist_from_e1_to_e2 = _sqr (edges[1][0] - edges[2][0]) + _sqr (edges[1][1] - edges[2][1]);
+        //double sqr_dist_from_e2_to_e3 = _sqr (edges[2][0] - edges[3][0]) + _sqr (edges[2][1] - edges[3][1]);
+        //double sqr_dist_from_e3_to_e0 = _sqr (edges[3][0] - edges[0][0]) + _sqr (edges[3][1] - edges[0][1]);
+        //double sum_of_sqr_rect = sqr_dist_from_e0_to_e1 + sqr_dist_from_e1_to_e2 + sqr_dist_from_e2_to_e3 + sqr_dist_from_e3_to_e0;
+        //
+        //if ( sum_of_sqr_dist < sum_of_sqr_rect )
+        //{
+        //// Save only the right indices
+        //backup_novel_box_inliers->indices.push_back (idx);
+        //}
 
-        double sqr_dist_to_e0 = _sqr (x - edges[0][0]) + _sqr (y - edges[0][1]);
-        double sqr_dist_to_e1 = _sqr (x - edges[1][0]) + _sqr (y - edges[1][1]);
-        double sqr_dist_to_e2 = _sqr (x - edges[2][0]) + _sqr (y - edges[2][1]);
-        double sqr_dist_to_e3 = _sqr (x - edges[3][0]) + _sqr (y - edges[3][1]);
-        double sum_of_sqr_dist = sqr_dist_to_e0 + sqr_dist_to_e1 + sqr_dist_to_e2 + sqr_dist_to_e3;
+        pcl::PointXYZ B;
+        B.x = backup_working_cloud->points.at (idx).x;
+        B.y = backup_working_cloud->points.at (idx).y;
 
-        double sqr_dist_from_e0_to_e1 = _sqr (edges[0][0] - edges[1][0]) + _sqr (edges[0][1] - edges[1][1]);
-        double sqr_dist_from_e1_to_e2 = _sqr (edges[1][0] - edges[2][0]) + _sqr (edges[1][1] - edges[2][1]);
-        double sqr_dist_from_e2_to_e3 = _sqr (edges[2][0] - edges[3][0]) + _sqr (edges[2][1] - edges[3][1]);
-        double sqr_dist_from_e3_to_e0 = _sqr (edges[3][0] - edges[0][0]) + _sqr (edges[3][1] - edges[0][1]);
-        double sum_of_sqr_rect = sqr_dist_from_e0_to_e1 + sqr_dist_from_e1_to_e2 + sqr_dist_from_e2_to_e3 + sqr_dist_from_e3_to_e0;
+        pcl::PointXYZ E0;  E0.x = edges[0][0];  E0.y = edges[0][1];
+        pcl::PointXYZ E1;  E1.x = edges[1][0];  E1.y = edges[1][1];
+        pcl::PointXYZ E2;  E2.x = edges[2][0];  E2.y = edges[2][1];
+        pcl::PointXYZ E3;  E3.x = edges[3][0];  E3.y = edges[3][1];
 
-        if ( sum_of_sqr_dist < sum_of_sqr_rect )
+        double A0 = whatAngle (E0, B, E1);
+        double A1 = whatAngle (E1, B, E2);
+        double A2 = whatAngle (E2, B, E3);
+        double A3 = whatAngle (E3, B, E0);
+        double SA = abs(A0) + abs(A1) + abs(A2) + abs(A3);
+
+        //cerr << A0 << endl ;
+        //cerr << A1 << endl ;
+        //cerr << A2 << endl ;
+        //cerr << A3 << endl ;
+        //cerr << " = " << abs(A0) + abs(A1) + abs(A2) + abs(A3) << endl ;
+        //viewer.spin ();
+
+        if ( abs(SA - 360) <= sat )
         {
-          // Save only the right indices
           backup_novel_box_inliers->indices.push_back (idx);
+          //cerr << SA << endl ;
         }
+
       }
-      */
+      //*/
       // TODO This is NOT the optim way, just a way // End //
 
       //if ( ((max_dist / min_dist) > flat_value) || ((max_dist / z_dist) > flat_value ))
@@ -3907,10 +4000,10 @@ int main (int argc, char** argv)
           marked_box_cloud->points.at (idx).intensity = 3;
         *marked_working_cloud += *marked_box_cloud;
         */
-        /*
+        ///*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 3;
-        */
+        //*/
       }
       else
       {
@@ -3949,10 +4042,10 @@ int main (int argc, char** argv)
           marked_box_cloud->points.at (idx).intensity = 2;
         *marked_working_cloud += *marked_box_cloud;
         */
-        /*
+        ///*
         for (int idx=0; idx < (int) backup_novel_box_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_novel_box_inliers->indices.at (idx)).intensity = 2;
-        */
+        //*/
       }
 
       //cerr << object_filename.str () << endl;
