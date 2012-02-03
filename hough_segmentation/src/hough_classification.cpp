@@ -4645,6 +4645,10 @@ int main (int argc, char** argv)
         viewer.addCuboid (C, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
         viewer.spin ();
 
+        // Remove These Point From The Cloud //
+        r_ei.setNegative (true);
+        r_ei.filter (*working_cloud);
+
         r_clusterS_indices.push_back (r_cluster_indices);
         r_clusterS_clouds.push_back (r_cluster_cloud);
       }
