@@ -73,10 +73,12 @@ double clustering_tolerance_of_significant_plane_inliers = 0.010; /// [meters]
 bool fitting_step = false;
 double line_threshold = 0.010;
 double circle_threshold = 0.010;
-int maximum_line_iterations = 1000;
-int maximum_circle_iterations = 1000;
+double minimum_line_length = 0.025;
+double maximum_line_length = 0.250;
 double minimum_circle_radius = 0.010;
 double maximum_circle_radius = 0.100;
+int maximum_line_iterations = 1000;
+int maximum_circle_iterations = 1000;
 int minimum_line_inliers = 100;
 int minimum_circle_inliers = 100;
 
@@ -1426,10 +1428,12 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-fitting_step", fitting_step);
   pcl::console::parse_argument (argc, argv, "-line_threshold", line_threshold);
   pcl::console::parse_argument (argc, argv, "-circle_threshold", circle_threshold);
-  pcl::console::parse_argument (argc, argv, "-maximum_line_iterations", maximum_line_iterations);
-  pcl::console::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
+  pcl::console::parse_argument (argc, argv, "-minimum_line_length", minimum_line_length);
+  pcl::console::parse_argument (argc, argv, "-maximum_line_length", maximum_line_length);
   pcl::console::parse_argument (argc, argv, "-minimum_circle_radius", minimum_circle_radius);
   pcl::console::parse_argument (argc, argv, "-maximum_circle_radius", maximum_circle_radius);
+  pcl::console::parse_argument (argc, argv, "-maximum_line_iterations", maximum_line_iterations);
+  pcl::console::parse_argument (argc, argv, "-maximum_circle_iterations", maximum_circle_iterations);
   pcl::console::parse_argument (argc, argv, "-minimum_line_inliers", minimum_line_inliers);
   pcl::console::parse_argument (argc, argv, "-minimum_circle_inliers", minimum_circle_inliers);
 
@@ -2066,6 +2070,7 @@ int main (int argc, char** argv)
       //sacs.setDistanceThreshold (line_threshold);
       //sacs.segment (*line_inliers, *line_coefficients);
 
+
       int circle_iterations = fitCircle (working_cloud, circle_inliers, circle_coefficients, circle_threshold, minimum_circle_radius, maximum_circle_radius, maximum_circle_iterations);
 
       /*
@@ -2158,6 +2163,29 @@ int main (int argc, char** argv)
 
         // Adjust Coefficients Of Line Model //
         adjustLineCoefficients (line_cloud, line_coefficients);
+
+        // XXX TODO XXX // MAYBE THE BEST WAY FOR THE FUTURE, WOULD BE TO WORK ONLY W/ LINE SEGMENTS AND CIRCLE ARCS //
+
+        // limit the lenghts of line segments, after the same reasoning you are limiting the radius of circle models //
+
+        double pt1[2];
+        pt1[0] = line_coefficients->values.at (0);
+        pt1[1] = line_coefficients->values.at (1);
+
+        double pt2[2];
+        pt2[0] = line_coefficients->values.at (3) + line_coefficients->values.at (0);
+        pt2[1] = line_coefficients->values.at (4) + line_coefficients->values.at (1);
+
+        // A.K.A. length of line //
+        float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
+
+        pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+
+        if ( lol < minimum_line_length )
+        {
+          valid_line = false;
+          if ( verbose ) pcl::console::print_error ("  [LENGTH OF LINE] Line Rejected ! \n");
+        }
 
         if ( fitting_step )
         {
@@ -2302,7 +2330,8 @@ int main (int argc, char** argv)
 
 
 
-      if ( verbose ) pcl::console::print_warn ("  %d line inliers vs. %d circle inliers\n", line_inliers->indices.size (), circle_inliers->indices.size ());
+      if ( verbose ) pcl::console::print_warn ("  %5d line inliers vs. %5d circle inliers\n", line_inliers->indices.size (), circle_inliers->indices.size ());
+      if ( verbose ) pcl::console::print_warn ("  %5d line cloudsz vs. %5d circle cloudsz\n", line_cloud->points.size (), circle_cloud->points.size ());
 
       // Parameters //
       double FP1[2];
@@ -4672,8 +4701,6 @@ int main (int argc, char** argv)
   } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
 
 
-  viewer.spin ();
-  viewer.spin ();
   viewer.spin ();
 
   return (0);
