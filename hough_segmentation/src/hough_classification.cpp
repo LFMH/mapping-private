@@ -390,6 +390,8 @@ void adjustLineModel (pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr &cloud, pc
 
   int iterations = fitLine (cloud, inliers, coefficients, threshold, maximum_iterations);
 
+  adjustLineCoefficients (cloud, coefficients);
+
   //pcl::SACSegmentation<pcl::PointXYZRGBNormalRSD> sacs;
   //sacs.setInputCloud (cloud);
   //sacs.setMethodType (pcl::SAC_RANSAC);
@@ -780,6 +782,23 @@ void ClusteringFeatureForLines (bool &valid_line,
   // Adjust Coefficients Of Line Model //
   adjustLineCoefficients (line_cloud, line_coefficients);
 
+  // XXX TODO XXX // MAYBE THE BEST WAY FOR THE FUTURE, WOULD BE TO WORK ONLY W/ LINE SEGMENTS AND CIRCLE ARCS //
+
+  // limit the lenghts of line segments, after the same reasoning you are limiting the radius of circle models //
+
+  double pt1[2];
+  pt1[0] = line_coefficients->values.at (0);
+  pt1[1] = line_coefficients->values.at (1);
+
+  double pt2[2];
+  pt2[0] = line_coefficients->values.at (3) + line_coefficients->values.at (0);
+  pt2[1] = line_coefficients->values.at (4) + line_coefficients->values.at (1);
+
+  // A.K.A. length of line //
+  float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
+
+  pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+
   if ( step )
   {
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> line_cloud_color (line_cloud, 0, 255, 0);
@@ -912,7 +931,7 @@ void ClusteringFeatureForCircles (bool &valid_circle,
 
     pcl::PointIndices::Ptr curvature_feature_inliers (new pcl::PointIndices ());
 
-    if ( curvature_clusters.at (z).indices.size() < 100 ) /// HEADS UP, THIS MIGHT EXCLUDE THE TALL CYLINDER ON THE LEFT, SET TO 25 MAYBE ?!
+    if ( curvature_clusters.at (z).indices.size() < 750 ) /// HEADS UP, THIS MIGHT EXCLUDE THE TALL CYLINDER ON THE LEFT, SET TO 25 MAYBE ?!
     {
       for ( int idx = 0; idx < (int) curvature_clusters.at (z).indices.size(); idx++ )
       {
@@ -1676,7 +1695,7 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("3D Normal Estimation ! Returned: %d normals\n", (int) working_cloud->points.size ());
 
-  if ( step )
+  if ( false )
   {
     viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "NORMAL_CLOUD");
@@ -1860,7 +1879,7 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("Normal Flattening ! Returned: %d 2D normals\n", (int) working_cloud->points.size ());
 
-  if ( step )
+  if ( false )
   {
     viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
@@ -1889,7 +1908,7 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("Normal Refinement ! Returned: %d normals\n", (int) working_cloud->points.size ());
 
-  if ( step )
+  if ( false )
   {
     viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMAL_CLOUD");
@@ -2041,6 +2060,7 @@ int main (int argc, char** argv)
 
       std::vector<std::string> ids;
 
+      pcl::console::print_info ("----------------------------------------------------------------------------------------------------\n");
       pcl::console::print_info ("AT FIT = %d AT ITERATION = %d\n", fit, ite);
 
       pcl::PointIndices::Ptr line_inliers (new pcl::PointIndices ());
@@ -2161,31 +2181,38 @@ int main (int argc, char** argv)
         //adjustLineModel (line_cloud, line_inliers, line_coefficients, half_of_line_threshold, maximum_line_iterations);
         adjustLineModel (adjust_using_curvature, line_inliers, line_coefficients, half_of_line_threshold, maximum_line_iterations);
 
+  double pt1[2];
+  pt1[0] = line_coefficients->values.at (0);
+  pt1[1] = line_coefficients->values.at (1);
+
+  double pt2[2];
+  pt2[0] = line_coefficients->values.at (3) + line_coefficients->values.at (0);
+  pt2[1] = line_coefficients->values.at (4) + line_coefficients->values.at (1);
+
+  // A.K.A. length of line //
+  float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
+
+  pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+
+  if ( lol < minimum_line_length )
+  {
+    valid_line = false;
+    if ( verbose ) pcl::console::print_error ("  [LENGTH OF LINE] Line Rejected ! \n");
+  }
+
         // Adjust Coefficients Of Line Model //
         adjustLineCoefficients (line_cloud, line_coefficients);
 
-        // XXX TODO XXX // MAYBE THE BEST WAY FOR THE FUTURE, WOULD BE TO WORK ONLY W/ LINE SEGMENTS AND CIRCLE ARCS //
+  pt1[0] = line_coefficients->values.at (0);
+  pt1[1] = line_coefficients->values.at (1);
 
-        // limit the lenghts of line segments, after the same reasoning you are limiting the radius of circle models //
+  pt2[0] = line_coefficients->values.at (3) + line_coefficients->values.at (0);
+  pt2[1] = line_coefficients->values.at (4) + line_coefficients->values.at (1);
 
-        double pt1[2];
-        pt1[0] = line_coefficients->values.at (0);
-        pt1[1] = line_coefficients->values.at (1);
+  // A.K.A. length of line //
+  lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
 
-        double pt2[2];
-        pt2[0] = line_coefficients->values.at (3) + line_coefficients->values.at (0);
-        pt2[1] = line_coefficients->values.at (4) + line_coefficients->values.at (1);
-
-        // A.K.A. length of line //
-        float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
-
-        pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
-
-        if ( lol < minimum_line_length )
-        {
-          valid_line = false;
-          if ( verbose ) pcl::console::print_error ("  [LENGTH OF LINE] Line Rejected ! \n");
-        }
+  pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
 
         if ( fitting_step )
         {
@@ -2271,6 +2298,31 @@ int main (int argc, char** argv)
         double half_of_circle_threshold = circle_threshold / 2;
         adjustCircleModel (circle_cloud, circle_inliers, circle_coefficients, half_of_circle_threshold, minimum_circle_radius, maximum_circle_radius, maximum_circle_iterations);
 
+        double mcx = circle_coefficients->values.at (0);
+        double mcy = circle_coefficients->values.at (1);
+        double  mr = circle_coefficients->values.at (2);
+
+        pcl::PointIndices::Ptr planar_cylinder_inliers (new pcl::PointIndices ());
+
+        for (int idx = 0; idx < (int) planar_curvature_cloud->points.size(); idx++)
+        {
+          double xx = planar_curvature_cloud->points.at (idx).x;
+          double yy = planar_curvature_cloud->points.at (idx).y;
+
+          double dd = sqrt ( _sqr (mcx - xx) + _sqr (mcy - yy) );
+
+          if ( dd < (mr + circle_threshold) )
+            planar_cylinder_inliers->indices.push_back (idx);
+        }
+
+        pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
+
+        if ( 750 < planar_cylinder_inliers->indices.size () )
+        {
+          pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
+          valid_circle = false;
+        }
+
         if ( fitting_step )
         {
           pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> circle_cloud_color (circle_cloud, 255, 127, 0);
@@ -2328,10 +2380,11 @@ int main (int argc, char** argv)
       //}
       //*/
 
-
+      if ( valid_line == false ) { line_inliers->indices.clear (); line_cloud->points.clear (); }
+      if ( valid_circle == false ) { circle_inliers->indices.clear (); circle_cloud->points.clear (); }
 
       if ( verbose ) pcl::console::print_warn ("  %5d line inliers vs. %5d circle inliers\n", line_inliers->indices.size (), circle_inliers->indices.size ());
-      if ( verbose ) pcl::console::print_warn ("  %5d line cloudsz vs. %5d circle cloudsz\n", line_cloud->points.size (), circle_cloud->points.size ());
+      if ( verbose ) pcl::console::print_info ("  %5d line cloudsz vs. %5d circle cloudsz\n", line_cloud->points.size (), circle_cloud->points.size ());
 
       // Parameters //
       double FP1[2];
@@ -2396,6 +2449,10 @@ int main (int argc, char** argv)
 
         if ( valid_circle )
         {
+          if (circle_inliers->indices.size () > 0 )
+          {
+          if (circle_inliers->indices.size () > minimum_circle_inliers )
+          {
           if ( verbose ) pcl::console::print_value ("  Circle Accepted ! Has %4d inliers with FC = (%6.3f,%6.3f) and FR = %5.3f in [%5.3f, %5.3f]\n", (int) circle_inliers->indices.size (), FCX, FCY, FR, minimum_circle_radius, maximum_circle_radius);
 
           // Cast Vote For Circles //
@@ -2405,6 +2462,13 @@ int main (int argc, char** argv)
           circle_vote.z =  FR;
 
           circle_parameters_space->points.push_back (circle_vote);
+
+          }
+          else
+            if ( verbose ) pcl::console::print_error ("  Circle No Good !\n");
+          }
+          else
+            if ( verbose ) pcl::console::print_error ("  Circle No Good !\n");
         }
         else
           if ( verbose ) pcl::console::print_error ("  Still Rejecting The Circle !\n");
