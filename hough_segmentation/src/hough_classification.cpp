@@ -2047,11 +2047,12 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    //if ( fit > 7 )
-    //{
-    //std::cout << " fitting_step = ";
-    //std::cin >> fitting_step;
-    //}
+    if ( fit > 7 )
+    {
+      //std::cout << " fitting_step = ";
+      //std::cin >> fitting_step;
+      fitting_step = 1;
+    }
 
     for (int ite = 0; ite < vransac_iterations; ite++)
     {
@@ -2317,7 +2318,7 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        if ( 750 < planar_cylinder_inliers->indices.size () )
+        if ( 825 < planar_cylinder_inliers->indices.size () )
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
@@ -4045,7 +4046,11 @@ int main (int argc, char** argv)
 
         if ( abs(SA - 360) <= sat )
         {
-          backup_novel_box_inliers->indices.push_back (idx);
+          B.z = backup_working_cloud->points.at (idx).z;
+
+          if ( (minimus < B.z) && (B.z < maximus) )
+            backup_novel_box_inliers->indices.push_back (idx);
+
           //cerr << SA << endl ;
         }
 
@@ -4055,8 +4060,8 @@ int main (int argc, char** argv)
 
       //if ( ((max_dist / min_dist) > flat_value) || ((max_dist / z_dist) > flat_value ))
       //if ( smallest_dimension < flat_value )
-      //if ( (smallest_dimension / (medium_dimension + biggest_dimension)) < flat_value )
-      if ((max_dist / min_dist) > flat_value)
+      if ( (smallest_dimension / (medium_dimension + biggest_dimension)) < flat_value )
+      //if ((max_dist / min_dist) > flat_value)
       {
         if ( number_of_flat < 10 )
           object_filename << directory << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
