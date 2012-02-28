@@ -1552,7 +1552,7 @@ int main (int argc, char** argv)
 
   // ---------- Load Input Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
   if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *xyz_rgb_cloud) == -1)
   {
@@ -1568,6 +1568,7 @@ int main (int argc, char** argv)
   if ( step )
   {
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
+    //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormalRSD> working_color (working_cloud);
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "XYZ_RGB_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "XYZ_RGB_CLOUD");
     viewer.spin ();
@@ -1591,11 +1592,13 @@ int main (int argc, char** argv)
     cerr << directory << endl;
   }
 
+  ///*
+
   // ---------- Filter Point Cloud Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
   sor.setInputCloud (xyz_rgb_cloud);
   sor.setMeanK (mean_k_filter);
   sor.setStddevMulThresh (std_dev_filter);
@@ -1620,13 +1623,13 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream filtered_output_filename;
-    filtered_output_filename << directory << "-" << "denoise.pcd" ;
+    filtered_output_filename << directory << "-" << "denoise-with-rgb.pcd" ;
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
-    std::string file = filtered_output_filename.str ();
-    f = file.find_last_of (".");
-    cerr << f << endl ;
-    directory = file.substr (0, f);
+    //std::string file = filtered_output_filename.str ();
+    //f = file.find_last_of (".");
+    //cerr << f << endl ;
+    //directory = file.substr (0, f);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1635,11 +1638,11 @@ int main (int argc, char** argv)
 
   // ---------- Smoothing ---------- //
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
   mls_tree->setInputCloud (filtered_cloud);
 
-  pcl::MovingLeastSquares<pcl::PointXYZ, pcl::Normal> mls;
+  pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::Normal> mls;
   mls.setInputCloud (filtered_cloud);
   mls.setPolynomialFit (true);
   mls.setSearchMethod (mls_tree);
@@ -1665,26 +1668,32 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream smooth_output_filename;
-    smooth_output_filename << directory << "-" << "smooth.pcd" ;
+    smooth_output_filename << directory << "-" << "denoise-smooth-with-rgb.pcd" ;
     pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
-    std::string file = smooth_output_filename.str ();
-    f = file.find_last_of (".");
-    cerr << f << endl ;
-    directory = file.substr (0, f);
+    //std::string file = smooth_output_filename.str ();
+    //f = file.find_last_of (".");
+    //cerr << f << endl ;
+    //directory = file.substr (0, f);
 
     cerr << directory << endl;
     cerr << directory << endl;
     cerr << directory << endl;
   }
 
+  //*/
+
+  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  //
+  //*smooth_cloud = *xyz_rgb_cloud;
+
   // ---------- Estimate 3D Normals ---------- //
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
   normal_tree->setInputCloud (smooth_cloud);
 
-  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
   ne.setInputCloud (smooth_cloud);
   ne.setSearchMethod (normal_tree);
   ne.setRadiusSearch (normal_search_radius);
@@ -1769,10 +1778,10 @@ int main (int argc, char** argv)
   // ---------- Estimate RSD Values ---------- //
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZ> ());
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
   rsd_tree->setInputCloud (smooth_cloud);
 
-  pcl::RSDEstimation<pcl::PointXYZ, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (smooth_cloud);
   rsd.setInputNormals (normal_cloud);
   rsd.setRadiusSearch (rsd_search_radius);
@@ -1934,29 +1943,36 @@ int main (int argc, char** argv)
 
   // ---------- For Classification ---------- //
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr marked_working_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+  pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_working_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
 
   //pcl::copyFields (*working_cloud, *marked_working_cloud);
 
+  pcl::copyPointCloud (*working_cloud, *marked_working_cloud);
+
   ///*
-  marked_working_cloud->points.resize (working_cloud->points.size ());
-  marked_working_cloud->width        = working_cloud->width;
-  marked_working_cloud->height       = working_cloud->height;
-  if (!working_cloud->is_dense) marked_working_cloud->is_dense = false; else marked_working_cloud->is_dense = true;
+  //marked_working_cloud->points.resize (working_cloud->points.size ());
+  //marked_working_cloud->width        = working_cloud->width;
+  //marked_working_cloud->height       = working_cloud->height;
+  //if (!working_cloud->is_dense) marked_working_cloud->is_dense = false; else marked_working_cloud->is_dense = true;
 
   for (size_t i=0; i < working_cloud->points.size (); ++i)
   {
-    marked_working_cloud->points.at (i).x         = working_cloud->points.at (i).x;
-    marked_working_cloud->points.at (i).y         = working_cloud->points.at (i).y;
-    marked_working_cloud->points.at (i).z         = working_cloud->points.at (i).z;
+    //marked_working_cloud->points.at (i).x         = working_cloud->points.at (i).x;
+    //marked_working_cloud->points.at (i).y         = working_cloud->points.at (i).y;
+    //marked_working_cloud->points.at (i).z         = working_cloud->points.at (i).z;
+    //marked_working_cloud->points.at (i).rgb       = working_cloud->points.at (i).rgb;
+
     marked_working_cloud->points.at (i).intensity = -1;
   }
   //*/
 
   if ( step )
   {
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZI> marked_color (marked_working_cloud, 0, 255, 127);
-    viewer.addPointCloud<pcl::PointXYZI> (marked_working_cloud, marked_color, "MARKED_CLOUD");
+    //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBI> marked_color (marked_working_cloud, 0, 255, 127);
+    //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormalRSD> marked_color (working_cloud);
+    //viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, marked_color, "MARKED_CLOUD");
+    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBI> marked_color (marked_working_cloud);
+    viewer.addPointCloud<pcl::PointXYZRGBI> (marked_working_cloud, marked_color, "MARKED_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "MARKED_CLOUD");
     viewer.spin ();
 
@@ -2051,7 +2067,7 @@ int main (int argc, char** argv)
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
-      fitting_step = 1;
+      fitting_step = 0;
     }
 
     for (int ite = 0; ite < vransac_iterations; ite++)
@@ -2318,7 +2334,8 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        if ( 825 < planar_cylinder_inliers->indices.size () )
+        if ( 1025 < planar_cylinder_inliers->indices.size () )
+        // if ( 825 < planar_cylinder_inliers->indices.size () ) //
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
@@ -4089,10 +4106,10 @@ int main (int argc, char** argv)
 
         number_of_flat++;
         /*
-        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
         pcl::copyFields (*box_cloud, *marked_box_cloud);
         for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
-          marked_box_cloud->points.at (idx).intensity = 3;
+          marked_box_cloud->points.at (idx).label = 3;
         *marked_working_cloud += *marked_box_cloud;
         */
         ///*
@@ -4128,10 +4145,10 @@ int main (int argc, char** argv)
 
         number_of_box++;
         /*
-        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
         pcl::copyFields (*box_cloud, *marked_box_cloud);
         for (int idx=0; idx < (int) marked_box_cloud->points.size (); idx++)
-          marked_box_cloud->points.at (idx).intensity = 2;
+          marked_box_cloud->points.at (idx).label = 2;
         *marked_working_cloud += *marked_box_cloud;
         */
         ///*
@@ -4363,10 +4380,10 @@ int main (int argc, char** argv)
         //
         //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
         /*
-        pcl::PointCloud<pcl::PointXYZI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
+        pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
         pcl::copyFields (*cylinder_cloud, *marked_cylinder_cloud);
         for (int idx=0; idx < (int) marked_cylinder_cloud->points.size (); idx++)
-          marked_cylinder_cloud->points.at (idx).intensity = 4;
+          marked_cylinder_cloud->points.at (idx).label = 4;
         *marked_working_cloud += *marked_cylinder_cloud;
         */
         if ( !till_the_end ) viewer.spin ();
@@ -4376,7 +4393,7 @@ int main (int argc, char** argv)
     }
 
     std::stringstream marked_output_filename;
-    marked_output_filename << directory << "-" << "marked.pcd" ;
+    marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
     pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
