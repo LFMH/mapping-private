@@ -50,6 +50,18 @@
 
 #include "../include/ransac.hpp"
 
+// ---------- Types ---------- //
+
+typedef pcl::PointXYZ I; //
+// typedef pcl::PointXYZRGB I; //
+
+typedef pcl::Normal N;
+
+typedef pcl::PointNormal PointT; //
+// typedef pcl::PointXYZRGBNormal PointT; //
+
+typedef pcl::Boundary B;
+
 // ---------- Variables ---------- //
 
 // Method //
@@ -1552,25 +1564,24 @@ int main (int argc, char** argv)
 
   // ---------- Load Input Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr input_cloud (new pcl::PointCloud<I> ());
 
-  if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *xyz_rgb_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *input_cloud) == -1)
   {
     pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [0]]);
     return (-1);
   }
 
   // Update Working Cloud //
-  pcl::copyPointCloud (*xyz_rgb_cloud, *working_cloud);
+  pcl::copyPointCloud (*input_cloud, *working_cloud);
 
   if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [0]], pcl::getFieldsList (*working_cloud).c_str ());
 
   if ( step )
   {
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
-    //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormalRSD> working_color (working_cloud);
-    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "XYZ_RGB_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "XYZ_RGB_CLOUD");
+    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "INPUT_CLOUD");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "INPUT_CLOUD");
     viewer.spin ();
   }
 
@@ -1584,11 +1595,9 @@ int main (int argc, char** argv)
   {
     std::string file = argv [pcd_file_indices [0]];
     f = file.find_last_of (".");
-    cerr << f << endl ;
     directory = file.substr (0, f);
 
-    cerr << directory << endl;
-    cerr << directory << endl;
+    cerr << f << endl ;
     cerr << directory << endl;
   }
 
@@ -1596,10 +1605,10 @@ int main (int argc, char** argv)
 
   // ---------- Filter Point Cloud Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
 
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-  sor.setInputCloud (xyz_rgb_cloud);
+  pcl::StatisticalOutlierRemoval<I> sor;
+  sor.setInputCloud (input_cloud);
   sor.setMeanK (mean_k_filter);
   sor.setStddevMulThresh (std_dev_filter);
   sor.filter (*filtered_cloud);
@@ -1607,11 +1616,11 @@ int main (int argc, char** argv)
   // Update Working Cloud //
   pcl::copyPointCloud (*filtered_cloud, *working_cloud);
 
-  if ( verbose ) pcl::console::print_info ("Filtering ! Before: %d points | After: %d points | Filtered: %d points\n", (int) xyz_rgb_cloud->points.size (), (int) working_cloud->points.size (), (int) xyz_rgb_cloud->points.size () - (int) working_cloud->points.size ());
+  if ( verbose ) pcl::console::print_info ("Filtering ! Before: %d points | After: %d points | Filtered: %d points\n", (int) input_cloud->points.size (), (int) working_cloud->points.size (), (int) input_cloud->points.size () - (int) working_cloud->points.size ());
 
   if ( step )
   {
-    viewer.removePointCloud ("XYZ_RGB_CLOUD");
+    viewer.removePointCloud ("INPUT_CLOUD");
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "FILTERED_CLOUD");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "FILTERED_CLOUD");
@@ -1623,26 +1632,24 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream filtered_output_filename;
-    filtered_output_filename << directory << "-" << "denoise-with-rgb.pcd" ;
+    filtered_output_filename << directory << "-" << "denoise.pcd" ;
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
-    //std::string file = filtered_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    std::string file = filtered_output_filename.str ();
+    f = file.find_last_of (".");
+    directory = file.substr (0, f);
 
-    cerr << directory << endl;
-    cerr << directory << endl;
+    cerr << f << endl ;
     cerr << directory << endl;
   }
 
   // ---------- Smoothing ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
+  pcl::search::KdTree<I>::Ptr mls_tree (new pcl::search::KdTree<I> ());
   mls_tree->setInputCloud (filtered_cloud);
 
-  pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::Normal> mls;
+  pcl::MovingLeastSquares<I, pcl::Normal> mls;
   mls.setInputCloud (filtered_cloud);
   mls.setPolynomialFit (true);
   mls.setSearchMethod (mls_tree);
@@ -1668,32 +1675,30 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream smooth_output_filename;
-    smooth_output_filename << directory << "-" << "denoise-smooth-with-rgb.pcd" ;
+    smooth_output_filename << directory << "-" << "smooth.pcd" ;
     pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
-    //std::string file = smooth_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    std::string file = smooth_output_filename.str ();
+    f = file.find_last_of (".");
+    directory = file.substr (0, f);
 
-    cerr << directory << endl;
-    cerr << directory << endl;
+    cerr << f << endl ;
     cerr << directory << endl;
   }
 
   //*/
 
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  //pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
   //
-  //*smooth_cloud = *xyz_rgb_cloud;
+  //*smooth_cloud = *input_cloud;
 
   // ---------- Estimate 3D Normals ---------- //
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<I>::Ptr normal_tree (new pcl::search::KdTree<I> ());
   normal_tree->setInputCloud (smooth_cloud);
 
-  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  pcl::NormalEstimation<I, pcl::Normal> ne;
   ne.setInputCloud (smooth_cloud);
   ne.setSearchMethod (normal_tree);
   ne.setRadiusSearch (normal_search_radius);
@@ -1778,10 +1783,10 @@ int main (int argc, char** argv)
   // ---------- Estimate RSD Values ---------- //
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<I>::Ptr rsd_tree (new pcl::search::KdTree<I> ());
   rsd_tree->setInputCloud (smooth_cloud);
 
-  pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation<I, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (smooth_cloud);
   rsd.setInputNormals (normal_cloud);
   rsd.setRadiusSearch (rsd_search_radius);
@@ -4393,7 +4398,7 @@ int main (int argc, char** argv)
     }
 
     std::stringstream marked_output_filename;
-    marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
+    marked_output_filename << directory << "-" << "marked.pcd" ;
     pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
