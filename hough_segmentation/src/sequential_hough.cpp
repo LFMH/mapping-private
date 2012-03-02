@@ -160,6 +160,7 @@ int number_of_short = 1;
 
 double flat_value = 0.250;
 
+bool deal_with_the_rest_of_the_points = true;
 bool consider_height_from_table_plane = true;
 bool shapes_from_table_plane = true;
 
@@ -1496,6 +1497,7 @@ int main (int argc, char** argv)
 
   pcl::console::parse_argument (argc, argv, "-flat_value", flat_value);
 
+  pcl::console::parse_argument (argc, argv, "-deal_with_the_rest_of_the_points", deal_with_the_rest_of_the_points);
   pcl::console::parse_argument (argc, argv, "-consider_height_from_table_plane", consider_height_from_table_plane);
   pcl::console::parse_argument (argc, argv, "-shapes_from_table_plane", shapes_from_table_plane);
 
@@ -1535,6 +1537,11 @@ int main (int argc, char** argv)
   //viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "xOy");
   //viewer.spin ();
 
+  for (int f = 0; f < pcd_file_indices.size (); f++)
+  {
+
+  pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [f]]);
+
   // Declare Working Cloud //
   pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr working_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
 
@@ -1542,16 +1549,16 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<I>::Ptr input_cloud (new pcl::PointCloud<I> ());
 
-  if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pcd_file_indices [f]], *input_cloud) == -1)
   {
-    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [0]]);
+    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [f]]);
     return (-1);
   }
 
   // Update Working Cloud //
   pcl::copyPointCloud (*input_cloud, *working_cloud);
 
-  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [0]], pcl::getFieldsList (*working_cloud).c_str ());
+  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [f]], pcl::getFieldsList (*working_cloud).c_str ());
 
   if ( step )
   {
@@ -1569,7 +1576,7 @@ int main (int argc, char** argv)
 
   if ( classification )
   {
-    std::string file = argv [pcd_file_indices [0]];
+    std::string file = argv [pcd_file_indices [f]];
     f = file.find_last_of (".");
     directory = file.substr (0, f);
 
@@ -5883,6 +5890,9 @@ int main (int argc, char** argv)
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
+    if ( deal_with_the_rest_of_the_points )
+    {
+
     if ( !more_votes_for_lines && !more_votes_for_circles )
     {
       viewer.spin ();
@@ -6256,7 +6266,7 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
 
-
+    }
 
     fit++;
 
@@ -6269,8 +6279,9 @@ int main (int argc, char** argv)
       else
         pcl::console::print_warn ("    %d = %d | Continue... \n", (int) working_cloud->points.size (), minimum_line_inliers);
 
-  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
+  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_circle_inliers) );
 
+  }
 
   viewer.spin ();
 
