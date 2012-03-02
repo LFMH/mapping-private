@@ -2022,8 +2022,8 @@ int main (int argc, char** argv)
           //sign_ee.setNegative (true);
           //sign_ee.filter (*working_cloud);
 
-          //if ( step )
-          if ( true )
+          if ( step )
+          //if ( true )
           {
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> significant_plane_inliers_color (significant_plane_inliers_cloud, 0, 255, 255);
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (significant_plane_inliers_cloud, significant_plane_inliers_color, "plane");
@@ -2067,8 +2067,8 @@ int main (int argc, char** argv)
               pcl::console::print_info ("  Cluster %d has %d points\n", clu, (int) sign_clusters.at (clu).indices.size());
           }
 
-          //if ( step )
-          if ( true )
+          if ( step )
+          //if ( true )
           {
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> big_color (biggest_cluster_of_plane_cloud, 0, 255, 255);
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (biggest_cluster_of_plane_cloud, big_color, "big_");
@@ -2107,8 +2107,8 @@ int main (int argc, char** argv)
           big_sign_ee.setNegative (false);
           big_sign_ee.filter (*boundary_cloud);
 
-          //if ( step )
-          if ( true )
+          if ( step )
+          //if ( true )
           {
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> boundary_color (boundary_cloud, 0, 255, 255);
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (boundary_cloud, boundary_color, "bou_");
@@ -2136,8 +2136,8 @@ int main (int argc, char** argv)
 
           adjustLineCoefficients (line_cloud, line_coefficients);
 
-          //if ( step )
-          if ( true )
+          if ( step )
+          //if ( true )
           {
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> line_cloud_color (line_cloud, 255, 0, 0);
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (line_cloud, line_cloud_color, "LINE_CLOUD_ID");
