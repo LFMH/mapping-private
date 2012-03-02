@@ -1537,10 +1537,10 @@ int main (int argc, char** argv)
   //viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "xOy");
   //viewer.spin ();
 
-  for (int f = 0; f < pcd_file_indices.size (); f++)
+  for (int ff = 0; ff < pcd_file_indices.size (); ff++)
   {
 
-  pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [f]]);
+  pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [ff]]);
 
   // Declare Working Cloud //
   pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr working_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
@@ -1549,16 +1549,16 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<I>::Ptr input_cloud (new pcl::PointCloud<I> ());
 
-  if (pcl::io::loadPCDFile (argv [pcd_file_indices [f]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pcd_file_indices [ff]], *input_cloud) == -1)
   {
-    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [f]]);
+    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [ff]]);
     return (-1);
   }
 
   // Update Working Cloud //
   pcl::copyPointCloud (*input_cloud, *working_cloud);
 
-  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [f]], pcl::getFieldsList (*working_cloud).c_str ());
+  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [ff]], pcl::getFieldsList (*working_cloud).c_str ());
 
   if ( step )
   {
@@ -1576,11 +1576,11 @@ int main (int argc, char** argv)
 
   if ( classification )
   {
-    std::string file = argv [pcd_file_indices [f]];
+    std::string file = argv [pcd_file_indices [ff]];
     f = file.find_last_of (".");
     directory = file.substr (0, f);
 
-    cerr << f << endl ;
+    //cerr << f << endl ;
     cerr << directory << endl;
   }
 
@@ -1622,7 +1622,7 @@ int main (int argc, char** argv)
     f = file.find_last_of (".");
     directory = file.substr (0, f);
 
-    cerr << f << endl ;
+    //cerr << f << endl ;
     cerr << directory << endl;
   }
 
@@ -1665,7 +1665,7 @@ int main (int argc, char** argv)
     f = file.find_last_of (".");
     directory = file.substr (0, f);
 
-    cerr << f << endl ;
+    //cerr << f << endl ;
     cerr << directory << endl;
   }
 
@@ -3548,6 +3548,8 @@ int main (int argc, char** argv)
 
   //int model = 0;
 
+  bool continue_hough = true;
+
   do
   {
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
@@ -3824,8 +3826,8 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        if ( 1025 < planar_cylinder_inliers->indices.size () ) // 5B
-        // if ( 825 < planar_cylinder_inliers->indices.size () ) // E3
+        if ( 1025 < planar_cylinder_inliers->indices.size () ) // table1
+        //if ( 525 < planar_cylinder_inliers->indices.size () ) // table2
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
@@ -6268,6 +6270,8 @@ int main (int argc, char** argv)
 
     }
 
+    if (!more_votes_for_lines && !more_votes_for_circles) continue_hough = false;
+
     fit++;
 
     // Print And Check If Either To Continue Or Stop //
@@ -6279,7 +6283,15 @@ int main (int argc, char** argv)
       else
         pcl::console::print_warn ("    %d = %d | Continue... \n", (int) working_cloud->points.size (), minimum_line_inliers);
 
-  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_circle_inliers) );
+  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_circle_inliers) && (continue_hough) );
+
+  viewer.spin ();
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
+
+  viewer.spin ();
 
   }
 
