@@ -1537,10 +1537,17 @@ int main (int argc, char** argv)
   //viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "xOy");
   //viewer.spin ();
 
-  for (int ff = 0; ff < pcd_file_indices.size (); ff++)
+
+  std::vector<std::vector<pcl::ModelCoefficients> > cyls;
+  std::vector<std::vector<std::vector<pcl::ModelCoefficients> > > cubs;
+
+  for (int fff = 0; fff < pcd_file_indices.size (); fff++)
   {
 
-  pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [ff]]);
+  std::vector<pcl::ModelCoefficients> cyls_per_view;
+  std::vector<std::vector<pcl::ModelCoefficients> > cubs_per_view;
+
+  pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [fff]]);
 
   // Declare Working Cloud //
   pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr working_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
@@ -1549,16 +1556,16 @@ int main (int argc, char** argv)
 
   pcl::PointCloud<I>::Ptr input_cloud (new pcl::PointCloud<I> ());
 
-  if (pcl::io::loadPCDFile (argv [pcd_file_indices [ff]], *input_cloud) == -1)
+  if (pcl::io::loadPCDFile (argv [pcd_file_indices [fff]], *input_cloud) == -1)
   {
-    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [ff]]);
+    pcl::console::print_error ("Couldn't read file %s\n", argv [pcd_file_indices [fff]]);
     return (-1);
   }
 
   // Update Working Cloud //
   pcl::copyPointCloud (*input_cloud, *working_cloud);
 
-  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [ff]], pcl::getFieldsList (*working_cloud).c_str ());
+  if ( verbose ) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [fff]], pcl::getFieldsList (*working_cloud).c_str ());
 
   if ( step )
   {
@@ -1576,7 +1583,7 @@ int main (int argc, char** argv)
 
   if ( classification )
   {
-    std::string file = argv [pcd_file_indices [ff]];
+    std::string file = argv [pcd_file_indices [fff]];
     f = file.find_last_of (".");
     directory = file.substr (0, f);
 
@@ -3308,16 +3315,16 @@ int main (int argc, char** argv)
 
 */
 
-          std::vector<pcl::ModelCoefficients> cub;
+          std::vector<pcl::ModelCoefficients> pla;
 
-          cub.push_back (e0);
-          cub.push_back (e1);
-          cub.push_back (e2);
-          cub.push_back (e3);
-          cub.push_back (e4);
-          cub.push_back (e5);
-          cub.push_back (e6);
-          cub.push_back (e7);
+          pla.push_back (e0);
+          pla.push_back (e1);
+          pla.push_back (e2);
+          pla.push_back (e3);
+          pla.push_back (e4);
+          pla.push_back (e5);
+          pla.push_back (e6);
+          pla.push_back (e7);
 
           cerr << e0.values.at(0) << " " << e0.values.at(1) << " " << e0.values.at(2) << " " << e0.values.at(3) << " " << e0.values.at(4) << " " << e0.values.at(5) << endl ;
           cerr << e1.values.at(0) << " " << e1.values.at(1) << " " << e1.values.at(2) << " " << e1.values.at(3) << " " << e1.values.at(4) << " " << e1.values.at(5) << endl ;
@@ -3332,7 +3339,7 @@ int main (int argc, char** argv)
 
           //////std::stringstream cub_id;
           //////cub_id << "CUB_" << getTimestamp ();
-          //////viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+          //////viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
           model++;
           cerr << endl << " MODEL " << model << endl << endl ;
@@ -3471,7 +3478,9 @@ int main (int argc, char** argv)
 
               std::stringstream cub_id;
               cub_id << "CUB_" << getTimestamp ();
-              viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+              viewer.addCuboid (pla, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+
+              cubs_per_view.push_back (pla);
 
               number_of_flat++;
               /*
@@ -3510,7 +3519,9 @@ int main (int argc, char** argv)
 
               std::stringstream cub_id;
               cub_id << "CUB_" << getTimestamp ();
-              viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+              viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+              cubs_per_view.push_back (pla);
 
               number_of_box++;
               /*
@@ -5598,6 +5609,8 @@ int main (int argc, char** argv)
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
 
+        cubs_per_view.push_back (cub);
+
         number_of_flat++;
         /*
         pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
@@ -5636,6 +5649,8 @@ int main (int argc, char** argv)
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+        cubs_per_view.push_back (cub);
 
         number_of_box++;
         /*
@@ -5773,6 +5788,8 @@ int main (int argc, char** argv)
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+
+      cyls_per_view.push_back (cyl);
 
       model++;
       cerr << endl << " MODEL " << model << endl << endl ;
@@ -6257,6 +6274,8 @@ int main (int argc, char** argv)
         viewer.addCuboid (C, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
         viewer.spin ();
 
+        cubs_per_view.push_back (C);
+
         // Remove These Point From The Cloud //
         r_ei.setNegative (true);
         r_ei.filter (*working_cloud);
@@ -6293,7 +6312,127 @@ int main (int argc, char** argv)
 
   viewer.spin ();
 
+  cerr << " cubs per view = " << cubs_per_view.size () << endl ;
+  cerr << " cyls per view = " << cyls_per_view.size () << endl ;
+
+  cubs.push_back (cubs_per_view);
+  cyls.push_back (cyls_per_view);
+
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+ofstream file;
+
+
+    double cuboid[8][3];
+    cuboid[0][0] = edges[0][0];        cuboid[0][1] = edges[0][1];        cuboid[0][2] = minZ;
+    cuboid[1][0] = edges[1][0];        cuboid[1][1] = edges[1][1];        cuboid[1][2] = minZ;
+    cuboid[2][0] = edges[2][0];        cuboid[2][1] = edges[2][1];        cuboid[2][2] = minZ;
+    cuboid[3][0] = edges[3][0];        cuboid[3][1] = edges[3][1];        cuboid[3][2] = minZ;
+    cuboid[4][0] = edges[0][0];        cuboid[4][1] = edges[0][1];        cuboid[4][2] = maxZ;
+    cuboid[5][0] = edges[1][0];        cuboid[5][1] = edges[1][1];        cuboid[5][2] = maxZ;
+    cuboid[6][0] = edges[2][0];        cuboid[6][1] = edges[2][1];        cuboid[6][2] = maxZ;
+    cuboid[7][0] = edges[3][0];        cuboid[7][1] = edges[3][1];        cuboid[7][2] = maxZ;
+
+
+    double d1 = sqrt (_sqr (cuboid[1][0] - cuboid[0][0]) + _sqr (cuboid[1][1] - cuboid[0][1]));
+    double d2 = sqrt (_sqr (cuboid[2][0] - cuboid[1][0]) + _sqr (cuboid[2][1] - cuboid[1][1]));
+    double d3 = maxZ - minZ;
+
+    file << setprecision (5) << d1 << " x " << d2 << " x " << d3  << "\n" ;
+    file << flush;
+
+
+
+
+
+
+
+
+  file.open ("box-ing-sizes.txt");
+
+  file << "\n";
+  file << flush;
+
+
+
+
+
+
+
+
+
+    // Get position of last slash in path of file
+    std::string path = argv [pPCDFileIndices.at (pcd)];
+    size_t slash = path.find_last_of ("/");
+    size_t length = path.length ();
+    std::string name = path.substr (slash + 1, length);
+
+    file << "  file " << name << "\n";
+    file << flush;
+
+    fprintf (stderr, "\n  Mean of Bound = %5.3f \n\n", rectanguloid_approximation);
+
+    for (int run = 0; run < runs; run++ )
+    {
+
+      file << "    run " << run << " with ";
+      file << flush;
+
+
+
+
+    fprintf (stderr, "\n");
+
+    file << "\n";
+    file << flush;
+
+    /// Dealloc ANNpointArrays ///
+    annDeallocPts (points);
+
+  }
+
+  file.close();
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   viewer.spin ();
 
