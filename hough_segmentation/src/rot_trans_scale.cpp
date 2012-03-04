@@ -237,6 +237,8 @@ int main (int argc, char** argv)
 
     /*
 
+    // for Table 1 //
+
     // ---------- Add Cuboid ---------- //
 
     pcl::ModelCoefficients e0, e1, e2, e3;
@@ -316,7 +318,11 @@ int main (int argc, char** argv)
 
     */
 
+
+
     /*
+
+    // for Table 2 //
 
     // ---------- Add Cuboid ---------- //
 
@@ -397,6 +403,91 @@ int main (int argc, char** argv)
 
     */
 
+
+
+    /*
+
+    // again, for Table 1 //
+
+    // ---------- Add Cuboid ---------- //
+
+    pcl::ModelCoefficients e0, e1, e2, e3;
+
+    e0.values.push_back (-0.700407);
+    e0.values.push_back (-0.976395);
+    e0.values.push_back (0.445392);
+    e0.values.push_back (0.0717466);
+    e0.values.push_back (0.18502);
+    e0.values.push_back (0);
+
+    e1.values.push_back (-0.62866);
+    e1.values.push_back (-0.791374);
+    e1.values.push_back (0.445392);
+    e1.values.push_back (-0.229261);
+    e1.values.push_back (0.0889022);
+    e1.values.push_back (0);
+
+    e2.values.push_back (-0.857922);
+    e2.values.push_back (-0.702472);
+    e2.values.push_back (0.445392);
+    e2.values.push_back (-0.0717466);
+    e2.values.push_back (-0.18502);
+    e2.values.push_back (0);
+
+    e3.values.push_back (-0.929668);
+    e3.values.push_back (-0.887492);
+    e3.values.push_back (0.445392);
+    e3.values.push_back (0.229261);
+    e3.values.push_back (-0.0889022);
+    e3.values.push_back (0);
+
+    pcl::ModelCoefficients e4, e5, e6, e7;
+
+    e4.values.push_back (-0.700407);
+    e4.values.push_back (-0.976395);
+    e4.values.push_back (0.468028);
+    e4.values.push_back (0.0717466);
+    e4.values.push_back (0.18502);
+    e4.values.push_back (0);
+
+    e5.values.push_back (-0.62866);
+    e5.values.push_back (-0.791374);
+    e5.values.push_back (0.468028);
+    e5.values.push_back (-0.229261);
+    e5.values.push_back (0.0889022);
+    e5.values.push_back (0);
+
+    e6.values.push_back (-0.857922);
+    e6.values.push_back (-0.702472);
+    e6.values.push_back (0.468028);
+    e6.values.push_back (-0.0717466);
+    e6.values.push_back (-0.18502);
+    e6.values.push_back (0);
+
+    e7.values.push_back (-0.929668);
+    e7.values.push_back (-0.887492);
+    e7.values.push_back (0.468028);
+    e7.values.push_back (0.229261);
+    e7.values.push_back (-0.0889022);
+    e7.values.push_back (0);
+
+    std::vector<pcl::ModelCoefficients> cub;
+
+    cub.push_back (e0);
+    cub.push_back (e1);
+    cub.push_back (e2);
+    cub.push_back (e3);
+    cub.push_back (e4);
+    cub.push_back (e5);
+    cub.push_back (e6);
+    cub.push_back (e7);
+
+    std::stringstream cub_id;
+    cub_id << "CUB_" << getTimestamp ();
+    viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+   */
+
     do
     {
       Eigen::Affine3f t;
@@ -412,7 +503,7 @@ int main (int argc, char** argv)
         viewer.spin ();
       }
 
-      // printf ("Again? 0/1 = "); scanf ("%d", &again);
+      //printf ("Again? 0/1 = "); scanf ("%d", &again);//
 
       if ( again == 1 )
       {
@@ -454,7 +545,7 @@ int main (int argc, char** argv)
 
     if ( step )
     {
-      pcl::visualization::PointCloudColorHandlerCustom<PointT> second_color (second_cloud, 255, 0, 0);
+      pcl::visualization::PointCloudColorHandlerCustom<PointT> second_color (second_cloud, 0, 0, 0);
       viewer.addPointCloud<PointT> (second_cloud, second_color, "second");
       viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "second");
       // viewer.spin ();
@@ -469,7 +560,7 @@ int main (int argc, char** argv)
     if ( step )
     {
       viewer.removePointCloud ("generic");
-      pcl::visualization::PointCloudColorHandlerCustom<PointT> working_color (working_cloud, 0, 0, 0);
+      pcl::visualization::PointCloudColorHandlerCustom<PointT> working_color (working_cloud, 255, 0, 0);
       viewer.addPointCloud<PointT> (working_cloud, working_color, "generic");
       viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
       viewer.spin ();
@@ -481,7 +572,7 @@ int main (int argc, char** argv)
 
     if ( verbose ) pcl::console::print_info ("Saved %d points to %s with following fields: %s\n", (int) (working_cloud->points.size ()), argv [pcd_file_indices [2]], pcl::getFieldsList (*working_cloud).c_str ());
   }
-  else if ( verbose ) pcl::console::print_info ("No mergingg...\n");
+  else if ( verbose ) pcl::console::print_info ("No merging...\n");
 
   // ---------- The End ---------- //
 

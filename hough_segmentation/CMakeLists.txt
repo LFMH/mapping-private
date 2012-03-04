@@ -19,8 +19,8 @@ target_link_libraries(sequential_hough ${PCL_LIBRARIES})
 #add_executable(hough_classification src/hough_classification.cpp)
 #target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
-#add_executable(rot_trans_scale src/rot_trans_scale.cpp)
-#target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
+add_executable(rot_trans_scale src/rot_trans_scale.cpp)
+target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
 
 #add_executable (cloud_operations src/cloud_operations.cpp)
 #target_link_libraries(cloud_operations ${PCL_LIBRARIES})

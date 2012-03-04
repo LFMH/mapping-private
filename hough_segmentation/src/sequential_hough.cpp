@@ -3826,8 +3826,8 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        if ( 1025 < planar_cylinder_inliers->indices.size () ) // table1
-        //if ( 525 < planar_cylinder_inliers->indices.size () ) // table2
+        //if ( 1025 < planar_cylinder_inliers->indices.size () ) // table1
+        if ( 525 < planar_cylinder_inliers->indices.size () ) // table2
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
