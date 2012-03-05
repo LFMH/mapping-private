@@ -32,6 +32,8 @@
 
 #define _sqr(c) ((c)*(c))
 
+#define M_PI 3.14159265358979323846
+
 ////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Optimized matrix-vector multiplication for coordinate system transformations.
  * \param T

@@ -1541,6 +1541,9 @@ int main (int argc, char** argv)
   std::vector<std::vector<pcl::ModelCoefficients> > cyls;
   std::vector<std::vector<std::vector<pcl::ModelCoefficients> > > cubs;
 
+  if ( true )
+  {
+
   for (int fff = 0; fff < pcd_file_indices.size (); fff++)
   {
 
@@ -3925,7 +3928,8 @@ int main (int argc, char** argv)
       {
 
         // THIS SHOULD BE ONLY TEMPORARY HERE //
-        if (line_inliers->indices.size () > circle_inliers->indices.size ())
+//        if (line_inliers->indices.size () > circle_inliers->indices.size ())
+        if (line_cloud->points.size () > circle_cloud->points.size ())
         {
         if ( valid_line )
         {
@@ -6256,7 +6260,7 @@ int main (int argc, char** argv)
         line_viewer.addLine (e7, line_7.str ());
         line_viewer.spin ();
 
-        */
+*/
 
         std::vector<pcl::ModelCoefficients> cub;
 
@@ -6320,6 +6324,7 @@ int main (int argc, char** argv)
 
   }
 
+  }
 
 
 
@@ -6337,88 +6342,56 @@ int main (int argc, char** argv)
 
 
 
-/*
 
-ofstream file;
+  FILE * file;
 
+  file = fopen ("characteristics-of-hough-voted-ransac-models.txt", "a");
 
-    double cuboid[8][3];
-    cuboid[0][0] = edges[0][0];        cuboid[0][1] = edges[0][1];        cuboid[0][2] = minZ;
-    cuboid[1][0] = edges[1][0];        cuboid[1][1] = edges[1][1];        cuboid[1][2] = minZ;
-    cuboid[2][0] = edges[2][0];        cuboid[2][1] = edges[2][1];        cuboid[2][2] = minZ;
-    cuboid[3][0] = edges[3][0];        cuboid[3][1] = edges[3][1];        cuboid[3][2] = minZ;
-    cuboid[4][0] = edges[0][0];        cuboid[4][1] = edges[0][1];        cuboid[4][2] = maxZ;
-    cuboid[5][0] = edges[1][0];        cuboid[5][1] = edges[1][1];        cuboid[5][2] = maxZ;
-    cuboid[6][0] = edges[2][0];        cuboid[6][1] = edges[2][1];        cuboid[6][2] = maxZ;
-    cuboid[7][0] = edges[3][0];        cuboid[7][1] = edges[3][1];        cuboid[7][2] = maxZ;
+  fprintf (file, "\n----------------------------------------------------------------------------------------------------\n", getTimestamp ().c_str ());
 
+  fprintf (file, "\n  run at %s with \n", getTimestamp ().c_str ());
 
-    double d1 = sqrt (_sqr (cuboid[1][0] - cuboid[0][0]) + _sqr (cuboid[1][1] - cuboid[0][1]));
-    double d2 = sqrt (_sqr (cuboid[2][0] - cuboid[1][0]) + _sqr (cuboid[2][1] - cuboid[1][1]));
-    double d3 = maxZ - minZ;
+  for (int fff = 0; fff < pcd_file_indices.size (); fff++)
+  {
 
-    file << setprecision (5) << d1 << " x " << d2 << " x " << d3  << "\n" ;
-    file << flush;
+    fprintf (file, "\n    for view %d \n", fff);
 
-
-
-
-
-
-
-
-  file.open ("box-ing-sizes.txt");
-
-  file << "\n";
-  file << flush;
-
-
-
-
-
-
-
-
-
-    // Get position of last slash in path of file
-    std::string path = argv [pPCDFileIndices.at (pcd)];
-    size_t slash = path.find_last_of ("/");
-    size_t length = path.length ();
-    std::string name = path.substr (slash + 1, length);
-
-    file << "  file " << name << "\n";
-    file << flush;
-
-    fprintf (stderr, "\n  Mean of Bound = %5.3f \n\n", rectanguloid_approximation);
-
-    for (int run = 0; run < runs; run++ )
+    for (int cu = 0; cu < cubs.at (fff).size (); cu++)
     {
 
-      file << "    run " << run << " with ";
-      file << flush;
+      double d1 = sqrt (_sqr (cubs.at (fff).at (cu).at (0).values.at (0) - cubs.at (fff).at (cu).at (1).values.at (0)) + _sqr (cubs.at (fff).at (cu).at (0).values.at (1) - cubs.at (fff).at (cu).at (1).values.at (1)));
+      double d2 = sqrt (_sqr (cubs.at (fff).at (cu).at (1).values.at (0) - cubs.at (fff).at (cu).at (2).values.at (0)) + _sqr (cubs.at (fff).at (cu).at (1).values.at (1) - cubs.at (fff).at (cu).at (2).values.at (1)));
+      double d3 = cubs.at (fff).at (cu).at (4).values.at (2) - cubs.at (fff).at (cu).at (0).values.at (2);
+
+      fprintf (file, "\n      %12.10f x %12.10f x %12.10f = %12.10f \n", d1, d2, d3, d1*d2*d3);
+
+
+
+    }
+
+
+
+    for (int cy = 0; cy < cyls.at (fff).size (); cy++)
+    {
+
+      double h = cyls.at (fff).at (cy).values.at (5);
+      double r = cyls.at (fff).at (cy).values.at (6);
+
+      fprintf (file, "\n      pi x %12.10f^2 x %12.10f = %12.10f \n", r, h, M_PI*_sqr(r)*h);
 
 
 
 
-    fprintf (stderr, "\n");
 
-    file << "\n";
-    file << flush;
 
-    /// Dealloc ANNpointArrays ///
-    annDeallocPts (points);
+    }
 
   }
 
-  file.close();
-
-*/
 
 
 
-
-
-
+  fclose (file);
 
 
 
