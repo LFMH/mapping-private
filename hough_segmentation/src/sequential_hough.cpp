@@ -171,9 +171,18 @@ double short_value = 0.250;
 // Different //
 double sat = 1.0;
 
+// Centroids //
+double threshold_between_centroids_of_cuboids = 0.0;
+double threshold_between_centroids_of_cylinders = 0.0;
+
+
+
 // ---------- Macros ---------- //
 
 #define _sqr(c) ((c)*(c))
+
+#define M_PI 3.14159265358979323846
+
 
 
 /////////////////////////////////////////////////////////////
@@ -1508,6 +1517,10 @@ int main (int argc, char** argv)
   // Different //
   pcl::console::parse_argument (argc, argv, "-sat", sat);
 
+  // Centroids //
+  pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cuboids", threshold_between_centroids_of_cuboids);
+  pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cylinders", threshold_between_centroids_of_cylinders);
+
   // ---------- Initializations ---------- //
 
   srand (time(0));
@@ -1541,6 +1554,9 @@ int main (int argc, char** argv)
   std::vector<std::vector<pcl::ModelCoefficients> > cyls;
   std::vector<std::vector<std::vector<pcl::ModelCoefficients> > > cubs;
 
+  std::vector<std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr > > clouds_of_cyls;
+  std::vector<std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr > > clouds_of_cubs;
+
   if ( true )
   {
 
@@ -1549,6 +1565,9 @@ int main (int argc, char** argv)
 
   std::vector<pcl::ModelCoefficients> cyls_per_view;
   std::vector<std::vector<pcl::ModelCoefficients> > cubs_per_view;
+
+  std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr > clouds_of_cyls_per_view;
+  std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr > clouds_of_cubs_per_view;
 
   pcl::console::print_value ("\nNow processing %s\n\n", argv [pcd_file_indices [fff]]);
 
@@ -3485,6 +3504,8 @@ int main (int argc, char** argv)
 
               cubs_per_view.push_back (pla);
 
+              clouds_of_cubs_per_view.push_back (box_cloud);
+
               number_of_flat++;
               /*
                  pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
@@ -3525,6 +3546,8 @@ int main (int argc, char** argv)
               viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
               cubs_per_view.push_back (pla);
+
+              clouds_of_cubs_per_view.push_back (box_cloud);
 
               number_of_box++;
               /*
@@ -5615,6 +5638,8 @@ int main (int argc, char** argv)
 
         cubs_per_view.push_back (cub);
 
+        clouds_of_cubs_per_view.push_back (box_cloud);
+
         number_of_flat++;
         /*
         pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_box_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
@@ -5655,6 +5680,8 @@ int main (int argc, char** argv)
         viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
         cubs_per_view.push_back (cub);
+
+        clouds_of_cubs_per_view.push_back (box_cloud);
 
         number_of_box++;
         /*
@@ -5794,6 +5821,8 @@ int main (int argc, char** argv)
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
 
       cyls_per_view.push_back (cyl);
+
+      clouds_of_cyls_per_view.push_back (cylinder_cloud);
 
       model++;
       cerr << endl << " MODEL " << model << endl << endl ;
@@ -6278,7 +6307,9 @@ int main (int argc, char** argv)
         viewer.addCuboid (C, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
         viewer.spin ();
 
-        cubs_per_view.push_back (C);
+        //////cubs_per_view.push_back (C);
+        //////
+        //////clouds_of_cubs_per_view.push_back (r_cluster_cloud);
 
         // Remove These Point From The Cloud //
         r_ei.setNegative (true);
@@ -6322,30 +6353,31 @@ int main (int argc, char** argv)
   cubs.push_back (cubs_per_view);
   cyls.push_back (cyls_per_view);
 
-  }
+  cerr << " clouds of cubs per view = " << clouds_of_cubs_per_view.size () << endl ;
+  cerr << " clouds of cyls per view = " << clouds_of_cyls_per_view.size () << endl ;
+
+  clouds_of_cubs.push_back (clouds_of_cubs_per_view);
+  clouds_of_cyls.push_back (clouds_of_cyls_per_view);
 
   }
 
+  }
 
 
 
+  // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
 
+  // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
 
-
-
-
-
-
-
-
-
-
+  // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
 
 
 
   FILE * file;
 
   file = fopen ("characteristics-of-hough-voted-ransac-models.txt", "a");
+
+  /*
 
   fprintf (file, "\n----------------------------------------------------------------------------------------------------\n", getTimestamp ().c_str ());
 
@@ -6363,13 +6395,14 @@ int main (int argc, char** argv)
       double d2 = sqrt (_sqr (cubs.at (fff).at (cu).at (1).values.at (0) - cubs.at (fff).at (cu).at (2).values.at (0)) + _sqr (cubs.at (fff).at (cu).at (1).values.at (1) - cubs.at (fff).at (cu).at (2).values.at (1)));
       double d3 = cubs.at (fff).at (cu).at (4).values.at (2) - cubs.at (fff).at (cu).at (0).values.at (2);
 
-      fprintf (file, "\n      %12.10f x %12.10f x %12.10f = %12.10f \n", d1, d2, d3, d1*d2*d3);
+      double v = d1 * d2 * d3;
 
+      Eigen::Vector4f cen;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (fff).at (cu), cen);
 
+      fprintf (file, "\n      %12.10f x %12.10f x %12.10f = %12.10f \n", d1, d2, d3, v);
 
     }
-
-
 
     for (int cy = 0; cy < cyls.at (fff).size (); cy++)
     {
@@ -6377,35 +6410,199 @@ int main (int argc, char** argv)
       double h = cyls.at (fff).at (cy).values.at (5);
       double r = cyls.at (fff).at (cy).values.at (6);
 
-      fprintf (file, "\n      pi x %12.10f^2 x %12.10f = %12.10f \n", r, h, M_PI*_sqr(r)*h);
+      double v = M_PI * _sqr(r) * h;
 
+      Eigen::Vector4f cen;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (fff).at (cy), cen);
 
-
-
-
+      fprintf (file, "\n      pi x %12.10f^2 x %12.10f = %12.10f \n", r, h, v);
 
     }
+
+  }
+
+  */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  fprintf (file, "\n----------------------------------------------------------------------------------------------------\n", getTimestamp ().c_str ());
+
+  cerr << endl << endl << endl << " threshold_between_centroids_of_cuboids = " << threshold_between_centroids_of_cuboids << endl ;
+
+  //bool match_not_found;
+
+  for (int cu1 = 0; cu1 < clouds_of_cubs.at (0).size (); cu1++)
+  {
+
+    Eigen::Vector4f cen1;
+    pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (0).at (cu1), cen1);
+
+    for (int cu2 = 0; cu2 < clouds_of_cubs.at (1).size (); cu2++)
+    {
+
+      //match_not_found = true;
+
+      Eigen::Vector4f cen2;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (1).at (cu2), cen2);
+
+      double cen1_to_cen2 = sqrt( _sqr(cen1[0]-cen2[0]) + _sqr(cen1[1]-cen2[1]) + _sqr(cen1[2]-cen2[2]) );
+
+      cerr << cen1_to_cen2 ;
+
+      if ( cen1_to_cen2 < threshold_between_centroids_of_cuboids )
+      {
+        //match_not_found = false;
+
+        cerr << " match found " << endl ;
+
+        if ( true )
+        {
+          std::stringstream cu1_id; cu1_id << "cu1_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cu1_color (clouds_of_cubs.at (0).at (cu1), 85, 170, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (0).at (cu1), cu1_color, cu1_id.str ());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu1_id.str ());
+
+          std::stringstream cu2_id; cu2_id << "cu2_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cu2_color (clouds_of_cubs.at (1).at (cu2), 255, 170, 85);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (1).at (cu2), cu2_color, cu2_id.str ());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu2_id.str ());
+
+          //viewer.spin ();
+          //viewer.removePointCloud (cu1_id. str());
+          //viewer.removePointCloud (cu2_id. str());
+        }
+
+        fprintf (file, "    b%d \n", cu1);
+
+        double cu1_d1 = sqrt (_sqr (cubs.at (0).at (cu1).at (0).values.at (0) - cubs.at (0).at (cu1).at (1).values.at (0)) + _sqr (cubs.at (0).at (cu1).at (0).values.at (1) - cubs.at (0).at (cu1).at (1).values.at (1)));
+        double cu1_d2 = sqrt (_sqr (cubs.at (0).at (cu1).at (1).values.at (0) - cubs.at (0).at (cu1).at (2).values.at (0)) + _sqr (cubs.at (0).at (cu1).at (1).values.at (1) - cubs.at (0).at (cu1).at (2).values.at (1)));
+        double cu1_d3 =             cubs.at (0).at (cu1).at (4).values.at (2) - cubs.at (0).at (cu1).at (0).values.at (2);
+        double cu1_v  = cu1_d1 * cu1_d2 * cu1_d3;
+
+        fprintf (file, "      v1 %12.10f x %12.10f x %12.10f = %12.10f \n", cu1_d1, cu1_d2, cu1_d3, cu1_v);
+
+        double cu2_d1 = sqrt (_sqr (cubs.at (1).at (cu2).at (0).values.at (0) - cubs.at (1).at (cu2).at (1).values.at (0)) + _sqr (cubs.at (1).at (cu2).at (0).values.at (1) - cubs.at (1).at (cu2).at (1).values.at (1)));
+        double cu2_d2 = sqrt (_sqr (cubs.at (1).at (cu2).at (1).values.at (0) - cubs.at (1).at (cu2).at (2).values.at (0)) + _sqr (cubs.at (1).at (cu2).at (1).values.at (1) - cubs.at (1).at (cu2).at (2).values.at (1)));
+        double cu2_d3 =             cubs.at (1).at (cu2).at (4).values.at (2) - cubs.at (1).at (cu2).at (0).values.at (2);
+        double cu2_v  = cu2_d1 * cu2_d2 * cu2_d3;
+
+        fprintf (file, "      v2 %12.10f x %12.10f x %12.10f = %12.10f \n", cu2_d1, cu2_d2, cu2_d3, cu2_v);
+
+      }
+      else
+        cerr << endl ;
+
+      viewer.spin ();
+
+    }
+
+    //if ( match_not_found )
 
   }
 
 
 
 
+
+
+
+
+
+
+
+
+  cerr << endl << endl << endl << " threshold_between_centroids_of_cylinders " << threshold_between_centroids_of_cylinders << endl ;
+
+  for (int cy1 = 0; cy1 < clouds_of_cyls.at (0).size (); cy1++)
+  {
+
+    Eigen::Vector4f cen1;
+    pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (0).at (cy1), cen1);
+
+    for (int cy2 = 0; cy2 < clouds_of_cyls.at (1).size (); cy2++)
+    {
+
+      Eigen::Vector4f cen2;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (1).at (cy2), cen2);
+
+      double cen1_to_cen2 = sqrt( _sqr(cen1[0]-cen2[0]) + _sqr(cen1[1]-cen2[1]) + _sqr(cen1[2]-cen2[2]) );
+
+      cerr << cen1_to_cen2 ;
+
+      if ( cen1_to_cen2 < threshold_between_centroids_of_cylinders )
+      {
+        cerr << " match found " << endl ;
+
+        if ( true )
+        {
+          std::stringstream cy1_id; cy1_id << "cy1_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cy1_color (clouds_of_cyls.at (0).at (cy1), 85, 170, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (0).at (cy1), cy1_color, cy1_id. str());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy1_id. str());
+
+          std::stringstream cy2_id; cy2_id << "cy2_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cy2_color (clouds_of_cyls.at (1).at (cy2), 255, 170, 85);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (1).at (cy2), cy2_color, cy2_id. str());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy2_id. str());
+
+          //viewer.spin ();
+          //viewer.removePointCloud (cy1_id. str());
+          //viewer.removePointCloud (cy2_id. str());
+        }
+
+        fprintf (file, "    c%d \n", cy1);
+
+        double cy1_h = cyls.at (0).at (cy1).values.at (5);
+        double cy1_r = cyls.at (0).at (cy1).values.at (6);
+        double cy1_v = M_PI * _sqr(cy1_r) * cy1_h;
+
+        fprintf (file, "\n      pi x %12.10f ^2 x %12.10f = %12.10f \n", cy1_r, cy1_h, cy1_v);
+
+        double cy2_h = cyls.at (1).at (cy2).values.at (5);
+        double cy2_r = cyls.at (1).at (cy2).values.at (6);
+        double cy2_v = M_PI * _sqr(cy2_r) * cy2_h;
+
+        fprintf (file, "\n      pi x %12.10f ^2 x %12.10f = %12.10f \n", cy2_r, cy2_h, cy2_v);
+
+      }
+      else
+        cerr << endl ;
+
+      viewer.spin ();
+
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   fclose (file);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   viewer.spin ();
 
