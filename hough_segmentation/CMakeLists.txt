@@ -16,6 +16,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 add_executable(sequential_hough src/sequential_hough.cpp)
 target_link_libraries(sequential_hough ${PCL_LIBRARIES})
 
+add_executable(assemble_statistics_file src/assemble_statistics_file.cpp)
+target_link_libraries(assemble_statistics_file ${PCL_LIBRARIES})
+
 #add_executable(hough_classification src/hough_classification.cpp)
 #target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
