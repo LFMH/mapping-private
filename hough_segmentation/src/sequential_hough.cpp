@@ -6345,7 +6345,7 @@ int main (int argc, char** argv)
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
 
-  viewer.spin ();
+  //viewer.spin ();
 
   cerr << " cubs per view = " << cubs_per_view.size () << endl ;
   cerr << " cyls per view = " << cyls_per_view.size () << endl ;
@@ -6663,6 +6663,86 @@ int main (int argc, char** argv)
   // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
 
   // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
+
+
+
+  {
+    FILE * file1;
+
+    file1 = fopen ("view-1-hough-voted-ransac-models.txt", "a");
+
+    int v1 = 0;
+
+    for (int cu1 = 0; cu1 < clouds_of_cubs.at (v1).size (); cu1++)
+    {
+      double cu1_d1 = sqrt (_sqr (cubs.at (v1).at (cu1).at (0).values.at (0) - cubs.at (v1).at (cu1).at (1).values.at (0)) + _sqr (cubs.at (v1).at (cu1).at (0).values.at (1) - cubs.at (v1).at (cu1).at (1).values.at (1)));
+      double cu1_d2 = sqrt (_sqr (cubs.at (v1).at (cu1).at (1).values.at (0) - cubs.at (v1).at (cu1).at (2).values.at (0)) + _sqr (cubs.at (v1).at (cu1).at (1).values.at (1) - cubs.at (v1).at (cu1).at (2).values.at (1)));
+      double cu1_d3 =             cubs.at (v1).at (cu1).at (4).values.at (2) - cubs.at (v1).at (cu1).at (0).values.at (2);
+      double cu1_v  = cu1_d1 * cu1_d2 * cu1_d3;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v1).at (cu1), cen1);
+
+      fprintf (file1, " 0 | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu1_d1, cu1_d2, cu1_d3, cu1_v, cen1[0], cen1[1], cen1[2]);
+    }
+
+    for (int cy1 = 0; cy1 < clouds_of_cyls.at (v1).size (); cy1++)
+    {
+      double cy1_h = cyls.at (v1).at (cy1).values.at (5);
+      double cy1_r = cyls.at (v1).at (cy1).values.at (6);
+      double cy1_v = M_PI * _sqr(cy1_r) * cy1_h;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v1).at (cy1), cen1);
+
+      fprintf (file1, " 1 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy1_r, cy1_h, cy1_v, cen1[0], cen1[1], cen1[2]);
+    }
+
+    fprintf (file1, "\n");
+
+    fclose (file1);
+  }
+
+
+
+  {
+    FILE * file2;
+
+    file2 = fopen ("view-2-hough-voted-ransac-models.txt", "a");
+
+    int v2 = 1;
+
+    for (int cu2 = 0; cu2 < clouds_of_cubs.at (v2).size (); cu2++)
+    {
+      double cu2_d1 = sqrt (_sqr (cubs.at (v2).at (cu2).at (0).values.at (0) - cubs.at (v2).at (cu2).at (1).values.at (0)) + _sqr (cubs.at (v2).at (cu2).at (0).values.at (1) - cubs.at (v2).at (cu2).at (1).values.at (1)));
+      double cu2_d2 = sqrt (_sqr (cubs.at (v2).at (cu2).at (1).values.at (0) - cubs.at (v2).at (cu2).at (2).values.at (0)) + _sqr (cubs.at (v2).at (cu2).at (1).values.at (1) - cubs.at (v2).at (cu2).at (2).values.at (1)));
+      double cu2_d3 =             cubs.at (v2).at (cu2).at (4).values.at (2) - cubs.at (v2).at (cu2).at (0).values.at (2);
+      double cu2_v  = cu2_d1 * cu2_d2 * cu2_d3;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v2).at (cu2), cen1);
+
+      fprintf (file2, " 0 %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu2_d1, cu2_d2, cu2_d3, cu2_v, cen1[0], cen1[1], cen1[2]);
+    }
+
+    for (int cy2 = 0; cy2 < clouds_of_cyls.at (v2).size (); cy2++)
+    {
+      double cy2_h = cyls.at (v2).at (cy2).values.at (5);
+      double cy2_r = cyls.at (v2).at (cy2).values.at (6);
+      double cy2_v = M_PI * _sqr(cy2_r) * cy2_h;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v2).at (cy2), cen1);
+
+      fprintf (file2, " 1 %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy2_r, cy2_h, cy2_v, cen1[0], cen1[1], cen1[2]);
+    }
+
+    fprintf (file2, "\n");
+
+    fclose (file2);
+  }
+
+
 
   /*
 
