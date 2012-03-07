@@ -130,7 +130,7 @@ int main (int argc, char** argv)
 
     while ( fgets (v1_line, 255, v1_file) != NULL )
     {
-      //printf (" %s ", v1_line);
+      printf (" %s ", v1_line);
 
       int v1_flag;
       sscanf (v1_line, " %d ", &v1_flag);
@@ -140,8 +140,8 @@ int main (int argc, char** argv)
       if ( v1_flag == 1 ) // BOX
       {
         double d1, d2, d3, v, c1, c2, c3;
-        sscanf (v1_line, " %d %lf %lf %lf %lf | %lf %lf %lf ", &v1_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
-        printf ("   %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf \n", d1, d2, d3, v, c1, c2, c3);
+        sscanf (v1_line, " %d | %lf %lf %lf %lf | %lf %lf %lf ", &v1_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", d1, d2, d3, v, c1, c2, c3);
 
         v1_model.push_back (d1);
         v1_model.push_back (d2);
@@ -157,8 +157,8 @@ int main (int argc, char** argv)
       if ( v1_flag == 2 ) // CYLINDER
       {
         double r, h, v, c1, c2, c3;
-        sscanf (v1_line, " %d %lf %lf %lf | %lf %lf %lf ", &v1_flag, &r, &h, &v, &c1, &c2, &c3);
-        printf ("   %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf \n", r, h, v, c1, c2, c3);
+        sscanf (v1_line, " %d | %lf %lf %lf | %lf %lf %lf ", &v1_flag, &r, &h, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", r, h, v, c1, c2, c3);
 
         v1_model.push_back (r);
         v1_model.push_back (h);
@@ -173,15 +173,15 @@ int main (int argc, char** argv)
       if ( v1_flag == 0 ) // NEW LINE
       {
         v1_models.push_back (per_run);
-        cerr << " per_run.size() " << per_run.size() << endl ;
+        //cerr << " per_run.size() " << per_run.size() << endl ;
 
         per_run.clear ();
-        cerr << " per_run.size() " << per_run.size() << endl ;
+        //cerr << " per_run.size() " << per_run.size() << endl ;
       }
 
       cerr << endl ;
 
-      //getchar ();
+      if ( step ) getchar ();
     }
 
     fclose (v1_file);
@@ -211,7 +211,7 @@ int main (int argc, char** argv)
 
     while ( fgets (v2_line, 255, v2_file) != NULL )
     {
-      //printf (" %s ", v2_line);
+      printf (" %s ", v2_line);
 
       int v2_flag;
       sscanf (v2_line, " %d ", &v2_flag);
@@ -221,8 +221,8 @@ int main (int argc, char** argv)
       if ( v2_flag == 1 ) // BOX
       {
         double d1, d2, d3, v, c1, c2, c3;
-        sscanf (v2_line, " %d %lf %lf %lf %lf | %lf %lf %lf ", &v2_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
-        printf ("   %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf \n", d1, d2, d3, v, c1, c2, c3);
+        sscanf (v2_line, " %d | %lf %lf %lf %lf | %lf %lf %lf ", &v2_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", d1, d2, d3, v, c1, c2, c3);
 
         v2_model.push_back (d1);
         v2_model.push_back (d2);
@@ -238,8 +238,8 @@ int main (int argc, char** argv)
       if ( v2_flag == 2 ) // CYLINDER
       {
         double r, h, v, c1, c2, c3;
-        sscanf (v2_line, " %d %lf %lf %lf | %lf %lf %lf ", &v2_flag, &r, &h, &v, &c1, &c2, &c3);
-        printf ("   %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf %12.10lf \n", r, h, v, c1, c2, c3);
+        sscanf (v2_line, " %d | %lf %lf %lf | %lf %lf %lf ", &v2_flag, &r, &h, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", r, h, v, c1, c2, c3);
 
         v2_model.push_back (r);
         v2_model.push_back (h);
@@ -254,15 +254,15 @@ int main (int argc, char** argv)
       if ( v2_flag == 0 ) // NEW LINE
       {
         v2_models.push_back (per_run);
-        cerr << " per_run.size() " << per_run.size() << endl ;
+        //cerr << " per_run.size() " << per_run.size() << endl ;
 
         per_run.clear ();
-        cerr << " per_run.size() " << per_run.size() << endl ;
+        //cerr << " per_run.size() " << per_run.size() << endl ;
       }
 
       cerr << endl ;
 
-      //getchar ();
+      if ( step ) getchar ();
     }
 
     fclose (v2_file);
@@ -348,7 +348,7 @@ int main (int argc, char** argv)
         if ( match_not_found )
           fprintf (file, "      run %2d | match not found \n", r);
 
-        getchar ();
+        if ( step ) getchar ();
       }
 
       fprintf (file, "\n    view 1 \n\n");
@@ -389,7 +389,7 @@ int main (int argc, char** argv)
         if ( match_not_found )
           fprintf (file, "      run %2d | match not found \n", r);
 
-        getchar ();
+        if ( step ) getchar ();
       }
     }
 
@@ -448,7 +448,7 @@ int main (int argc, char** argv)
         if ( match_not_found )
           fprintf (file, "      run %2d | match not found \n", r);
 
-        getchar ();
+        if ( step ) getchar ();
       }
 
       fprintf (file, "\n    view 1 \n\n");
@@ -488,7 +488,7 @@ int main (int argc, char** argv)
         if ( match_not_found )
           fprintf (file, "      run %2d | match not found \n", r);
 
-        getchar ();
+        if ( step ) getchar ();
       }
     }
 
