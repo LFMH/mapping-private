@@ -112,9 +112,9 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cuboids", threshold_between_centroids_of_cuboids);
   pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cylinders", threshold_between_centroids_of_cylinders);
 
+  // ---------------------------------------- //
   // ---------- Loading Text Files ---------- //
-  // ---------- Loading Text Files ---------- //
-  // ---------- Loading Text Files ---------- //
+  // ---------------------------------------- //
 
   vector<vector<vector<double> > > v1_models;
 
@@ -137,7 +137,7 @@ int main (int argc, char** argv)
 
       vector<double> v1_model;
 
-      if ( v1_flag == 0 )
+      if ( v1_flag == 1 ) // BOX
       {
         double d1, d2, d3, v, c1, c2, c3;
         sscanf (v1_line, " %d %lf %lf %lf %lf | %lf %lf %lf ", &v1_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
@@ -154,7 +154,7 @@ int main (int argc, char** argv)
         per_run.push_back (v1_model);
       }
 
-      if ( v1_flag == 1 )
+      if ( v1_flag == 2 ) // CYLINDER
       {
         double r, h, v, c1, c2, c3;
         sscanf (v1_line, " %d %lf %lf %lf | %lf %lf %lf ", &v1_flag, &r, &h, &v, &c1, &c2, &c3);
@@ -170,7 +170,7 @@ int main (int argc, char** argv)
         per_run.push_back (v1_model);
       }
 
-      if ( v1_flag == -1 )
+      if ( v1_flag == 0 ) // NEW LINE
       {
         v1_models.push_back (per_run);
         cerr << " per_run.size() " << per_run.size() << endl ;
@@ -218,7 +218,7 @@ int main (int argc, char** argv)
 
       vector<double> v2_model;
 
-      if ( v2_flag == 0 )
+      if ( v2_flag == 1 ) // BOX
       {
         double d1, d2, d3, v, c1, c2, c3;
         sscanf (v2_line, " %d %lf %lf %lf %lf | %lf %lf %lf ", &v2_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
@@ -235,7 +235,7 @@ int main (int argc, char** argv)
         per_run.push_back (v2_model);
       }
 
-      if ( v2_flag == 1 )
+      if ( v2_flag == 2 ) // CYLINDER
       {
         double r, h, v, c1, c2, c3;
         sscanf (v2_line, " %d %lf %lf %lf | %lf %lf %lf ", &v2_flag, &r, &h, &v, &c1, &c2, &c3);
@@ -251,7 +251,7 @@ int main (int argc, char** argv)
         per_run.push_back (v2_model);
       }
 
-      if ( v2_flag == -1 )
+      if ( v2_flag == 0 ) // NEW LINE
       {
         v2_models.push_back (per_run);
         cerr << " per_run.size() " << per_run.size() << endl ;
@@ -278,9 +278,9 @@ int main (int argc, char** argv)
     cerr << endl ;
   }
 
+  // ------------------------------------------------ //
   // ---------- Generating Statistics File ---------- //
-  // ---------- Generating Statistics File ---------- //
-  // ---------- Generating Statistics File ---------- //
+  // ------------------------------------------------ //
 
   FILE * file;
 

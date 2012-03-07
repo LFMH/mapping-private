@@ -175,6 +175,9 @@ double sat = 1.0;
 double threshold_between_centroids_of_cuboids = 0.0;
 double threshold_between_centroids_of_cylinders = 0.0;
 
+// New //
+int too_many_planar_curvatures = 0;
+
 
 
 // ---------- Macros ---------- //
@@ -1520,6 +1523,9 @@ int main (int argc, char** argv)
   // Centroids //
   pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cuboids", threshold_between_centroids_of_cuboids);
   pcl::console::parse_argument (argc, argv, "-threshold_between_centroids_of_cylinders", threshold_between_centroids_of_cylinders);
+
+  // New //
+  pcl::console::parse_argument (argc, argv, "-too_many_planar_curvatures", too_many_planar_curvatures);
 
   // ---------- Initializations ---------- //
 
@@ -3863,8 +3869,9 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        //if ( 1025 < planar_cylinder_inliers->indices.size () ) // table1
-        if ( 525 < planar_cylinder_inliers->indices.size () ) // table2
+        //if ( 1025 < planar_cylinder_inliers->indices.size () )
+        //if ( 525 < planar_cylinder_inliers->indices.size () )
+        if ( too_many_planar_curvatures < planar_cylinder_inliers->indices.size () )
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
@@ -6683,7 +6690,7 @@ int main (int argc, char** argv)
       Eigen::Vector4f cen1;
       pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v1).at (cu1), cen1);
 
-      fprintf (file1, " 0 | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu1_d1, cu1_d2, cu1_d3, cu1_v, cen1[0], cen1[1], cen1[2]);
+      fprintf (file1, " 1 | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu1_d1, cu1_d2, cu1_d3, cu1_v, cen1[0], cen1[1], cen1[2]);
     }
 
     for (int cy1 = 0; cy1 < clouds_of_cyls.at (v1).size (); cy1++)
@@ -6695,10 +6702,10 @@ int main (int argc, char** argv)
       Eigen::Vector4f cen1;
       pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v1).at (cy1), cen1);
 
-      fprintf (file1, " 1 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy1_r, cy1_h, cy1_v, cen1[0], cen1[1], cen1[2]);
+      fprintf (file1, " 2 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy1_r, cy1_h, cy1_v, cen1[0], cen1[1], cen1[2]);
     }
 
-    fprintf (file1, "\n");
+    fprintf (file1, " 0 \n");
 
     fclose (file1);
   }
@@ -6722,7 +6729,7 @@ int main (int argc, char** argv)
       Eigen::Vector4f cen1;
       pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v2).at (cu2), cen1);
 
-      fprintf (file2, " 0 %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu2_d1, cu2_d2, cu2_d3, cu2_v, cen1[0], cen1[1], cen1[2]);
+      fprintf (file2, " 1 | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cu2_d1, cu2_d2, cu2_d3, cu2_v, cen1[0], cen1[1], cen1[2]);
     }
 
     for (int cy2 = 0; cy2 < clouds_of_cyls.at (v2).size (); cy2++)
@@ -6734,10 +6741,10 @@ int main (int argc, char** argv)
       Eigen::Vector4f cen1;
       pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v2).at (cy2), cen1);
 
-      fprintf (file2, " 1 %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy2_r, cy2_h, cy2_v, cen1[0], cen1[1], cen1[2]);
+      fprintf (file2, " 2 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy2_r, cy2_h, cy2_v, cen1[0], cen1[1], cen1[2]);
     }
 
-    fprintf (file2, "\n");
+    fprintf (file2, " 0 \n");
 
     fclose (file2);
   }
