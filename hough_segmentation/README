@@ -1,5 +1,5 @@
 
-../bin/assemble_statistics_file [ view-2-hough-voted-ransac-models.txt view-1-hough-voted-ransac-models.txt ]                                                                                                  [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+../bin/assemble_statistics_file [ view-1-hough-voted-ransac-models.txt view-2-hough-voted-ransac-models.txt ] -step 0                                                                                          [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
 
 ================================================== New Stuff ==================================================
 
@@ -22,6 +22,8 @@
 ================================================== Other New Stuff ==================================================
 
 // upright //
+
+../bin/rot_trans_scale                                                                                                                                                                                           /media/g/work/data/tables12/3-table/table3-dbsvn-table-objects-ASCII-0.0050-merged.pcd   /media/g/work/data/tables12/3-table/table3-dbsvn-table-objects-ASCII-0.0050-merged-upright.pcd                                                                                               -cam 0.00249333,2.49333/-0.529277,-1.1842,0.728209/-0.472854,-1.17548,1.53755/-0.972813,-0.220699,0.0701981/0.523599/1260,787/420,80                                                                                                                                                  -verbose 1 -step 1 -size 3 -transform 1 [ -x -0.0 -y -0.0 -z -0.05 -roll -0.065 -pitch -0.035 -yaw 0.05 ]
 
 ../bin/rot_trans_scale                                                                                                                                                                                           /media/g/work/data/tables12/2-table/table2-dbsvn-table-objects-cut-ASCII-0.0050.pcd   /media/g/work/data/tables12/2-table/table2-dbsvn-table-objects-cut-ASCII-0.0050-upright.pcd                                                                                                     -cam 0.00249333,2.49333/-0.529277,-1.1842,0.728209/-0.472854,-1.17548,1.53755/-0.972813,-0.220699,0.0701981/0.523599/1260,787/420,80                                                                                                                                                  -verbose 1 -step 1 -size 3 -transform 1 [ -x -0.0 -y -0.0 -z -0.05 -roll -0.065 -pitch -0.035 -yaw 0.05 ]
 
