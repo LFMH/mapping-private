@@ -278,6 +278,87 @@ int main (int argc, char** argv)
     cerr << endl ;
   }
 
+  vector<vector<vector<double> > > v1v2_models;
+
+  {
+    int v1v2 = 2; // IMPORTANT
+
+    FILE * v1v2_file;
+    v1v2_file = fopen (argv [txt_file_indices [v1v2]], "r");
+
+    char v1v2_line[255];
+
+    vector<vector<double> > per_run;
+
+    while ( fgets (v1v2_line, 255, v1v2_file) != NULL )
+    {
+      printf (" %s ", v1v2_line);
+
+      int v1v2_flag;
+      sscanf (v1v2_line, " %d ", &v1v2_flag);
+
+      vector<double> v1v2_model;
+
+      if ( v1v2_flag == 1 ) // BOX
+      {
+        double d1, d2, d3, v, c1, c2, c3;
+        sscanf (v1v2_line, " %d | %lf %lf %lf %lf | %lf %lf %lf ", &v1v2_flag, &d1, &d2, &d3, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", d1, d2, d3, v, c1, c2, c3);
+
+        v1v2_model.push_back (d1);
+        v1v2_model.push_back (d2);
+        v1v2_model.push_back (d3);
+        v1v2_model.push_back (v);
+        v1v2_model.push_back (c1);
+        v1v2_model.push_back (c2);
+        v1v2_model.push_back (c3);
+
+        per_run.push_back (v1v2_model);
+      }
+
+      if ( v1v2_flag == 2 ) // CYLINDER
+      {
+        double r, h, v, c1, c2, c3;
+        sscanf (v1v2_line, " %d | %lf %lf %lf | %lf %lf %lf ", &v1v2_flag, &r, &h, &v, &c1, &c2, &c3);
+        printf ("     %12.10lf %12.10lf %12.10lf   %12.10lf %12.10lf %12.10lf \n", r, h, v, c1, c2, c3);
+
+        v1v2_model.push_back (r);
+        v1v2_model.push_back (h);
+        v1v2_model.push_back (v);
+        v1v2_model.push_back (c1);
+        v1v2_model.push_back (c2);
+        v1v2_model.push_back (c3);
+
+        per_run.push_back (v1v2_model);
+      }
+
+      if ( v1v2_flag == 0 ) // NEW LINE
+      {
+        v1v2_models.push_back (per_run);
+        //cerr << " per_run.size() " << per_run.size() << endl ;
+
+        per_run.clear ();
+        //cerr << " per_run.size() " << per_run.size() << endl ;
+      }
+
+      cerr << endl ;
+
+      if ( step ) getchar ();
+    }
+
+    fclose (v1v2_file);
+
+    cerr << " v1v2_models.size() " << v1v2_models.size() << endl ;
+    for (int r = 0; r < v1v2_models.size(); r++)
+    {
+      cerr << " v1v2_models.at(r).size() " << v1v2_models.at(r).size() << endl ;
+      for (int m = 0; m < v1v2_models.at (r).size(); m++)
+        cerr << " v1v2_models.at(r).at(m).size() " << v1v2_models.at(r).at(m).size() << endl ;
+    }
+
+    cerr << endl ;
+  }
+
   // ------------------------------------------------ //
   // ---------- Generating Statistics File ---------- //
   // ------------------------------------------------ //
@@ -391,6 +472,47 @@ int main (int argc, char** argv)
 
         if ( step ) getchar ();
       }
+
+      fprintf (file, "\n    merged \n\n");
+
+      for (int r = 0; r < v1v2_models.size(); r++)
+      {
+        match_not_found = true;
+
+        for (int m = 0; m < v1v2_models.at(r).size(); m++)
+        {
+          if ( v1v2_models.at(r).at(m).size() == 7 ) // BOX
+          {
+            double md1 = v1v2_models.at(r).at(m).at(0);
+            double md2 = v1v2_models.at(r).at(m).at(1);
+            double md3 = v1v2_models.at(r).at(m).at(2);
+            double  mv = v1v2_models.at(r).at(m).at(3);
+            double mc1 = v1v2_models.at(r).at(m).at(4);
+            double mc2 = v1v2_models.at(r).at(m).at(5);
+            double mc3 = v1v2_models.at(r).at(m).at(6);
+
+            double ccc_to_mc = sqrt( _sqr(ccc1-mc1) + _sqr(ccc2-mc2) + _sqr(ccc3-mc3) );
+
+            printf (" %7.5f", ccc_to_mc);
+
+            if ( ccc_to_mc < threshold_between_centroids_of_cuboids )
+            {
+              match_not_found = false;
+
+              printf (" match found \n");
+
+              fprintf (file, "      run %2d | %12.10f x %12.10f x %12.10f = %12.10f | %12.10f %12.10f %12.10f \n", r, md1, md2, md3, mv, mc1, mc2, mc3);
+            }
+            else
+              printf ("\n");
+          }
+        }
+
+        if ( match_not_found )
+          fprintf (file, "      run %2d | match not found \n", r);
+
+        if ( step ) getchar ();
+      }
     }
 
     // ---------------------- //
@@ -479,6 +601,46 @@ int main (int argc, char** argv)
               printf (" match found \n");
 
               fprintf (file, "      run %2d | pi x %12.10f ^2 x %12.10f = %12.10f | %12.10f %12.10f %12.10f \n", r, rr, h, v, c1, c2, c3);
+            }
+            else
+              printf ("\n");
+          }
+        }
+
+        if ( match_not_found )
+          fprintf (file, "      run %2d | match not found \n", r);
+
+        if ( step ) getchar ();
+      }
+
+      fprintf (file, "\n    merged \n\n");
+
+      for (int r = 0; r < v1v2_models.size(); r++)
+      {
+        match_not_found = true;
+
+        for (int m = 0; m < v1v2_models.at(r).size(); m++)
+        {
+          if ( v1v2_models.at(r).at(m).size() == 6 ) // CYLINDER
+          {
+            double mrr = v1v2_models.at(r).at(m).at(0);
+            double  mh = v1v2_models.at(r).at(m).at(1);
+            double  mv = v1v2_models.at(r).at(m).at(2);
+            double mc1 = v1v2_models.at(r).at(m).at(3);
+            double mc2 = v1v2_models.at(r).at(m).at(4);
+            double mc3 = v1v2_models.at(r).at(m).at(5);
+
+            double ccc_to_mc = sqrt( _sqr(ccc1-mc1) + _sqr(ccc2-mc2) + _sqr(ccc3-mc3) );
+
+            printf (" %7.5f", ccc_to_mc);
+
+            if ( ccc_to_mc < threshold_between_centroids_of_cylinders )
+            {
+              match_not_found = false;
+
+              printf (" match found \n");
+
+              fprintf (file, "      run %2d | pi x %12.10f ^2 x %12.10f = %12.10f | %12.10f %12.10f %12.10f \n", r, mrr, mh, mv, mc1, mc2, mc3);
             }
             else
               printf ("\n");
