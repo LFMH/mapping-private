@@ -7660,7 +7660,7 @@ int main (int argc, char** argv)
         viewer.addCuboid (merged_cubs.at(cub), 0.0, 1.0, 0.5, 0.75, cub1_id.str());
 
         std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp();
-        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (merged_clouds_of_cubs.at(cub), 0, 0, 0);
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (merged_clouds_of_cubs.at(cub), 0.5, 0.5, 0.5);
         viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cubs.at (cub), cub_color, cub_id.str());
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str());
       }
@@ -7675,7 +7675,7 @@ int main (int argc, char** argv)
         viewer.addCylinder (merged_cyls.at(cyl), 0.0, 1.0, 0.5, 0.75, cyl1_id.str());
 
         std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp();
-        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (merged_clouds_of_cyls.at(cyl), 0, 0, 0);
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (merged_clouds_of_cyls.at(cyl), 0.5, 0.5, 0.5);
         viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cyls.at (cyl), cyl_color, cyl_id.str());
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id.str());
       }
