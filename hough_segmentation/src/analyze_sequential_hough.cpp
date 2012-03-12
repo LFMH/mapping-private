@@ -7004,7 +7004,7 @@ int main (int argc, char** argv)
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (tmp_cloud, mcy_color, mcy_id.str());
             viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, mcy_id.str());
 
-            //viewer.spin ();
+            viewer.spin ();
             //viewer.removeShape (mcyl_id.str());
             //viewer.removePointCloud (mcy_id.str());
           }
@@ -7018,7 +7018,7 @@ int main (int argc, char** argv)
         else
           cerr << endl ;
 
-        viewer.spin ();
+        //viewer.spin ();
 
       }
 
@@ -7042,7 +7042,7 @@ int main (int argc, char** argv)
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (v1).at (cy1), cy1_color, cy1_id. str());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy1_id. str());
 
-          //viewer.spin();
+          viewer.spin();
           //viewer.removeShape (cyl1_id. str());
           //viewer.removePointCloud (cy1_id. str());
         }
@@ -7175,24 +7175,187 @@ int main (int argc, char** argv)
 
           }
 
-          // ----------
+          std::stringstream mcub_id;
+          std::stringstream mcu_id; mcu_id << "mcu_id_" << getTimestamp ();
 
           if ( true )
           {
-            std::stringstream mcub_id;
             mcub_id << "mcub_" << getTimestamp();
             viewer.addCuboid (tmp_coeffs, 0.0, 1.0, 0.5, 0.5, mcub_id.str());
 
-            std::stringstream mcu_id; mcu_id << "mcu_id_" << getTimestamp ();
             pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> mcu_color (tmp_cloud, 0, 255, 127);
             viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (tmp_cloud, mcu_color, mcu_id.str());
             viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, mcu_id.str());
 
-            //viewer.spin ();
+            viewer.spin ();
             //viewer.removeShape (mcub_id.str());
             //viewer.removePointCloud (mcu_id.str());
           }
 
+          /*
+
+          //
+
+          pcl::ModelCoefficients c1l01;
+
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(0).values.at(0));
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(0).values.at(1));
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(0).values.at(2));
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(0));
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(1));
+          c1l01.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(2));
+
+          viewer.addTubeSegment (c1l01, 1.0, 0.0, 0.0, line_threshold /2, "c1l01");
+          viewer.spin();
+
+          pcl::ModelCoefficients c1l12;
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(0));
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(1));
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(1).values.at(2));
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(2).values.at(0));
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(2).values.at(1));
+          c1l12.values.push_back (cubs.at(v1).at(cu1).at(2).values.at(2));
+
+          viewer.addTubeSegment (c1l12, 1.0, 0.0, 0.0, line_threshold /2, "c1l12");
+          viewer.spin();
+
+          //
+
+          pcl::ModelCoefficients c2l01;
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(0).values.at(0));
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(0).values.at(1));
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(0).values.at(2));
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(0));
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(1));
+          c2l01.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(2));
+
+          viewer.addTubeSegment (c2l01, 0.0, 1.0, 0.0, line_threshold /2, "c2l01");
+          viewer.spin();
+
+          pcl::ModelCoefficients c2l12;
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(0));
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(1));
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(1).values.at(2));
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(2).values.at(0));
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(2).values.at(1));
+          c2l12.values.push_back (cubs.at(v2).at(cu2).at(2).values.at(2));
+
+          viewer.addTubeSegment (c2l12, 0.0, 1.0, 0.0, line_threshold /2, "c2l12");
+          viewer.spin();
+
+          //
+
+          viewer.removeShape ("c1l01");
+          viewer.removeShape ("c1l12");
+          viewer.removeShape ("c2l01");
+          viewer.removeShape ("c2l12");
+
+          //
+
+          */
+
+          // ----------
+          // ----------
+          // ----------
+
+          bool ok;
+          std::cout << " OK = ";
+          std::cin >> ok;
+
+          if ( !ok )
+          {
+            viewer.removeShape (mcub_id.str());
+            viewer.removePointCloud (mcu_id.str());
+
+            pcl::ModelCoefficients aux;
+
+            aux                                    = cubs.at(v2).at(cu2).at(0);
+            cubs.at(v2).at(cu2).at(0) = cubs.at(v2).at(cu2).at(2);
+            cubs.at(v2).at(cu2).at(2) = aux;
+
+            aux                                    = cubs.at(v2).at(cu2).at(1);
+            cubs.at(v2).at(cu2).at(1) = cubs.at(v2).at(cu2).at(3);
+            cubs.at(v2).at(cu2).at(3) = aux;
+
+            aux                                    = cubs.at(v2).at(cu2).at(4);
+            cubs.at(v2).at(cu2).at(4) = cubs.at(v2).at(cu2).at(6);
+            cubs.at(v2).at(cu2).at(6) = aux;
+
+            aux                                    = cubs.at(v2).at(cu2).at(5);
+            cubs.at(v2).at(cu2).at(5) = cubs.at(v2).at(cu2).at(7);
+            cubs.at(v2).at(cu2).at(7) = aux;
+
+            tmp_coeffs.clear();
+            tmp_coeffs.resize (cubs.at(v1).at(cu1).size());
+
+            for (int p = 0; p < tmp_coeffs.size(); p++)
+            {
+              /*
+
+              //
+
+              if (p == 1)
+              {
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(1).values.at(0) + cubs.at(v2).at(cu2).at(3).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(1).values.at(1) + cubs.at(v2).at(cu2).at(3).values.at(1)) /2);
+              }
+              else if (p == 3)
+              {
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(3).values.at(0) + cubs.at(v2).at(cu2).at(1).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(3).values.at(1) + cubs.at(v2).at(cu2).at(1).values.at(1)) /2);
+              }
+              else if (p == 5)
+              {
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(5).values.at(0) + cubs.at(v2).at(cu2).at(7).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(5).values.at(1) + cubs.at(v2).at(cu2).at(7).values.at(1)) /2);
+              }
+              else if (p == 7)
+              {
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(7).values.at(0) + cubs.at(v2).at(cu2).at(5).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(7).values.at(1) + cubs.at(v2).at(cu2).at(5).values.at(1)) /2);
+              }
+              else
+              {
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(0) + cubs.at(v2).at(cu2).at(p).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(1) + cubs.at(v2).at(cu2).at(p).values.at(1)) /2);
+              }
+
+              //
+
+              */
+
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(0) + cubs.at(v2).at(cu2).at(p).values.at(0)) /2);
+              tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(1) + cubs.at(v2).at(cu2).at(p).values.at(1)) /2);
+
+              if (p < 4)
+                tmp_coeffs[p].values.push_back ( min (cubs.at(v1).at(cu1).at(p).values.at(2) , cubs.at(v2).at(cu2).at(p).values.at(2)) );
+              else
+                tmp_coeffs[p].values.push_back ( max (cubs.at(v1).at(cu1).at(p).values.at(2) , cubs.at(v2).at(cu2).at(p).values.at(2)) );
+
+            }
+
+            // ----------
+
+            if ( true )
+            {
+              std::stringstream mmmcub_id;
+              mmmcub_id << "mmmcub_" << getTimestamp();
+              viewer.addCuboid (tmp_coeffs, 0.0, 1.0, 0.5, 0.5, mmmcub_id.str());
+
+              std::stringstream mmmcu_id; mmmcu_id << "mmmcu_id_" << getTimestamp ();
+              pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> mcu_color (tmp_cloud, 0, 255, 127);
+              viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (tmp_cloud, mcu_color, mmmcu_id.str());
+              viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, mmmcu_id.str());
+
+              viewer.spin ();
+              //viewer.removeShape (mmmcub_id.str());
+              //viewer.removePointCloud (mmmcu_id.str());
+            }
+
+          }
+
+          // ----------
+          // ----------
           // ----------
 
           merged_cubs.push_back (tmp_coeffs);
@@ -7202,7 +7365,7 @@ int main (int argc, char** argv)
         else
           cerr << endl ;
 
-        viewer.spin ();
+        //viewer.spin ();
 
       }
 
@@ -7226,7 +7389,7 @@ int main (int argc, char** argv)
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (v1).at (cu1), cu1_color, cu1_id.str ());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu1_id.str ());
 
-          //viewer.spin ();
+          viewer.spin ();
           //viewer.removeShape (cub1_id.str());
           //viewer.removePointCloud (cu1_id.str());
         }
@@ -7264,23 +7427,267 @@ int main (int argc, char** argv)
 
   }
 
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
+  // ---- //
+  // GTFO //
+  // ---- //
+
+  {
+
+    int view;
+
+    view = 0;
+
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (cubs.at(view).at(cub), 0.333, 0.666, 0.999, 0.5, cub1_id.str ());
+
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (clouds_of_cubs.at (view).at(cub), 85, 170, 255);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (view).at (cub), cub_color, cub_id.str ());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str ());
+      }
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (cyls.at(view).at(cyl), 0.333, 0.666, 0.999, 0.5, cyl1_id.str ());
+
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (clouds_of_cyls.at (view).at(cyl), 85, 170, 255);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (view).at (cyl), cyl_color, cyl_id. str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id. str());
+      }
+    }
+
+    //
+
+    view = 1;
+
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (cubs.at(view).at(cub), 0.999, 0.666, 0.333, 0.5, cub1_id.str ());
+
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (clouds_of_cubs.at (view).at(cub), 255, 170, 85);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (view).at (cub), cub_color, cub_id.str ());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str ());
+      }
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (cyls.at(view).at(cyl), 0.999, 0.666, 0.333, 0.5, cyl1_id.str ());
+
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (clouds_of_cyls.at (view).at(cyl), 255, 170, 85);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (view).at (cyl), cyl_color, cyl_id. str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id. str());
+      }
+    }
+
+    viewer.spin(); // just for slight visualization //
+  }
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
+  // ----- //
+  // LMFAO //
+  // ----- //
+
+  {
+
+    for (int cub = 0; cub < merged_cubs.size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (merged_cubs.at(cub), 0.0, 1.0, 0.5, 0.5, cub1_id.str());
+
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (merged_clouds_of_cubs.at(cub), 0, 255, 127);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cubs.at (cub), cub_color, cub_id.str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str());
+      }
+    }
+
+    for (int cyl = 0; cyl < merged_cyls.size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (merged_cyls.at(cyl), 0.0, 1.0, 0.5, 0.5, cyl1_id.str());
+
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (merged_clouds_of_cyls.at(cyl), 0, 255, 127);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cyls.at (cyl), cyl_color, cyl_id.str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id.str());
+      }
+    }
+
+    viewer.spin(); // just for slight visualization //
+
+  }
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
+  // ---- //
+  // GTFO // BLACK //
+  // ---- //
+
+  {
+
+    int view;
+
+    view = 0;
+
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (cubs.at(view).at(cub), 0.333, 0.666, 0.999, 0.5, cub1_id.str ());
+
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (clouds_of_cubs.at (view).at(cub), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (view).at (cub), cub_color, cub_id.str ());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str ());
+      }
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (cyls.at(view).at(cyl), 0.333, 0.666, 0.999, 0.5, cyl1_id.str ());
+
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (clouds_of_cyls.at (view).at(cyl), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (view).at (cyl), cyl_color, cyl_id. str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id. str());
+      }
+    }
+
+    //
+
+    view = 1;
+
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (cubs.at(view).at(cub), 0.999, 0.666, 0.333, 0.5, cub1_id.str ());
+
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (clouds_of_cubs.at (view).at(cub), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (view).at (cub), cub_color, cub_id.str ());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str ());
+      }
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (cyls.at(view).at(cyl), 0.999, 0.666, 0.333, 0.5, cyl1_id.str ());
+
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp ();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (clouds_of_cyls.at (view).at(cyl), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (view).at (cyl), cyl_color, cyl_id. str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id. str());
+      }
+    }
+
+    viewer.spin(); // just for slight visualization //
+  }
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
+  // ----- //
+  // LMFAO // BLACK //
+  // ----- //
 
+  {
 
+    for (int cub = 0; cub < merged_cubs.size(); cub++)
+    {
+      if ( true )
+      {
+        std::stringstream cub1_id;
+        cub1_id << "cub1_id" << getTimestamp();
+        viewer.addCuboid (merged_cubs.at(cub), 0.0, 1.0, 0.5, 0.5, cub1_id.str());
 
+        std::stringstream cub_id; cub_id << "cub_id_" << getTimestamp();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cub_color (merged_clouds_of_cubs.at(cub), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cubs.at (cub), cub_color, cub_id.str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cub_id.str());
+      }
+    }
 
+    for (int cyl = 0; cyl < merged_cyls.size(); cyl++)
+    {
+      if ( true )
+      {
+        std::stringstream cyl1_id;
+        cyl1_id << "cyl1_" << getTimestamp();
+        viewer.addCylinder (merged_cyls.at(cyl), 0.0, 1.0, 0.5, 0.5, cyl1_id.str());
 
+        std::stringstream cyl_id; cyl_id << "cyl_id_" << getTimestamp();
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cyl_color (merged_clouds_of_cyls.at(cyl), 0, 0, 0);
+        viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_clouds_of_cyls.at (cyl), cyl_color, cyl_id.str());
+        viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_id.str());
+      }
+    }
+
+    viewer.spin(); // just for slight visualization //
+
+  }
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
