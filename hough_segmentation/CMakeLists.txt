@@ -13,18 +13,21 @@ set(CMAKE_BUILD_TYPE Debug)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-add_executable(sequential_hough src/sequential_hough.cpp)
-target_link_libraries(sequential_hough ${PCL_LIBRARIES})
+add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
+target_link_libraries(analyze_sequential_hough ${PCL_LIBRARIES})
 
-add_executable(assemble_statistics_file src/assemble_statistics_file.cpp)
-target_link_libraries(assemble_statistics_file ${PCL_LIBRARIES})
-
+#add_executable(sequential_hough src/sequential_hough.cpp)
+#target_link_libraries(sequential_hough ${PCL_LIBRARIES})
+#
+#add_executable(assemble_statistics_file src/assemble_statistics_file.cpp)
+#target_link_libraries(assemble_statistics_file ${PCL_LIBRARIES})
+#
 #add_executable(hough_classification src/hough_classification.cpp)
 #target_link_libraries(hough_classification ${PCL_LIBRARIES})
-
-add_executable(rot_trans_scale src/rot_trans_scale.cpp)
-target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
-
+#
+#add_executable(rot_trans_scale src/rot_trans_scale.cpp)
+#target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
+#
 #add_executable (cloud_operations src/cloud_operations.cpp)
 #target_link_libraries(cloud_operations ${PCL_LIBRARIES})
 

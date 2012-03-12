@@ -53,6 +53,10 @@
 #include "../include/ransac.hpp"
 #include "../include/fetch_cuboid.hpp"
 
+// ---------- Namespaces ---------- //
+
+using namespace std;
+
 // ---------- Types ---------- //
 
 typedef pcl::PointXYZ I; //
@@ -6799,6 +6803,486 @@ int main (int argc, char** argv)
   fclose (file);
 
   */
+
+
+
+  // -------------------------------- //
+  // SHOW THE RESULTING MODELS IN RGB // ---------- // ---------- // ---------- //
+  // -------------------------------- //
+
+  for ( int view = 0; view < pcd_file_indices.size(); view++)
+  {
+    float r = 0.0;
+    float g = 0.0;
+    float b = 0.0;
+
+    if (view == 0) r = 1.0;
+    if (view == 1) g = 1.0;
+    if (view == 2) b = 1.0;
+
+    for ( int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      //float r = (rand () / (RAND_MAX + 1.0));
+      //float g = (rand () / (RAND_MAX + 1.0));
+      //float b = (rand () / (RAND_MAX + 1.0));
+      //
+      //int R = 255 * r;
+      //int G = 255 * g;
+      //int B = 255 * b;
+
+      std::stringstream cub_id;
+      cub_id << "cub_" << getTimestamp ();
+      viewer.addCuboid (cubs.at(view).at(cub), r, g, b, 0.75, cub_id.str());
+      //viewer.spin();
+    }
+
+    for ( int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      //float r = (rand () / (RAND_MAX + 1.0));
+      //float g = (rand () / (RAND_MAX + 1.0));
+      //float b = (rand () / (RAND_MAX + 1.0));
+      //
+      //int R = 255 * r;
+      //int G = 255 * g;
+      //int B = 255 * b;
+
+      std::stringstream cyl_id;
+      cyl_id << "cyl_" << getTimestamp ();
+      viewer.addCylinder (cyls.at(view).at(cyl), r, g, b, 0.75, cyl_id.str());
+      //viewer.spin();
+    }
+
+    viewer.spin(); // just for slight visualization //
+
+  }
+
+  // ! Clean Up Time ! //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
+
+
+
+  // ----------------------- //
+  // START MERGING CYLINDERS // ---------- // ---------- // ---------- //
+  // ----------------------- //
+
+  std::vector<pcl::ModelCoefficients> merged_cyls;
+  std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr > merged_clouds_of_cyls;
+
+  {
+
+    int v1 = 0;
+    int v2 = 1;
+
+    bool match_not_found;
+
+    cerr << endl << endl << endl << " threshold between centroids of cylinders = " << threshold_between_centroids_of_cylinders << endl ;
+
+    for (int cy1 = 0; cy1 < clouds_of_cyls.at (v1).size (); cy1++)
+    {
+
+      match_not_found = true;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v1).at (cy1), cen1);
+
+      for (int cy2 = 0; cy2 < clouds_of_cyls.at (v2).size (); cy2++)
+      {
+
+        Eigen::Vector4f cen2;
+        pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v2).at (cy2), cen2);
+
+        double cen1_to_cen2 = sqrt( _sqr(cen1[0]-cen2[0]) + _sqr(cen1[1]-cen2[1]) + _sqr(cen1[2]-cen2[2]) );
+
+        printf (" %7.5f", cen1_to_cen2);
+
+        if ( cen1_to_cen2 < threshold_between_centroids_of_cylinders )
+        {
+
+          match_not_found = false;
+
+          cerr << " match found" << endl ;
+
+          if ( true )
+          {
+            std::stringstream cyl1_id;
+            cyl1_id << "cyl1_" << getTimestamp();
+            viewer.addCylinder (cyls.at(v1).at(cy1), 0.333, 0.666, 0.999, 0.5, cyl1_id.str ());
+
+            std::stringstream cy1_id; cy1_id << "cy1_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cy1_color (clouds_of_cyls.at (v1).at (cy1), 85, 170, 255);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (v1).at (cy1), cy1_color, cy1_id. str());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy1_id. str());
+
+            std::stringstream cyl2_id;
+            cyl2_id << "cyl2_" << getTimestamp();
+            viewer.addCylinder (cyls.at(v2).at(cy2), 0.999, 0.666, 0.333, 0.5, cyl2_id.str ());
+
+            std::stringstream cy2_id; cy2_id << "cy2_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cy2_color (clouds_of_cyls.at (v2).at (cy2), 255, 170, 85);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (v2).at (cy2), cy2_color, cy2_id. str());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy2_id. str());
+
+            viewer.spin();
+            viewer.removeShape (cyl1_id.str());
+            viewer.removeShape (cyl2_id.str());
+            viewer.removePointCloud (cy1_id.str());
+            viewer.removePointCloud (cy2_id.str());
+          }
+
+          // --------------- //
+          // PROCESSING PART //
+          // --------------- //
+
+          pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+          *tmp_cloud += *clouds_of_cyls.at (v1).at (cy1);
+          *tmp_cloud += *clouds_of_cyls.at (v2).at (cy2);
+
+          // ----------
+
+          double cy1p1[3];
+          cy1p1[0]  = cyls.at(v1).at(cy1).values.at(0);
+          cy1p1[1]  = cyls.at(v1).at(cy1).values.at(1);
+          cy1p1[2]  = cyls.at(v1).at(cy1).values.at(2);
+
+          double cy1p2[3];
+          cy1p2[0]  = cyls.at(v1).at(cy1).values.at(3) + cyls.at(v1).at(cy1).values.at(0);
+          cy1p2[1]  = cyls.at(v1).at(cy1).values.at(4) + cyls.at(v1).at(cy1).values.at(1);
+          cy1p2[2]  = cyls.at(v1).at(cy1).values.at(5) + cyls.at(v1).at(cy1).values.at(2);
+
+          double r1 = cyls.at(v1).at(cy1).values.at(6);
+
+          // ----------
+
+          double cy2p1[3];
+          cy2p1[0]  = cyls.at(v2).at(cy2).values.at(0);
+          cy2p1[1]  = cyls.at(v2).at(cy2).values.at(1);
+          cy2p1[2]  = cyls.at(v2).at(cy2).values.at(2);
+
+          double cy2p2[3];
+          cy2p2[0]  = cyls.at(v2).at(cy2).values.at(3) + cyls.at(v2).at(cy2).values.at(0);
+          cy2p2[1]  = cyls.at(v2).at(cy2).values.at(4) + cyls.at(v2).at(cy2).values.at(1);
+          cy2p2[2]  = cyls.at(v2).at(cy2).values.at(5) + cyls.at(v2).at(cy2).values.at(2);
+
+          double r2 = cyls.at(v2).at(cy2).values.at(6);
+
+          // ----------
+
+          double m1cx =     (cy1p1[0] + cy2p1[0]) /2;
+          double m1cy =     (cy1p1[1] + cy2p1[1]) /2;
+          double m1cz = min (cy1p1[2] , cy2p1[2]);
+
+          double m2cx =     (cy1p2[0] + cy2p2[0]) /2;
+          double m2cy =     (cy1p2[1] + cy2p2[1]) /2;
+          double m2cz = max (cy1p2[2] , cy2p2[2]);
+
+          double   mr = (r1 + r2) /2;
+
+          // ----------
+
+          pcl::ModelCoefficients tmp_coeffs;
+
+          tmp_coeffs.values.push_back (m1cx);
+          tmp_coeffs.values.push_back (m1cy);
+          tmp_coeffs.values.push_back (m1cz);
+          tmp_coeffs.values.push_back (0.0);
+          tmp_coeffs.values.push_back (0.0);
+          tmp_coeffs.values.push_back (m2cz - m1cz);
+          tmp_coeffs.values.push_back (mr);
+
+          // ----------
+
+          if ( true )
+          {
+            std::stringstream mcyl_id;
+            mcyl_id << "mcyl_" << getTimestamp ();
+            viewer.addCylinder (tmp_coeffs, 0.0, 1.0, 0.5, 0.5, mcyl_id.str ());
+
+            std::stringstream mcy_id; mcy_id << "mcy_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> mcy_color (tmp_cloud, 0, 255, 127);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (tmp_cloud, mcy_color, mcy_id.str());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, mcy_id.str());
+
+            //viewer.spin ();
+            //viewer.removeShape (mcyl_id.str());
+            //viewer.removePointCloud (mcy_id.str());
+          }
+
+          // ----------
+
+          merged_cyls.push_back (tmp_coeffs);
+          merged_clouds_of_cyls.push_back (tmp_cloud);
+
+        }
+        else
+          cerr << endl ;
+
+        viewer.spin ();
+
+      }
+
+      // ------ //
+      // IF NOT //
+      // ------ //
+
+      if ( match_not_found )
+      {
+
+        cerr << "         match not found ! " << endl ;
+
+        if ( true )
+        {
+          std::stringstream cyl1_id;
+          cyl1_id << "cyl1_" << getTimestamp();
+          viewer.addCylinder (cyls.at(v1).at(cy1), 0.333, 0.666, 0.999, 0.5, cyl1_id.str ());
+
+          std::stringstream cy1_id; cy1_id << "cy1_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cy1_color (clouds_of_cyls.at (v1).at (cy1), 85, 170, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at (v1).at (cy1), cy1_color, cy1_id. str());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cy1_id. str());
+
+          //viewer.spin();
+          //viewer.removeShape (cyl1_id. str());
+          //viewer.removePointCloud (cy1_id. str());
+        }
+
+        // ----------- //
+        // SAVING PART //
+        // ----------- //
+
+        pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+        *tmp_cloud += *clouds_of_cyls.at(v1).at(cy1);
+
+        // ----------
+
+        pcl::ModelCoefficients tmp_coeffs;
+
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(0));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(1));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(2));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(3));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(4));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(5));
+        tmp_coeffs.values.push_back (cyls.at(v1).at(cy1).values.at(6));
+
+        // ----------
+
+        merged_cyls.push_back (tmp_coeffs);
+        merged_clouds_of_cyls.push_back (tmp_cloud);
+
+      }
+
+    }
+
+  }
+
+
+
+  // ------------------ //
+  // DEALING WITH BOXES // ---------- // ---------- // ---------- //
+  // ------------------ //
+
+  std::vector<std::vector<pcl::ModelCoefficients> > merged_cubs;
+  std::vector<pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr> merged_clouds_of_cubs;
+
+  {
+
+    int v1 = 0;
+    int v2 = 1;
+
+    bool match_not_found;
+
+    cerr << endl << endl << endl << " threshold between centroids of cuboids = " << threshold_between_centroids_of_cuboids << endl ;
+
+    for (int cu1 = 0; cu1 < clouds_of_cubs.at (v1).size (); cu1++)
+    {
+
+      match_not_found = true;
+
+      Eigen::Vector4f cen1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v1).at (cu1), cen1);
+
+      for (int cu2 = 0; cu2 < clouds_of_cubs.at (v2).size (); cu2++)
+      {
+
+        Eigen::Vector4f cen2;
+        pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v2).at (cu2), cen2);
+
+        double cen1_to_cen2 = sqrt( _sqr(cen1[0]-cen2[0]) + _sqr(cen1[1]-cen2[1]) + _sqr(cen1[2]-cen2[2]) );
+
+        printf (" %7.5f", cen1_to_cen2);
+
+        if ( cen1_to_cen2 < threshold_between_centroids_of_cuboids )
+        {
+
+          match_not_found = false;
+
+          cerr << " match found " << endl ;
+
+          if ( true )
+          {
+            std::stringstream cub1_id;
+            cub1_id << "cub1_id" << getTimestamp();
+            viewer.addCuboid (cubs.at(v1).at(cu1), 0.333, 0.666, 0.999, 0.5, cub1_id.str ());
+
+            std::stringstream cu1_id; cu1_id << "cu1_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cu1_color (clouds_of_cubs.at (v1).at (cu1), 85, 170, 255);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (v1).at (cu1), cu1_color, cu1_id.str ());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu1_id.str ());
+
+            std::stringstream cub2_id;
+            cub2_id << "cub2_id" << getTimestamp();
+            viewer.addCuboid (cubs.at(v2).at(cu2), 0.999, 0.666, 0.333, 0.5, cub2_id.str ());
+
+            std::stringstream cu2_id; cu2_id << "cu2_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cu2_color (clouds_of_cubs.at (v2).at (cu2), 255, 170, 85);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (v2).at (cu2), cu2_color, cu2_id.str ());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu2_id.str ());
+
+            viewer.spin ();
+            viewer.removeShape (cub1_id.str());
+            viewer.removeShape (cub2_id.str());
+            viewer.removePointCloud (cu1_id.str());
+            viewer.removePointCloud (cu2_id.str());
+          }
+
+          // --------------- //
+          // PROCESSING PART //
+          // --------------- //
+
+          pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+          *tmp_cloud += *clouds_of_cubs.at(v1).at(cu1);
+          *tmp_cloud += *clouds_of_cubs.at(v2).at(cu2);
+
+          // ----------
+
+          std::vector<pcl::ModelCoefficients> tmp_coeffs;
+          tmp_coeffs.resize (cubs.at(v1).at(cu1).size());
+
+          for (int p = 0; p < tmp_coeffs.size(); p++)
+          {
+
+            tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(0) + cubs.at(v2).at(cu2).at(p).values.at(0)) /2);
+            tmp_coeffs[p].values.push_back ( (cubs.at(v1).at(cu1).at(p).values.at(1) + cubs.at(v2).at(cu2).at(p).values.at(1)) /2);
+
+            if (p < 4)
+              tmp_coeffs[p].values.push_back ( min (cubs.at(v1).at(cu1).at(p).values.at(2) , cubs.at(v2).at(cu2).at(p).values.at(2)) );
+            else
+              tmp_coeffs[p].values.push_back ( max (cubs.at(v1).at(cu1).at(p).values.at(2) , cubs.at(v2).at(cu2).at(p).values.at(2)) );
+
+          }
+
+          // ----------
+
+          if ( true )
+          {
+            std::stringstream mcub_id;
+            mcub_id << "mcub_" << getTimestamp();
+            viewer.addCuboid (tmp_coeffs, 0.0, 1.0, 0.5, 0.5, mcub_id.str());
+
+            std::stringstream mcu_id; mcu_id << "mcu_id_" << getTimestamp ();
+            pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> mcu_color (tmp_cloud, 0, 255, 127);
+            viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (tmp_cloud, mcu_color, mcu_id.str());
+            viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, mcu_id.str());
+
+            //viewer.spin ();
+            //viewer.removeShape (mcub_id.str());
+            //viewer.removePointCloud (mcu_id.str());
+          }
+
+          // ----------
+
+          merged_cubs.push_back (tmp_coeffs);
+          merged_clouds_of_cubs.push_back (tmp_cloud);
+
+        }
+        else
+          cerr << endl ;
+
+        viewer.spin ();
+
+      }
+
+      // ------ //
+      // IF NOT //
+      // ------ //
+
+      if ( match_not_found )
+      {
+
+        cerr << "         match not found ! " << endl ;
+
+        if ( true )
+        {
+          std::stringstream cub1_id;
+          cub1_id << "cub1_id" << getTimestamp();
+          viewer.addCuboid (cubs.at(v1).at(cu1), 0.333, 0.666, 0.999, 0.5, cub1_id.str ());
+
+          std::stringstream cu1_id; cu1_id << "cu1_id_" << getTimestamp ();
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cu1_color (clouds_of_cubs.at (v1).at (cu1), 85, 170, 255);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at (v1).at (cu1), cu1_color, cu1_id.str ());
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cu1_id.str ());
+
+          //viewer.spin ();
+          //viewer.removeShape (cub1_id.str());
+          //viewer.removePointCloud (cu1_id.str());
+        }
+
+        // ----------- //
+        // SAVING PART //
+        // ----------- //
+
+        pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+        *tmp_cloud += *clouds_of_cubs.at(v1).at(cu1);
+
+        // ----------
+
+        std::vector<pcl::ModelCoefficients> tmp_coeffs;
+        tmp_coeffs.resize (cubs.at(v1).at(cu1).size());
+
+        for (int p = 0; p < tmp_coeffs.size(); p++)
+        {
+
+          tmp_coeffs[p].values.push_back (cubs.at(v1).at(cu1).at(p).values.at(0));
+          tmp_coeffs[p].values.push_back (cubs.at(v1).at(cu1).at(p).values.at(1));
+          tmp_coeffs[p].values.push_back (cubs.at(v1).at(cu1).at(p).values.at(2));
+
+        }
+
+        // ----------
+
+        merged_cubs.push_back (tmp_coeffs);
+        merged_clouds_of_cubs.push_back (tmp_cloud);
+
+      }
+
+    }
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   viewer.spin ();
 
