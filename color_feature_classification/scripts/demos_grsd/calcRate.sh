@@ -30,4 +30,6 @@ do
 	fi
     fi
 done
-echo \(true false\) : \($true_count $false_count\)
+#echo \(true false\) : \($true_count $false_count\)
+sample_num=`expr $true_count + $false_count`
+echo $2 `echo "scale=7; $true_count/$sample_num" | bc`

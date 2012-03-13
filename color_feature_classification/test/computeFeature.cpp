@@ -35,7 +35,8 @@ void computeFeature( const PointCloud<PointXYZRGB> input_cloud, std::vector< std
       for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	for( int oz = 0; oz < repeat_num_offset; oz++ ){
 	  std::vector< std::vector<float> > colorCHLAC;
-	  extractC3HLACSignature981( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	  //extractC3HLACSignature981( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
+	  extractC3HLACSignature117( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );
 	  const int hist_num = colorCHLAC.size(); // number of subdivisions
 	  
 	  for( int h=0; h<hist_num; h++ )
@@ -116,7 +117,8 @@ void computeFeature_with_rotate( const PointCloud<PointXYZRGB> input_cloud, std:
 	    for( int oy = 0; oy < repeat_num_offset; oy++ ){
 	      for( int oz = 0; oz < repeat_num_offset; oz++ ){
 		//* extract features
-		extractC3HLACSignature981( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );	      
+		//extractC3HLACSignature981( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );	      
+		extractC3HLACSignature117( grid, cloud_downsampled, colorCHLAC, thR, thG, thB, voxel_size, subdivision_size, ox*offset_step, oy*offset_step, oz*offset_step );	      
 		const int hist_num = colorCHLAC.size();
 	      
 		for( int h=0; h<hist_num; h++ ){

@@ -41,7 +41,7 @@
       $ bash `rospack find color_feature_classification`/scripts/demos_grsd/all.sh
 
   3.2 test
-      $ bash `rospack find color_feature_classification`/scripts/demos_grsd/2.test_classify.sh [dim_of_subspace (e.g. 18)] > result.txt
+      $ bash `rospack find color_feature_classification`/scripts/demos_grsd/2.test_classify.sh [feature_type (e.g. g)] [dim_of_subspace (e.g. 18)] > result.txt
 
   3.3 show results
       $ bash `rospack find color_feature_classification`/scripts/demos_grsd/calcRate.sh result.txt
