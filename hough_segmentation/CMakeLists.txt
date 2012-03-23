@@ -13,8 +13,15 @@ set(CMAKE_BUILD_TYPE Debug)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
-target_link_libraries(analyze_sequential_hough ${PCL_LIBRARIES})
+add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
+target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
+
+# -- # -- # --
+
+#add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
+#target_link_libraries(analyze_sequential_hough ${PCL_LIBRARIES})
+
+# -- # -- # --
 
 #add_executable(sequential_hough src/sequential_hough.cpp)
 #target_link_libraries(sequential_hough ${PCL_LIBRARIES})
