@@ -55,6 +55,22 @@
 
 #include "../include/ransac.hpp"
 
+// ---------- Namespaces ---------- //
+
+using namespace std;
+
+// ---------- Types ---------- //
+
+typedef pcl::PointXYZ I; //
+// typedef pcl::PointXYZRGB I; //
+
+typedef pcl::Normal N;
+
+typedef pcl::PointNormal PointT; //
+// typedef pcl::PointXYZRGBNormal PointT; //
+
+typedef pcl::Boundary B;
+
 // ---------- Variables ---------- //
 
 // Method //
@@ -1557,7 +1573,7 @@ int main (int argc, char** argv)
 
   // ---------- Load Input Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr xyz_rgb_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr xyz_rgb_cloud (new pcl::PointCloud<I> ());
 
   if (pcl::io::loadPCDFile (argv [pcd_file_indices [0]], *xyz_rgb_cloud) == -1)
   {
@@ -1601,9 +1617,9 @@ int main (int argc, char** argv)
 
   // ---------- Filter Point Cloud Data ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
 
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+  pcl::StatisticalOutlierRemoval<I> sor;
   sor.setInputCloud (xyz_rgb_cloud);
   sor.setMeanK (mean_k_filter);
   sor.setStddevMulThresh (std_dev_filter);
@@ -1643,11 +1659,11 @@ int main (int argc, char** argv)
 
   // ---------- Smoothing ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr smooth_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr mls_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
+  pcl::search::KdTree<I>::Ptr mls_tree (new pcl::search::KdTree<I> ());
   mls_tree->setInputCloud (filtered_cloud);
 
-  pcl::MovingLeastSquares<pcl::PointXYZRGB, pcl::Normal> mls;
+  pcl::MovingLeastSquares<I, pcl::Normal> mls;
   mls.setInputCloud (filtered_cloud);
   mls.setPolynomialFit (true);
   mls.setSearchMethod (mls_tree);
@@ -1695,10 +1711,10 @@ int main (int argc, char** argv)
   // ---------- Estimate 3D Normals ---------- //
 
   pcl::PointCloud<pcl::Normal>::Ptr normal_cloud (new pcl::PointCloud<pcl::Normal> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr normal_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<I>::Ptr normal_tree (new pcl::search::KdTree<I> ());
   normal_tree->setInputCloud (smooth_cloud);
 
-  pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  pcl::NormalEstimation<I, pcl::Normal> ne;
   ne.setInputCloud (smooth_cloud);
   ne.setSearchMethod (normal_tree);
   ne.setRadiusSearch (normal_search_radius);
@@ -1783,10 +1799,10 @@ int main (int argc, char** argv)
   // ---------- Estimate RSD Values ---------- //
 
   pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr rsd_tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+  pcl::search::KdTree<I>::Ptr rsd_tree (new pcl::search::KdTree<I> ());
   rsd_tree->setInputCloud (smooth_cloud);
 
-  pcl::RSDEstimation<pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+  pcl::RSDEstimation<I, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
   rsd.setInputCloud (smooth_cloud);
   rsd.setInputNormals (normal_cloud);
   rsd.setRadiusSearch (rsd_search_radius);
