@@ -4346,9 +4346,16 @@ int main (int argc, char** argv)
       cerr << cyl_max.z - cyl_min.z << endl ;
       cerr << mr << endl ;
 
+      if ( object_step )
+      {
+      viewer.spin();
+
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+
+      viewer.spin();
+      }
 
       // For Analyzing //
       cyls.push_back (cyl);
@@ -4920,12 +4927,12 @@ int main (int argc, char** argv)
 
       fprintf (text4cyls, "\n  FILE %s \n\n", file.c_str());
 
-      for (int ru = 0; ru < cubs.size(); ru++)
+      for (int ru = 0; ru < cyls.size(); ru++)
       {
         double h = cyls.at(ru).values.at (5);
         double r = cyls.at(ru).values.at (6);
 
-        fprintf (text4cyls, "    RUN %2d | pi x %12.10f ^2 x %12.10f \n", ru, h, r);
+        fprintf (text4cyls, "    RUN %2d | pi x %12.10f ^2 x %12.10f \n", ru, r, h);
       }
     }
   }
