@@ -6,6 +6,10 @@
 
 
 
+
+
+../bin/analyze_hough_classification /home/goron/work/_Clouds/src/FootprintAnalysis/data/box/cereal_view2_1278931268.072980-ASCII.pcd [ -RUNS 10 -object_step 1 ]                                               -cam 0.00348885,3.48885/1.62899,-1.88697,1.15889/1.16831,-1.19078,1.85257/0.465631,-0.450728,0.761598/0.523599/840,525/840,80 [ -verbose 1 -step 0 -size 9 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]                 [ -mean_k_filter 30 -std_dev_filter 3.0 ] -VRANSAC_ITERATIONS 100 [ -smoothing_search_radius 0.010 -normal_search_radius 0.020 -curvature_threshold 0.0050 -minimum_line_length 0.025 -minimum_circle_radius 0.030 -maximum_circle_radius 0.090 ]                                      -fitting_step 0 [ -line_threshold 0.0125 -maximum_line_iterations 500 -minimum_line_inliers 100 -circle_threshold 0.0100 -maximum_circle_iterations 500 -minimum_circle_inliers 100 ] -line_normals_angle_threshold 3.0 -circle_normals_angle_threshold 30.0                          -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.025 -growing_height 0.035 ] -flat_value 3.0 -sat 1.0
+
 ===================================================================================================================
 ===================================================================================================================
 ===================================================================================================================

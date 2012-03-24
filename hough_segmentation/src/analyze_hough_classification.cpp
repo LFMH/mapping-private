@@ -172,6 +172,10 @@ double short_value = 0.250;
 // Different //
 double sat = 1.0;
 
+// Analyze //
+int runs = 0;
+bool object_step = false;
+
 // ---------- Macros ---------- //
 
 #define _sqr(c) ((c)*(c))
@@ -1539,6 +1543,10 @@ int main (int argc, char** argv)
   // Different //
   pcl::console::parse_argument (argc, argv, "-sat", sat);
 
+  // Analyze //
+  pcl::console::parse_argument (argc, argv, "-RUNS", runs);
+  pcl::console::parse_argument (argc, argv, "-object_step", object_step);
+
   // ---------- Initializations ---------- //
 
   srand (time(0));
@@ -2073,6 +2081,27 @@ int main (int argc, char** argv)
     }
   }
 
+  std::vector<pcl::ModelCoefficients> cyls;
+  std::vector<std::vector<pcl::ModelCoefficients> > cubs;
+
+  if ( fitting_step || space_step || growing_visualization )
+  {
+    viewer.removePointCloud ("WORKING_CLOUD");
+  }
+
+  for (int ru = 0; ru < runs; ru++)
+  {
+
+  // Restore Working Cloud //
+  *working_cloud = *backup_working_cloud;
+
+  if ( fitting_step || space_step || growing_visualization )
+  {
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
+    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
+  }
+
   // ---------- Fitting Of Models ---------- //
 
   int fit = 0;
@@ -2084,12 +2113,12 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 7 )
-    {
+      //if ( fit > 7 )
+      //{
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
-      fitting_step = 0;
-    }
+      //fitting_step = 0;
+      //}
 
     for (int ite = 0; ite < vransac_iterations; ite++)
     {
@@ -4121,9 +4150,19 @@ int main (int argc, char** argv)
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
           if ( space_step ) viewer.spin ();
 
+        if ( object_step )
+        {
+        viewer.spin();
+
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+
+        viewer.spin();
+        }
+
+        // For Analyzing //
+        cubs.push_back (cub);
 
         number_of_flat++;
         /*
@@ -4160,9 +4199,19 @@ int main (int argc, char** argv)
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "WORKING_CLOUD");
           if ( space_step ) viewer.spin ();
 
+        if ( object_step )
+        {
+        viewer.spin();
+
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+        viewer.spin();
+        }
+
+        // For Analyzing //
+        cubs.push_back (cub);
 
         number_of_box++;
         /*
@@ -4300,6 +4349,9 @@ int main (int argc, char** argv)
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
       viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+
+      // For Analyzing //
+      cyls.push_back (cyl);
 
       model++;
       cerr << endl << " MODEL " << model << endl << endl ;
@@ -4807,6 +4859,69 @@ int main (int argc, char** argv)
 
   } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
 
+  ///*
+  // Le Clean Up //
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
+  //*/
+
+  }
+
+  cerr << endl ;
+  cerr << cubs.size() << endl ;
+  cerr << cyls.size() << endl ;
+  cerr << endl ;
+
+  {
+    if ( cubs.size() != 0 )
+    {
+      FILE * text4cubs;
+      text4cubs = fopen ("hough-ransac-boxes.txt", "a");
+
+      std::string path = argv [pcd_file_indices [0]];
+      size_t     slash = path.find_last_of ("/");
+      std::string file = path.substr (slash + 1);
+
+      cerr << slash << endl ;
+      cerr <<  file << endl;
+
+      fprintf (text4cubs, "\n  FILE %s \n\n", file.c_str());
+
+      for (int ru = 0; ru < cubs.size(); ru++)
+      {
+        double d1 = sqrt (_sqr (cubs.at(ru).at(0).values.at(0) - cubs.at(ru).at(1).values.at(0)) + _sqr (cubs.at(ru).at(0).values.at(1) - cubs.at(ru).at(1).values.at(1)));
+        double d2 = sqrt (_sqr (cubs.at(ru).at(1).values.at(0) - cubs.at(ru).at(2).values.at(0)) + _sqr (cubs.at(ru).at(1).values.at(1) - cubs.at(ru).at(2).values.at(1)));
+        double d3 = cubs.at(ru).at(4).values.at(2) - cubs.at(ru).at(0).values.at(2);
+
+        fprintf (text4cubs, "    RUN %2d | %12.10f x %12.10f x %12.10f \n", ru, d1, d2, d3);
+      }
+    }
+  }
+
+  {
+    if ( cyls.size() != 0 )
+    {
+      FILE * text4cyls;
+      text4cyls = fopen ("hough-ransac-cylinders.txt", "a");
+
+      std::string path = argv [pcd_file_indices [0]];
+      size_t     slash = path.find_last_of ("/");
+      std::string file = path.substr (slash + 1);
+
+      cerr << slash << endl ;
+      cerr <<  file << endl;
+
+      fprintf (text4cyls, "\n  FILE %s \n\n", file.c_str());
+
+      for (int ru = 0; ru < cubs.size(); ru++)
+      {
+        double h = cyls.at(ru).values.at (5);
+        double r = cyls.at(ru).values.at (6);
+
+        fprintf (text4cyls, "    RUN %2d | pi x %12.10f ^2 x %12.10f \n", ru, h, r);
+      }
+    }
+  }
 
   viewer.spin ();
 
