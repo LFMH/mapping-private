@@ -1653,7 +1653,7 @@ int main (int argc, char** argv)
   {
     std::stringstream filtered_output_filename;
     filtered_output_filename << directory << "-" << "denoise-with-rgb.pcd" ;
-    pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
+  /*pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);*/
 
     //std::string file = filtered_output_filename.str ();
     //f = file.find_last_of (".");
@@ -1698,7 +1698,7 @@ int main (int argc, char** argv)
   {
     std::stringstream smooth_output_filename;
     smooth_output_filename << directory << "-" << "denoise-smooth-with-rgb.pcd" ;
-    pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
+  /*pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);*/
 
     //std::string file = smooth_output_filename.str ();
     //f = file.find_last_of (".");
@@ -4465,9 +4465,16 @@ int main (int argc, char** argv)
 
     }
 
-    std::stringstream marked_output_filename;
-    marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
-    pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
+     //                //
+    // Classification //
+   //                //
+
+    if ( classification )
+    {
+      std::stringstream marked_output_filename;
+      marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
+    /*pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);*/
+    }
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
