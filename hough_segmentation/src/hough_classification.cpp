@@ -141,6 +141,7 @@ int number_of_short = 1;
 
 double flat_value = 0.250;
 
+bool deal_with_the_rest_of_the_points = true;
 bool consider_height_from_table_plane = true;
 bool shapes_from_table_plane = true;
 
@@ -1508,6 +1509,7 @@ int main (int argc, char** argv)
 
   pcl::console::parse_argument (argc, argv, "-flat_value", flat_value);
 
+  pcl::console::parse_argument (argc, argv, "-deal_with_the_rest_of_the_points", deal_with_the_rest_of_the_points);
   pcl::console::parse_argument (argc, argv, "-consider_height_from_table_plane", consider_height_from_table_plane);
   pcl::console::parse_argument (argc, argv, "-shapes_from_table_plane", shapes_from_table_plane);
 
@@ -4398,6 +4400,9 @@ int main (int argc, char** argv)
 
     // ---------- Deal With The Rest Of The Points ---------- //
 
+    if ( deal_with_the_rest_of_the_points )
+    {
+
     if ( !more_votes_for_lines && !more_votes_for_circles )
     {
       viewer.spin ();
@@ -4771,6 +4776,8 @@ int main (int argc, char** argv)
       viewer.spin ();
     }
 
+    }
+
 
 
     fit++;
@@ -4786,6 +4793,9 @@ int main (int argc, char** argv)
 
   } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
 
+  //
+
+  pcl::console::print_warn ("Finished in %5.3g [s] !\n", tt.toc ());
 
   viewer.spin ();
 
