@@ -1,4 +1,10 @@
 
+// just for screenshots //
+
+pcd_viewer _3_frame_20110707T161503.036406-objects-downsampled-working-cloud.pcd -bc 1,1,1 -ps 6                                                                                                                  -cam 0.152854,1.83846/0.485908,0.401111,0.257471/0.520284,-0.356642,0.774695/0.0185779,0.564242,0.825401/0.523599/840,525/840,80
+
+../bin/hough_classification /media/g/work/data/kinect-LUCI/objects/objects-hokuyo/_3_frame_20110707T161503.036406-objects-downsampled.pcd                                                                      -cam 0.152854,1.83846/0.485908,0.401111,0.257471/0.520284,-0.356642,0.774695/0.0185779,0.564242,0.825401/0.523599/840,525/840,80 [ -verbose 1 -step 1 -size 6 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]              [ -mean_k_filter 50 -std_dev_filter 5.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -rsd_search_radius 0.030 -rsd_plane_radius 0.150 ]
+
 ================================================== Analyze Hough ==================================================
 
 
