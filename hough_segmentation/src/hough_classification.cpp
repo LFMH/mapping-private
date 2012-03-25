@@ -1998,6 +1998,13 @@ int main (int argc, char** argv)
   // Backup Working Cloud //
   *backup_working_cloud = *working_cloud;
 
+  //                    //
+  // Save Working Cloud //
+  //                    //
+  std::stringstream working_output_filename;
+  working_output_filename << directory << "-" << "working-cloud.pcd" ;
+  pcl::io::savePCDFileASCII (working_output_filename.str (), *working_cloud);
+
   // -------------------------------------------------- //
   // ---------- Take Care of Planars Objects ---------- //
   // -------------------------------------------------- //
@@ -2059,6 +2066,8 @@ int main (int argc, char** argv)
   int fit = 0;
 
   int model = 0;
+
+  bool continue_hough = true;
 
   do
   {
@@ -4778,7 +4787,7 @@ int main (int argc, char** argv)
 
     }
 
-
+    if (!more_votes_for_lines && !more_votes_for_circles) continue_hough = false;
 
     fit++;
 
@@ -4791,7 +4800,7 @@ int main (int argc, char** argv)
       else
         pcl::console::print_warn ("    %d = %d | Continue... \n", (int) working_cloud->points.size (), minimum_line_inliers);
 
-  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) );
+  } while ( ((int) working_cloud->points.size () > minimum_line_inliers) && ((int) working_cloud->points.size () > minimum_line_inliers) && (continue_hough) );
 
   //
 
