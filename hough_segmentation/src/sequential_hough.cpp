@@ -3507,6 +3507,7 @@ int main (int argc, char** argv)
               std::stringstream cub_id;
               cub_id << "CUB_" << getTimestamp ();
               viewer.addCuboid (pla, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+              if ( space_step ) viewer.spin ();
 
               cubs_per_view.push_back (pla);
 
@@ -3550,6 +3551,7 @@ int main (int argc, char** argv)
               std::stringstream cub_id;
               cub_id << "CUB_" << getTimestamp ();
               viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+              if ( space_step ) viewer.spin ();
 
               cubs_per_view.push_back (pla);
 
@@ -3598,11 +3600,15 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 6 )
+    if ( fit > 9 )
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
-      //fitting_step = 1;
+
+      fitting_step = 1;
+      space_step = 1;
+      growing_visualization = 1;
+
     }
 
     for (int ite = 0; ite < vransac_iterations; ite++)
@@ -5642,6 +5648,7 @@ int main (int argc, char** argv)
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+        if ( space_step ) viewer.spin ();
 
         cubs_per_view.push_back (cub);
 
@@ -5685,6 +5692,7 @@ int main (int argc, char** argv)
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
         viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+        if ( space_step ) viewer.spin ();
 
         cubs_per_view.push_back (cub);
 
