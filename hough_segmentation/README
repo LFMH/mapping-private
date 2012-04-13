@@ -1,22 +1,23 @@
 
+================================================== * ==================================================
+
+../bin/sequential_hough [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 2000 ]                                           /media/g/work/data/kinect-sequences/scene7/260_degree_cut3.pcd                                                                                                                                                                                                                        -cam 0.00264683,2.64683/0.718506,0.469028,0.849058/0.435639,-0.210651,1.43342/0.297286,0.548311,0.78165/0.523599/840,525/840,80 [ -verbose 1 -step 0 -size 3 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]               [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  5.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0100 -maximum_line_iterations 250 -minimum_line_inliers 150 -circle_threshold 0.0100 -maximum_circle_iterations 250 -minimum_circle_inliers 150 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0025 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ] 
+
+pcd_viewer -cam 0.0623175,1.52757/0.657625,0.337335,0.94125/0.422641,-0.297817,1.15483/0.116859,0.277431,0.953612/0.523599/840,525/840,130 /media/g/work/data/kinect-sequences/scene7/260_degree_cut3.pcd -bc 1,1,1 -ps 3
+
+================================================== * ==================================================
+
+
+
 // just for screenshots //
 
 pcd_viewer _3_frame_20110707T161503.036406-objects-downsampled-working-cloud.pcd -bc 1,1,1 -ps 6                                                                                                                  -cam 0.152854,1.83846/0.485908,0.401111,0.257471/0.520284,-0.356642,0.774695/0.0185779,0.564242,0.825401/0.523599/840,525/840,80
 
 ../bin/hough_classification /media/g/work/data/kinect-LUCI/objects/objects-hokuyo/_3_frame_20110707T161503.036406-objects-downsampled.pcd                                                                      -cam 0.152854,1.83846/0.485908,0.401111,0.257471/0.520284,-0.356642,0.774695/0.0185779,0.564242,0.825401/0.523599/840,525/840,80 [ -verbose 1 -step 1 -size 6 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]              [ -mean_k_filter 50 -std_dev_filter 5.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -rsd_search_radius 0.030 -rsd_plane_radius 0.150 ]
 
+
+
 ================================================== Analyze Hough ==================================================
-
-
-
-
-
-
-
-
-
-
-
 
 
 
