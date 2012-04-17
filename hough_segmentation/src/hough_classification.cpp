@@ -152,6 +152,16 @@ double short_value = 0.250;
 // Different //
 double sat = 1.0;
 
+// New //
+int too_many_planar_curvatures = 0;
+
+// Color //
+double r_bc = 0.0;
+double g_bc = 0.0;
+double b_bc = 0.0;
+
+
+
 // ---------- Macros ---------- //
 
 #define _sqr(c) ((c)*(c))
@@ -1520,6 +1530,16 @@ int main (int argc, char** argv)
   // Different //
   pcl::console::parse_argument (argc, argv, "-sat", sat);
 
+  // New //
+  pcl::console::parse_argument (argc, argv, "-too_many_planar_curvatures", too_many_planar_curvatures);
+
+  // Color //
+  pcl::console::parse_argument (argc, argv, "-r_bc", r_bc);
+  pcl::console::parse_argument (argc, argv, "-g_bc", g_bc);
+  pcl::console::parse_argument (argc, argv, "-b_bc", b_bc);
+
+  pcl::console::parse_3x_arguments (argc, argv, "-rgb_bc", r_bc, g_bc, b_bc);
+
   // ---------- Initializations ---------- //
 
   srand (time(0));
@@ -1534,7 +1554,7 @@ int main (int argc, char** argv)
 
   pcl::visualization::PCLVisualizer viewer ("3D VIEWER");
 
-  viewer.setBackgroundColor (1.0, 1.0, 1.0);
+  viewer.setBackgroundColor (r_bc, g_bc, b_bc);
   viewer.addCoordinateSystem (0.25f);
   viewer.getCameraParameters (argc, argv);
   viewer.updateCamera ();
@@ -1762,7 +1782,8 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("Curvature Mapping ! Returned: %d planars vs %d circulars\n", (int) planar_curvature_cloud->points.size (), (int) circular_curvature_cloud->points.size ());
 
-  if ( step )
+  //if ( step )
+  if ( false )
   {
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> planar_curvature_cloud_color (planar_curvature_cloud);
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> circular_curvature_cloud_color (circular_curvature_cloud);
@@ -1776,6 +1797,20 @@ int main (int argc, char** argv)
     viewer.removePointCloud ("CIRCULAR_CURVATURE_CLOUD");
     viewer.spin ();
   }
+
+  // EXTRA // for visualization purposes...
+
+  if ( step )
+  {
+    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
+    viewer.spin ();
+
+    viewer.removePointCloud ("NORMAL_CLOUD");
+    viewer.spin ();
+  }
+
+  // EXTRA //
 
   // ---------- Estimate RSD Values ---------- //
 
@@ -1865,7 +1900,8 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("RSD Mapping ! Returned: %d plausibles vs %d implausibles\n", (int) plausible_r_min_cloud->points.size (), (int) implausible_r_min_cloud->points.size ());
 
-  if ( step )
+  //if ( step )
+  if ( false )
   {
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> plausible_r_min_cloud_color (plausible_r_min_cloud);
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> implausible_r_min_cloud_color (implausible_r_min_cloud);
@@ -1968,7 +2004,7 @@ int main (int argc, char** argv)
   }
   //*/
 
-  if ( step )
+  if ( false /* step */ )
   {
     //pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBI> marked_color (marked_working_cloud, 0, 255, 127);
     //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBNormalRSD> marked_color (working_cloud);
@@ -2074,11 +2110,14 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 7 )
+    if ( fit > 12 )
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
-      fitting_step = 0;
+
+      //space_step = 1;
+      //fitting_step = 1;
+      //growing_visualization = 1;
     }
 
     for (int ite = 0; ite < vransac_iterations; ite++)
@@ -2345,8 +2384,9 @@ int main (int argc, char** argv)
 
         pcl::console::print_value ("  # PLANAR POINTS OF CYLINDER = %d \n", planar_cylinder_inliers->indices.size ());
 
-        if ( 1025 < planar_cylinder_inliers->indices.size () ) // 5B
+        // if ( 1025 < planar_cylinder_inliers->indices.size () ) // 5B
         // if ( 825 < planar_cylinder_inliers->indices.size () ) // E3
+        if ( too_many_planar_curvatures < planar_cylinder_inliers->indices.size () )
         {
           pcl::console::print_value ("  Skiping this cylinder model ! Too Many Planar Curvatures.\n");
           valid_circle = false;
@@ -2433,7 +2473,9 @@ int main (int argc, char** argv)
       {
 
         // THIS SHOULD BE ONLY TEMPORARY HERE //
-        if (line_inliers->indices.size () > circle_inliers->indices.size ())
+        if (line_inliers->indices.size () > circle_inliers->indices.size ()) // comparing remaining inliers
+//        if (line_cloud->points.size () > circle_cloud->points.size ()) // compare actual cloud
+
         {
         if ( valid_line )
         {
@@ -4100,7 +4142,8 @@ int main (int argc, char** argv)
 
           std::stringstream box_cloud_id;
           box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
-          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 0, 127, 255);
+//          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 0, 127, 255); // light blue
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 255, 127, 0); // light orange
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
           if ( space_step ) viewer.spin ();
@@ -4113,7 +4156,9 @@ int main (int argc, char** argv)
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
-        viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ());
+//        viewer.addCuboid (cub, 0.0, 0.5, 1.0, 0.5, cub_id.str ()); // light blue
+        viewer.addCuboid (cub, 1.0, 0.5, 0.0, 0.5, cub_id.str ()); // light orange
+        if ( space_step ) viewer.spin();
 
         number_of_flat++;
         /*
@@ -4139,7 +4184,7 @@ int main (int argc, char** argv)
 
           std::stringstream box_cloud_id;
           box_cloud_id << "BOX_CLOUD_" << getTimestamp ();
-          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255);
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> box_cloud_color (box_cloud, 127, 0, 255); // purple
           viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (box_cloud, box_cloud_color, box_cloud_id.str ());
           viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, box_cloud_id.str ());
           if ( space_step ) viewer.spin ();
@@ -4152,7 +4197,9 @@ int main (int argc, char** argv)
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
-        viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+//        viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ()); // light blue
+        viewer.addCuboid (cub, 1.0, 0.5, 0.0, 0.5, cub_id.str ()); // light orange
+        if ( space_step ) viewer.spin();
 
         number_of_box++;
         /*
@@ -4252,7 +4299,7 @@ int main (int argc, char** argv)
 
         std::stringstream cyl_cloud_id;
         cyl_cloud_id << "CYL_CLOUD_" << getTimestamp ();
-        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cylinder_cloud_color (cylinder_cloud, 127, 255, 0);
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> cylinder_cloud_color (cylinder_cloud, 127, 255, 0); // light green
         viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (cylinder_cloud, cylinder_cloud_color, cyl_cloud_id.str ());
         viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, cyl_cloud_id.str ());
         if ( space_step ) viewer.spin ();
@@ -4289,7 +4336,8 @@ int main (int argc, char** argv)
 
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
-      viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+      viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ()); // light green
+      if ( space_step ) viewer.spin();
 
       model++;
       cerr << endl << " MODEL " << model << endl << endl ;
