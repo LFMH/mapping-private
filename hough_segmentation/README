@@ -387,11 +387,16 @@ bin/hough_segmentation_with_lines   /media/stuff/work/data/ros/hough_segmentatio
 =============================================================================================================================================================
 
 
-# ROBOTIK 2012 MOVIE #
+
+# ROBOTIK 2012 MOVIE # ON #
 
 pcd_viewer /media/g/work/events/2012-ROBOTIK/presentation/movie/datasets/frame_20110707T162426.445233-nanless-pcd2v-cut-ascii.pcd                                                                              -cam 0.00993656,9.93656/-0.0401226,-0.221521,2.77332/0.111931,0.111875,-1.23908/0.0117232,-0.996534,-0.082359/0.523599/1260,787/420,80 -ps 2 -bc 0.0,0.5,1.0
 
 pcd_viewer /media/g/work/events/2012-ROBOTIK/presentation/movie/datasets/table-ascii-frame_20110707T162426.445233-nanless-pcd2v-cut-ascii.pcd                                                                  -cam 0.00993656,9.93656/-0.0401226,-0.221521,2.77332/0.111931,0.111875,-1.23908/0.0117232,-0.996534,-0.082359/0.523599/1260,787/420,80 -ps 2 -bc 0.0,0.5,1.0
 
+pcd_viewer /media/g/work/events/2012-ROBOTIK/presentation/movie/datasets/_6_frame_20110707T162426.445233-objects-cut-ascii.pcd                                                                                 -cam 0.290751,1.90077/0.509929,0.320679,0.194074/0.553262,-0.488006,0.797439/0.0102914,0.598323,0.801189/0.523599/1260,787/420,80 -ps 3 -bc 0.0,0.5,1.0
+
 ../bin/hough_classification /media/g/work/data/kinect-LUCI/downsampled/_6_frame_20110707T162426.445233-objects-downsampled-cut-ASCII.pcd [ -too_many_planar_curvatures 250 ] [ -rgb_bc 0.0,0.5,1.0 ]           -cam 0.290751,1.90077/0.509929,0.320679,0.194074/0.553262,-0.488006,0.797439/0.0102914,0.598323,0.801189/0.523599/1260,787/420,80 [ -verbose 1 -step 0 -size 8 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]             [ -mean_k_filter 10 -std_dev_filter 10.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.020 -normal_search_radius 0.020 -curvature_threshold 0.0020 -minimum_line_length 0.045 -minimum_circle_radius 0.030 -maximum_circle_radius 0.090 ]                                     -fitting_step 0 [ -line_threshold 0.0080 -maximum_line_iterations 100 -minimum_line_inliers 100 -circle_threshold 0.0075 -maximum_circle_iterations 100 -minimum_circle_inliers 100 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.025 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.005 -growing_height 0.030 ] -flat_value 4.321 -sat 1.0 [ -deal_with_the_rest_of_the_points 0 ]
+
+# ROBOTIK 2012 MOVIE # OFF #
 
