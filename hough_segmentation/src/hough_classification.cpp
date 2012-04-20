@@ -29,6 +29,9 @@
 
 // ---------- Dependencies ---------- //
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "pcl/console/parse.h"
 #include "pcl/console/time.h"
 #include "pcl/features/normal_3d.h"
@@ -1598,7 +1601,8 @@ int main (int argc, char** argv)
 
   // ---------- For Classification ---------- //
 
-  std::string directory;
+  std::string           directory;
+  std::stringstream new_directory;
 
   size_t f;
 
@@ -1612,6 +1616,24 @@ int main (int argc, char** argv)
     cerr << directory << endl;
     cerr << directory << endl;
     cerr << directory << endl;
+
+    size_t slash;
+    slash = file.find_last_of ("/");
+    cerr << slash << endl;
+
+    std::string dir_path;
+    dir_path = file.substr (0, f);
+    cerr << dir_path << endl;
+    dir_path.insert (slash + 1, "dir");
+    cerr << dir_path << endl;
+
+//    int status = mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    int status = mkdir(dir_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+//    new_directory << directory << "/";
+    new_directory << dir_path << "/";
+    cerr << new_directory.str() << endl;
+
   }
 
   ///*
@@ -1645,7 +1667,8 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream filtered_output_filename;
-    filtered_output_filename << directory << "-" << "denoise-with-rgb.pcd" ;
+//    filtered_output_filename << directory << "-" << "denoise-with-rgb.pcd" ;
+    filtered_output_filename << new_directory.str() << "denoised.pcd" ;
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
     //std::string file = filtered_output_filename.str ();
@@ -1690,7 +1713,8 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream smooth_output_filename;
-    smooth_output_filename << directory << "-" << "denoise-smooth-with-rgb.pcd" ;
+//    smooth_output_filename << directory << "-" << "denoise-smooth-with-rgb.pcd" ;
+    smooth_output_filename << new_directory.str() << "denoised-smoothed.pcd" ;
     pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
     //std::string file = smooth_output_filename.str ();
@@ -1736,8 +1760,6 @@ int main (int argc, char** argv)
     viewer.spin ();
   }
 
-  // pcl::io::savePCDFile ("3D-normals.pcd", *working_cloud);
-
   if ( verbose ) pcl::console::print_info ("Curvature Estimation ! Returned: %d curvatures\n", (int) working_cloud->points.size ());
 
   if ( step )
@@ -1782,8 +1804,7 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("Curvature Mapping ! Returned: %d planars vs %d circulars\n", (int) planar_curvature_cloud->points.size (), (int) circular_curvature_cloud->points.size ());
 
-  //if ( step )
-  if ( false )
+  if ( step )
   {
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> planar_curvature_cloud_color (planar_curvature_cloud);
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> circular_curvature_cloud_color (circular_curvature_cloud);
@@ -1800,15 +1821,15 @@ int main (int argc, char** argv)
 
   // EXTRA // for visualization purposes...
 
-  if ( step )
-  {
-    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
-    viewer.spin ();
-
-    viewer.removePointCloud ("NORMAL_CLOUD");
-    viewer.spin ();
-  }
+  //if ( step )
+  //{
+  //viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
+  //viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
+  //viewer.spin ();
+  //
+  //viewer.removePointCloud ("NORMAL_CLOUD");
+  //viewer.spin ();
+  //}
 
   // EXTRA //
 
@@ -1831,7 +1852,7 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("RSD Estimation ! Returned: %d rsd values\n", (int) working_cloud->points.size ());
 
-  if ( step )
+  if ( false )
   {
     pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZRGBNormalRSD> r_min_colors (working_cloud, "r_min");
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, r_min_colors, "R_MIN");
@@ -1865,7 +1886,6 @@ int main (int argc, char** argv)
 
   _rsd_cloud_->height = 1;
   _rsd_cloud_->width  = rsd_cloud->points.size ();
-  pcl::io::savePCDFile ("rsd.pcd", *_rsd_cloud_);
 
   */
 
@@ -1900,7 +1920,6 @@ int main (int argc, char** argv)
 
   if ( verbose ) pcl::console::print_info ("RSD Mapping ! Returned: %d plausibles vs %d implausibles\n", (int) plausible_r_min_cloud->points.size (), (int) implausible_r_min_cloud->points.size ());
 
-  //if ( step )
   if ( false )
   {
     pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> plausible_r_min_cloud_color (plausible_r_min_cloud);
@@ -1964,8 +1983,6 @@ int main (int argc, char** argv)
     viewer.removePointCloud ("NORMAL_CLOUD");
     viewer.spin ();
   }
-
-  // pcl::io::savePCDFile ("2D-normals.pcd", *working_cloud);
 
   //////
 
@@ -2038,7 +2055,8 @@ int main (int argc, char** argv)
   // Save Working Cloud //
   //                    //
   std::stringstream working_output_filename;
-  working_output_filename << directory << "-" << "working-cloud.pcd" ;
+//  working_output_filename << directory << "-" << "working-cloud.pcd";
+  working_output_filename << new_directory.str() << "the-working-cloud.pcd";
   pcl::io::savePCDFileASCII (working_output_filename.str (), *working_cloud);
 
   // -------------------------------------------------- //
@@ -2101,7 +2119,7 @@ int main (int argc, char** argv)
 
   int fit = 0;
 
-  int model = 0;
+  int model = -1;
 
   bool continue_hough = true;
 
@@ -2110,13 +2128,13 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 12 )
+    if ( fit > 7 )
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
 
-      //space_step = 1;
       //fitting_step = 1;
+      //space_step = 1;
       //growing_visualization = 1;
     }
 
@@ -4215,11 +4233,20 @@ int main (int argc, char** argv)
         //*/
       }
 
-      //cerr << object_filename.str () << endl;
-      //cerr << object_filename.str () << endl;
-      //cerr << object_filename.str () << endl;
-      //
-      //pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+      //////cerr << object_filename.str () << endl;
+      //////cerr << object_filename.str () << endl;
+      //////cerr << object_filename.str () << endl;
+      //////
+      //////pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+
+      std::stringstream obj_name;
+      //obj_name << new_directory.str() << "obj" << "_" << getTimestamp() << ".pcd" ;
+      if ( model < 10 )
+        obj_name << new_directory.str() << "obj" << "_0" << model << ".pcd" ;
+      else
+        obj_name << new_directory.str() << "obj" << "_" << model << ".pcd" ;
+      pcl::io::savePCDFile (obj_name.str (), *box_cloud, 10);
+      cerr << obj_name.str() << endl;
 
       if ( !till_the_end ) viewer.spin ();
 
@@ -4433,11 +4460,22 @@ int main (int argc, char** argv)
         for (int idx=0; idx < (int) backup_cylinder_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_cylinder_inliers->indices.at (idx)).intensity = 4;
         //*/
-        //cerr << object_filename.str () << endl;
-        //cerr << object_filename.str () << endl;
-        //cerr << object_filename.str () << endl;
-        //
-        //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+
+        //////cerr << object_filename.str () << endl;
+        //////cerr << object_filename.str () << endl;
+        //////cerr << object_filename.str () << endl;
+        //////
+        //////pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+
+        std::stringstream obj_name;
+        //obj_name << new_directory.str() << "obj" << "_" << getTimestamp() << ".pcd" ;
+        if ( model < 10 )
+          obj_name << new_directory.str() << "obj" << "_0" << model << ".pcd" ;
+        else
+          obj_name << new_directory.str() << "obj" << "_" << model << ".pcd" ;
+        pcl::io::savePCDFile (obj_name.str (), *cylinder_cloud, 10);
+        cerr << obj_name.str() << endl;
+
         /*
         pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
         pcl::copyFields (*cylinder_cloud, *marked_cylinder_cloud);
@@ -4452,7 +4490,8 @@ int main (int argc, char** argv)
     }
 
     std::stringstream marked_output_filename;
-    marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
+//    marked_output_filename << directory << "-" << "denoise-smooth-marked-with-rgb.pcd" ;
+    marked_output_filename << new_directory.str() << "denoised-smoothed-marked.pcd" ;
     pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
