@@ -13,9 +13,6 @@ set(CMAKE_BUILD_TYPE Debug)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
-#target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
-
 # -- # -- # --
 
 #add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
@@ -28,6 +25,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(assemble_statistics_file ${PCL_LIBRARIES})
 
 # -- # -- # --
+
+#add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
+#target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
 
 add_executable(hough_classification src/hough_classification.cpp)
 target_link_libraries(hough_classification ${PCL_LIBRARIES})

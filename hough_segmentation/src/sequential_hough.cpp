@@ -1556,7 +1556,6 @@ int main (int argc, char** argv)
   //viewer.setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "xOy");
   //viewer.spin ();
 
-
   std::vector<std::vector<pcl::ModelCoefficients> > cyls;
   std::vector<std::vector<std::vector<pcl::ModelCoefficients> > > cubs;
 
@@ -3600,16 +3599,16 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 9 )
-    {
-      //std::cout << " fitting_step = ";
-      //std::cin >> fitting_step;
+    //if ( fit > 9 )
+    //{
+      ////std::cout << " fitting_step = ";
+      ////std::cin >> fitting_step;
 
-      fitting_step = 1;
-      space_step = 1;
-      growing_visualization = 1;
+      //fitting_step = 1;
+      //space_step = 1;
+      //growing_visualization = 1;
 
-    }
+    //}
 
     for (int ite = 0; ite < vransac_iterations; ite++)
     {
@@ -6681,7 +6680,7 @@ int main (int argc, char** argv)
 
 
 
-  /*
+  ///*
 
   {
     FILE * file1;
@@ -6759,7 +6758,7 @@ int main (int argc, char** argv)
     fclose (file2);
   }
 
-  */
+  //*/
 
   /*
 
