@@ -55,6 +55,11 @@
 
 // ---------- Variables ---------- //
 
+int xp = 0;
+int yp = 0;
+int xs = 0;
+int ys = 0;
+
 // Method //
 int vransac_iterations = 100;
 double normal_search_radius = 0.020;
@@ -1442,6 +1447,11 @@ int main (int argc, char** argv)
     return (-1);
   }
 
+  pcl::console::parse_argument (argc, argv, "-xp", xp);
+  pcl::console::parse_argument (argc, argv, "-yp", yp);
+  pcl::console::parse_argument (argc, argv, "-xs", xs);
+  pcl::console::parse_argument (argc, argv, "-ys", ys);
+
   // Method //
   pcl::console::parse_argument (argc, argv, "-VRANSAC_ITERATIONS", vransac_iterations);
   pcl::console::parse_argument (argc, argv, "-normal_search_radius", normal_search_radius);
@@ -1556,6 +1566,9 @@ int main (int argc, char** argv)
   // ---------- 3D Viewer ---------- //
 
   pcl::visualization::PCLVisualizer viewer ("3D VIEWER");
+
+  //viewer.setPosition (xp, yp);
+  //viewer.setSize (xs, ys);
 
   viewer.setBackgroundColor (r_bc, g_bc, b_bc);
   viewer.addCoordinateSystem (0.25f);
@@ -2128,7 +2141,7 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 7 )
+    if ( fit > 9 )
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
