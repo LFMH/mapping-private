@@ -1637,7 +1637,7 @@ int main (int argc, char** argv)
     std::string dir_path;
     dir_path = file.substr (0, f);
     cerr << dir_path << endl;
-    dir_path.insert (slash + 1, "dir");
+    dir_path.insert (slash + 1, "dir---");
     cerr << dir_path << endl;
 
 //    int status = mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -2141,7 +2141,7 @@ int main (int argc, char** argv)
     pcl::PointCloud<pcl::PointNormal>::Ptr line_parameters_space (new pcl::PointCloud<pcl::PointNormal> ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr circle_parameters_space (new pcl::PointCloud<pcl::PointXYZ> ());
 
-    if ( fit > 9 )
+    if ( fit > 10 )
     {
       //std::cout << " fitting_step = ";
       //std::cin >> fitting_step;
