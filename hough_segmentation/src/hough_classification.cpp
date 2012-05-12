@@ -76,6 +76,8 @@ int minimum_inliers_of_significant_plane = 100; /// [points]
 int maximum_iterations_of_significant_plane = 1000; /// [iterations]
 int minimum_size_of_significant_plane_cluster = 1000; /// [points]
 double clustering_tolerance_of_significant_plane_inliers = 0.010; /// [meters]
+double normal_distance_weight = 0.0;
+double epsilon_angle = 0.0;
 
 // Fitting //
 bool fitting_step = false;
@@ -1466,6 +1468,8 @@ int main (int argc, char** argv)
   pcl::console::parse_argument (argc, argv, "-maximum_iterations_of_significant_plane", maximum_iterations_of_significant_plane);
   pcl::console::parse_argument (argc, argv, "-minimum_size_of_significant_plane_cluster", minimum_size_of_significant_plane_cluster);
   pcl::console::parse_argument (argc, argv, "-clustering_tolerance_of_significant_plane_inliers", clustering_tolerance_of_significant_plane_inliers);
+  pcl::console::parse_argument (argc, argv, "-normal_distance_weight", normal_distance_weight);
+  pcl::console::parse_argument (argc, argv, "-epsilon_angle", epsilon_angle);
 
   // Fitting //
   pcl::console::parse_argument (argc, argv, "-fitting_step", fitting_step);
@@ -2089,6 +2093,23 @@ int main (int argc, char** argv)
     sign_sacs.setMaxIterations (maximum_iterations_of_significant_plane);
     sign_sacs.setInputCloud (working_cloud);
     sign_sacs.segment (*significant_plane_inliers, *significant_plane_coefficients);
+
+/*
+    Eigen::Vector3f axis = Eigen::Vector3f (0.0, 0.0, 1.0);
+
+    pcl::SACSegmentationFromNormals<pcl::PointXYZRGBNormalRSD, pcl::Normal> sacsfn;
+    sacsfn.setOptimizeCoefficients (true);
+    sacsfn.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+    sacsfn.setNormalDistanceWeight (normal_distance_weight);
+    sacsfn.setMethodType (pcl::SAC_RANSAC);
+    sacsfn.setDistanceThreshold (significant_plane_threshold);
+    sacsfn.setMaxIterations (maximum_iterations_of_significant_plane);
+    sacsfn.setAxis (axis);
+    sacsfn.setEpsAngle (epsilon_angle);
+    sacsfn.setInputCloud (working_cloud);
+    sacsfn.setInputNormals (normal_cloud);
+    sacsfn.segment (*significant_plane_inliers, *significant_plane_coefficients);
+*/
 
     if ( verbose ) pcl::console::print_info ("Significant plane has %5d inliers, found in maximum %d iterations\n", (int) significant_plane_inliers->indices.size (), maximum_iterations_of_significant_plane);
 
