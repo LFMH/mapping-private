@@ -55,8 +55,8 @@
 
 // ---------- Types ---------- //
 
-typedef pcl::PointXYZ I; //
-// typedef pcl::PointXYZRGB I; //
+// typedef pcl::PointXYZ I; //
+typedef pcl::PointXYZRGB I; //
 
 typedef pcl::Normal N;
 
@@ -1775,7 +1775,7 @@ int main (int argc, char** argv)
   // ---------------------------- //
   // ---------------------------- //
   // ---------- Faster ---------- //
-  pcl::PointCloud<N>::Ptr smooth_cloud_with_normals (new pcl::PointCloud<N> ());
+  pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr smooth_cloud_with_normals (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
 
   if (( !smoothed ) && ( !normal ))
   {
@@ -1814,6 +1814,24 @@ int main (int argc, char** argv)
       viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
       viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
       viewer.spin ();
+    }
+
+    // ---------- Just For Classification Sake ---------- //
+
+    if ( classification )
+    {
+      pcl::copyFields (*smooth_cloud_with_normals, *smooth_cloud);
+
+      std::stringstream smooth_output_filename;
+      smooth_output_filename << directory << "-" << "smooth.pcd" ;
+      pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
+
+      std::string file = smooth_output_filename.str ();
+      f = file.find_last_of (".");
+      directory = file.substr (0, f);
+
+      //cerr << f << endl ;
+      //cerr << directory << endl;
     }
   }
   // ---------- Faster ---------- //
