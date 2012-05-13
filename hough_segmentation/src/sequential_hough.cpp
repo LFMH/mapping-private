@@ -65,6 +65,17 @@ typedef pcl::PointNormal PointT; //
 
 typedef pcl::Boundary B;
 
+// ---------- Structures ---------- //
+
+struct object
+{
+  int type;
+  Eigen::Vector4f centroid;
+  pcl::ModelCoefficients cylinder;
+  std::vector<pcl::ModelCoefficients> cuboid;
+  pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr cloud;
+};
+
 // ---------- Variables ---------- //
 
 // Method //
@@ -1620,7 +1631,7 @@ int main (int argc, char** argv)
 
   // ---------- Path and Name of File ---------- //
 
-  std::string file = argv [pcd_file_indices [0]];
+  std::string file = argv [pcd_file_indices [fff]];
   size_t dot = file.find_last_of (".");
   std::string name = file.substr (0, dot);
   cerr << name << endl;
@@ -6929,6 +6940,46 @@ int main (int argc, char** argv)
 
 
 
+  for (int view = 0; view < pcd_file_indices.size(); view++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      std::stringstream cub_id;
+      cub_id << "cub-id-" << getTimestamp();
+      viewer.addCuboid (cubs.at(view).at(cub), r, g, b, 0.5, cub_id.str ());
+
+      std::stringstream id;
+      id << "id-" << getTimestamp();
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> color (clouds_of_cubs.at(view).at(cub), R, G, B);
+      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cubs.at(view).at(cub), color, id.str());
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      std::stringstream cyl_id;
+      cyl_id << "cyl-id-" << getTimestamp();
+      viewer.addCylinder (cyls.at(view).at(cyl), r, g, b, 0.5, cyl_id.str ());
+
+      std::stringstream id;
+      id << "id-" << getTimestamp ();
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> color (clouds_of_cyls.at(view).at(cyl), R, G, B);
+      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (clouds_of_cyls.at(view).at(cyl), color, id.str());
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+    }
+
+    viewer.spin();
+  }
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
@@ -6969,6 +7020,154 @@ int main (int argc, char** argv)
 
 
 
+  cerr << endl;
+  bool match_not_found;
+  std::vector <std::vector <object> > objs;
+
+  for (int view = 0; view < pcd_file_indices.size(); view++)
+  {
+    for (int cub = 0; cub < cubs.at(view).size(); cub++)
+    {
+      object obj;
+      obj.type = 1;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at(view).at(cub), obj.centroid);
+      obj.cuboid = cubs.at(view).at(cub);
+      obj.cloud = clouds_of_cubs.at(view).at(cub);
+
+      match_not_found = true;
+
+      if (objs.size() == 0)
+      {
+        // create first element
+        objs.resize(1);
+        objs.at(0).push_back(obj);
+      }
+      else
+      {
+        for (int idx = 0; idx < objs.size(); idx++)
+        {
+          double distance_between_centroids = sqrt( _sqr(objs.at(idx).at(0).centroid[0]-obj.centroid[0]) + _sqr(objs.at(idx).at(0).centroid[1]-obj.centroid[1]) + _sqr(objs.at(idx).at(0).centroid[2]-obj.centroid[2]) );
+          cerr << setprecision(5) << " " << distance_between_centroids << " " << endl;
+
+
+          if (distance_between_centroids < threshold_between_centroids_of_cuboids)
+          {
+            // add another element
+            objs.at(idx).push_back(obj);
+
+            match_not_found = false;
+            cerr << " Match was found. " << endl;
+          }
+        }
+
+        if ( match_not_found )
+        {
+          // create another element
+          int size = objs.size();
+          objs.resize(objs.size() + 1);
+          objs.at(objs.size() - 1).push_back(obj);
+        }
+      }
+      cerr << endl;
+    }
+
+    for (int cyl = 0; cyl < cyls.at(view).size(); cyl++)
+    {
+      object obj;
+      obj.type = 2;
+      pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at(view).at(cyl), obj.centroid);
+      obj.cylinder = cyls.at(view).at(cyl);
+      obj.cloud = clouds_of_cyls.at(view).at(cyl);
+
+      match_not_found = true;
+
+      if (objs.size() == 0)
+      {
+        // create first element
+        objs.resize(1);
+        objs.at(0).push_back(obj);
+      }
+      else
+      {
+        for (int idx = 0; idx < objs.size(); idx++)
+        {
+          double distance_between_centroids = sqrt( _sqr(objs.at(idx).at(0).centroid[0]-obj.centroid[0]) + _sqr(objs.at(idx).at(0).centroid[1]-obj.centroid[1]) + _sqr(objs.at(idx).at(0).centroid[2]-obj.centroid[2]) );
+          cerr << setprecision(5) << " " << distance_between_centroids << " " << endl;
+
+          if (distance_between_centroids < threshold_between_centroids_of_cylinders)
+          {
+            // add another element
+            objs.at(idx).push_back(obj);
+
+            match_not_found = false;
+            cerr << " Match was found. " << endl;
+          }
+        }
+
+        if ( match_not_found )
+        {
+          // create another element
+          int size = objs.size();
+          objs.resize(objs.size() + 1);
+          objs.at(objs.size() - 1).push_back(obj);
+        }
+      }
+      cerr << endl;
+    }
+  }
+
+  cerr << objs.size() << " objects " << endl;
+  for (int idx = 0; idx < objs.size(); idx++)
+    cerr << " object " << idx << " has " << objs.at(idx).size() << " instances " << endl;
+  cerr << endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  for (int obj = 0; obj < objs.size(); obj++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    for (int inst = 0; inst < objs.at(obj).size(); inst++)
+    {
+      std::stringstream obj_id;
+      obj_id << "obj-id-" << getTimestamp();
+      if (objs.at(obj).at(inst).type == 1)
+        viewer.addCuboid     (objs.at(obj).at(inst).cuboid, r, g, b, 0.5, obj_id.str ());
+      if (objs.at(obj).at(inst).type == 2)
+        viewer.addCylinder (objs.at(obj).at(inst).cylinder, r, g, b, 0.5, obj_id.str ());
+
+      std::stringstream id;
+      id << "id-" << getTimestamp();
+      pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> color (objs.at(obj).at(inst).cloud, R, G, B);
+      viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (objs.at(obj).at(inst).cloud, color, id.str());
+      viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+    }
+
+    viewer.spin();
+  }
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
@@ -6992,6 +7191,54 @@ int main (int argc, char** argv)
 
 
 
+
+
+
+
+  {
+    FILE * txt;
+    txt = fopen ("sequential-hough-ransac-numbers.txt", "a");
+
+    for (int obj = 0; obj < objs.size(); obj++)
+    {
+      if (objs.at(obj).at(0).type == 1)
+      {
+        fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+        fprintf (txt, "  model %d [box]\n\n", obj);
+
+        for (int inst = 0; inst < objs.at(obj).size(); inst++)
+        {
+          double d1 = sqrt (_sqr (objs.at(obj).at(inst).cuboid.at(0).values.at(0) - objs.at(obj).at(inst).cuboid.at(1).values.at(0)) + _sqr (objs.at(obj).at(inst).cuboid.at(0).values.at(1) - objs.at(obj).at(inst).cuboid.at(1).values.at(1)));
+          double d2 = sqrt (_sqr (objs.at(obj).at(inst).cuboid.at(1).values.at(0) - objs.at(obj).at(inst).cuboid.at(2).values.at(0)) + _sqr (objs.at(obj).at(inst).cuboid.at(1).values.at(1) - objs.at(obj).at(inst).cuboid.at(2).values.at(1)));
+          double d3 =             objs.at(obj).at(inst).cuboid.at(4).values.at(2) - objs.at(obj).at(inst).cuboid.at(0).values.at(2);
+          double v  = d1 * d2 * d3;
+
+          fprintf (txt, "    view %d | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", inst, d1, d2, d3, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[1], objs.at(obj).at(inst).centroid[2]);
+        }
+      }
+
+      if (objs.at(obj).at(0).type == 2)
+      {
+        fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+        fprintf (txt, "  model %d [cylinder]\n\n", obj);
+
+        for (int inst = 0; inst < objs.at(obj).size(); inst++)
+        {
+          double h = objs.at(obj).at(inst).cylinder.values.at(5);
+          double r = objs.at(obj).at(inst).cylinder.values.at(6);
+          double v = M_PI * _sqr(r) * h;
+
+          fprintf (txt, "    view %d | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", inst, r, h, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[0]);
+        }
+      }
+    }
+
+    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+
+    fclose (txt);
+  }
 
 
 
