@@ -2132,6 +2132,17 @@ int main (int argc, char** argv)
   // Backup Working Cloud //
   *backup_working_cloud = *working_cloud;
 
+  bool rerun = false;
+
+  do
+  {
+
+  cyls_per_view.clear();
+  cubs_per_view.clear();
+  clouds_of_cyls_per_view.clear();
+  clouds_of_cubs_per_view.clear();
+  *working_cloud = *backup_working_cloud;
+
   // -------------------------------------------------- //
   // ---------- Take Care of Planars Objects ---------- //
   // -------------------------------------------------- //
@@ -3701,17 +3712,6 @@ int main (int argc, char** argv)
   }
 
   // ---------- Fitting Of Models ---------- //
-
-  bool rerun = false;
-
-  do
-  {
-
-  cyls_per_view.clear();
-  cubs_per_view.clear();
-  clouds_of_cyls_per_view.clear();
-  clouds_of_cubs_per_view.clear();
-  *working_cloud = *backup_working_cloud;
 
   int fit = 0;
 
@@ -7265,6 +7265,24 @@ int main (int argc, char** argv)
 
 
 
+
+  double colors[6][3];
+
+  //colors[0][0] = 1.0; colors[0][1] = 0.0; colors[0][2] = 0.0; // red
+  //colors[1][0] = 0.0; colors[1][1] = 1.0; colors[1][2] = 0.5; // green-cyan
+  //colors[2][0] = 1.0; colors[2][1] = 0.0; colors[2][2] = 1.0; // pink
+  //colors[3][0] = 0.5; colors[3][1] = 1.0; colors[3][2] = 0.0; // green-yellow
+  //colors[4][0] = 0.0; colors[4][1] = 0.0; colors[4][2] = 1.0; // blue
+  //colors[5][0] = 1.0; colors[5][1] = 0.5; colors[5][2] = 0.0; // red-yellow
+  //colors[6][0] = 0.0; colors[6][1] = 1.0; colors[6][2] = 1.0; // cyan
+
+  colors[0][0] = 1.0; colors[0][1] = 0.0; colors[0][2] = 0.0; // red
+  colors[1][0] = 0.0; colors[1][1] = 1.0; colors[1][2] = 0.0; // green
+  colors[2][0] = 0.0; colors[2][1] = 0.0; colors[2][2] = 1.0; // blue
+  colors[3][0] = 1.0; colors[3][1] = 1.0; colors[3][2] = 0.0; // yellow
+  colors[4][0] = 0.0; colors[4][1] = 1.0; colors[4][2] = 1.0; // cyan
+  colors[5][0] = 1.0; colors[5][1] = 0.0; colors[5][2] = 1.0; // pink
+  colors[6][0] = 0.5; colors[6][1] = 0.5; colors[6][2] = 0.5; // grey
 
 
 
