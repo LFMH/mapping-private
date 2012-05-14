@@ -6485,6 +6485,11 @@ int main (int argc, char** argv)
   std::cin >> rerun;
   std::cerr << endl ;
 
+  if (rerun)
+    std::cerr << " YES " << endl << endl ;
+  else
+    std::cerr << " NO " << endl << endl ;
+
   // ! Clean Up Time ! //
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
