@@ -3702,6 +3702,17 @@ int main (int argc, char** argv)
 
   // ---------- Fitting Of Models ---------- //
 
+  bool rerun = false;
+
+  do
+  {
+
+  cyls_per_view.clear();
+  cubs_per_view.clear();
+  clouds_of_cyls_per_view.clear();
+  clouds_of_cubs_per_view.clear();
+  *working_cloud = *backup_working_cloud;
+
   int fit = 0;
 
   //int model = 0;
@@ -6469,11 +6480,18 @@ int main (int argc, char** argv)
 
   viewer.spin ();
 
+  std::cerr << endl ;
+  std::cout << " RE-RUN = ";
+  std::cin >> rerun;
+  std::cerr << endl ;
+
   // ! Clean Up Time ! //
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
 
   //viewer.spin ();
+
+  } while (rerun);
 
   cerr << " cubs per view = " << cubs_per_view.size () << endl ;
   cerr << " cyls per view = " << cyls_per_view.size () << endl ;
