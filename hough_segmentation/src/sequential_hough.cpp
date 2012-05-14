@@ -7189,12 +7189,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
   {
     FILE * txt;
     txt = fopen ("sequential-hough-ransac-numbers.txt", "a");
@@ -7233,9 +7227,9 @@ int main (int argc, char** argv)
       }
     }
 
-    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
-    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
-    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n\n");
+    fprintf (txt, "\n----------------------------------------------------------------------------------------------------\n");
+    fprintf (txt,   "----------------------------------------------------------------------------------------------------\n");
+    fprintf (txt,   "----------------------------------------------------------------------------------------------------\n");
 
     fclose (txt);
   }
@@ -7244,6 +7238,149 @@ int main (int argc, char** argv)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  std::vector <object> merged_objs;
+
+  for (int obj = 0; obj < objs.size(); obj++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    object obj_merged;
+
+    if (objs.at(obj).at(0).type == 1)
+    {
+      std::vector<pcl::ModelCoefficients> tmp_coeffs;
+      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+      for (int inst = 0; inst < objs.at(obj).size(); inst++)
+      {
+        tmp_coeffs.resize(8);
+
+        for (int corner = 0; corner < tmp_coeffs.size(); corner++)
+        {
+          tmp_coeffs[corner].values.push_back ((objs.at(obj).at(inst).cuboid.at(corner).values.at(0) + objs.at(obj).at(inst).cuboid.at(corner).values.at(0)) /2);
+          tmp_coeffs[corner].values.push_back ((objs.at(obj).at(inst).cuboid.at(corner).values.at(1) + objs.at(obj).at(inst).cuboid.at(corner).values.at(1)) /2);
+
+          if (corner < 4)
+            tmp_coeffs[corner].values.push_back (std::min (objs.at(obj).at(inst).cuboid.at(corner).values.at(2), objs.at(obj).at(inst).cuboid.at(corner).values.at(2)));
+          else
+            tmp_coeffs[corner].values.push_back (std::max (objs.at(obj).at(inst).cuboid.at(corner).values.at(2), objs.at(obj).at(inst).cuboid.at(corner).values.at(2)));
+        }
+
+        *tmp_cloud += *objs.at(obj).at(inst).cloud;
+      }
+
+      obj_merged.type = objs.at(obj).at(0).type;
+      obj_merged.cuboid = tmp_coeffs;
+      obj_merged.cloud = tmp_cloud;
+    }
+
+    //
+
+    if (objs.at(obj).at(0).type == 2)
+    {
+      pcl::ModelCoefficients tmp_coeffs;
+      pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr tmp_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+      double mean_cx = 0;
+      double mean_cy = 0;
+      double mean_r  = 0;
+      double min_z = DBL_MAX;
+      double max_z = DBL_MIN;
+
+      for (int inst = 0; inst < objs.at(obj).size(); inst++)
+      {
+        mean_cx = mean_cx + objs.at(obj).at(inst).cylinder.values[0];
+        mean_cy = mean_cy + objs.at(obj).at(inst).cylinder.values[1];
+        mean_r  = mean_r  + objs.at(obj).at(inst).cylinder.values[6];
+
+        if (min_z > objs.at(obj).at(inst).cylinder.values[2])
+          min_z = objs.at(obj).at(inst).cylinder.values[2];
+        if (max_z < objs.at(obj).at(inst).cylinder.values[5])
+          max_z = objs.at(obj).at(inst).cylinder.values[5];
+
+        *tmp_cloud += *objs.at(obj).at(inst).cloud;
+      }
+
+      mean_cx = mean_cx / objs.at(obj).size();
+      mean_cy = mean_cy / objs.at(obj).size();
+      mean_r  = mean_r  / objs.at(obj).size();
+
+      tmp_coeffs.values.resize(7);
+      tmp_coeffs.values[0] = mean_cx;
+      tmp_coeffs.values[1] = mean_cy;
+      tmp_coeffs.values[2] = min_z;
+      tmp_coeffs.values[3] = 0.0;
+      tmp_coeffs.values[4] = 0.0;
+      tmp_coeffs.values[5] = max_z;
+      tmp_coeffs.values[6] = mean_r;
+
+      obj_merged.type = objs.at(obj).at(0).type;
+      obj_merged.cylinder = tmp_coeffs;
+      obj_merged.cloud = tmp_cloud;
+    }
+
+    merged_objs.push_back(obj_merged);
+  }
+
+
+
+
+
+
+
+
+
+
+
+  for (int obj = 0; obj < merged_objs.size(); obj++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    std::stringstream obj_id;
+    obj_id << "obj-id-" << getTimestamp();
+    if (merged_objs.at(obj).type == 1) viewer.addCuboid (merged_objs.at(obj).cuboid, r, g, b, 0.5, obj_id.str());
+    if (merged_objs.at(obj).type == 2) viewer.addCylinder (merged_objs.at(obj).cylinder, r, g, b, 0.5, obj_id.str());
+
+    std::stringstream id;
+    id << "id-" << getTimestamp();
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> color (merged_objs.at(obj).cloud, R, G, B);
+    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (merged_objs.at(obj).cloud, color, id.str());
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, id.str());
+
+    viewer.spin();
+  }
+  viewer.removeAllShapes ();
+  viewer.removeAllPointClouds ();
 
 
 
