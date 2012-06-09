@@ -1652,7 +1652,7 @@ int main (int argc, char** argv)
     std::string dir_path;
     dir_path = file.substr (0, f);
     cerr << dir_path << endl;
-    dir_path.insert (slash + 1, "dir---");
+    dir_path.insert (slash + 1, "dir-");
     cerr << dir_path << endl;
 
 //    int status = mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
