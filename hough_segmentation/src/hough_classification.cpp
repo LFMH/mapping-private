@@ -55,8 +55,8 @@
 
 // ---------- Types ---------- //
 
-typedef pcl::PointXYZ I; //
-// typedef pcl::PointXYZRGB I; //
+// typedef pcl::PointXYZ I; //
+ typedef pcl::PointXYZRGB I; //
 
 typedef pcl::PointNormal T; //
 // typedef pcl::PointXYZRGBNormal T; //
