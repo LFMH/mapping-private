@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <boost/filesystem.hpp>
+
 #include "pcl/console/parse.h"
 #include "pcl/console/time.h"
 #include "pcl/features/normal_3d.h"
@@ -133,8 +135,8 @@ double vX, vY, vZ;
 double growing_step = 0.010;
 double growing_height = 0.010;
 bool growing_visualization = false;
-int mean_k_filter = 100;
-int std_dev_filter = 10.0;
+int mean_k_filter = 100; // hard-coded to this value of 100 points //
+int std_dev_filter = 10;
 
 // Rest //
 double r_clustering_tolerance = 0.010;
@@ -1661,8 +1663,32 @@ int main (int argc, char** argv)
 //    new_directory << directory << "/";
     new_directory << dir_path << "/";
     cerr << new_directory.str() << endl;
-
   }
+
+
+
+  cerr << endl << endl << endl;
+  std::string prepro_file = directory;
+  cerr << prepro_file << endl;
+
+  //std::string SOR = boost::lexical_cast <std::string> (std_dev_filter);
+  //std::string MLS = boost::lexical_cast <std::string> (smoothing_search_radius);
+  //std::string NE  = boost::lexical_cast <std::string> (normal_search_radius);
+  //std::string signature = "_SOR" + SOR + "_MLS" + MLS + "_NE" + NE + ".pcd";
+
+  std::stringstream signature;
+  signature << "_SOR=" << std_dev_filter << "_MLS=" << smoothing_search_radius << "_NE=" << normal_search_radius << ".pcd";
+
+  prepro_file.insert (f, signature.str());
+  cerr << prepro_file << endl;
+
+  if ( !boost::filesystem::exists (prepro_file) )
+  {
+    std::cout << "Can't find following file!" << std::endl << prepro_file << std::endl;
+    cerr << endl << endl << endl;
+  }
+
+
 
   ///*
 
