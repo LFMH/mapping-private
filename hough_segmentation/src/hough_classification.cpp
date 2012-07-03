@@ -1634,14 +1634,14 @@ int main (int argc, char** argv)
   std::string           directory;
   std::stringstream new_directory;
 
-  size_t f;
+  size_t full_stop;
 
   if ( classification )
   {
     std::string file = argv [pcd_file_indices [0]];
-    f = file.find_last_of (".");
-    cerr << f << endl ;
-    directory = file.substr (0, f);
+    full_stop = file.find_last_of (".");
+    cerr << full_stop << endl ;
+    directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1652,7 +1652,7 @@ int main (int argc, char** argv)
     cerr << slash << endl;
 
     std::string dir_path;
-    dir_path = file.substr (0, f);
+    dir_path = file.substr (0, full_stop);
     cerr << dir_path << endl;
     dir_path.insert (slash + 1, "dir-");
     cerr << dir_path << endl;
@@ -1679,12 +1679,12 @@ int main (int argc, char** argv)
   std::stringstream signature;
   signature << "_SOR=" << std_dev_filter << "_MLS=" << smoothing_search_radius << "_NE=" << normal_search_radius << ".pcd";
 
-  prepro_file.insert (f, signature.str());
+  prepro_file.insert (full_stop, signature.str());
   cerr << prepro_file << endl;
 
   if ( !boost::filesystem::exists (prepro_file) )
   {
-    std::cout << "Can't find following file!" << std::endl << prepro_file << std::endl;
+    std::cout << "Can't find the file!" << std::endl;
     cerr << endl << endl << endl;
   }
 
@@ -1726,9 +1726,9 @@ int main (int argc, char** argv)
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
     //std::string file = filtered_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    //full_stop = file.find_last_of (".");
+    //cerr << full_stop << endl ;
+    //directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1772,9 +1772,9 @@ int main (int argc, char** argv)
     pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
     //std::string file = smooth_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    //full_stop = file.find_last_of (".");
+    //cerr << full_stop << endl ;
+    //directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
