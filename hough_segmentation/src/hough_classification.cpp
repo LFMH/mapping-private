@@ -1671,13 +1671,13 @@ int main (int argc, char** argv)
   std::string prepro_file = directory;
   cerr << prepro_file << endl;
 
-  //std::string SOR = boost::lexical_cast <std::string> (std_dev_filter);
-  //std::string MLS = boost::lexical_cast <std::string> (smoothing_search_radius);
-  //std::string NE  = boost::lexical_cast <std::string> (normal_search_radius);
-  //std::string signature = "_SOR" + SOR + "_MLS" + MLS + "_NE" + NE + ".pcd";
+  //std::string sor = boost::lexical_cast <std::string> (std_dev_filter);
+  //std::string mls = boost::lexical_cast <std::string> (smoothing_search_radius);
+  //std::string ne  = boost::lexical_cast <std::string> (normal_search_radius);
+  //std::string signature = "_sor" + sor + "_mls" + mls + "_ne" + ne + ".pcd";
 
   std::stringstream signature;
-  signature << "_SOR=" << std_dev_filter << "_MLS=" << smoothing_search_radius << "_NE=" << normal_search_radius << ".pcd";
+  signature << "_sor" << std_dev_filter << "_mls" << smoothing_search_radius << "_ne" << normal_search_radius << ".pcd";
 
   prepro_file.insert (full_stop, signature.str());
   cerr << prepro_file << endl;
