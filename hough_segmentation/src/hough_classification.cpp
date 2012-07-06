@@ -1667,7 +1667,7 @@ int main (int argc, char** argv)
 
 
 
-  cerr << endl << endl << endl;
+  cerr << endl << endl;
   std::string prepro_file = directory;
   cerr << prepro_file << endl;
 
@@ -1685,7 +1685,7 @@ int main (int argc, char** argv)
   if ( !boost::filesystem::exists (prepro_file) )
   {
     std::cout << "Can't find the file!" << std::endl;
-    cerr << endl << endl << endl;
+    cerr << endl << endl;
   }
 
 
@@ -1885,7 +1885,7 @@ int main (int argc, char** argv)
   //viewer.spin ();
   //}
 
-  // EXTRA //
+  // EXTRA // for visualization purposes...
 
   // ---------- Estimate RSD Values ---------- //
 
@@ -2971,6 +2971,39 @@ int main (int argc, char** argv)
     M[0] = (P1[0] + P2[0]) / 2;
     M[1] = (P1[1] + P2[1]) / 2;
 
+    double z_max = -DBL_MAX;
+    int    z_idx = -1;
+
+    for (int zzz=0; zzz < vransac_line_cloud->points.size(); zzz++)
+    {
+      if (vransac_line_cloud->points.at(zzz).z > z_max)
+      {
+        z_max = vransac_line_cloud->points.at(zzz).z;
+        z_idx = zzz;
+      }
+    }
+
+    MaX.x = vransac_line_cloud->points.at(z_idx).x;
+    MaX.y = vransac_line_cloud->points.at(z_idx).y;
+    MaX.z = vransac_line_cloud->points.at(z_idx).z;
+
+    double p1p2v[2];
+    p1p2v[0] = P2[0] - P1[0];
+    p1p2v[1] = P2[1] - P1[1];
+    double p1p2l = sqrt(_sqr(p1p2v[0]) + _sqr(p1p2v[1]));
+    p1p2v[0] = p1p2v[0] / p1p2l;
+    p1p2v[1] = p1p2v[1] / p1p2l;
+
+    double p1p0v[2];
+    p1p0v[0] = MaX.x - P1[0];
+    p1p0v[1] = MaX.y - P1[1];
+
+    // projection on line of maximum point height from inliers //
+    double mph[3];
+    mph[0] = (p1p0v[0]*p1p2v[0] + p1p0v[1]*p1p2v[1]) * p1p2v[0]   +   P1[0];
+    mph[1] = (p1p0v[0]*p1p2v[0] + p1p0v[1]*p1p2v[1]) * p1p2v[1]   +   P1[1];
+    mph[2] = 0.0;
+
     //////////////////
     // From M To P1 //
     //////////////////
@@ -2978,8 +3011,10 @@ int main (int argc, char** argv)
     bool em1_bool = true;
 
     double M1[2];
-    M1[0] = M[0];
-    M1[1] = M[1];
+    //M1[0] = M[0];
+    //M1[1] = M[1];
+    M1[0] = mph[0];
+    M1[1] = mph[1];
 
     do
     {
@@ -3112,8 +3147,10 @@ int main (int argc, char** argv)
     bool em2_bool = true;
 
     double M2[2];
-    M2[0] = M[0];
-    M2[1] = M[1];
+    //M2[0] = M[0];
+    //M2[1] = M[1];
+    M2[0] = mph[0];
+    M2[1] = mph[1];
 
     do
     {
