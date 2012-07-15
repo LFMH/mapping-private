@@ -1,0 +1,19 @@
+<package>
+  <description brief="depth_image_smoothing">
+
+     depth_image_smoothing
+
+  </description>
+  <author>Nico Blodow, Vladyslav Usenko</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/depth_image_smoothing</url>
+  <depend package="pcl"/>
+  <depend package="opencv2"/>
+  <depend package="message_filters"/>
+  <depend package="cv_bridge"/>
+  
+
+</package>
+
+

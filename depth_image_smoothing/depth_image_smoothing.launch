@@ -1,0 +1,4 @@
+<launch>
+  	<include file="$(find openni_camera)/launch/openni_node.launch" />
+	<node name="depth_image_smoothing" pkg="depth_image_smoothing" type="demo" />
+</launch>
