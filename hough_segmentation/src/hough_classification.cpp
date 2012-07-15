@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <boost/filesystem.hpp>
+
 #include "pcl/console/parse.h"
 #include "pcl/console/time.h"
 #include "pcl/features/normal_3d.h"
@@ -55,8 +57,8 @@
 
 // ---------- Types ---------- //
 
-typedef pcl::PointXYZ I; //
-// typedef pcl::PointXYZRGB I; //
+// typedef pcl::PointXYZ I; //
+ typedef pcl::PointXYZRGB I; //
 
 typedef pcl::PointNormal T; //
 // typedef pcl::PointXYZRGBNormal T; //
@@ -133,8 +135,8 @@ double vX, vY, vZ;
 double growing_step = 0.010;
 double growing_height = 0.010;
 bool growing_visualization = false;
-int mean_k_filter = 100;
-int std_dev_filter = 10.0;
+int mean_k_filter = 100; // hard-coded to this value of 100 points //
+int std_dev_filter = 10;
 
 // Rest //
 double r_clustering_tolerance = 0.010;
@@ -1632,14 +1634,14 @@ int main (int argc, char** argv)
   std::string           directory;
   std::stringstream new_directory;
 
-  size_t f;
+  size_t full_stop;
 
   if ( classification )
   {
     std::string file = argv [pcd_file_indices [0]];
-    f = file.find_last_of (".");
-    cerr << f << endl ;
-    directory = file.substr (0, f);
+    full_stop = file.find_last_of (".");
+    cerr << full_stop << endl ;
+    directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1650,7 +1652,7 @@ int main (int argc, char** argv)
     cerr << slash << endl;
 
     std::string dir_path;
-    dir_path = file.substr (0, f);
+    dir_path = file.substr (0, full_stop);
     cerr << dir_path << endl;
     dir_path.insert (slash + 1, "dir-");
     cerr << dir_path << endl;
@@ -1661,8 +1663,32 @@ int main (int argc, char** argv)
 //    new_directory << directory << "/";
     new_directory << dir_path << "/";
     cerr << new_directory.str() << endl;
-
   }
+
+
+
+  cerr << endl << endl;
+  std::string prepro_file = directory;
+  cerr << prepro_file << endl;
+
+  //std::string sor = boost::lexical_cast <std::string> (std_dev_filter);
+  //std::string mls = boost::lexical_cast <std::string> (smoothing_search_radius);
+  //std::string ne  = boost::lexical_cast <std::string> (normal_search_radius);
+  //std::string signature = "_sor" + sor + "_mls" + mls + "_ne" + ne + ".pcd";
+
+  std::stringstream signature;
+  signature << "_sor" << std_dev_filter << "_mls" << smoothing_search_radius << "_ne" << normal_search_radius << ".pcd";
+
+  prepro_file.insert (full_stop, signature.str());
+  cerr << prepro_file << endl;
+
+  if ( !boost::filesystem::exists (prepro_file) )
+  {
+    std::cout << "Can't find the file!" << std::endl;
+    cerr << endl << endl;
+  }
+
+
 
   ///*
 
@@ -1700,9 +1726,9 @@ int main (int argc, char** argv)
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
     //std::string file = filtered_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    //full_stop = file.find_last_of (".");
+    //cerr << full_stop << endl ;
+    //directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1746,9 +1772,9 @@ int main (int argc, char** argv)
     pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
     //std::string file = smooth_output_filename.str ();
-    //f = file.find_last_of (".");
-    //cerr << f << endl ;
-    //directory = file.substr (0, f);
+    //full_stop = file.find_last_of (".");
+    //cerr << full_stop << endl ;
+    //directory = file.substr (0, full_stop);
 
     cerr << directory << endl;
     cerr << directory << endl;
@@ -1859,158 +1885,158 @@ int main (int argc, char** argv)
   //viewer.spin ();
   //}
 
-  // EXTRA //
+  // EXTRA // for visualization purposes...
 
-  // ---------- Estimate RSD Values ---------- //
-
-  pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
-  pcl::search::KdTree<I>::Ptr rsd_tree (new pcl::search::KdTree<I> ());
-  rsd_tree->setInputCloud (smooth_cloud);
-
-  pcl::RSDEstimation<I, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
-  rsd.setInputCloud (smooth_cloud);
-  rsd.setInputNormals (normal_cloud);
-  rsd.setRadiusSearch (rsd_search_radius);
-  rsd.setPlaneRadius (rsd_plane_radius);
-  rsd.setSearchMethod (rsd_tree);
-  rsd.compute (*rsd_cloud);
-
-  // Update Working Cloud //
-  pcl::copyPointCloud (*rsd_cloud, *working_cloud);
-
-  if ( verbose ) pcl::console::print_info ("RSD Estimation ! Returned: %d rsd values\n", (int) working_cloud->points.size ());
-
-  if ( false )
-  {
-    pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZRGBNormalRSD> r_min_colors (working_cloud, "r_min");
-    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, r_min_colors, "R_MIN");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN");
-    viewer.spin ();
-
-    viewer.removePointCloud ("R_MIN");
-    viewer.spin ();
-  }
-
-  /*
-
-  pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr _rsd_cloud_ (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
-  for (int idx = 0; idx < (int) rsd_cloud->points.size (); idx++)
-  {
-    double r_min = rsd_cloud->points[idx].r_min;
-    double r_max = rsd_cloud->points[idx].r_max;
-
-    pcl::PointXYZRGBNormal p;
-
-           p.x = working_cloud->points[idx].x;
-           p.y = working_cloud->points[idx].y;
-           p.z = working_cloud->points[idx].z;
-         p.rgb = working_cloud->points[idx].rgb;
-    p.normal_x = r_min;
-    p.normal_y = r_max;
-    p.normal_z = working_cloud->points[idx].normal_z;
-
-    _rsd_cloud_->points.push_back (p);
-  }
-
-  _rsd_cloud_->height = 1;
-  _rsd_cloud_->width  = rsd_cloud->points.size ();
-
-  */
-
-  // Split Pausible From Implausible Radius Values //
-  pcl::PointIndices::Ptr plausible_r_min_indices (new pcl::PointIndices ());
-  pcl::PointIndices::Ptr implausible_r_min_indices (new pcl::PointIndices ());
-
-  for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
-  {
-    double r_min = working_cloud->points.at (idx).r_min;
-
-    if ( (low_r_min < r_min) && (r_min < high_r_min) )
-      plausible_r_min_indices->indices.push_back (idx);
-    else
-      implausible_r_min_indices->indices.push_back (idx);
-  }
-
-  // Extract Plausible And Implausible Radius Values //
-  pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr plausible_r_min_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
-  pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr implausible_r_min_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
-
-  pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> r_ei;
-  r_ei.setInputCloud (working_cloud);
-
-  r_ei.setIndices (plausible_r_min_indices);
-  r_ei.setNegative (false);
-  r_ei.filter (*plausible_r_min_cloud);
-
-  r_ei.setIndices (implausible_r_min_indices);
-  r_ei.setNegative (false);
-  r_ei.filter (*implausible_r_min_cloud);
-
-  if ( verbose ) pcl::console::print_info ("RSD Mapping ! Returned: %d plausibles vs %d implausibles\n", (int) plausible_r_min_cloud->points.size (), (int) implausible_r_min_cloud->points.size ());
-
-  if ( false )
-  {
-    pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> plausible_r_min_cloud_color (plausible_r_min_cloud);
-    pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> implausible_r_min_cloud_color (implausible_r_min_cloud);
-    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (plausible_r_min_cloud, plausible_r_min_cloud_color, "PLAUSIBLE_R_MIN_CLOUD");
-    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (implausible_r_min_cloud, implausible_r_min_cloud_color, "IMPLAUSIBLE_R_MIN_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "PLAUSIBLE_R_MIN_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "IMPLAUSIBLE_R_MIN_CLOUD");
-    viewer.spin ();
-
-    viewer.removePointCloud ("PLAUSIBLE_R_MIN_CLOUD");
-    viewer.removePointCloud ("IMPLAUSIBLE_R_MIN_CLOUD");
-    viewer.spin ();
-  }
-
-  // ---------- Compute 2D Normals ---------- //
-
-  for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
-  {
-    // Force Normals From 3D To 2D
-    working_cloud->points[idx].normal_z = 0.0;
-  }
-
-  if ( verbose ) pcl::console::print_info ("Normal Flattening ! Returned: %d 2D normals\n", (int) working_cloud->points.size ());
-
-  if ( false )
-  {
-    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
-    viewer.spin ();
-
-    viewer.removePointCloud ("NORMAL_CLOUD");
-    viewer.spin ();
-  }
-
-  // Refine Normals In 2D Space
-  for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
-  {
-    double nx = working_cloud->points[idx].normal_x;
-    double ny = working_cloud->points[idx].normal_y;
-    double nz = working_cloud->points[idx].normal_z;
-
-    double nl = sqrt (nx*nx + ny*ny + nz*nz);
-    nx = nx / nl;
-    ny = ny / nl;
-    nz = nz / nl;
-
-    working_cloud->points[idx].normal_x = nx;
-    working_cloud->points[idx].normal_y = ny;
-    working_cloud->points[idx].normal_z = nz;
-  }
-
-  if ( verbose ) pcl::console::print_info ("Normal Refinement ! Returned: %d normals\n", (int) working_cloud->points.size ());
-
-  if ( false )
-  {
-    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMAL_CLOUD");
-    viewer.spin ();
-
-    viewer.removePointCloud ("NORMAL_CLOUD");
-    viewer.spin ();
-  }
+// NOT USED //  // ---------- Estimate RSD Values ---------- //
+// NOT USED //
+// NOT USED //  pcl::PointCloud<pcl::PrincipalRadiiRSD>::Ptr rsd_cloud (new pcl::PointCloud<pcl::PrincipalRadiiRSD> ());
+// NOT USED //  pcl::search::KdTree<I>::Ptr rsd_tree (new pcl::search::KdTree<I> ());
+// NOT USED //  rsd_tree->setInputCloud (smooth_cloud);
+// NOT USED //
+// NOT USED //  pcl::RSDEstimation<I, pcl::Normal, pcl::PrincipalRadiiRSD> rsd;
+// NOT USED //  rsd.setInputCloud (smooth_cloud);
+// NOT USED //  rsd.setInputNormals (normal_cloud);
+// NOT USED //  rsd.setRadiusSearch (rsd_search_radius);
+// NOT USED //  rsd.setPlaneRadius (rsd_plane_radius);
+// NOT USED //  rsd.setSearchMethod (rsd_tree);
+// NOT USED //  rsd.compute (*rsd_cloud);
+// NOT USED //
+// NOT USED //  // Update Working Cloud //
+// NOT USED //  pcl::copyPointCloud (*rsd_cloud, *working_cloud);
+// NOT USED //
+// NOT USED //  if ( verbose ) pcl::console::print_info ("RSD Estimation ! Returned: %d rsd values\n", (int) working_cloud->points.size ());
+// NOT USED //
+// NOT USED //  if ( false )
+// NOT USED //  {
+// NOT USED //    pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZRGBNormalRSD> r_min_colors (working_cloud, "r_min");
+// NOT USED //    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, r_min_colors, "R_MIN");
+// NOT USED //    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "R_MIN");
+// NOT USED //    viewer.spin ();
+// NOT USED //
+// NOT USED //    viewer.removePointCloud ("R_MIN");
+// NOT USED //    viewer.spin ();
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  /*
+// NOT USED //
+// NOT USED //  pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr _rsd_cloud_ (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+// NOT USED //  for (int idx = 0; idx < (int) rsd_cloud->points.size (); idx++)
+// NOT USED //  {
+// NOT USED //    double r_min = rsd_cloud->points[idx].r_min;
+// NOT USED //    double r_max = rsd_cloud->points[idx].r_max;
+// NOT USED //
+// NOT USED //    pcl::PointXYZRGBNormal p;
+// NOT USED //
+// NOT USED //           p.x = working_cloud->points[idx].x;
+// NOT USED //           p.y = working_cloud->points[idx].y;
+// NOT USED //           p.z = working_cloud->points[idx].z;
+// NOT USED //         p.rgb = working_cloud->points[idx].rgb;
+// NOT USED //    p.normal_x = r_min;
+// NOT USED //    p.normal_y = r_max;
+// NOT USED //    p.normal_z = working_cloud->points[idx].normal_z;
+// NOT USED //
+// NOT USED //    _rsd_cloud_->points.push_back (p);
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  _rsd_cloud_->height = 1;
+// NOT USED //  _rsd_cloud_->width  = rsd_cloud->points.size ();
+// NOT USED //
+// NOT USED //  */
+// NOT USED //
+// NOT USED //  // Split Pausible From Implausible Radius Values //
+// NOT USED //  pcl::PointIndices::Ptr plausible_r_min_indices (new pcl::PointIndices ());
+// NOT USED //  pcl::PointIndices::Ptr implausible_r_min_indices (new pcl::PointIndices ());
+// NOT USED //
+// NOT USED //  for (int idx = 0; idx < (int) working_cloud->points.size(); idx++)
+// NOT USED //  {
+// NOT USED //    double r_min = working_cloud->points.at (idx).r_min;
+// NOT USED //
+// NOT USED //    if ( (low_r_min < r_min) && (r_min < high_r_min) )
+// NOT USED //      plausible_r_min_indices->indices.push_back (idx);
+// NOT USED //    else
+// NOT USED //      implausible_r_min_indices->indices.push_back (idx);
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  // Extract Plausible And Implausible Radius Values //
+// NOT USED //  pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr plausible_r_min_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+// NOT USED //  pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr implausible_r_min_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+// NOT USED //
+// NOT USED //  pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> r_ei;
+// NOT USED //  r_ei.setInputCloud (working_cloud);
+// NOT USED //
+// NOT USED //  r_ei.setIndices (plausible_r_min_indices);
+// NOT USED //  r_ei.setNegative (false);
+// NOT USED //  r_ei.filter (*plausible_r_min_cloud);
+// NOT USED //
+// NOT USED //  r_ei.setIndices (implausible_r_min_indices);
+// NOT USED //  r_ei.setNegative (false);
+// NOT USED //  r_ei.filter (*implausible_r_min_cloud);
+// NOT USED //
+// NOT USED //  if ( verbose ) pcl::console::print_info ("RSD Mapping ! Returned: %d plausibles vs %d implausibles\n", (int) plausible_r_min_cloud->points.size (), (int) implausible_r_min_cloud->points.size ());
+// NOT USED //
+// NOT USED //  if ( false )
+// NOT USED //  {
+// NOT USED //    pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> plausible_r_min_cloud_color (plausible_r_min_cloud);
+// NOT USED //    pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGBNormalRSD> implausible_r_min_cloud_color (implausible_r_min_cloud);
+// NOT USED //    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (plausible_r_min_cloud, plausible_r_min_cloud_color, "PLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (implausible_r_min_cloud, implausible_r_min_cloud_color, "IMPLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "PLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "IMPLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //
+// NOT USED //    viewer.removePointCloud ("PLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.removePointCloud ("IMPLAUSIBLE_R_MIN_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  // ---------- Compute 2D Normals ---------- //
+// NOT USED //
+// NOT USED //  for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
+// NOT USED //  {
+// NOT USED //    // Force Normals From 3D To 2D
+// NOT USED //    working_cloud->points[idx].normal_z = 0.0;
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  if ( verbose ) pcl::console::print_info ("Normal Flattening ! Returned: %d 2D normals\n", (int) working_cloud->points.size ());
+// NOT USED //
+// NOT USED //  if ( false )
+// NOT USED //  {
+// NOT USED //    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
+// NOT USED //    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "NORMAL_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //
+// NOT USED //    viewer.removePointCloud ("NORMAL_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  // Refine Normals In 2D Space
+// NOT USED //  for (int idx = 0; idx < (int) working_cloud->points.size (); idx++)
+// NOT USED //  {
+// NOT USED //    double nx = working_cloud->points[idx].normal_x;
+// NOT USED //    double ny = working_cloud->points[idx].normal_y;
+// NOT USED //    double nz = working_cloud->points[idx].normal_z;
+// NOT USED //
+// NOT USED //    double nl = sqrt (nx*nx + ny*ny + nz*nz);
+// NOT USED //    nx = nx / nl;
+// NOT USED //    ny = ny / nl;
+// NOT USED //    nz = nz / nl;
+// NOT USED //
+// NOT USED //    working_cloud->points[idx].normal_x = nx;
+// NOT USED //    working_cloud->points[idx].normal_y = ny;
+// NOT USED //    working_cloud->points[idx].normal_z = nz;
+// NOT USED //  }
+// NOT USED //
+// NOT USED //  if ( verbose ) pcl::console::print_info ("Normal Refinement ! Returned: %d normals\n", (int) working_cloud->points.size ());
+// NOT USED //
+// NOT USED //  if ( false )
+// NOT USED //  {
+// NOT USED //    viewer.addPointCloudNormals<pcl::PointXYZRGBNormalRSD> (working_cloud, 1, 0.025, "NORMAL_CLOUD");
+// NOT USED //    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "NORMAL_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //
+// NOT USED //    viewer.removePointCloud ("NORMAL_CLOUD");
+// NOT USED //    viewer.spin ();
+// NOT USED //  }
 
   //////
 
@@ -2945,6 +2971,39 @@ int main (int argc, char** argv)
     M[0] = (P1[0] + P2[0]) / 2;
     M[1] = (P1[1] + P2[1]) / 2;
 
+    double z_max = -DBL_MAX;
+    int    z_idx = -1;
+
+    for (int zzz=0; zzz < vransac_line_cloud->points.size(); zzz++)
+    {
+      if (vransac_line_cloud->points.at(zzz).z > z_max)
+      {
+        z_max = vransac_line_cloud->points.at(zzz).z;
+        z_idx = zzz;
+      }
+    }
+
+    MaX.x = vransac_line_cloud->points.at(z_idx).x;
+    MaX.y = vransac_line_cloud->points.at(z_idx).y;
+    MaX.z = vransac_line_cloud->points.at(z_idx).z;
+
+    double p1p2v[2];
+    p1p2v[0] = P2[0] - P1[0];
+    p1p2v[1] = P2[1] - P1[1];
+    double p1p2l = sqrt(_sqr(p1p2v[0]) + _sqr(p1p2v[1]));
+    p1p2v[0] = p1p2v[0] / p1p2l;
+    p1p2v[1] = p1p2v[1] / p1p2l;
+
+    double p1p0v[2];
+    p1p0v[0] = MaX.x - P1[0];
+    p1p0v[1] = MaX.y - P1[1];
+
+    // projection on line of maximum point height from inliers //
+    double mph[3];
+    mph[0] = (p1p0v[0]*p1p2v[0] + p1p0v[1]*p1p2v[1]) * p1p2v[0]   +   P1[0];
+    mph[1] = (p1p0v[0]*p1p2v[0] + p1p0v[1]*p1p2v[1]) * p1p2v[1]   +   P1[1];
+    mph[2] = 0.0;
+
     //////////////////
     // From M To P1 //
     //////////////////
@@ -2952,8 +3011,10 @@ int main (int argc, char** argv)
     bool em1_bool = true;
 
     double M1[2];
-    M1[0] = M[0];
-    M1[1] = M[1];
+    //M1[0] = M[0];
+    //M1[1] = M[1];
+    M1[0] = mph[0];
+    M1[1] = mph[1];
 
     do
     {
@@ -3086,8 +3147,10 @@ int main (int argc, char** argv)
     bool em2_bool = true;
 
     double M2[2];
-    M2[0] = M[0];
-    M2[1] = M[1];
+    //M2[0] = M[0];
+    //M2[1] = M[1];
+    M2[0] = mph[0];
+    M2[1] = mph[1];
 
     do
     {
