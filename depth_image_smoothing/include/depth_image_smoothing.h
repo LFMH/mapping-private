@@ -19,7 +19,7 @@ public:
 	// configuration object describing filtering behaviour
     struct Config
     {
-      Config (float dm = 1.0f, int i = 7, int s = 5)
+      Config (float dm = 1.0f, int i = 1, int s = 5)
         : depth_multiplier_ (dm)
         , smoothing_iterations_ (i)
         , smoothing_kernel_size_ (s)

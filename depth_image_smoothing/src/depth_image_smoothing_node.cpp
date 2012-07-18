@@ -26,6 +26,16 @@ void callback(const ImageConstPtr& image1, const ImageConstPtr& image2)
 
   cv::Mat depth_float;
   depth_img->image.convertTo(depth_float, CV_32F);
+
+//  float bad_point = std::numeric_limits<float>::quiet_NaN();
+//
+//  cv::Mat mask;
+//  cv::compare(depth_float, 0, mask, cv::CMP_EQ);
+//  depth_float.setTo(bad_point, mask);
+//
+//  cv::compare(depth_float, 2048, mask, cv::CMP_GE);
+//  depth_float.setTo(bad_point, mask);
+
   //cv::imwrite("depth_float.png", depth_float);
 
   cv::Mat depth_smoothed = dis.bilateralSmoothing(depth_float);
