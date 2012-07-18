@@ -27,14 +27,14 @@ void callback(const ImageConstPtr& image1, const ImageConstPtr& image2)
   cv::Mat depth_float;
   depth_img->image.convertTo(depth_float, CV_32F);
 
-//  float bad_point = std::numeric_limits<float>::quiet_NaN();
-//
-//  cv::Mat mask;
-//  cv::compare(depth_float, 0, mask, cv::CMP_EQ);
-//  depth_float.setTo(bad_point, mask);
-//
-//  cv::compare(depth_float, 2048, mask, cv::CMP_GE);
-//  depth_float.setTo(bad_point, mask);
+  //  float bad_point = std::numeric_limits<float>::quiet_NaN();
+  //
+  //  cv::Mat mask;
+  //  cv::compare(depth_float, 0, mask, cv::CMP_EQ);
+  //  depth_float.setTo(bad_point, mask);
+  //
+  //  cv::compare(depth_float, 2048, mask, cv::CMP_GE);
+  //  depth_float.setTo(bad_point, mask);
 
   //cv::imwrite("depth_float.png", depth_float);
 
@@ -59,6 +59,17 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "vision_node");
 
   ros::NodeHandle nh;
+  ros::NodeHandle node_handle_private = ros::NodeHandle("~");
+
+  int smoothing_kernel_size = 5, smoothing_iterations = 1;
+  double depth_multiplier = 1.0f;
+
+  node_handle_private.getParam("smoothing_kernel_size", smoothing_kernel_size);
+  node_handle_private.getParam("smoothing_iterations", smoothing_iterations);
+  node_handle_private.getParam("depth_multiplier", depth_multiplier);
+
+  ias_uima::pcl::DepthImageSmoothing::Config c(depth_multiplier, smoothing_iterations, smoothing_kernel_size);
+  dis.setConfig(c);
 
   pub = nh.advertise<sensor_msgs::PointCloud2> ("/camera/smooth/points", 1);
 
