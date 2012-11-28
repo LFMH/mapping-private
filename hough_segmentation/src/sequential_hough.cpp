@@ -3609,9 +3609,9 @@ int main (int argc, char** argv)
               //if ((max_dist / min_dist) > flat_value)
             {
               if ( number_of_flat < 10 )
-                object_filename << directory << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
+                object_filename << directory << "---" << "object" << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
               else
-                object_filename << directory << "-" << "flat" << "_" << number_of_flat << ".pcd" ;
+                object_filename << directory << "---" << "object" << "-" << "flat" << "_" << number_of_flat << ".pcd" ;
 
               cerr << "      FLAT      " << endl ;
 
@@ -3653,9 +3653,9 @@ int main (int argc, char** argv)
             else
             {
               if ( number_of_box < 10 )
-                object_filename << directory << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
+                object_filename << directory << "---" << "object" << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
               else
-                object_filename << directory << "-" << "box" << "_" << number_of_box << ".pcd" ;
+                object_filename << directory << "---" << "object" << "-" << "box" << "_" << number_of_box << ".pcd" ;
 
               cerr << "      BOX      " << endl ;
 
@@ -3695,11 +3695,11 @@ int main (int argc, char** argv)
               //*/
             }
 
-            //cerr << object_filename.str () << endl;
-            //cerr << object_filename.str () << endl;
-            //cerr << object_filename.str () << endl;
-            //
-            //pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+            cerr << object_filename.str () << endl;
+            cerr << object_filename.str () << endl;
+            cerr << object_filename.str () << endl;
+
+            pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
 
             if ( !till_the_end ) viewer.spin ();
 
@@ -5750,9 +5750,9 @@ int main (int argc, char** argv)
       //if ((max_dist / min_dist) > flat_value)
       {
         if ( number_of_flat < 10 )
-          object_filename << directory << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
+          object_filename << directory << "---" << "object" << "-" << "flat" << "_" << "0" << number_of_flat << ".pcd" ;
         else
-          object_filename << directory << "-" << "flat" << "_" << number_of_flat << ".pcd" ;
+          object_filename << directory << "---" << "object" << "-" << "flat" << "_" << number_of_flat << ".pcd" ;
 
         cerr << "      FLAT      " << endl ;
 
@@ -5794,9 +5794,9 @@ int main (int argc, char** argv)
       else
       {
         if ( number_of_box < 10 )
-          object_filename << directory << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
+          object_filename << directory << "---" << "object" << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
         else
-          object_filename << directory << "-" << "box" << "_" << number_of_box << ".pcd" ;
+          object_filename << directory << "---" << "object" << "-" << "box" << "_" << number_of_box << ".pcd" ;
 
         cerr << "      BOX      " << endl ;
 
@@ -5836,11 +5836,11 @@ int main (int argc, char** argv)
         //*/
       }
 
-      //cerr << object_filename.str () << endl;
-      //cerr << object_filename.str () << endl;
-      //cerr << object_filename.str () << endl;
-      //
-      //pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
+      cerr << object_filename.str () << endl;
+      cerr << object_filename.str () << endl;
+      cerr << object_filename.str () << endl;
+
+      pcl::io::savePCDFile (object_filename.str (), *box_cloud, 10);
 
       if ( !till_the_end ) viewer.spin ();
 
@@ -5990,12 +5990,21 @@ int main (int argc, char** argv)
 
         if ( height_of_cylinder > tall_value )
         {
-          if ( number_of_tall < 10 )
-            object_filename << directory << "-" << "tall" << "_" << "0" << number_of_tall << ".pcd" ;
-          else
-            object_filename << directory << "-" << "tall" << "_" << number_of_tall << ".pcd" ;
+//          if ( number_of_tall < 10 )
+//            object_filename << directory << "-" << "tall" << "_" << "0" << number_of_tall << ".pcd" ;
+//          else
+//            object_filename << directory << "-" << "tall" << "_" << number_of_tall << ".pcd" ;
+//
+//          cerr << "      TALL      " << endl ;
 
-          cerr << "      TALL      " << endl ;
+          if ( number_of_tall < 10 )
+            object_filename << directory << "---" << "object" << "-" << "cylinder" << "_" << "0" << number_of_tall << ".pcd" ;
+          else
+            object_filename << directory << "---" << "object" << "-" << "cylinder" << "_" << number_of_tall << ".pcd" ;
+
+          cerr << "      CYLINDER      " << endl ;
+
+          //
 
           number_of_tall++;
         }
@@ -6057,11 +6066,11 @@ int main (int argc, char** argv)
         for (int idx=0; idx < (int) backup_cylinder_inliers->indices.size (); idx++)
           marked_working_cloud->points.at (backup_cylinder_inliers->indices.at (idx)).intensity = 4;
         //*/
-        //cerr << object_filename.str () << endl;
-        //cerr << object_filename.str () << endl;
-        //cerr << object_filename.str () << endl;
-        //
-        //pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
+        cerr << object_filename.str () << endl;
+        cerr << object_filename.str () << endl;
+        cerr << object_filename.str () << endl;
+
+        pcl::io::savePCDFile (object_filename.str (), *cylinder_cloud, 10);
         /*
         pcl::PointCloud<pcl::PointXYZRGBI>::Ptr marked_cylinder_cloud (new pcl::PointCloud<pcl::PointXYZRGBI> ());
         pcl::copyFields (*cylinder_cloud, *marked_cylinder_cloud);
@@ -6484,6 +6493,8 @@ int main (int argc, char** argv)
   std::cout << " RE-RUN = ";
   std::cin >> rerun;
   std::cerr << endl ;
+
+  pcl::console::print_value ("\n re-Processing %s\n\n", argv [pcd_file_indices [fff]]);
 
   if (rerun)
     std::cerr << " YES " << endl << endl ;
