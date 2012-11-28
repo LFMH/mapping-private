@@ -1683,7 +1683,7 @@ int main (int argc, char** argv)
   if ( classification )
   {
     std::stringstream filtered_output_filename;
-    filtered_output_filename << directory << "-" << "denoise.pcd" ;
+    filtered_output_filename << directory << "---" << "denoise.pcd" ;
     pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
     std::string file = filtered_output_filename.str ();
@@ -1794,7 +1794,7 @@ int main (int argc, char** argv)
     pcl::copyPointCloud (*normal_cloud, *smooth_cloud_with_normals);
 
     std::stringstream smooth_file_with_normals;
-    smooth_file_with_normals << name << "-smoothed-" << smoothing_search_radius << "-normal-" << normal_search_radius <<".pcd" ;
+    smooth_file_with_normals << name << "---smoothed-" << smoothing_search_radius << "-normal-" << normal_search_radius <<".pcd" ;
     pcl::io::savePCDFileASCII (smooth_file_with_normals.str(), *smooth_cloud_with_normals);
     if ( verbose ) pcl::console::print_info ("The smoothed cloud with normals was saved!\n");
   }
@@ -1802,7 +1802,7 @@ int main (int argc, char** argv)
   if (( smoothed ) && ( normal ))
   {
     std::stringstream smooth_file_with_normals;
-    smooth_file_with_normals << name << "-smoothed-" << smoothing_search_radius << "-normal-" << normal_search_radius <<".pcd" ;
+    smooth_file_with_normals << name << "---smoothed-" << smoothing_search_radius << "-normal-" << normal_search_radius <<".pcd" ;
     std::string smooth_file_with_normals_as_string = smooth_file_with_normals.str();
 
     if (pcl::io::loadPCDFile (smooth_file_with_normals.str(), *smooth_cloud_with_normals) == -1)
