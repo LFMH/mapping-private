@@ -15,8 +15,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # -- # -- # --
 
-#add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
-#target_link_libraries(analyze_sequential_hough ${PCL_LIBRARIES})
+add_executable(analyze_sequential_hough src/analyze_sequential_hough.cpp)
+target_link_libraries(analyze_sequential_hough ${PCL_LIBRARIES})
 
 add_executable(sequential_hough src/sequential_hough.cpp)
 target_link_libraries(sequential_hough ${PCL_LIBRARIES})
@@ -29,8 +29,8 @@ target_link_libraries(sequential_hough ${PCL_LIBRARIES})
 #add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
 #target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
 
-add_executable(hough_classification src/hough_classification.cpp)
-target_link_libraries(hough_classification ${PCL_LIBRARIES})
+#add_executable(hough_classification src/hough_classification.cpp)
+#target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
 #add_executable(rot_trans_scale src/rot_trans_scale.cpp)
 #target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})

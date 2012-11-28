@@ -26,3 +26,22 @@
 
 ../bin/hough_classification      /media/g/work/data/kinect-sequences/scene9/260_degree_cut3.pcd      [ -too_many_planar_curvatures  750 ] [ -rgb_bc 1.0,1.0,1.0 ]                                              -cam 0.00227914,2.27914/0.609357,0.399019,0.885576/0.419484,-0.388474,1.28408/0.147325,0.418084,0.896382/0.523599/840,525/840,80 [ -verbose 1 -step 0 -size 3 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]              [ -mean_k_filter 50 -std_dev_filter  3.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.020 -normal_search_radius 0.040 -curvature_threshold 0.0060 -minimum_line_length 0.025 -minimum_circle_radius 0.030 -maximum_circle_radius 0.090 ]                                     -fitting_step 0 [ -line_threshold 0.0075 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0075 -maximum_circle_iterations 100 -minimum_circle_inliers 500 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.025 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0050 -growing_height 0.050 ] -flat_value 3.0 -sat 1.0 [ -deal_with_the_rest_of_the_points 0 ]
 
+
+
+
+
+
+
+
+
+#########
+#       #
+#  320  #
+#       #
+#########
+
+try----
+
+../bin/hough_classification          /media/stuff/work/data/kinect-sequences/scene5/300_degree_cut3.pcd          [ -too_many_planar_curvatures 1000 ] [ -rgb_bc 1.0,1.0,1.0 ]                       -cam 0.00227914,2.27914/0.609357,0.399019,0.885576/0.419484,-0.388474,1.28408/0.147325,0.418084,0.896382/0.523599/840,525/840,80 [ -verbose 1 -step 0 -size 3 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]           [ -mean_k_filter 50 -std_dev_filter  2.5 ] -VRANSAC_ITERATIONS 50 [ -smoothing_search_radius 0.020 -normal_search_radius 0.030 -curvature_threshold 0.0040 -minimum_line_length 0.025 -minimum_circle_radius 0.030 -maximum_circle_radius 0.090 ]                                  -fitting_step 0 [ -line_threshold 0.0100 -maximum_line_iterations 100 -minimum_line_inliers 500 -circle_threshold 0.0100 -maximum_circle_iterations 100 -minimum_circle_inliers 500 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250      -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0050 -growing_height 0.050 ] -flat_value 3.0 -sat 1.0 [ -deal_with_the_rest_of_the_points 0 ]
+
+
