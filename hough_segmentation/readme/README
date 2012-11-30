@@ -1,4 +1,301 @@
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SC2012
+
+../bin/hough_classification      /media/g/work/data/new/scene7_in_paper/marked_260_degree_cut3.pcd     [ -too_many_planar_curvatures 1000 ] [ -rgb_bc 1.0,1.0,1.0 ]                                            -cam 0.00303209,3.03209/0.770866,0.528437,0.767423/0.0857872,-0.350534,1.5724/0.357223,0.463965,0.810634/0.523599/840,525/840,80      [ -verbose 1 -step 0 -size 3 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 1 -shapes_from_table_plane 1 ]         [ -mean_k_filter 50 -std_dev_filter  5.0 ] -VRANSAC_ITERATIONS 99 [ -smoothing_search_radius 0.020 -normal_search_radius 0.030 -curvature_threshold 0.0030 -minimum_line_length 0.050 -minimum_circle_radius 0.030 -maximum_circle_radius 0.090 ]                                     -fitting_step 0 [ -line_threshold 0.0075 -maximum_line_iterations 100 -minimum_line_inliers 100 -circle_threshold 0.0075 -maximum_circle_iterations 100 -minimum_circle_inliers 500 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.025 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0025 -growing_height 0.050 ] -flat_value 3.0 -sat 1.0 [ -deal_with_the_rest_of_the_points 0 ]
+
+
+
+pcd_viewer         marked_260_degree_cut3.pcd -bc 1,1,1 -cam 0.0513088,1.51907/0.657175,0.334614,0.938712/0.431226,-0.274879,1.20001/0.155834,0.339858,0.927477/0.523599/840,525/840,80 -ps 5
+pcd_viewer dir---marked_260_degree_cut3/obj_* -bc 1,1,1 -cam 0.0513088,1.51907/0.657175,0.334614,0.938712/0.431226,-0.274879,1.20001/0.155834,0.339858,0.927477/0.523599/840,525/840,80
+
+pcd_viewer         marked_260_degree_cut3.pcd -bc 1,1,1 -cam 0.185136,1.47842/0.638876,0.366397,0.951487/0.36069,0.0277141,1.58536/0.487707,0.662804,0.568184/0.523599/840,525/840,130 -ps 5
+pcd_viewer dir---marked_260_degree_cut3/obj_* -bc 1,1,1 -cam 0.185136,1.47842/0.638876,0.366397,0.951487/0.36069,0.0277141,1.58536/0.487707,0.662804,0.568184/0.523599/840,525/840,130
+
+
+
+
+
+pcd_viewer       marked_320_degree_cut3.pcd   -bc 1,1,1 -cam 0.121336,1.44714/0.702458,0.329045,0.930798/0.613917,-0.339659,1.12002/0.0620808,0.264139,0.962485/0.523599/840,525/840,130 -ps 5
+pcd_viewer dir---marked_320_degree_cut3/obj_* -bc 1,1,1 -cam 0.121336,1.44714/0.702458,0.329045,0.930798/0.613917,-0.339659,1.12002/0.0620808,0.264139,0.962485/0.523599/840,525/840,130
+
+pcd_viewer       marked_320_degree_cut3.pcd   -bc 1,1,1 -cam 0.292955,1.57578/0.654715,0.367064,0.967248/0.352004,0.0178865,1.69176/0.536716,0.650284,0.537648/0.523599/840,525/840,180 -ps 5
+pcd_viewer dir---marked_320_degree_cut3/obj_* -bc 1,1,1 -cam 0.292955,1.57578/0.654715,0.367064,0.967248/0.352004,0.0178865,1.69176/0.536716,0.650284,0.537648/0.523599/840,525/840,180
+
+
+
+
+pcd_viewer               marked_220_degree_cut3.pcd   -bc 1,1,1 -cam 0.00157103,1.57103/0.605649,0.263574,0.945067/0.341545,-0.225057,1.00104/0.0554936,0.0839833,0.994921/0.523599/840,525/734,162 -ps 5
+pcd_viewer         dir---marked_220_degree_cut3/obj_* -bc 1,1,1 -cam 0.00157103,1.57103/0.605649,0.263574,0.945067/0.341545,-0.225057,1.00104/0.0554936,0.0839833,0.994921/0.523599/840,525/734,162
+
+pcd_viewer               marked_220_degree_cut3.pcd   -bc 1,1,1 -cam 0.00166692,1.66692/0.632415,0.299211,0.986642/0.350427,-0.176282,1.48312/0.380398,0.550404,0.743204/0.523599/840,525/736,212 -ps 5
+pcd_viewer         dir---marked_220_degree_cut3/obj_* -bc 1,1,1 -cam 0.00166692,1.66692/0.632415,0.299211,0.986642/0.350427,-0.176282,1.48312/0.380398,0.550404,0.743204/0.523599/840,525/736,212
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%    Object Blocks!
+
+
+# seg_scene3.pcd #
+
+../bin/hough_classification [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 275 ]                                          /media/g/work/data/other/seg_scenes_pcl/seg_scene3.pcd -cam 0.00196223,1.96223/0.609259,0.0620676,0.909379/0.457482,0.0504888,1.14541/0.831923,0.123377,0.541002/0.523599/840,525/840,80                                                                                              [ -verbose 1 -step 1 -size 6 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ] [ -rgb_bc 1.0,1.0,1.0 ]                                                                                                                       [ -significant_plane_threshold 0.0 -maximum_iterations_of_significant_plane 0 -minimum_inliers_of_significant_plane 0 -clustering_tolerance_of_significant_plane_inliers 0.0 -minimum_size_of_significant_plane_cluster 0 ]                                                           [ -mean_k_filter 50 -std_dev_filter 10.0 ] -VRANSAC_ITERATIONS 100 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0100 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                      -fitting_step 0 [ -line_threshold 0.0100 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0100 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+# seg_scene4.pcd #
+
+../bin/hough_classification [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 275 ]                                          /media/g/work/data/other/seg_scenes_pcl/seg_scene4.pcd -cam 0.00179352,1.79352/0.572152,0.103965,0.870886/0.269265,0.0904791,1.08956/0.583321,0.0471649,0.810871/0.523599/840,525/840,80                                                                                              [ -verbose 1 -step 1 -size 6 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ] [ -rgb_bc 1.0,1.0,1.0 ]                                                                                                                       [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  3.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.030 -normal_search_radius 0.025 -curvature_threshold 0.0035 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]  v                                    -fitting_step 0 [ -line_threshold 0.0075 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0125 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0010 -growing_height 0.075 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+# seg_scene5.pcd #
+
+../bin/sequential_hough [ -boundary_search_radius 0.0750 -boundary_angle_threshold 45 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 750 ]                                              /media/g/work/data/other/seg_scenes_pcl/seg_scene5.pcd -cam 0.00188737,1.88737/0.563207,0.12354,0.848791/0.269712,0.0959777,1.07866/0.612979,0.0493744,0.788555/0.523599/840,525/840,80                                                                                               [ -verbose 1 -step 1 -size 6 -sign 1 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  1.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -minimum_line_length 0.050 -minimum_circle_radius 0.020 -maximum_circle_radius 0.060 ]                                     -fitting_step 0 [ -line_threshold 0.0050 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0050 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##########################################################################################################################################
+
+../bin/sequential_hough [ -boundary_search_radius 0.0750 -boundary_angle_threshold 45 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 750 ]                                              /media/g/work/data/other/seg_scenes_pcl/seg_scene5.pcd -cam 0.00188737,1.88737/0.563207,0.12354,0.848791/0.269712,0.0959777,1.07866/0.612979,0.0493744,0.788555/0.523599/840,525/840,80                                                                                               [ -verbose 1 -step 0 -size 3 -sign 1 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  1.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0050 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0050 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 1 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+../bin/hough_classification [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 275 ]                                          /media/g/work/data/other/seg_scenes_pcl/seg_scene3.pcd -cam 0.00196223,1.96223/0.609259,0.0620676,0.909379/0.457482,0.0504888,1.14541/0.831923,0.123377,0.541002/0.523599/840,525/840,80                                                                                              [ -verbose 1 -step 0 -size 5 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0 -maximum_iterations_of_significant_plane 0 -minimum_inliers_of_significant_plane 0 -clustering_tolerance_of_significant_plane_inliers 0.0 -minimum_size_of_significant_plane_cluster 0 ]                                                           [ -mean_k_filter 50 -std_dev_filter 10.0 ] -VRANSAC_ITERATIONS 100 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0100 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0100 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0100 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+../bin/sequential_hough [ -boundary_search_radius 0.0750 -boundary_angle_threshold 45 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 750 ]                                              /media/g/work/data/other/seg_scenes_pcl/seg_scene5.pcd -cam 0.00188737,1.88737/0.563207,0.12354,0.848791/0.269712,0.0959777,1.07866/0.612979,0.0493744,0.788555/0.523599/840,525/840,80                                                                                               [ -verbose 1 -step 0 -size 3 -sign 1 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  1.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0050 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0050 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0050 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 1 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+
+
+
+
+
+
+../bin/hough_classification [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 275 ]                                          /media/g/work/data/other/seg_scenes_pcl/seg_scene4.pcd -cam 0.00179352,1.79352/0.572152,0.103965,0.870886/0.269265,0.0904791,1.08956/0.583321,0.0471649,0.810871/0.523599/840,525/840,80                                                                                              [ -verbose 1 -step 0 -size 4 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0025 -maximum_iterations_of_significant_plane 250 -minimum_inliers_of_significant_plane 2500 -clustering_tolerance_of_significant_plane_inliers 0.010 -minimum_size_of_significant_plane_cluster 2500 ]                                              [ -mean_k_filter 50 -std_dev_filter  3.0 ] -VRANSAC_ITERATIONS 25 [ -smoothing_search_radius 0.030 -normal_search_radius 0.020 -curvature_threshold 0.0100 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0050 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0075 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.0010 -growing_height 0.075 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+
+
+
+
+
+
+../bin/hough_classification [ -boundary_search_radius 0.0750 -boundary_angle_threshold 60 ] [ -deal_with_the_rest_of_the_points 0 ] [ -too_many_planar_curvatures 275 ]                                          /media/g/work/data/other/seg_scenes_pcl/seg_scene3.pcd -cam 0.00196223,1.96223/0.609259,0.0620676,0.909379/0.457482,0.0504888,1.14541/0.831923,0.123377,0.541002/0.523599/840,525/840,80                                                                                              [ -verbose 1 -step 0 -size 5 -sign 0 -till_the_end 1 -classification 1 -consider_height_from_table_plane 0 -shapes_from_table_plane 0 ]                                                                                                                                               [ -significant_plane_threshold 0.0 -maximum_iterations_of_significant_plane 0 -minimum_inliers_of_significant_plane 0 -clustering_tolerance_of_significant_plane_inliers 0.0 -minimum_size_of_significant_plane_cluster 0 ]                                                           [ -mean_k_filter 50 -std_dev_filter 10.0 ] -VRANSAC_ITERATIONS 100 [ -smoothing_search_radius 0.010 -normal_search_radius 0.030 -curvature_threshold 0.0100 -minimum_line_length 0.025 -minimum_circle_radius 0.020 -maximum_circle_radius 0.050 ]                                     -fitting_step 0 [ -line_threshold 0.0100 -maximum_line_iterations 100 -minimum_line_inliers 250 -circle_threshold 0.0100 -maximum_circle_iterations 100 -minimum_circle_inliers 250 ] -minimum_size_of_line_inliers_clusters 100 -minimum_size_of_circle_inliers_clusters 250         -space_step 0 -clustering_tolerance_of_line_parameters_space 0.010 -minimum_size_of_line_parameters_clusters 1 -clustering_tolerance_of_circle_parameters_space 0.010 -minimum_size_of_circle_parameters_clusters 1                                                                   -viewpoint_translation 0.50,-0.30,0.65 -viewpoint_rotation -126.5,0.0,-1.75 [ -growing_visualization 0 -growing_step 0.010 -growing_height 0.025 ] -flat_value 0.001 -sat 1.0 [ -threshold_between_centroids_of_cuboids 0.050 -threshold_between_centroids_of_cylinders 0.050 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ================================================== * ==================================================
 
 

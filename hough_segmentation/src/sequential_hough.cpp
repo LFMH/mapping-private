@@ -7241,7 +7241,7 @@ int main (int argc, char** argv)
           double d3 =             objs.at(obj).at(inst).cuboid.at(4).values.at(2) - objs.at(obj).at(inst).cuboid.at(0).values.at(2);
           double v  = d1 * d2 * d3;
 
-          fprintf (txt, "    view %d | %12.10f %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", inst, d1, d2, d3, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[1], objs.at(obj).at(inst).centroid[2]);
+          fprintf (txt, "    view %d | %12.10f x %12.10f x %12.10f = %12.10f | %12.10f %12.10f %12.10f \n", inst, d1, d2, d3, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[1], objs.at(obj).at(inst).centroid[2]);
         }
       }
 
@@ -7256,7 +7256,7 @@ int main (int argc, char** argv)
           double r = objs.at(obj).at(inst).cylinder.values.at(6);
           double v = M_PI * _sqr(r) * h;
 
-          fprintf (txt, "    view %d | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", inst, r, h, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[0]);
+          fprintf (txt, "    view %d | pi x %12.10f ^2 x %12.10f = %12.10f | %12.10f %12.10f %12.10f \n", inst, r, h, v, objs.at(obj).at(inst).centroid[0], objs.at(obj).at(inst).centroid[1], objs.at(obj).at(inst).centroid[2]);
         }
       }
     }
