@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
 project(HOUGH_SEGMENTATION)
 
-find_package(PCL 1.5 REQUIRED)
+find_package(PCL 1.5 EXACT)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -26,11 +26,11 @@ target_link_libraries(sequential_hough ${PCL_LIBRARIES})
 
 # -- # -- # --
 
-#add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
-#target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
+add_executable(analyze_hough_classification src/analyze_hough_classification.cpp)
+target_link_libraries(analyze_hough_classification ${PCL_LIBRARIES})
 
-#add_executable(hough_classification src/hough_classification.cpp)
-#target_link_libraries(hough_classification ${PCL_LIBRARIES})
+add_executable(hough_classification src/hough_classification.cpp)
+target_link_libraries(hough_classification ${PCL_LIBRARIES})
 
 #add_executable(rot_trans_scale src/rot_trans_scale.cpp)
 #target_link_libraries(rot_trans_scale ${PCL_LIBRARIES})
