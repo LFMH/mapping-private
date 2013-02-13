@@ -1,0 +1,8 @@
+
+  * concat-t0_cut3-unsmoothed-unfiltered.pcd
+      > classification: flat, box, cylinder
+      > sizes of models
+      > position of centroids
+      > save individual .pcd files of objects
+      > also, save -marked- cloud
+
