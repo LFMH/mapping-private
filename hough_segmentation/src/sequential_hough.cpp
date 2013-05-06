@@ -1652,63 +1652,72 @@ int main (int argc, char** argv)
     //cerr << directory << endl;
   }
 
-  // ---------- Filter Point Cloud Data ---------- //
-
-  pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
-
-  pcl::StatisticalOutlierRemoval<I> sor;
-  sor.setInputCloud (input_cloud);
-  sor.setMeanK (mean_k_filter);
-  sor.setStddevMulThresh (std_dev_filter);
-  sor.filter (*filtered_cloud);
-
-  // ------------------------------------------ //
-  // ---------- Update Working Cloud ---------- //
-  // ------------------------------------------ //
-  pcl::copyPointCloud (*filtered_cloud, *working_cloud);
-
-  if ( verbose ) pcl::console::print_info ("Filtering... Before: %d points | After: %d points | Filtered: %d points\n", (int) input_cloud->points.size (), (int) working_cloud->points.size (), (int) input_cloud->points.size () - (int) working_cloud->points.size ());
-
-  if ( step )
-  {
-    viewer.removePointCloud ("generic");
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
-    viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
-    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
-    viewer.spin ();
-  }
-
-  // ---------- For Classification ---------- //
-
-  if ( classification )
-  {
-    std::stringstream filtered_output_filename;
-    filtered_output_filename << directory << "---" << "denoise.pcd" ;
-    pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
-
-    std::string file = filtered_output_filename.str ();
-    f = file.find_last_of (".");
-    directory = file.substr (0, f);
-
-    //cerr << f << endl ;
-    //cerr << directory << endl;
-  }
-
-  //pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
-  //*filtered_cloud = *input_cloud;
+/*
+//        // ---------- Filter Point Cloud Data ---------- //
+//
+//        pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
+//
+//        pcl::StatisticalOutlierRemoval<I> sor;
+//        sor.setInputCloud (input_cloud);
+//        sor.setMeanK (mean_k_filter);
+//        sor.setStddevMulThresh (std_dev_filter);
+//        sor.filter (*filtered_cloud);
+//
+//        // ------------------------------------------ //
+//        // ---------- Update Working Cloud ---------- //
+//        // ------------------------------------------ //
+//        pcl::copyPointCloud (*filtered_cloud, *working_cloud);
+//
+//        if ( verbose )
+//          pcl::console::print_info ("Filtering... Before: %d points | After: %d points | Filtered: %d points\n", (int) input_cloud->points.size (), (int) working_cloud->points.size (), (int) input_cloud->points.size () - (int) working_cloud->points.size ());
+//
+//        if ( step )
+//        {
+//          viewer.removePointCloud ("generic");
+//          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
+//          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
+//          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
+//          viewer.spin ();
+//        }
+//
+//        // ---------- For Classification ---------- //
+//
+//        if ( classification )
+//        {
+//          std::stringstream filtered_output_filename;
+//          filtered_output_filename << directory << "---" << "denoise.pcd" ;
+//          pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
+//
+//          std::string file = filtered_output_filename.str ();
+//          f = file.find_last_of (".");
+//          directory = file.substr (0, f);
+//
+//          //cerr << f << endl ;
+//          //cerr << directory << endl;
+//        }
+//
+//        //pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
+//        //*filtered_cloud = *input_cloud;
+*/
 
   // ---------- Smoothing ---------- //
 
   pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
   pcl::search::KdTree<I>::Ptr mls_tree (new pcl::search::KdTree<I> ());
-  mls_tree->setInputCloud (filtered_cloud);
+/*
+        mls_tree->setInputCloud (filtered_cloud);
+*/
+  mls_tree->setInputCloud (input_cloud);
 
   if ( !smoothed )
   {
     if ( verbose ) pcl::console::print_info ("Started smoothing of surfaces... \n");
 
     pcl::MovingLeastSquares<I, pcl::Normal> mls;
-    mls.setInputCloud (filtered_cloud);
+/*
+          mls.setInputCloud (filtered_cloud);
+*/
+    mls.setInputCloud (input_cloud);
     mls.setPolynomialFit (true);
     mls.setSearchMethod (mls_tree);
     mls.setSearchRadius (smoothing_search_radius);
@@ -1735,7 +1744,7 @@ int main (int argc, char** argv)
     if ( classification )
     {
       std::stringstream smooth_output_filename;
-      smooth_output_filename << directory << "-" << "smooth.pcd" ;
+      smooth_output_filename << directory << "---" << "smooth.pcd" ;
       pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
       std::string file = smooth_output_filename.str ();
@@ -1749,6 +1758,62 @@ int main (int argc, char** argv)
 
   //pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
   //*smooth_cloud = *input_cloud;
+
+
+
+
+
+
+        // ---------- Filtering of Smoothed Data Set ---------- //
+
+        pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
+
+        pcl::StatisticalOutlierRemoval<I> sor;
+        sor.setInputCloud (smooth_cloud);
+        sor.setMeanK (mean_k_filter);
+        sor.setStddevMulThresh (std_dev_filter);
+        sor.filter (*filtered_cloud);
+
+        // ------------------------------------------ //
+        // ---------- Update Working Cloud ---------- //
+        // ------------------------------------------ //
+        pcl::copyPointCloud (*filtered_cloud, *working_cloud);
+
+        if ( verbose )
+          pcl::console::print_info ("Filtering... Before: %d points | After: %d points | Filtered: %d points\n", (int) smooth_cloud->points.size (), (int) working_cloud->points.size (), (int) smooth_cloud->points.size () - (int) working_cloud->points.size ());
+
+        if ( step )
+        {
+          viewer.removePointCloud ("generic");
+          pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> working_color (working_cloud, 0, 0, 0);
+          viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (working_cloud, working_color, "generic");
+          viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "generic");
+          viewer.spin ();
+        }
+
+        // ---------- For Classification ---------- //
+
+        if ( classification )
+        {
+          std::stringstream filtered_output_filename;
+          filtered_output_filename << directory << "---" << "denoise.pcd" ;
+          pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
+
+          std::string file = filtered_output_filename.str ();
+          f = file.find_last_of (".");
+          directory = file.substr (0, f);
+
+          //cerr << f << endl ;
+          //cerr << directory << endl;
+        }
+
+        //pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
+        //*filtered_cloud = *smooth_cloud;
+
+
+
+
+
 
   // ---------- Estimate 3D Normals ---------- //
 
