@@ -786,6 +786,64 @@ void ClusteringFeatureForLines (bool &valid_line,
   ei.filter (*clustering_feature_cloud);
   }
 
+
+
+
+
+        pcl::console::print_error ("      cfp.size() = %d \n\n", (int) curvature_feature_cloud->points.size());
+
+       // First we need to verify that there actually are 'cfp' points present //
+
+       if ( curvature_feature_cloud->points.size() > 0 )
+       {
+
+         // There is a need for clustering the cloud which represents the 'curvature feature points' -- cfp //
+
+          std::vector<pcl::PointIndices> cfp_clusters;
+          pcl::search::KdTree<pcl::PointXYZRGBNormalRSD>::Ptr cfp_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormalRSD> ());
+          cfp_tree->setInputCloud (curvature_feature_cloud);
+
+          pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> cfp_ece;
+          cfp_ece.setInputCloud (curvature_feature_cloud);
+          cfp_ece.setClusterTolerance (line_inliers_clustering_tolerance);
+          cfp_ece.setMinClusterSize (1);
+          cfp_ece.setSearchMethod (cfp_tree);
+          cfp_ece.extract (cfp_clusters);
+
+          if ( cfp_clusters.size() > 0 )
+          {
+            if ( verbose )
+            {
+              pcl::console::print_error ("      Curvature Feature Points -- have %d clusters with\n", (int) cfp_clusters.size());
+              for (int cfp = 0; cfp < (int) cfp_clusters.size(); cfp++)
+                pcl::console::print_error ("        Cluster %d has %5d points\n", cfp, (int) cfp_clusters.at (cfp).indices.size ());
+              pcl::console::print_error ("\n");
+            }
+
+          pcl::PointIndices::Ptr                          largest_cfp_cluster       (new pcl::PointIndices (cfp_clusters.at (0)));
+          pcl::PointCloud<pcl::PointXYZRGBNormalRSD>::Ptr largest_cfp_cluster_cloud (new pcl::PointCloud<pcl::PointXYZRGBNormalRSD> ());
+
+          pcl::ExtractIndices<pcl::PointXYZRGBNormalRSD> cfp_ei;
+          cfp_ei.setInputCloud (curvature_feature_cloud);
+          cfp_ei.setIndices (largest_cfp_cluster);
+          cfp_ei.setNegative (false);
+          cfp_ei.filter (*largest_cfp_cluster_cloud);
+
+          // Well, do not forget to retain only the largest cluster of the 'cfp' //
+
+          *curvature_feature_cloud = *largest_cfp_cluster_cloud;
+
+           pcl::console::print_error ("      size of 'cfp' is %d points\n",   (int) largest_cfp_cluster_cloud->points.size ());
+           pcl::console::print_error ("      size of 'cfp' is %d points\n\n", (int) curvature_feature_cloud->points.size ());
+
+          }
+        }
+
+
+
+
+
+
   // Update Inliers And Cloud Of Line //
   *line_inliers = *clustering_feature_inliers;
   *line_cloud = *clustering_feature_cloud;
@@ -809,7 +867,7 @@ void ClusteringFeatureForLines (bool &valid_line,
   // A.K.A. length of line //
   float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
 
-  pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+  pcl::console::print_warn ("  (a) length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
 
   if ( step )
   {
@@ -818,7 +876,10 @@ void ClusteringFeatureForLines (bool &valid_line,
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "INLIERS");
     viewer.addLine (*line_coefficients, 0.0, 1.0, 0.0, "LINE");
     viewer.spin ();
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> curvature_feature_cloud_color (curvature_feature_cloud, 255, 255, 0);
+/*
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> curvature_feature_cloud_color (curvature_feature_cloud, 255, 255,   0);
+*/
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> curvature_feature_cloud_color (curvature_feature_cloud, 127,   0, 127);
     viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (curvature_feature_cloud, curvature_feature_cloud_color, "CURVATURE_INLIERS");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "CURVATURE_INLIERS");
     viewer.spin ();
@@ -3928,6 +3989,25 @@ int main (int argc, char** argv)
         //adjustLineModel (line_cloud, line_inliers, line_coefficients, half_of_line_threshold, maximum_line_iterations);
         adjustLineModel (adjust_using_curvature, line_inliers, line_coefficients, half_of_line_threshold, maximum_line_iterations);
 
+
+
+              if ( fitting_step )
+              {
+                pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGBNormalRSD> adjust_using_curvature_color (adjust_using_curvature, 64, 255, 127);
+                viewer.addPointCloud<pcl::PointXYZRGBNormalRSD> (adjust_using_curvature, adjust_using_curvature_color, "id1");
+                viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size, "id1");
+                /*
+                      viewer.addLine (*line_coefficients, 0.25, 1.0, 0.5, "id2");
+                */
+                viewer.addTube (*line_coefficients, 0.25, 1.0, 0.5, 0.005, "id2");
+                viewer.spin ();
+                viewer.removePointCloud ("id1");
+                viewer.removeShape ("id2");
+                viewer.spin ();
+              }
+
+
+
         double pt1[2];
         pt1[0] = line_coefficients->values.at (0);
         pt1[1] = line_coefficients->values.at (1);
@@ -3939,7 +4019,7 @@ int main (int argc, char** argv)
         // A.K.A. length of line //
         float lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
 
-        pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+        pcl::console::print_warn ("  (b) length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
 
         if ( lol < minimum_line_length )
         {
@@ -3947,8 +4027,12 @@ int main (int argc, char** argv)
           if ( verbose ) pcl::console::print_error ("  [LENGTH OF LINE] Line Rejected ! \n");
         }
 
+/*
+
         // Adjust Coefficients Of Line Model //
         adjustLineCoefficients (line_cloud, line_coefficients);
+
+*/
 
         pt1[0] = line_coefficients->values.at (0);
         pt1[1] = line_coefficients->values.at (1);
@@ -3959,7 +4043,7 @@ int main (int argc, char** argv)
         // A.K.A. length of line //
         lol = sqrt (_sqr (pt2[0] - pt1[0]) + _sqr (pt2[1] - pt1[1]));
 
-        pcl::console::print_warn ("  length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
+        pcl::console::print_warn ("  (c) length of line = %.3f | where minimum length of line = %.3f \n", lol, minimum_line_length);
 
         if ( fitting_step )
         {
