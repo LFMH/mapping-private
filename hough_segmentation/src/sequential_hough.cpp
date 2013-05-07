@@ -806,7 +806,7 @@ void ClusteringFeatureForLines (bool &valid_line,
           pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormalRSD> cfp_ece;
           cfp_ece.setInputCloud (curvature_feature_cloud);
           cfp_ece.setClusterTolerance (line_inliers_clustering_tolerance);
-          cfp_ece.setMinClusterSize (1);
+          cfp_ece.setMinClusterSize (2); // not 1, because pcl has problems when dealing with such a value
           cfp_ece.setSearchMethod (cfp_tree);
           cfp_ece.extract (cfp_clusters);
 
