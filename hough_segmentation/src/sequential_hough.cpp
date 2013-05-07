@@ -3687,6 +3687,34 @@ int main (int argc, char** argv)
             double y_dist = sqrt (_sqr (e1.values[0]-e2.values[0]) + _sqr (e1.values[1]-e2.values[1]) + _sqr (e1.values[2]-e2.values[2])) ;
             double z_dist = sqrt (_sqr (e2.values[0]-e6.values[0]) + _sqr (e2.values[1]-e6.values[1]) + _sqr (e2.values[2]-e6.values[2])) ;
 
+
+
+                  double x_cen = (e0.values[0] + e6.values[0]) / 2;
+                  double y_cen = (e0.values[1] + e6.values[1]) / 2;
+                  double z_cen = (e0.values[2] + e6.values[2]) / 2;
+
+                  std::cerr << "          " << "(" << x_cen << "," << y_cen << "," << z_cen << ")" << std::endl;
+
+                         x_cen = (e1.values[0] + e7.values[0]) / 2;
+                         y_cen = (e1.values[1] + e7.values[1]) / 2;
+                         z_cen = (e1.values[2] + e7.values[2]) / 2;
+
+                  std::cerr << "          " << "(" << x_cen << "," << y_cen << "," << z_cen << ")" << std::endl;
+
+                         x_cen = (e2.values[0] + e4.values[0]) / 2;
+                         y_cen = (e2.values[1] + e4.values[1]) / 2;
+                         z_cen = (e2.values[2] + e4.values[2]) / 2;
+
+                  std::cerr << "          " << "(" << x_cen << "," << y_cen << "," << z_cen << ")" << std::endl;
+
+                         x_cen = (e3.values[0] + e5.values[0]) / 2;
+                         y_cen = (e3.values[1] + e5.values[1]) / 2;
+                         z_cen = (e3.values[2] + e5.values[2]) / 2;
+
+                  std::cerr << "          " << "(" << x_cen << "," << y_cen << "," << z_cen << ")" << std::endl;
+
+
+
             // Create file name for saving
             std::stringstream object_filename;
 
@@ -3848,7 +3876,24 @@ int main (int argc, char** argv)
 
               std::stringstream cub_id;
               cub_id << "CUB_" << getTimestamp ();
-              viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+              // viewer.addCuboid (pla, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+                 viewer.addCuboid (pla, 1.0, 0.0, 0.0, 1.0, cub_id.str ());
+
+
+
+                    double abs_cen[3];
+                    abs_cen[0] = x_cen;
+                    abs_cen[1] = y_cen;
+                    abs_cen[2] = z_cen;
+
+                    Eigen::Vector4f rel_cen;
+                    pcl::compute3DCentroid (*box_cloud, rel_cen);
+
+                    fprintf (cad_data, "  box | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | length %12.10f width %12.10f height %12.10f \n",
+                             abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], x_dist, y_dist, z_dist);
+
+
+
               if ( space_step ) viewer.spin ();
 
               cubs_per_view.push_back (pla);
@@ -6154,20 +6199,21 @@ int main (int argc, char** argv)
 
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
-      //viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
-      viewer.addCylinder (cyl, 1.0, 0.0, 0.0, 1.0, cyl_id.str ());
+      // viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+         viewer.addCylinder (cyl, 1.0, 0.0, 0.0, 1.0, cyl_id.str ());
 
 
 
             double abs_cen[3];
             abs_cen[0] = mcx;
             abs_cen[1] = mcy;
-            abs_cen[2] = (cyl_max.z - cyl_min.z) / 2;
+            abs_cen[2] = cyl_min.z + ((cyl_max.z - cyl_min.z) / 2);
 
             Eigen::Vector4f rel_cen;
             pcl::compute3DCentroid (*cylinder_cloud, rel_cen);
 
-            fprintf (cad_data, "  cylinder | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | radius %12.10f height  %12.10f \n", abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2],   );
+            fprintf (cad_data, "  cylinder | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | radius %12.10f height %12.10f \n",
+                     abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], mr, (cyl_max.z - cyl_min.z));
 
 
 
