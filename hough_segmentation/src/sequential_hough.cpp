@@ -844,6 +844,7 @@ void ClusteringFeatureForLines (bool &valid_line,
 
 
 
+
   // Update Inliers And Cloud Of Line //
   *line_inliers = *clustering_feature_inliers;
   *line_cloud = *clustering_feature_cloud;
