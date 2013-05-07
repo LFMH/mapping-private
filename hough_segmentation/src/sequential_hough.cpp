@@ -280,7 +280,7 @@ std::string getTimestamp ()
 
   std::stringstream ss;
   ss << std::setw (4) << std::setfill ('0') << time_info->tm_year + 1900;
-  ss << std::setw (2) << std::setfill ('0') << time_info->tm_mon;
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_mon + 1;
   ss << std::setw (2) << std::setfill ('0') << time_info->tm_mday;
   ss << ".";
   ss << std::setw (2) << std::setfill ('0') << time_info->tm_hour;
@@ -290,6 +290,43 @@ std::string getTimestamp ()
   ss << std::setw (3) << std::setfill ('0') << fine_time.tv_usec / 1000;
   ss << ".";
   ss << std::setw (3) << std::setfill ('0') << fine_time.tv_usec - fine_time.tv_usec / 1000 * 1000;
+
+  return ss.str ();
+}
+
+//////////////////////////////////////////////////////
+/** \brief Get the current timestamp as an unique key,
+ *         which can be read bye humans
+ */
+std::string getStampOfTime ()
+{
+  time_t raw_time;
+  struct tm *time_info;
+  struct timeval fine_time;
+
+  raw_time = time (NULL);
+  time_info = localtime (&raw_time);
+  gettimeofday (&fine_time, NULL);
+
+  std::stringstream ss;
+  ss << std::setw (4) << std::setfill ('0') << time_info->tm_year + 1900;
+  ss << "/";
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_mon + 1;
+  ss << "/";
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_mday;
+  ss << " ";
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_hour;
+  ss << ":";
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_min;
+  ss << ":";
+  ss << std::setw (2) << std::setfill ('0') << time_info->tm_sec;
+  ss << " ";
+  ss << std::setw (3) << std::setfill ('0') << fine_time.tv_usec / 1000;
+  ss << "ms";
+  ss << " ";
+  ss << std::setw (3) << std::setfill ('0') << fine_time.tv_usec - fine_time.tv_usec / 1000 * 1000;
+  ss << "us";
+  ss << " ";
 
   return ss.str ();
 }
@@ -1476,6 +1513,16 @@ double whatAngle (pcl::PointXYZ a, pcl::PointXYZ b, pcl::PointXYZ c)
 */
 int main (int argc, char** argv)
 {
+
+
+
+          FILE * cad_data;
+          cad_data = fopen ("CAD_models_parameters.txt", "a");
+
+          fprintf (cad_data, "\n");
+          fprintf (cad_data, "timestamp = %s \n", getStampOfTime().c_str());
+
+
 
   // ---------- Command Line Arguments ---------- //
 
@@ -6107,7 +6154,74 @@ int main (int argc, char** argv)
 
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
-      viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+      //viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+      viewer.addCylinder (cyl, 1.0, 0.0, 0.0, 1.0, cyl_id.str ());
+
+
+
+            double abs_cen[3];
+            abs_cen[0] = mcx;
+            abs_cen[1] = mcy;
+            abs_cen[2] = (cyl_max.z - cyl_min.z) / 2;
+
+            Eigen::Vector4f rel_cen;
+            pcl::compute3DCentroid (*cylinder_cloud, rel_cen);
+
+            fprintf (cad_data, "  cylinder | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | radius %12.10f height  %12.10f \n", abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2],   );
+
+
+
+          //
+          //
+          //
+          //
+          //for (int cu1 = 0; cu1 < clouds_of_cubs.at (v1v2).size (); cu1++)
+          //{
+          //double cu1_d1 = sqrt (_sqr (cubs.at (v1v2).at (cu1).at (0).values.at (0) - cubs.at (v1v2).at (cu1).at (1).values.at (0)) + _sqr (cubs.at (v1v2).at (cu1).at (0).values.at (1) - cubs.at (v1v2).at (cu1).at (1).values.at (1)));
+          //double cu1_d2 = sqrt (_sqr (cubs.at (v1v2).at (cu1).at (1).values.at (0) - cubs.at (v1v2).at (cu1).at (2).values.at (0)) + _sqr (cubs.at (v1v2).at (cu1).at (1).values.at (1) - cubs.at (v1v2).at (cu1).at (2).values.at (1)));
+          //double cu1_d3 =             cubs.at (v1v2).at (cu1).at (4).values.at (2) - cubs.at (v1v2).at (cu1).at (0).values.at (2);
+          //double cu1_v  = cu1_d1 * cu1_d2 * cu1_d3;
+          //
+          //Eigen::Vector4f cen1;
+          //pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v1v2).at (cu1), cen1);
+          //
+          //}
+          //
+          //for (int cy1 = 0; cy1 < clouds_of_cyls.at (v1v2).size (); cy1++)
+          //{
+          //double cy1_h = cyls.at (v1v2).at (cy1).values.at (5);
+          //double cy1_r = cyls.at (v1v2).at (cy1).values.at (6);
+          //double cy1_v = M_PI * _sqr(cy1_r) * cy1_h;
+          //
+          //Eigen::Vector4f cen1;
+          //pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v1v2).at (cy1), cen1);
+          //
+          //fprintf (cad_file, " 2 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy1_r, cy1_h, cy1_v, cen1[0], cen1[1], cen1[2]);
+          //}
+          //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       cyls_per_view.push_back (cyl);
 
@@ -6682,6 +6796,12 @@ int main (int argc, char** argv)
   // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
 
   // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- //
+
+
+
+        fprintf (cad_data, " // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- // \n");
+
+        fclose (cad_data);
 
 
 
