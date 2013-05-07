@@ -3892,6 +3892,9 @@ int main (int argc, char** argv)
                     fprintf (cad_data, "  box | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | length %12.10f width %12.10f height %12.10f \n",
                              abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], x_dist, y_dist, z_dist);
 
+                    fprintf (cad_data, "  %s | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | length %12.10f width %12.10f height %12.10f \n",
+                             object_filename.str(), abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], x_dist, y_dist, z_dist);
+
 
 
               if ( space_step ) viewer.spin ();
