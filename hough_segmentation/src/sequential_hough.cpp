@@ -1517,10 +1517,10 @@ int main (int argc, char** argv)
 
 
           FILE * cad_data;
-          cad_data = fopen ("CAD_models_parameters.txt", "a");
+          cad_data = fopen ("cad_models_parameters.txt", "a");
 
           fprintf (cad_data, "\n");
-          fprintf (cad_data, "timestamp = %s \n", getStampOfTime().c_str());
+          fprintf (cad_data, "Timestamp = %s \n\n", getStampOfTime().c_str());
 
 
 
@@ -3892,9 +3892,6 @@ int main (int argc, char** argv)
                     fprintf (cad_data, "  box | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | length %12.10f width %12.10f height %12.10f \n",
                              abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], x_dist, y_dist, z_dist);
 
-                    fprintf (cad_data, "  %s | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | length %12.10f width %12.10f height %12.10f \n",
-                             object_filename.str(), abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], x_dist, y_dist, z_dist);
-
 
 
               if ( space_step ) viewer.spin ();
@@ -6215,60 +6212,8 @@ int main (int argc, char** argv)
             Eigen::Vector4f rel_cen;
             pcl::compute3DCentroid (*cylinder_cloud, rel_cen);
 
-            fprintf (cad_data, "  cylinder | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | radius %12.10f height %12.10f \n",
-                     abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], mr, (cyl_max.z - cyl_min.z));
-
-
-
-          //
-          //
-          //
-          //
-          //for (int cu1 = 0; cu1 < clouds_of_cubs.at (v1v2).size (); cu1++)
-          //{
-          //double cu1_d1 = sqrt (_sqr (cubs.at (v1v2).at (cu1).at (0).values.at (0) - cubs.at (v1v2).at (cu1).at (1).values.at (0)) + _sqr (cubs.at (v1v2).at (cu1).at (0).values.at (1) - cubs.at (v1v2).at (cu1).at (1).values.at (1)));
-          //double cu1_d2 = sqrt (_sqr (cubs.at (v1v2).at (cu1).at (1).values.at (0) - cubs.at (v1v2).at (cu1).at (2).values.at (0)) + _sqr (cubs.at (v1v2).at (cu1).at (1).values.at (1) - cubs.at (v1v2).at (cu1).at (2).values.at (1)));
-          //double cu1_d3 =             cubs.at (v1v2).at (cu1).at (4).values.at (2) - cubs.at (v1v2).at (cu1).at (0).values.at (2);
-          //double cu1_v  = cu1_d1 * cu1_d2 * cu1_d3;
-          //
-          //Eigen::Vector4f cen1;
-          //pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cubs.at (v1v2).at (cu1), cen1);
-          //
-          //}
-          //
-          //for (int cy1 = 0; cy1 < clouds_of_cyls.at (v1v2).size (); cy1++)
-          //{
-          //double cy1_h = cyls.at (v1v2).at (cy1).values.at (5);
-          //double cy1_r = cyls.at (v1v2).at (cy1).values.at (6);
-          //double cy1_v = M_PI * _sqr(cy1_r) * cy1_h;
-          //
-          //Eigen::Vector4f cen1;
-          //pcl::compute3DCentroid<pcl::PointXYZRGBNormalRSD> (*clouds_of_cyls.at (v1v2).at (cy1), cen1);
-          //
-          //fprintf (cad_file, " 2 | %12.10f %12.10f %12.10f | %12.10f %12.10f %12.10f \n", cy1_r, cy1_h, cy1_v, cen1[0], cen1[1], cen1[2]);
-          //}
-          //
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            fprintf (cad_data, "  cylinder %d | absolute center (%12.10f,%12.10f,%12.10f) | relative center (%12.10f,%12.10f,%12.10f) | radius %12.10f height %12.10f \n",
+                     number_of_tall, abs_cen[0], abs_cen[1], abs_cen[2], rel_cen[0], rel_cen[1], rel_cen[2], mr, (cyl_max.z - cyl_min.z));
 
 
 
