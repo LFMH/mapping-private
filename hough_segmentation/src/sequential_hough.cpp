@@ -6022,7 +6022,24 @@ int main (int argc, char** argv)
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
-        viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+        // viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
+
+              pcl::ModelCoefficients cub_coe;
+              // translation
+              cub_coe.values.push_back (cub.at (0).values[0]);
+              cub_coe.values.push_back (cub.at (0).values[1]);
+              cub_coe.values.push_back (cub.at (0).values[2]);
+              // rotation
+              cub_coe.values.push_back (0.0);
+              cub_coe.values.push_back (0.0);
+              cub_coe.values.push_back (1.0);
+              cub_coe.values.push_back (0.5);
+              // size
+              cub_coe.values.push_back (x_dist);
+              cub_coe.values.push_back (y_dist);
+              cub_coe.values.push_back (z_dist);
+
+        viewer.addCube (cub_coe, cub_id.str ());
 
 
 
