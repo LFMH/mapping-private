@@ -1853,7 +1853,7 @@ int main (int argc, char** argv)
     if ( classification )
     {
       std::stringstream smooth_output_filename;
-      smooth_output_filename << directory << "---" << "smooth.pcd" ;
+      smooth_output_filename << directory << "_mls" << smoothing_search_radius << ".pcd" ;
       pcl::io::savePCDFileASCII (smooth_output_filename.str (), *smooth_cloud);
 
       std::string file = smooth_output_filename.str ();
@@ -1905,7 +1905,7 @@ int main (int argc, char** argv)
         if ( classification )
         {
           std::stringstream filtered_output_filename;
-          filtered_output_filename << directory << "---" << "denoise.pcd" ;
+          filtered_output_filename << directory << "_sor" << mean_k_filter << ":" << std_dev_filter << ".pcd" ;
           pcl::io::savePCDFileASCII (filtered_output_filename.str (), *filtered_cloud);
 
           std::string file = filtered_output_filename.str ();
@@ -6001,9 +6001,9 @@ int main (int argc, char** argv)
       else
       {
         if ( number_of_box < 10 )
-          object_filename << directory << "---" << "object" << "-" << "box" << "_" << "0" << number_of_box << ".pcd" ;
+          object_filename << directory << "--" << "box" << "_" << "0" << number_of_box << ".pcd" ;
         else
-          object_filename << directory << "---" << "object" << "-" << "box" << "_" << number_of_box << ".pcd" ;
+          object_filename << directory << "--" << "box" << "_" << number_of_box << ".pcd" ;
 
         cerr << "      BOX      " << endl ;
 
@@ -6236,9 +6236,9 @@ int main (int argc, char** argv)
 //          cerr << "      TALL      " << endl ;
 
           if ( number_of_tall < 10 )
-            object_filename << directory << "---" << "object" << "-" << "cylinder" << "_" << "0" << number_of_tall << ".pcd" ;
+            object_filename << directory << "--" << "cylinder" << "_" << "0" << number_of_tall << ".pcd" ;
           else
-            object_filename << directory << "---" << "object" << "-" << "cylinder" << "_" << number_of_tall << ".pcd" ;
+            object_filename << directory << "--" << "cylinder" << "_" << number_of_tall << ".pcd" ;
 
           cerr << "      CYLINDER      " << endl ;
 
