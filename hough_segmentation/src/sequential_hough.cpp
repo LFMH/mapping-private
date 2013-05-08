@@ -6179,8 +6179,9 @@ int main (int argc, char** argv)
       cerr << mr << endl ;
 
       std::stringstream cyl_id;
-      cyl_id << "CYL" << getTimestamp ();
-      viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
+      // cyl_id << "CYL" << getTimestamp (); //
+      cyl_id << "cylinder" << "_" << number_of_tall << ".vtk";
+      viewer.addCylinderVTK (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
 
 
 
