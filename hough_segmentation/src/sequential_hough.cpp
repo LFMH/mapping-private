@@ -6022,8 +6022,7 @@ int main (int argc, char** argv)
 
         std::stringstream cub_id;
         cub_id << "CUB_" << getTimestamp ();
-        // viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
-        viewer.addCuboid (cub, 1.0, 0.0, 0.0, 0.5, cub_id.str ());
+        viewer.addCuboid (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
 
 
@@ -6181,8 +6180,7 @@ int main (int argc, char** argv)
 
       std::stringstream cyl_id;
       cyl_id << "CYL" << getTimestamp ();
-      // viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
-         viewer.addCylinder (cyl, 1.0, 0.0, 0.0, 1.0, cyl_id.str ());
+      viewer.addCylinder (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
 
 
 
@@ -6775,8 +6773,7 @@ int main (int argc, char** argv)
 
 
 
-        fprintf (cad_data, " // -- // -- // -- // -- // -- // -- // -- // -- // -- // -- // \n");
-
+        fprintf (cad_data, "\n");
         fclose (cad_data);
 
 
