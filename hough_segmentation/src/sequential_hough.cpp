@@ -6022,7 +6022,7 @@ int main (int argc, char** argv)
 
         std::stringstream cub_id;
         // cub_id << "CUB_" << getTimestamp (); //
-        cub_id << "box" << "_" << number_of_box << ".vtk";
+        cub_id << "cad_box" << "_" << number_of_box << ".vtk";
         viewer.addCuboidVTK (cub, 0.5, 0.0, 1.0, 0.5, cub_id.str ());
 
 
@@ -6181,7 +6181,7 @@ int main (int argc, char** argv)
 
       std::stringstream cyl_id;
       // cyl_id << "CYL" << getTimestamp (); //
-      cyl_id << "cylinder" << "_" << number_of_tall << ".vtk";
+      cyl_id << "cad_cylinder" << "_" << number_of_tall << ".vtk";
       viewer.addCylinderVTK (cyl, 0.5, 1.0, 0.0, 0.5, cyl_id.str ());
 
 
