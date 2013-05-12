@@ -7663,6 +7663,8 @@ int main (int argc, char** argv)
     viewer.addCylinder (cyls.at(view).at(cyl_idx), r, g, b, 0.75, cyl_id.str ());
   }
 
+  viewer.spin ();
+
 
 
 
