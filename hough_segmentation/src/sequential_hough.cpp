@@ -52,6 +52,9 @@
 
 #include "../include/ransac.hpp"
 #include "../include/fetch_cuboid.hpp"
+#include "../include/inside.hpp"
+
+
 
 // ---------- Types ---------- //
 
@@ -7659,6 +7662,22 @@ int main (int argc, char** argv)
     cyl_id << "cyloid_" << getTimestamp ();
     viewer.addCylinder (cyls.at(view).at(cyl_idx), r, g, b, 0.75, cyl_id.str ());
   }
+
+
+
+
+
+  for (int pnt_idx = 0; pnt_idx < original_cloud->points.size (); pnt_idx++)
+  {
+     Vec3 point;
+     pnt.x = original_cloud->points.at (pnt_idx).x;
+     pnt.y = original_cloud->points.at (pnt_idx).y;
+     pnt.z = original_cloud->points.at (pnt_idx).z;
+
+     std::cerr << " " << pnt.x << " " << pnt.y << " " << pnt.z << " " << std::endl;
+  }
+
+
 
 
 
