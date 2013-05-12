@@ -7204,20 +7204,9 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*             *
+ * Big Section *
+ *             *
 
   for (int view = 0; view < pcd_file_indices.size(); view++)
   {
@@ -7259,41 +7248,6 @@ int main (int argc, char** argv)
   }
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -7404,19 +7358,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   for (int obj = 0; obj < objs.size(); obj++)
   {
     float r = (rand () / (RAND_MAX + 1.0));
@@ -7447,22 +7388,6 @@ int main (int argc, char** argv)
   }
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -7517,16 +7442,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
-
-
-
-
   double colors[6][3];
 
   //colors[0][0] = 1.0; colors[0][1] = 0.0; colors[0][2] = 0.0; // red
@@ -7544,10 +7459,6 @@ int main (int argc, char** argv)
   colors[4][0] = 0.0; colors[4][1] = 1.0; colors[4][2] = 1.0; // cyan
   colors[5][0] = 1.0; colors[5][1] = 0.0; colors[5][2] = 1.0; // pink
   colors[6][0] = 0.5; colors[6][1] = 0.5; colors[6][2] = 0.5; // grey
-
-
-
-
 
 
 
@@ -7647,12 +7558,6 @@ int main (int argc, char** argv)
 
 
 
-
-
-
-
-
-
   for (int obj = 0; obj < merged_objs.size(); obj++)
   {
     float r = (rand () / (RAND_MAX + 1.0));
@@ -7679,19 +7584,9 @@ int main (int argc, char** argv)
   viewer.removeAllShapes ();
   viewer.removeAllPointClouds ();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+*             *
+* Big Section *
+*             */
 
 
 
