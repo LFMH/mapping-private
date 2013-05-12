@@ -6729,17 +6729,17 @@ int main (int argc, char** argv)
 
   viewer.spin ();
 
-  std::cerr << endl ;
-  std::cout << " RE-RUN = ";
-  std::cin >> rerun;
-  std::cerr << endl ;
-
-  pcl::console::print_value ("\n re-Processing %s\n\n", argv [pcd_file_indices [fff]]);
-
-  if (rerun)
-    std::cerr << " YES " << endl << endl ;
-  else
-    std::cerr << " NO " << endl << endl ;
+//  std::cerr << endl ;
+//  std::cout << " RE-RUN = ";
+//  std::cin >> rerun;
+//  std::cerr << endl ;
+//
+//  pcl::console::print_value ("\n re-Processing %s\n\n", argv [pcd_file_indices [fff]]);
+//
+//  if (rerun)
+//    std::cerr << " YES " << endl << endl ;
+//  else
+//    std::cerr << " NO " << endl << endl ;
 
   // ! Clean Up Time ! //
   viewer.removeAllShapes ();
@@ -6749,14 +6749,14 @@ int main (int argc, char** argv)
 
   } while (rerun);
 
-  cerr << " cubs per view = " << cubs_per_view.size () << endl ;
-  cerr << " cyls per view = " << cyls_per_view.size () << endl ;
+//  cerr << " cubs per view = " << cubs_per_view.size () << endl ;
+//  cerr << " cyls per view = " << cyls_per_view.size () << endl ;
 
   cubs.push_back (cubs_per_view);
   cyls.push_back (cyls_per_view);
 
-  cerr << " clouds of cubs per view = " << clouds_of_cubs_per_view.size () << endl ;
-  cerr << " clouds of cyls per view = " << clouds_of_cyls_per_view.size () << endl ;
+//  cerr << " clouds of cubs per view = " << clouds_of_cubs_per_view.size () << endl ;
+//  cerr << " clouds of cyls per view = " << clouds_of_cyls_per_view.size () << endl ;
 
   clouds_of_cubs.push_back (clouds_of_cubs_per_view);
   clouds_of_cyls.push_back (clouds_of_cyls_per_view);
@@ -7587,6 +7587,78 @@ int main (int argc, char** argv)
 *             *
 * Big Section *
 *             */
+
+
+
+  char original_file[255];
+  printf ("\n\n\n");
+  printf ("Enter original dataset: ");
+   scanf ("%s", original_file);
+
+  // ---------- Load Original Data Set ---------- //
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
+  if (pcl::io::loadPCDFile (original_file, *original_cloud) == -1)
+  {
+    pcl::console::print_error ("Couldn't read file %s\n", original_file);
+    return (-1);
+  }
+
+  if (verbose) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (original_cloud->points.size ()), original_file, pcl::getFieldsList (*original_cloud).c_str ());
+
+  if (true)
+  {
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> original_color (original_cloud, 0, 0, 0);
+    viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, original_color, "generic");
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "generic");
+    viewer.spin ();
+  }
+
+  // ---------- Path and Name of File ---------- //
+
+  std::string file = original_file;
+  size_t f = file.find_last_of (".");
+  std::string directory = file.substr (0, f);
+
+  cerr << f << endl ;
+  cerr << directory << endl;
+
+  // ---------- Visualize Detected Objects ---------- //
+
+  int view = 0;
+
+  for (int cub_idx = 0; cub_idx < cubs.at(view).size (); cub_idx++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    std::stringstream cub_id;
+    cub_id << "cuboid_" << getTimestamp ();
+    viewer.addCuboid (cubs.at(view).at(cub_idx), r, g, b, 0.75, cub_id.str ());
+  }
+
+  viewer.spin ();
+
+  for (int cyl_idx = 0; cyl_idx < cyls.at(view).size (); cyl_idx++)
+  {
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    std::stringstream cyl_id;
+    cyl_id << "cyloid_" << getTimestamp ();
+    viewer.addCylinder (cyls.at(view).at(cyl_idx), r, g, b, 0.75, cyl_id.str ());
+  }
 
 
 
