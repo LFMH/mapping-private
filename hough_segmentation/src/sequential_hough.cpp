@@ -7669,7 +7669,7 @@ int main (int argc, char** argv)
 
   for (int pnt_idx = 0; pnt_idx < original_cloud->points.size (); pnt_idx++)
   {
-     Vec3 point;
+     Vec3 pnt;
      pnt.x = original_cloud->points.at (pnt_idx).x;
      pnt.y = original_cloud->points.at (pnt_idx).y;
      pnt.z = original_cloud->points.at (pnt_idx).z;
