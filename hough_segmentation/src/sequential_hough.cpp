@@ -1960,6 +1960,10 @@ int main (int argc, char** argv)
     }
   }
 
+/*         *
+ * Section *
+ *         *
+
   // ---------------------------- //
   // ---------------------------- //
   // ---------- Faster ---------- //
@@ -2025,6 +2029,10 @@ int main (int argc, char** argv)
   // ---------- Faster ---------- //
   // ---------------------------- //
   // ---------------------------- //
+
+*         *
+* Section *
+*         */
 
   if ( verbose ) pcl::console::print_info ("Curvature Estimation ! Returned: %d curvatures\n", (int) working_cloud->points.size ());
 
@@ -6328,7 +6336,7 @@ int main (int argc, char** argv)
     }
 
     std::stringstream marked_output_filename;
-    marked_output_filename << directory << "-" << "marked.pcd" ;
+    marked_output_filename << directory << "--" << "marked.pcd" ;
     pcl::io::savePCDFileASCII (marked_output_filename.str (), *marked_working_cloud);
 
     // ---------- Deal With The Rest Of The Points ---------- //
