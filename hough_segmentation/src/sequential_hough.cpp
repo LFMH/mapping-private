@@ -7601,34 +7601,34 @@ int main (int argc, char** argv)
 
 
 
-  char original_file[255];
+  char dataset[255];
   printf ("\n\n\n");
   printf ("Enter original dataset: ");
-   scanf ("%s", original_file);
+   scanf ("%s", dataset);
 
   // ---------- Load Original Data Set ---------- //
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr original_cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB> ());
 
-  if (pcl::io::loadPCDFile (original_file, *original_cloud) == -1)
+  if (pcl::io::loadPCDFile (dataset, *cloud) == -1)
   {
-    pcl::console::print_error ("Couldn't read file %s\n", original_file);
+    pcl::console::print_error ("Couldn't read file %s\n", dataset);
     return (-1);
   }
 
-  if (verbose) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (original_cloud->points.size ()), original_file, pcl::getFieldsList (*original_cloud).c_str ());
+  if (verbose) pcl::console::print_info ("Loaded %d data points from %s with the following fields: %s\n", (int) (cloud->points.size ()), dataset, pcl::getFieldsList (*cloud).c_str ());
 
   if (true)
   {
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> original_color (original_cloud, 0, 0, 0);
-    viewer.addPointCloud<pcl::PointXYZRGB> (original_cloud, original_color, "generic");
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> color (cloud, 0, 0, 0);
+    viewer.addPointCloud<pcl::PointXYZRGB> (cloud, color, "generic");
     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "generic");
     viewer.spin ();
   }
 
   // ---------- Path and Name of File ---------- //
 
-  std::string file = original_file;
+  std::string file = dataset;
   size_t f = file.find_last_of (".");
   std::string directory = file.substr (0, f);
 
@@ -7677,12 +7677,12 @@ int main (int argc, char** argv)
 
 
 
-  for (int pnt_idx = 0; pnt_idx < original_cloud->points.size (); pnt_idx++)
+  for (int pnt_idx = 0; pnt_idx < cloud->points.size (); pnt_idx++)
   {
      Vec3 pnt;
-     pnt.x = original_cloud->points.at (pnt_idx).x;
-     pnt.y = original_cloud->points.at (pnt_idx).y;
-     pnt.z = original_cloud->points.at (pnt_idx).z;
+     pnt.x = cloud->points.at (pnt_idx).x;
+     pnt.y = cloud->points.at (pnt_idx).y;
+     pnt.z = cloud->points.at (pnt_idx).z;
 
      std::cerr << " " << pnt.x << " " << pnt.y << " " << pnt.z << " " << std::endl;
   }
