@@ -7601,10 +7601,16 @@ int main (int argc, char** argv)
 
 
 
-  char dataset[255];
-  printf ("\n\n\n");
-  printf ("Enter original dataset: ");
-   scanf ("%s", dataset);
+
+
+  printf (" \n \n \n ");
+  std::string aux = "/media/go/data/tu-munich/concat-t0_cut3-unsmoothed-unfiltered.pcd";
+  const char* dataset = aux.c_str();
+
+//  char dataset[255];
+//  printf ("\n\n\n");
+//  printf ("Enter original dataset: ");
+//   scanf ("%s", dataset);
 
   // ---------- Load Original Data Set ---------- //
 
@@ -7667,27 +7673,76 @@ int main (int argc, char** argv)
     int B = 255 * b;
 
     std::stringstream cyl_id;
-    cyl_id << "cyloid_" << getTimestamp ();
+    cyl_id << "cylinder_" << getTimestamp ();
     viewer.addCylinder (cyls.at(view).at(cyl_idx), r, g, b, 0.75, cyl_id.str ());
   }
 
   viewer.spin ();
 
+  viewer.removeAllShapes ();
+  viewer.spin ();
 
+  std::vector<pcl::PointIndices::Ptr>                 indices_of_cylinders;
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>  clouds_of_cylinders;
 
-
-
-  for (int pnt_idx = 0; pnt_idx < cloud->points.size (); pnt_idx++)
+  for (int cyl_idx = 0; cyl_idx < cyls.at(view).size (); cyl_idx++)
   {
-     Vec3 pnt;
-     pnt.x = cloud->points.at (pnt_idx).x;
-     pnt.y = cloud->points.at (pnt_idx).y;
-     pnt.z = cloud->points.at (pnt_idx).z;
+    Vec3 pt1;
+    pt1.x        = cyls.at (view).at (cyl_idx).values.at (0);
+    pt1.y        = cyls.at (view).at (cyl_idx).values.at (1);
+    pt1.z        = cyls.at (view).at (cyl_idx).values.at (2);
+    Vec3 pt2;
+    pt2.x        = cyls.at (view).at (cyl_idx).values.at (0);
+    pt2.y        = cyls.at (view).at (cyl_idx).values.at (1);
+    pt2.z        = cyls.at (view).at (cyl_idx).values.at (5) + cyls.at (view).at (cyl_idx).values.at (2);
 
-     std::cerr << " " << pnt.x << " " << pnt.y << " " << pnt.z << " " << std::endl;
+    float radius = cyls.at (view).at (cyl_idx).values.at (6);
+
+    float sqd_length = _sqr(pt2.x - pt1.x) + _sqr(pt2.y - pt1.y) + _sqr(pt2.z - pt1.z);
+    float sqd_radius = _sqr(radius + circle_threshold /**//2/**/);
+
+    pcl::PointIndices::Ptr                 cylinder_indices (new pcl::PointIndices ());
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cylinder_cloud   (new pcl::PointCloud<pcl::PointXYZRGB> ());
+
+    for (int pnt_idx = 0; pnt_idx < cloud->points.size (); pnt_idx++)
+    {
+      Vec3 pnt;
+      pnt.x = cloud->points.at (pnt_idx).x;
+      pnt.y = cloud->points.at (pnt_idx).y;
+      pnt.z = cloud->points.at (pnt_idx).z;
+
+      float dist = isPointInsideCylinder (pt1, pt2, sqd_length, sqd_radius, pnt);
+
+      if (dist > 0) cylinder_indices->indices.push_back (pnt_idx);
+    }
+
+    // Save for later...
+    indices_of_cylinders.push_back (cylinder_indices);
+
+    pcl::ExtractIndices<pcl::PointXYZRGB> cyl_ei;
+    cyl_ei.setInputCloud (cloud);
+    cyl_ei.setIndices (cylinder_indices);
+    cyl_ei.setNegative (false);
+    cyl_ei.filter (*cylinder_cloud);
+
+    // Save for later...
+    clouds_of_cylinders.push_back (cylinder_cloud);
+
+    float r = (rand () / (RAND_MAX + 1.0));
+    float g = (rand () / (RAND_MAX + 1.0));
+    float b = (rand () / (RAND_MAX + 1.0));
+
+    int R = 255 * r;
+    int G = 255 * g;
+    int B = 255 * b;
+
+    std::stringstream cyl_id;
+    cyl_id << "cylinder_" << getTimestamp ();
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> cylinder_cloud_color (cylinder_cloud, R, G, B);
+    viewer.addPointCloud<pcl::PointXYZRGB> (cylinder_cloud, cylinder_cloud_color, cyl_id.str ());
+    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, cyl_id.str ());
+    viewer.spin ();
   }
-
-
 
 
 
