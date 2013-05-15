@@ -1815,6 +1815,15 @@ int main (int argc, char** argv)
   // ---------- Smoothing ---------- //
 
   pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
+
+if (smoothing_search_radius == 0)
+{
+  if (verbose) pcl::console::print_error (" -- No smoothing!\n");
+  *smooth_cloud = *input_cloud;
+}
+else
+{
+
   pcl::search::KdTree<I>::Ptr mls_tree (new pcl::search::KdTree<I> ());
 /*
         mls_tree->setInputCloud (filtered_cloud);
@@ -1868,8 +1877,7 @@ int main (int argc, char** argv)
     }
   }
 
-  //pcl::PointCloud<I>::Ptr smooth_cloud (new pcl::PointCloud<I> ());
-  //*smooth_cloud = *input_cloud;
+}
 
 
 
@@ -1879,6 +1887,14 @@ int main (int argc, char** argv)
         // ---------- Filtering of Smoothed Data Set ---------- //
 
         pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
+
+if ((mean_k_filter == 0) && (std_dev_filter == 0))
+{
+  if (verbose) pcl::console::print_error (" -- No filtering!\n");
+  *filtered_cloud = *smooth_cloud;
+}
+else
+{
 
         pcl::StatisticalOutlierRemoval<I> sor;
         sor.setInputCloud (smooth_cloud);
@@ -1919,8 +1935,7 @@ int main (int argc, char** argv)
           //cerr << directory << endl;
         }
 
-        //pcl::PointCloud<I>::Ptr filtered_cloud (new pcl::PointCloud<I> ());
-        //*filtered_cloud = *smooth_cloud;
+}
 
 
 
